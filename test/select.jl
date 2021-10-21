@@ -1732,9 +1732,8 @@ end
                 tab in (df, dfv),
                 op in (select, select!, transform, transform!, combine)
 
-        @show sel, typeof(tab), op
-
         @test op(copy(tab), sel .=> first) == op(copy(tab), names(tab, sel) .=> first)
+        @test op(copy(tab), sel .=> [first]) == op(copy(tab), names(tab, sel) .=> [first])
         @test op(copy(tab), sel .=> [first length]) ==
               op(copy(tab), names(tab, sel) .=> [first length])
         @test op(copy(tab), sel .=> sel) ==
@@ -1745,6 +1744,10 @@ end
               op(copy(tab), names(tab, sel) .=> first .=> sel) ==
               op(copy(tab), sel .=> first .=> names(tab, sel)) ==
               op(copy(tab), names(tab, sel) .=> first .=> names(tab, sel))
+        @test op(copy(tab), sel .=> [first] .=> sel) ==
+              op(copy(tab), names(tab, sel) .=> [first] .=> sel) ==
+              op(copy(tab), sel .=> [first] .=> names(tab, sel)) ==
+              op(copy(tab), names(tab, sel) .=> [first] .=> names(tab, sel))
 
         @test op(groupby(copy(tab), :id), sel .=> first) ==
               op(groupby(copy(tab), :id), names(tab, sel) .=> first)
@@ -1762,6 +1765,10 @@ end
         res = names(tab, sel) .=> sum
         res = isempty(res) ? [] : res
         @test DataFrames.broadcast_pair(tab, sel .=> sum) == res
+
+        res = names(tab, sel) .=> [sum]
+        res = isempty(res) ? [] : res
+        @test DataFrames.broadcast_pair(tab, sel .=> [sum]) == res
 
         res = names(tab, sel) .=> [sum length]
         res = isempty(res) ? [] : res
@@ -1782,6 +1789,13 @@ end
               DataFrames.broadcast_pair(tab, sel .=> sum .=> names(tab, sel)) ==
               res
 
+        res = names(tab, sel) .=> [sum] .=> names(tab, sel)
+        res = isempty(res) ? [] : res
+        @test DataFrames.broadcast_pair(tab, sel .=> [sum] .=> sel) ==
+              DataFrames.broadcast_pair(tab, names(tab, sel) .=> [sum] .=> sel) ==
+              DataFrames.broadcast_pair(tab, sel .=> [sum] .=> names(tab, sel)) ==
+              res
+
         # this is an invalid transformation, but we can check if a correct result
         # is produced in the preprocessing step
         res = names(tab, sel) .=> [sum length] .=> names(tab, sel)
@@ -1791,6 +1805,26 @@ end
               DataFrames.broadcast_pair(tab, sel .=> [sum length] .=> names(tab, sel)) ==
               res
     end
+
+    @test_throws DimensionMismatch DataFrames.broadcast_pair(df, Not(:x1) .=> Between(:x2, :x4))
+    @test_throws DimensionMismatch DataFrames.broadcast_pair(df, Not(:x1) .=> sum .=> Between(:x2, :x4))
+    @test_throws DimensionMismatch DataFrames.broadcast_pair(df, Not(:x1) .=> Between(:x2, :x1))
+    @test_throws DimensionMismatch DataFrames.broadcast_pair(df, Not(:x1) .=> sum .=> Between(:x2, :x1))
+    # this is allowed due to how broadcasting rules are defined
+    @test combine(df, Between(:x2, :x2) .=> sum .=> Between(:x1, :x3)) ==
+          DataFrame(x1=610, x2=610, x3=610)
+    @test combine(df, Between(:x2, :x2) .=> Between(:x1, :x3)) ==
+          DataFrame(x1=df.x2, x2=df.x2, x3=df.x2)
+    @test_throws ArgumentError DataFrames.broadcast_pair(df,
+        [Between(:x1, :x2) .=> sin Between(:x2, :x3) .=> sin])
+    # this is a case that we cannot handle correctly, note that properly
+    # this broadcasting operation should error
+    @test DataFrames.broadcast_pair(df,Between(:x1, :x2) .=> []) == []
+    @test_throws ArgumentError DataFrames.broadcast_pair(df,Between(:x1, :x2) .=> [sin, cos, sin])
+    @test_throws ArgumentError DataFrames.broadcast_pair(df,Between(:x1, :x2) .=> [sin cos
+                                                                                   sin cos
+                                                                                   sin cos])
+
 end
 
 end # module

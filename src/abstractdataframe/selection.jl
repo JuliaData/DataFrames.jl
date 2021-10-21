@@ -201,6 +201,7 @@ function broadcast_pair(df::AbstractDataFrame, @nospecialize(p::Pair))
 end
 
 # this is needed in broadcasting when one of dimensions has length 0
+# as then broadcasting produces Matrix{Any}
 broadcast_pair(df::AbstractDataFrame, @nospecialize(p::AbstractMatrix)) =
     isempty(p) ? [] : p
 
@@ -222,7 +223,7 @@ function broadcast_pair(df::AbstractDataFrame, @nospecialize(p::AbstractVecOrMat
             throw(ArgumentError("broadcasted dimension does not match the " *
                                 "number of selected columns"))
         end
-        new_src = ndims(p) == 1 ? new_names : repeat(new_names, inner=(1, size(p, 2)))
+        new_src = new_names
     else
         new_src = src
     end
@@ -241,7 +242,7 @@ function broadcast_pair(df::AbstractDataFrame, @nospecialize(p::AbstractVecOrMat
             throw(ArgumentError("broadcasted dimension does not match the " *
                                 "number of selected columns"))
         end
-        new_second = ndims(p) == 1 ? new_names : repeat(new_names, inner=(1, size(p, 2)))
+        new_second = new_names
     else
         if first_second isa Pair
             fun, dst = first_second
@@ -257,7 +258,7 @@ function broadcast_pair(df::AbstractDataFrame, @nospecialize(p::AbstractVecOrMat
                     throw(ArgumentError("broadcasted dimension does not match the " *
                                         "number of selected columns"))
                 end
-                new_dst = ndims(p) == 1 ? new_names : repeat(new_names, inner=(1, size(p, 2)))
+                new_dst = new_names
                 new_second = first.(second) .=> new_dst
             else
                 new_second = second
