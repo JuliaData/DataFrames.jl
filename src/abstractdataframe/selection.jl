@@ -67,6 +67,10 @@ const TRANSFORMATION_COMMON_RULES =
     `cols => function`. In particular the following expression `function => target_cols`
     is not a valid transformation specification.
 
+    Note! If `cols` or `target_cols` is one of `All`, `Cols`, `Between`, or
+    `Not` and is used in a broadcasting context are properly expanded to
+    selected column names within the call data frame scope.
+
     All functions have two types of signatures. One of them takes a `GroupedDataFrame`
     as the first argument and an arbitrary number of transformations described above
     as following arguments. The second type of signature is when a `Function` or a `Type`
@@ -905,7 +909,7 @@ julia> select(df, :, [:a, :b] => (a, b) -> a .+ b .- sum(b)/length(b))
    2 │     2      5           2.0
    3 │     3      6           4.0
 
-julia> select(df, names(df) .=> [minimum maximum])
+julia> select(df, All() .=> [minimum maximum])
 3×4 DataFrame
  Row │ a_minimum  b_minimum  a_maximum  b_maximum
      │ Int64      Int64      Int64      Int64
@@ -1243,7 +1247,7 @@ julia> combine(df, :, [:a, :b] => (a, b) -> a .+ b .- sum(b)/length(b))
    2 │     2      5           2.0
    3 │     3      6           4.0
 
-julia> combine(df, names(df) .=> [minimum maximum])
+julia> combine(df, All() .=> [minimum maximum])
 1×4 DataFrame
  Row │ a_minimum  b_minimum  a_maximum  b_maximum
      │ Int64      Int64      Int64      Int64

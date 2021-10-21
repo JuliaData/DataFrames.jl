@@ -73,6 +73,10 @@ convenience form `nrow => target_cols` it is always interpreted as
 `cols => function`. In particular the following expression `function => target_cols`
 is not a valid transformation specification.
 
+Note! If `cols` or `target_cols` is one of `All`, `Cols`, `Between`, or `Not`
+and is used in a broadcasting context are properly expanded to selected column
+names within the call data frame scope.
+
 All functions have two types of signatures. One of them takes a `GroupedDataFrame`
 as the first argument and an arbitrary number of transformations described above
 as following arguments. The second type of signature is when a `Function` or a `Type`
