@@ -25,6 +25,6 @@ functions it is possible to override the default processing performed by
 function `function` by adding a [`table_transformation`](@ref) method for this
 function. This is most useful for custom reductions over columns of `NamedTuple`
 created by `AsTable`, especially in cases when the user expects that very many
-(over 1000 as a rule of thumb) would be selected by `AsTable` selector in which
+columns (over 1000 as a rule of thumb) would be selected by `AsTable` selector in which
 case avoiding creation of `NamedTuple` object significantly reduces compilation
-time (which is often more longer than computation time in such cases).
+time (which is often longer than computation time in such cases).
