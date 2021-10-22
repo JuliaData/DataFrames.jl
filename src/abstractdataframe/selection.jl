@@ -404,8 +404,17 @@ _empty_astable_helper(fun, len) = [fun(NamedTuple()) for _ in 1:len]
 
 function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,)::Ref{Any})
     df_sel = select(df, col_idx.cols, copycols=false)
-    if ncol(df_sel) == 0 && fun isa ByRow
-        return _empty_astable_helper(fun.fun, nrow(df))
+    if ncol(df_sel) == 0
+        if fun isa ByRow
+            # work around fact that length∘skipmissing is not supported in Julia Base yet
+            if fun === ByRow(length∘skipmissing)
+                return _empty_astable_helper(length, nrow(df))
+            else
+                return _empty_astable_helper(fun.fun, nrow(df))
+            end
+        else
+            return fun(NamedTuple())
+        end
     else
         return table_transformation(df_sel, fun)
     end
@@ -414,13 +423,16 @@ end
 _empty_selector_helper(fun, len) = [fun() for _ in 1:len]
 
 function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{Int}, (fun,)::Ref{Any})
-    if isempty(col_idx) && fun isa ByRow
-        return _empty_selector_helper(fun.fun, nrow(df))
+    if isempty(col_idx)
+        if fun isa ByRow
+            return _empty_selector_helper(fun.fun, nrow(df))
+        else
+            return fun()
+        end
     else
         cdf = eachcol(df)
         cols = map(c -> cdf[c], col_idx)
         if (fun === +) || fun === ByRow(+) # removing parentheses leads to a parsing error
-            isempty(cols) && return +() # to make sure we produce a consistent error
             return reduce(+, cols)
         elseif fun === ByRow(min)
             return _minmax_row_fast(cols, min)

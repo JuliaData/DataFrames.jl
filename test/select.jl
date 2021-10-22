@@ -2030,6 +2030,29 @@ end
     @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :res).res ≃ BigFloat[1, 1]
 end
 
+@testset "tests of reductions over empty selections" begin
+    df = DataFrame(zeros(3, 5), :auto)
+    for fun in (+, min, max, ByRow(+), ByRow(min), ByRow(max))
+        @test_throws MethodError combine(df, Cols() => fun)
+        @test_throws MethodError combine(df, AsTable(Cols()) => fun)
+    end
+    for fun in (sum, ByRow(sum), ByRow(sum∘skipmissing),
+                mean, ByRow(mean), ByRow(mean∘skipmissing),
+                minimum, ByRow(minimum), ByRow(minimum∘skipmissing),
+                maximum, ByRow(maximum), ByRow(maximum∘skipmissing))
+        @test_throws MethodError combine(df, Cols() => fun)
+        @test_throws ArgumentError combine(df, AsTable(Cols()) => fun)
+    end
+    @test_throws MethodError combine(df, Cols() => length)
+    @test_throws MethodError combine(df, Cols() => ByRow(length))
+    @test_throws MethodError combine(df, Cols() => ByRow(length∘skipmissing))
+    @test combine(df, AsTable(Cols()) => length) == DataFrame(length=0)
+    @test combine(df, AsTable(Cols()) => ByRow(length)) ==
+          DataFrame(length=[0, 0, 0])
+    @test combine(df, AsTable(Cols()) => ByRow(length∘skipmissing)) ==
+          DataFrame(length_skipmissing=[0, 0, 0])
+end
+
 @testset "function as target column names specifier" begin
     df_ref = DataFrame(x=[[1, 2], [3, 4]], id=1:2)
     for v in (df_ref, groupby(df_ref, :id))
