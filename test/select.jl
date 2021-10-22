@@ -2041,7 +2041,8 @@ end
                 minimum, ByRow(minimum), ByRow(minimum∘skipmissing),
                 maximum, ByRow(maximum), ByRow(maximum∘skipmissing))
         @test_throws MethodError combine(df, Cols() => fun)
-        @test_throws ArgumentError combine(df, AsTable(Cols()) => fun)
+        # need union as the error type is not stable across Julia versions
+        @test_throws Union{MethodError,ArgumentError} combine(df, AsTable(Cols()) => fun)
     end
     @test_throws MethodError combine(df, Cols() => length)
     @test_throws MethodError combine(df, Cols() => ByRow(length))
