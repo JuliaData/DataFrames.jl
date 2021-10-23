@@ -129,6 +129,7 @@ include("groupeddataframe/utils.jl")
 include("other/broadcasting.jl")
 
 include("abstractdataframe/selection.jl")
+include("abstractdataframe/selectionfast.jl")
 include("abstractdataframe/subset.jl")
 include("abstractdataframe/iteration.jl")
 include("abstractdataframe/reshape.jl")

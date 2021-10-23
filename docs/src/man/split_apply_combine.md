@@ -79,8 +79,8 @@ as following arguments. The second type of signature is when a `Function` or a `
 is passed as the first argument and a `GroupedDataFrame` as the second argument
 (similar to `map`).
 
-As a special rule, with the `cols => function` and `cols => function =>
-target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
+As a special rule, with the `cols => function` and
+`cols => function => target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
 object then a `NamedTuple` containing columns selected by `cols` is passed to
 `function`.
 

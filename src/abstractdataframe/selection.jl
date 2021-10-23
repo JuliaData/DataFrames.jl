@@ -48,8 +48,8 @@ const TRANSFORMATION_COMMON_RULES =
        the target column or columns, which must be a single name (as a `Symbol` or a string),
        a vector of names or `AsTable`. Additionally it can be a `Function` which
        takes a string or a vector of strings as an argument containing names of columns
-   selected by `cols`, and returns the target columns names (all accepted types
-   except `AsTable` are allowed).
+       selected by `cols`, and returns the target columns names (all accepted types
+       except `AsTable` are allowed).
     4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
        must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
     5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
@@ -166,6 +166,9 @@ const TRANSFORMATION_COMMON_RULES =
     variables (i.e. they should be pure), or use locks to control parallel accesses.
     In the future, parallelism may be extended to other cases, so this requirement
     also holds for `DataFrame` inputs.
+
+    In order to improve the performance of the operations some transformations
+    invoke optimized implementation, see [`table_transformation`](@ref) for details.
     """
 
 """
@@ -400,22 +403,44 @@ _transformation_helper(df::AbstractDataFrame, col_idx::Int, (fun,)::Ref{Any}) =
 _empty_astable_helper(fun, len) = [fun(NamedTuple()) for _ in 1:len]
 
 function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,)::Ref{Any})
-    tbl = Tables.columntable(select(df, col_idx.cols, copycols=false))
-    if isempty(tbl) && fun isa ByRow
-        return _empty_astable_helper(fun.fun, nrow(df))
+    df_sel = select(df, col_idx.cols, copycols=false)
+    if ncol(df_sel) == 0
+        if fun isa ByRow
+            # work around fact that length∘skipmissing is not supported in Julia Base yet
+            if fun === ByRow(length∘skipmissing)
+                return _empty_astable_helper(length, nrow(df))
+            else
+                return _empty_astable_helper(fun.fun, nrow(df))
+            end
+        else
+            return fun(NamedTuple())
+        end
     else
-        return fun(tbl)
+        return table_transformation(df_sel, fun)
     end
 end
 
 _empty_selector_helper(fun, len) = [fun() for _ in 1:len]
 
 function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{Int}, (fun,)::Ref{Any})
-    if isempty(col_idx) && fun isa ByRow
-        return _empty_selector_helper(fun.fun, nrow(df))
+    if isempty(col_idx)
+        if fun isa ByRow
+            return _empty_selector_helper(fun.fun, nrow(df))
+        else
+            return fun()
+        end
     else
         cdf = eachcol(df)
-        return fun(map(c -> cdf[c], col_idx)...)
+        cols = map(c -> cdf[c], col_idx)
+        if (fun === +) || fun === ByRow(+) # removing parentheses leads to a parsing error
+            return reduce(+, cols)
+        elseif fun === ByRow(min)
+            return _minmax_row_fast(cols, min)
+        elseif fun === ByRow(max)
+            return _minmax_row_fast(cols, max)
+        else
+            return fun(cols...)
+        end
     end
 end
 
