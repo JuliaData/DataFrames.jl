@@ -1830,7 +1830,6 @@ end
                                                                                    sin cos])
     @test_throws ArgumentError DataFrames.broadcast_pair(df, 1:3 .=> Between(:x1, :x2))
     @test_throws ArgumentError DataFrames.broadcast_pair(df, 1:3 .=> sum .=> Between(:x1, :x2))
-
 end
 
 end # module
