@@ -205,7 +205,7 @@ function broadcast_pair(df::AbstractDataFrame, @nospecialize(p::Pair))
 end
 
 # this is needed in broadcasting when one of dimensions has length 0
-# as then broadcasting produces Matrix{Any}
+# as then broadcasting produces Matrix{Any} rather than Matrix{<:Pair}
 broadcast_pair(df::AbstractDataFrame, @nospecialize(p::AbstractMatrix)) =
     isempty(p) ? [] : p
 

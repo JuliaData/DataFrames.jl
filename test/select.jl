@@ -1823,13 +1823,13 @@ end
         [1 .=> sum .=> Between(:x1, :x2) 1 .=> sum .=> Between(:x2, :x3)])
     # this is a case that we cannot handle correctly, note that properly
     # this broadcasting operation should error
-    @test DataFrames.broadcast_pair(df,Between(:x1, :x2) .=> []) == []
-    @test_throws ArgumentError DataFrames.broadcast_pair(df,Between(:x1, :x2) .=> [sin, cos, sin])
-    @test_throws ArgumentError DataFrames.broadcast_pair(df,Between(:x1, :x2) .=> [sin cos
+    @test DataFrames.broadcast_pair(df, Between(:x1, :x2) .=> []) == []
+    @test_throws ArgumentError DataFrames.broadcast_pair(df, Between(:x1, :x2) .=> [sin, cos, sin])
+    @test_throws ArgumentError DataFrames.broadcast_pair(df, Between(:x1, :x2) .=> [sin cos
                                                                                    sin cos
                                                                                    sin cos])
-    @test_throws ArgumentError DataFrames.broadcast_pair(df,1:3 .=> Between(:x1, :x2))
-    @test_throws ArgumentError DataFrames.broadcast_pair(df,1:3 .=> sum .=> Between(:x1, :x2))
+    @test_throws ArgumentError DataFrames.broadcast_pair(df, 1:3 .=> Between(:x1, :x2))
+    @test_throws ArgumentError DataFrames.broadcast_pair(df, 1:3 .=> sum .=> Between(:x1, :x2))
 
 end
 
