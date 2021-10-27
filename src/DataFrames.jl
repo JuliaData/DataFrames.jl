@@ -116,6 +116,12 @@ else
     end
 end
 
+if isdefined(Base, :ComposedFunction) # Julia >= 1.6.0-DEV.85
+    using Base: ComposedFunction
+else
+    using Compat: ComposedFunction
+end
+
 include("other/utils.jl")
 include("other/index.jl")
 

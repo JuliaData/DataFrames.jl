@@ -90,7 +90,8 @@
 * for selected common transformation specifications like e.g.
   `AsTable(...) => ByRow(sum)` use a custom implementations that
   lead to lower compilation latency and faster computation
-  ([#2869](https://github.com/JuliaData/DataFrames.jl/pull/2869))
+  ([#2869](https://github.com/JuliaData/DataFrames.jl/pull/2869)),
+  ([#2919](https://github.com/JuliaData/DataFrames.jl/pull/2919))
 
 # DataFrames.jl v1.2.2 Patch Release Notes
 

@@ -2054,6 +2054,53 @@ end
           DataFrame(length_skipmissing=[0, 0, 0])
 end
 
+@testset "test AsTable(...) => fun∘collect and ByRow(fun∘collect)" begin
+    Random.seed!(1234)
+    df1 = DataFrame(rand(10, 100), :auto)
+    df1.id = repeat(1:2, 5)
+    df2 = copy(df1)
+    df2.x50 = 1:10
+    df3 = copy(df1)
+    df3.x60 = [1.0:9.0; missing]
+    df4 = copy(df3)
+    df4.x50 = 1:10
+
+    for df in (df1, df2, df3, df4)
+        dfv = view(df, 2:10, 2:101)
+        for x in (df, dfv), fun in (sum, prod, first, x -> x[1] - x[2])
+            @test combine(x, AsTable(r"x") => ByRow(fun∘collect) => :res) ≃
+                  combine(x, AsTable(r"x") => ByRow(x -> (fun∘collect)(x)) => :res)
+            @test combine(x, AsTable(r"x") => ByRow(fun∘skipmissing∘collect) => :res) ≃
+                  combine(x, AsTable(r"x") => ByRow(x -> (fun∘skipmissing∘collect)(x)) => :res)
+        end
+    end
+
+    for df in (df1, df2, df3, df4)
+        dfv = view(df, 2:10, 2:101)
+        for x in (df, dfv), fun in (mean, std, var)
+            @test combine(x, AsTable(r"x") => ByRow(fun∘skipmissing∘collect) => :res) ≃
+                  combine(x, AsTable(r"x") => ByRow(x -> (fun∘skipmissing∘collect)(x)) => :res)
+        end
+    end
+
+    df3 .= coalesce.(df3, 0.0)
+    df4 .= coalesce.(df4, 0.0)
+
+    for df in (df1, df2, df3, df4)
+        dfv = view(df, 2:10, 2:101)
+        for x in (df, dfv), fun in (mean, std, var)
+            if df === df2 || df === df4
+                # mixing Int and Float64 invokes a different implementation of these functions
+                @test combine(x, AsTable(r"x") => ByRow(fun∘collect) => :res) ≈
+                    combine(x, AsTable(r"x") => ByRow(x -> (fun∘collect)(x)) => :res)
+            else
+                @test combine(x, AsTable(r"x") => ByRow(fun∘collect) => :res) ≃
+                    combine(x, AsTable(r"x") => ByRow(x -> (fun∘collect)(x)) => :res)
+            end
+        end
+    end
+end
+
 @testset "function as target column names specifier" begin
     df_ref = DataFrame(x=[[1, 2], [3, 4]], id=1:2)
     for v in (df_ref, groupby(df_ref, :id))

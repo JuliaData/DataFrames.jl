@@ -25,6 +25,7 @@ Fast paths are implemented within DataFrames.jl for the following functions `fun
 * `mean`, `ByRow(mean), `ByRow(mean∘skipmissing)`
 * `minimum`, `ByRow(minimum)`, `ByRow(minimum∘skipmissing)`
 * `maximum`, `ByRow(maximum)`, `ByRow(maximum∘skipmissing)`
+* `fun∘collect` and `ByRow(fun∘collect)` where `fun` is any function
 
 Note that in order to improve the performance `ByRow(sum)`,
 `ByRow(sum∘skipmissing)`, `ByRow(mean)`, and `ByRow(mean∘skipmissing)`
@@ -56,8 +57,46 @@ This is a default implementation called when `AsTable(...) => fun` is requested.
 The `df_sel` argument is a data frame storing columns selected by
 `AsTable(...)` selector.
 """
-default_table_transformation(df_sel::AbstractDataFrame, fun) =
-    fun(Tables.columntable(df_sel))
+function default_table_transformation(df_sel::AbstractDataFrame, fun)
+    if fun isa ByRow && fun.fun isa ComposedFunction{<:Any, typeof(collect)}
+        vT = unique(typeof.(eachcol(df_sel)))
+        if length(vT) == 1 # homogenous type
+            T = eltype(vT[1])
+            cT = vT[1]
+        elseif length(vT) == 2 # small union
+            T = Union{eltype(vT[1]), eltype(vT[2])}
+            cT = Union{vT[1], vT[2]}
+        else # large union
+            T = Any
+            cT = Any
+        end
+        v = Vector{T}(undef, ncol(df_sel))
+        cols = collect(cT, eachcol(df_sel))
+        return _fast_row_aggregate_collect(fun.fun.outer, v, cols)
+    elseif fun isa ComposedFunction{<:Any, typeof(collect)}
+        # this will narrow down eltype of a resulting vector
+        # but will not perform conversion
+        return fun(map(identity, eachcol(df_sel)))
+    else
+        return fun(Tables.columntable(df_sel))
+    end
+end
+
+function _populate_v(v, cols, len, i)
+    # make sure fun has not resized v
+    @assert length(v) == len
+    for j in 1:len
+        @inbounds v[j] = cols[j][i]
+    end
+    return v
+end
+
+function _fast_row_aggregate_collect(fun, v::Vector, cols::Vector)
+    len = length(v)
+    n = length(cols[1])
+    @assert all(x -> length(x) == n, cols)
+    return [fun(_populate_v(v, cols, len, i)) for i in 1:n]
+end
 
 # this is slower than _sum_fast below, but is required if we want
 # to produce the same results as we would without using fast path
@@ -348,22 +387,3 @@ end
 function table_transformation(df_sel::AbstractDataFrame, ::typeof(maximum))
     return reduce(max, map(identity, eachcol(df_sel)))
 end
-
-# TODO:
-# Add these transformations in the future
-# - cols => ByRow(coalesce)
-# - cols => *
-# - AsTable(cols) => prod
-# - AsTable(cols) => ByRow(prod)
-# - AsTable(cols) => first
-# - AsTable(cols) => ByRow(first)
-# - AsTable(cols) => ByRow(first∘skipmissing)
-# - AsTable(cols) => last
-# - AsTable(cols) => ByRow(last)
-# - AsTable(cols) => ByRow(last∘skipmissing)
-# - AsTable(cols) => var
-# - AsTable(cols) => ByRow(var)
-# - AsTable(cols) => ByRow(var∘skipmissing)
-# - AsTable(cols) => std
-# - AsTable(cols) => ByRow(std)
-# - AsTable(cols) => ByRow(std∘skipmissing)
