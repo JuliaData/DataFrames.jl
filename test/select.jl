@@ -2067,7 +2067,7 @@ end
 
     for df in (df1, df2, df3, df4)
         dfv = view(df, 2:10, 2:101)
-        for x in (df, dfv), fun in (sum, prod, first, x -> x[1] - x[2])
+        for x in (df, dfv), fun in (sum, prod, first, x -> first(x) - sum(x))
             @test combine(x, AsTable(r"x") => ByRow(fun∘collect) => :res) ≃
                   combine(x, AsTable(r"x") => ByRow(x -> (fun∘collect)(x)) => :res)
             @test combine(x, AsTable(r"x") => ByRow(fun∘skipmissing∘collect) => :res) ≃
