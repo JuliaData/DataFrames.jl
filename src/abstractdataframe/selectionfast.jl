@@ -23,6 +23,9 @@ Fast paths are implemented within DataFrames.jl for the following functions `fun
 * `sum`, `ByRow(sum), `ByRow(sum∘skipmissing)`
 * `length`, `ByRow(length)`, `ByRow(length∘skipmissing)`
 * `mean`, `ByRow(mean), `ByRow(mean∘skipmissing)`
+* `ByRow(var), `ByRow(var∘skipmissing)`
+* `ByRow(std), `ByRow(std∘skipmissing)`
+* `ByRow(median), `ByRow(median∘skipmissing)`
 * `minimum`, `ByRow(minimum)`, `ByRow(minimum∘skipmissing)`
 * `maximum`, `ByRow(maximum)`, `ByRow(maximum∘skipmissing)`
 * `fun∘collect` and `ByRow(fun∘collect)` where `fun` is any function
@@ -387,3 +390,18 @@ end
 function table_transformation(df_sel::AbstractDataFrame, ::typeof(maximum))
     return reduce(max, map(identity, eachcol(df_sel)))
 end
+
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(std))) =
+    table_transformation(df_sel, ByRow(std∘collect))
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(std∘skipmissing))) =
+    table_transformation(df_sel, ByRow(std∘skipmissing∘collect))
+
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(var))) =
+    table_transformation(df_sel, ByRow(var∘collect))
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(var∘skipmissing))) =
+    table_transformation(df_sel, ByRow(var∘skipmissing∘collect))
+
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(median))) =
+    table_transformation(df_sel, ByRow(median∘collect))
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(median∘skipmissing))) =
+    table_transformation(df_sel, ByRow(median∘skipmissing∘collect))

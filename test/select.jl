@@ -2083,6 +2083,20 @@ end
         end
     end
 
+    for df in (df1, df2, df3, df4)
+        dfv = view(df, 2:10, 2:101)
+        for x in (df, dfv), fun in (std, var, median)
+            if df === df2 || df === df4
+                # mixing Int and Float64 invokes a different implementation of these functions
+                @test combine(x, AsTable(r"x") => ByRow(fun∘skipmissing) => :res) ≈
+                    combine(x, AsTable(r"x") => ByRow(x -> (fun∘skipmissing)(x)) => :res)
+            else
+                @test combine(x, AsTable(r"x") => ByRow(fun∘skipmissing) => :res) ≃
+                    combine(x, AsTable(r"x") => ByRow(x -> (fun∘skipmissing)(x)) => :res)
+            end
+        end
+    end
+
     df3 .= coalesce.(df3, 0.0)
     df4 .= coalesce.(df4, 0.0)
 
@@ -2096,6 +2110,20 @@ end
             else
                 @test combine(x, AsTable(r"x") => ByRow(fun∘collect) => :res) ≃
                     combine(x, AsTable(r"x") => ByRow(x -> (fun∘collect)(x)) => :res)
+            end
+        end
+    end
+
+    for df in (df1, df2, df3, df4)
+        dfv = view(df, 2:10, 2:101)
+        for x in (df, dfv), fun in (std, var, median)
+            if fun !== median
+                # mixing Int and Float64 invokes a different implementation of these functions
+                @test combine(x, AsTable(r"x") => ByRow(fun) => :res) ≈
+                    combine(x, AsTable(r"x") => ByRow(x -> fun(x)) => :res)
+            else
+                @test combine(x, AsTable(r"x") => ByRow(fun) => :res) ≃
+                    combine(x, AsTable(r"x") => ByRow(x -> fun(x)) => :res)
             end
         end
     end
