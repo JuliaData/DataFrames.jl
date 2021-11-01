@@ -63,7 +63,7 @@ The `df_sel` argument is a data frame storing columns selected by
 function default_table_transformation(df_sel::AbstractDataFrame, fun)
     if fun isa ByRow && fun.fun isa ComposedFunction{<:Any, typeof(collect)}
         vT = unique(typeof.(eachcol(df_sel)))
-        if length(vT) == 1 # homogenous type
+        if length(vT) == 1 # homogeneous type
             T = eltype(vT[1])
             cT = vT[1]
         elseif length(vT) == 2 # small union
@@ -77,7 +77,7 @@ function default_table_transformation(df_sel::AbstractDataFrame, fun)
         cols = collect(cT, eachcol(df_sel))
         return _fast_row_aggregate_collect(fun.fun.outer, v, cols)
     elseif fun isa ComposedFunction{<:Any, typeof(collect)}
-        # this will narrow down eltype of a resulting vector
+        # this will narrow down eltype of the resulting vector
         # but will not perform conversion
         return fun(map(identity, eachcol(df_sel)))
     else
@@ -402,6 +402,6 @@ table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(var∘skipmissing
     table_transformation(df_sel, ByRow(var∘skipmissing∘collect))
 
 table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(median))) =
-    table_transformation(df_sel, ByRow(median∘collect))
+    table_transformation(df_sel, ByRow(median!∘collect))
 table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(median∘skipmissing))) =
     table_transformation(df_sel, ByRow(median∘skipmissing∘collect))
