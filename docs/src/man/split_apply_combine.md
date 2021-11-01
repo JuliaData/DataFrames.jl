@@ -73,6 +73,12 @@ convenience form `nrow => target_cols` it is always interpreted as
 `cols => function`. In particular the following expression `function => target_cols`
 is not a valid transformation specification.
 
+Note! If `cols` or `target_cols` are one of `All`, `Cols`, `Between`, or `Not`,
+broadcasting using `.=>` is supported and is equivalent to broadcasting
+the result of `names(df, cols)` or `names(df, target_cols)`.
+This behaves as if broadcasting happened after replacing the selector
+with selected column names within the data frame scope.
+
 All functions have two types of signatures. One of them takes a `GroupedDataFrame`
 as the first argument and an arbitrary number of transformations described above
 as following arguments. The second type of signature is when a `Function` or a `Type`
