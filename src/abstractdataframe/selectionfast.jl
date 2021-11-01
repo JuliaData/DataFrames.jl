@@ -70,7 +70,12 @@ function default_table_transformation(df_sel::AbstractDataFrame, fun)
             T = Union{eltype(vT[1]), eltype(vT[2])}
             cT = Union{vT[1], vT[2]}
         else # large union
-            T = Any
+            # use Base.promote_typejoin to make sure that in case all columns
+            # have <:Real eltype the v vector has <:Real eltype which
+            # is required by some functions, eg. in StatsBase.jl
+            T = mapreduce(eltype, Base.promote_typejoin, vT)
+            # use Any for cT, as the common type of columns will be abstract
+            # anyway, so it is better to use Any as it should reduce compilation latency
             cT = Any
         end
         v = Vector{T}(undef, ncol(df_sel))
@@ -85,7 +90,7 @@ function default_table_transformation(df_sel::AbstractDataFrame, fun)
     end
 end
 
-function _populate_v(v, cols, len, i)
+function _populate_v!(v::Vector, cols::Vector, len::Int, i::Int)
     # make sure fun has not resized v
     @assert length(v) == len
     for j in 1:len
@@ -98,7 +103,7 @@ function _fast_row_aggregate_collect(fun, v::Vector, cols::Vector)
     len = length(v)
     n = length(cols[1])
     @assert all(x -> length(x) == n, cols)
-    return [fun(_populate_v(v, cols, len, i)) for i in 1:n]
+    return [fun(_populate_v!(v, cols, len, i)) for i in 1:n]
 end
 
 # this is slower than _sum_fast below, but is required if we want

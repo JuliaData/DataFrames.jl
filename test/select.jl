@@ -2127,6 +2127,35 @@ end
             end
         end
     end
+
+    # test promotion over more than two distinct types of columns
+    df = DataFrame(x=[true, false], y=1:2, z=1.0:2.0)
+    df2 = DataFrame(rand(1:10, 10, 10_000), :auto)
+    df2.y = 1.0:10.0
+    df2.z = repeat([true, false], 5)
+    fun(v::AbstractVector{<:Real}) = sum(v)
+    for x in (df, df2)
+        @test combine(x, AsTable(All()) => ByRow(fun∘collect) => :res) ≃
+            combine(x, AsTable(All()) => ByRow(sum) => :res)
+    end
+
+    df = DataFrame(x=1:2, y=PooledArray(1:2), z=view([1, 2], 1:2), copycols=false)
+    df2 = DataFrame(rand(1:10, 10, 10_000), :auto)
+    df2.y = PooledArray(1:10)
+    df2.z = view([1:10;], 1:10)
+    fun2(v::Vector{Int}) = sum(v)
+    for x in (df, df2)
+        @test combine(x, AsTable(All()) => ByRow(fun∘collect) => :res) ≃
+            combine(x, AsTable(All()) => ByRow(sum) => :res)
+    end
+
+    df = DataFrame(rand(10, 1000), :auto)
+    @test combine(df, AsTable(All()) => sum∘collect => :res) ≃
+          combine(df, AsTable(All()) => sum => :res)
+    @test combine(df, AsTable(All()) => first∘collect => :res) ≃
+          combine(df, :x1 => :res)
+    @test combine(df, AsTable(All()) => last∘collect => :res) ≃
+          combine(df, :x1000 => :res)
 end
 
 @testset "function as target column names specifier" begin
