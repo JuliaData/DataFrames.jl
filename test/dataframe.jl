@@ -2019,7 +2019,8 @@ end
         @test names(x, :) == names(x)
         @test names(x, <("a2")) == ["a1"]
 
-        @test_throws TypeError names(x, x -> 1)
+        # before Julia 1.8 it is TypeError; the change is caused by the redesign of ifelse
+        @test_throws Union{MethodError, TypeError} names(x, x -> 1)
     end
 end
 
