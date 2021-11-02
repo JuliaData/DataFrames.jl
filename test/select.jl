@@ -2128,27 +2128,42 @@ end
         end
     end
 
+    # test mutating the working vector
+    df = DataFrame(rand(10, 1000), :auto)
+    @test_throws AssertionError combine(df, AsTable(All()) => ByRow(pop!∘collect))
+
     # test promotion over more than two distinct types of columns
     df = DataFrame(x=[true, false], y=1:2, z=1.0:2.0)
     df2 = DataFrame(rand(1:10, 10, 10_000), :auto)
     df2.y = 1.0:10.0
     df2.z = repeat([true, false], 5)
+    df3 = DataFrame(rand(1:10, 10, 10_000), :auto)
+    df3.y = 1.0:10.0
     fun(v::AbstractVector{<:Real}) = sum(v)
-    for x in (df, df2)
+    for x in (df, df2, df3)
         @test combine(x, AsTable(All()) => ByRow(fun∘collect) => :res) ≃
             combine(x, AsTable(All()) => ByRow(sum) => :res)
+        @test combine(df, AsTable(All()) => ByRow(eltype∘collect) => :res) ≃
+              combine(df, AsTable(All()) => ByRow(x -> (eltype∘collect)(x)) => :res) ≃
+              DataFrame(res=[Real, Real])
     end
 
     df = DataFrame(x=1:2, y=PooledArray(1:2), z=view([1, 2], 1:2), copycols=false)
     df2 = DataFrame(rand(1:10, 10, 10_000), :auto)
     df2.y = PooledArray(1:10)
     df2.z = view([1:10;], 1:10)
+    df3 = DataFrame(rand(1:10, 10, 10_000), :auto)
+    df3.y = PooledArray(1:10)
     fun2(v::Vector{Int}) = sum(v)
     for x in (df, df2)
         @test combine(x, AsTable(All()) => ByRow(fun∘collect) => :res) ≃
             combine(x, AsTable(All()) => ByRow(sum) => :res)
+        @test combine(df, AsTable(All()) => ByRow(eltype∘collect) => :res) ≃
+              combine(df, AsTable(All()) => ByRow(x -> (eltype∘collect)(x)) => :res) ≃
+              DataFrame(res=[Int, Int])
     end
 
+    # test without ByRow
     df = DataFrame(rand(10, 1000), :auto)
     @test combine(df, AsTable(All()) => sum∘collect => :res) ≃
           combine(df, AsTable(All()) => sum => :res)
