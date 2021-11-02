@@ -67,7 +67,8 @@ function default_table_transformation(df_sel::AbstractDataFrame, fun)
             T = eltype(vT[1])
             cT = vT[1]
         elseif length(vT) == 2 # small union
-            T = Union{eltype(vT[1]), eltype(vT[2])}
+            # Base.promote_typejoin is used wen collecting NamedTuple elements
+            T = Base.promote_typejoin(eltype(vT[1]), eltype(vT[2]))
             cT = Union{vT[1], vT[2]}
         else # large union
             # use Base.promote_typejoin to make sure that in case all columns
