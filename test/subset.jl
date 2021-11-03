@@ -301,7 +301,7 @@ end
         Random.seed!(12345)
         df = DataFrame(rand(100, 5), :auto)
         columns = names(df, Not(Between(:x3, ncol(df))))
-        @test subset(df, vcat.(columns, "x5") .=> .<) ==
+        @test subset(df, vcat.(columns, "x5") .=> ByRow(<)) ==
               subset(df, [:x1, :x5] => ByRow(<), [:x2, :x5] => ByRow(<)) ==
               df[(df.x1 .< df.x5) .& (df.x2 .< df.x5), :]
     end
