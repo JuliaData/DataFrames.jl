@@ -277,4 +277,27 @@ end
     @test_throws ArgumentError subset(DataFrame(x=1:3), :x => x -> (true for i in 1:3))
 end
 
+@testset "multicolumn selectors" begin
+    dfref = DataFrame(1:10 .!= permutedims(1:11), :auto)
+
+    for df in (dfref, groupby(dfref, :x2), groupby(dfref, :x11))
+        @test subset(df, Not(:x1) .=> identity) ==
+            subset(df, Not(:x1) .=> [identity identity]) ==
+            subset(df, (names(df, Not(:x1)) .=> identity)...)
+        @test subset(df, Not(:x1)) == subset(df, names(df, Not(:x1))...)
+        @test subset(df, :) == subset(df, names(df)) == subset(df, names(df)...)
+        @test subset(df, Cols(:) .=> ByRow(x -> true)) == subset(df, (names(df, Cols(:)) .=> ByRow(x -> true))...)
+        @test subset(df, [], [:x1]) == subset(df, :x1)
+        @test subset(df, Matrix{Any}(undef, 0, 0), [:x1]) == subset(df, :x1)
+        @test subset(df, [:x1, :x3, :x5]) == subset(df, [1, 3, 5]) == subset(df, :x1, :x3, :x5)
+        @test subset(df, [false; fill(true, 10)]) == subset(df, (2:11)...)
+        @test_throws ArgumentError subset(df, [:x1 => identity => :x1])
+        @test_throws ArgumentError subset(df, Not(:x1) .=> identity .=> Not(:x1))
+        @test_throws ArgumentError subset(df, Not(:x1) .=> [identity identity] .=> Not(:x1))
+        @test_throws ArgumentError subset(df, [:y])
+        @test_throws BoundsError subset(df, [-1])
+        @test_throws BoundsError subset(df, [true])
+    end
+end
+
 end

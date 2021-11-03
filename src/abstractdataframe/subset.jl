@@ -49,6 +49,17 @@ end
 # if more than 32 conditions are passed as `args`.
 function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
                                 (args,)::Ref{Any}, skipmissing::Bool)
+    cs_vec = []
+    for v in map(x -> broadcast_pair(df isa GroupedDataFrame ? parent(df) : df, x), args)
+        if v isa AbstractVecOrMat{<:Pair}
+            append!(cs_vec, v)
+        elseif v isa MultiColumnIndex
+            append!(cs_vec, names(df, v))
+        else
+            push!(cs_vec, v)
+        end
+    end
+
     # subset allows a transformation specification without a target column name or a column
     conditions = Any[if a isa ColumnIndex
                          a => Symbol(:x, i)
@@ -56,7 +67,7 @@ function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
                          first(a) => assert_bool_vec(last(a)) => Symbol(:x, i)
                      else
                          throw(ArgumentError("condition specifier $a is not supported by `subset`"))
-                     end for (i, a) in enumerate(args)]
+                     end for (i, a) in enumerate(cs_vec)]
     isempty(conditions) && throw(ArgumentError("at least one condition must be passed"))
 
     if df isa AbstractDataFrame
