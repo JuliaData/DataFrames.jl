@@ -55,38 +55,38 @@ table_transformation(df_sel::AbstractDataFrame, fun) =
     default_table_transformation(df_sel, fun)
 
 """
-    isreduction(fun)
+    isreadonly(fun)
 
-Trait returning a `Bool` indicator if function `fun` is a reduction. Reduction
-function guarantees not to modify nor return in any form the passed argument. By
-default it returns `false`.
+Trait returning a `Bool` indicator if function `fun` is only reading the passed
+argument. Such a function guarantees not to modify nor return in any form the
+passed argument. By default `false` is returned.
 
 This function might become a part of the public API of DataFrames.jl in the
 future, currently it should be considered experimental. Adding a method to
-`isreduction` for a specific function `fun` will improve performance of
+`isreadonly` for a specific function `fun` will improve performance of
 `AsTable(...) => ByRow(fun∘collect)` operation.
 """
-isreduction(::Any) = false
-isreduction(::typeof(sum)) = true
-isreduction(::typeof(sum∘skipmissing)) = true
-isreduction(::typeof(length)) = true
-isreduction(::typeof(mean)) = true
-isreduction(::typeof(mean∘skipmissing)) = true
-isreduction(::typeof(var)) = true
-isreduction(::typeof(var∘skipmissing)) = true
-isreduction(::typeof(std)) = true
-isreduction(::typeof(std∘skipmissing)) = true
-isreduction(::typeof(median)) = true
-isreduction(::typeof(median∘skipmissing)) = true
-isreduction(::typeof(minimum)) = true
-isreduction(::typeof(minimum∘skipmissing)) = true
-isreduction(::typeof(maximum)) = true
-isreduction(::typeof(maximum∘skipmissing)) = true
-isreduction(::typeof(prod)) = true
-isreduction(::typeof(prod∘skipmissing)) = true
-isreduction(::typeof(first)) = true
-isreduction(::typeof(first∘skipmissing)) = true
-isreduction(::typeof(last)) = true
+isreadonly(::Any) = false
+isreadonly(::typeof(sum)) = true
+isreadonly(::typeof(sum∘skipmissing)) = true
+isreadonly(::typeof(length)) = true
+isreadonly(::typeof(mean)) = true
+isreadonly(::typeof(mean∘skipmissing)) = true
+isreadonly(::typeof(var)) = true
+isreadonly(::typeof(var∘skipmissing)) = true
+isreadonly(::typeof(std)) = true
+isreadonly(::typeof(std∘skipmissing)) = true
+isreadonly(::typeof(median)) = true
+isreadonly(::typeof(median∘skipmissing)) = true
+isreadonly(::typeof(minimum)) = true
+isreadonly(::typeof(minimum∘skipmissing)) = true
+isreadonly(::typeof(maximum)) = true
+isreadonly(::typeof(maximum∘skipmissing)) = true
+isreadonly(::typeof(prod)) = true
+isreadonly(::typeof(prod∘skipmissing)) = true
+isreadonly(::typeof(first)) = true
+isreadonly(::typeof(first∘skipmissing)) = true
+isreadonly(::typeof(last)) = true
 
 """
     default_table_transformation(df_sel::AbstractDataFrame, fun)
@@ -116,7 +116,7 @@ function default_table_transformation(df_sel::AbstractDataFrame, fun)
         end
         v = Vector{T}(undef, ncol(df_sel))
         cols = collect(cT, eachcol(df_sel))
-        reduction = isreduction(fun.fun.outer)
+        reduction = isreadonly(fun.fun.outer)
         return _fast_row_aggregate_collect(fun.fun.outer, v, cols, reduction)
     elseif fun isa ComposedFunction{<:Any, typeof(collect)}
         # this will narrow down eltype of the resulting vector
