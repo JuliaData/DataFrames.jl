@@ -116,8 +116,8 @@ function default_table_transformation(df_sel::AbstractDataFrame, fun)
         end
         v = Vector{T}(undef, ncol(df_sel))
         cols = collect(cT, eachcol(df_sel))
-        reduction = isreadonly(fun.fun.outer)
-        return _fast_row_aggregate_collect(fun.fun.outer, v, cols, reduction)
+        readonly = isreadonly(fun.fun.outer)
+        return _fast_row_aggregate_collect(fun.fun.outer, v, cols, readonly)
     elseif fun isa ComposedFunction{<:Any, typeof(collect)}
         # this will narrow down eltype of the resulting vector
         # but will not perform conversion
@@ -127,18 +127,18 @@ function default_table_transformation(df_sel::AbstractDataFrame, fun)
     end
 end
 
-function _populate_v!(v::Vector, cols::Vector, len::Int, i::Int, reduction::Bool)
+function _populate_v!(v::Vector, cols::Vector, len::Int, i::Int, readonly::Bool)
     for j in 1:len
         @inbounds v[j] = cols[j][i]
     end
-    return reduction ? v : copy(v)
+    return readonly ? v : copy(v)
 end
 
-function _fast_row_aggregate_collect(fun, v::Vector, cols::Vector, reduction::Bool)
+function _fast_row_aggregate_collect(fun, v::Vector, cols::Vector, readonly::Bool)
     len = length(v)
     n = length(cols[1])
     @assert all(x -> length(x) == n, cols)
-    return [fun(_populate_v!(v, cols, len, i, reduction)) for i in 1:n]
+    return [fun(_populate_v!(v, cols, len, i, readonly)) for i in 1:n]
 end
 
 # this is slower than _sum_fast below, but is required if we want
