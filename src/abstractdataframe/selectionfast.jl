@@ -17,7 +17,8 @@ It is guaranteed that `df_sel` has at least one column.
 The main use of special `table_transformation` methods is to provide more
 efficient than the default implementations of requested `fun` transformation.
 
-This function is part of the public API of DataFrames.jl.
+This function might become a part of the public API of DataFrames.jl in the
+future, currently it should be considered experimental.
 
 Fast paths are implemented within DataFrames.jl for the following functions `fun`:
 * `sum`, `ByRow(sum), `ByRow(sum∘skipmissing)`
@@ -56,13 +57,14 @@ table_transformation(df_sel::AbstractDataFrame, fun) =
 """
     isreduction(fun)
 
-Trait returning a `Bool` indicator if function `fun` is a reduction.
-Reduction function guarantees not to modify nor return in any form the passed
-argument. By default it returns `false`.
+Trait returning a `Bool` indicator if function `fun` is a reduction. Reduction
+function guarantees not to modify nor return in any form the passed argument. By
+default it returns `false`.
 
-This function is part of the public API of DataFrames.jl. Adding a method
-to `isreduction` for a specific function `fun` will improve performance
-of `AsTable(...) => ByRow(fun∘collect)` operation.
+This function might become a part of the public API of DataFrames.jl in the
+future, currently it should be considered experimental. Adding a method to
+`isreduction` for a specific function `fun` will improve performance of
+`AsTable(...) => ByRow(fun∘collect)` operation.
 """
 isreduction(::Any) = false
 isreduction(::typeof(sum)) = true

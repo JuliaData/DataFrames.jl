@@ -2175,9 +2175,11 @@ end
     @test combine(df4, AsTable(All()) => ByRow(eltype∘collect) => :res) ≃
             combine(df4, AsTable(All()) => ByRow(x -> (eltype∘collect)(x)) => :res) ≃
             DataFrame(res=[Union{Int, Missing}, Union{Int, Missing}])
+    # T is Any under Julia 1.0, but Union{Missing, Integer} currently
+    T = Base.promote_typejoin(Missing, Base.promote_typejoin(Int, UInt8))
     @test combine(df5, AsTable(All()) => ByRow(eltype∘collect) => :res) ≃
             combine(df5, AsTable(All()) => ByRow(x -> (eltype∘collect)(x)) => :res) ≃
-            DataFrame(res=[Union{Integer, Missing}, Union{Integer, Missing}])
+            DataFrame(res=[T, T])
 
     df = DataFrame(x=1:2, y=PooledArray(1:2), z=view([1, 2], 1:2), copycols=false)
     df2 = DataFrame(rand(1:10, 10, 10_000), :auto)
