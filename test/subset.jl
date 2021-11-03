@@ -1,6 +1,6 @@
 module TestSubset
 
-using Test, DataFrames, Statistics
+using Test, DataFrames, Statistics, Random
 
 const ≅ = isequal
 
@@ -297,6 +297,13 @@ end
         @test_throws ArgumentError subset(df, [:y])
         @test_throws BoundsError subset(df, [-1])
         @test_throws BoundsError subset(df, [true])
+
+        Random.seed!(12345)
+        df = DataFrame(rand(100, 5), :auto)
+        columns = names(df, Not(Between(:x3, ncol(df))))
+        @test subset(df, vcat.(columns, "x5") .=> .<) ==
+              subset(df, [:x1, :x5] => ByRow(<), [:x2, :x5] => ByRow(<)) ==
+              df[(df.x1 .< df.x5) .& (df.x2 .< df.x5), :]
     end
 end
 
