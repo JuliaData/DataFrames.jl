@@ -54,6 +54,39 @@ table_transformation(df_sel::AbstractDataFrame, fun) =
     default_table_transformation(df_sel, fun)
 
 """
+    isreduction(fun)
+
+Trait returning a `Bool` indicator if function `fun` is a reduction.
+Reduction function guarantees not to modify nor return in any form the passed
+argument. By default it returns `false`.
+
+This function is part of the public API of DataFrames.jl. Adding a method
+to `isreduction` for a specific function `fun` will improve performance
+of `AsTable(...) => ByRow(fun∘collect)` operation.
+"""
+isreduction(::Any) = false
+isreduction(::typeof(sum)) = true
+isreduction(::typeof(sum∘skipmissing)) = true
+isreduction(::typeof(length)) = true
+isreduction(::typeof(mean)) = true
+isreduction(::typeof(mean∘skipmissing)) = true
+isreduction(::typeof(var)) = true
+isreduction(::typeof(var∘skipmissing)) = true
+isreduction(::typeof(std)) = true
+isreduction(::typeof(std∘skipmissing)) = true
+isreduction(::typeof(median)) = true
+isreduction(::typeof(median∘skipmissing)) = true
+isreduction(::typeof(minimum)) = true
+isreduction(::typeof(minimum∘skipmissing)) = true
+isreduction(::typeof(maximum)) = true
+isreduction(::typeof(maximum∘skipmissing)) = true
+isreduction(::typeof(prod)) = true
+isreduction(::typeof(prod∘skipmissing)) = true
+isreduction(::typeof(first)) = true
+isreduction(::typeof(first∘skipmissing)) = true
+isreduction(::typeof(last)) = true
+
+"""
     default_table_transformation(df_sel::AbstractDataFrame, fun)
 
 This is a default implementation called when `AsTable(...) => fun` is requested.
@@ -81,7 +114,8 @@ function default_table_transformation(df_sel::AbstractDataFrame, fun)
         end
         v = Vector{T}(undef, ncol(df_sel))
         cols = collect(cT, eachcol(df_sel))
-        return _fast_row_aggregate_collect(fun.fun.outer, v, cols)
+        reduction = isreduction(fun.fun.outer)
+        return _fast_row_aggregate_collect(fun.fun.outer, v, cols, reduction)
     elseif fun isa ComposedFunction{<:Any, typeof(collect)}
         # this will narrow down eltype of the resulting vector
         # but will not perform conversion
@@ -91,20 +125,18 @@ function default_table_transformation(df_sel::AbstractDataFrame, fun)
     end
 end
 
-function _populate_v!(v::Vector, cols::Vector, len::Int, i::Int)
-    # make sure fun has not resized v
-    @assert length(v) == len
+function _populate_v!(v::Vector, cols::Vector, len::Int, i::Int, reduction::Bool)
     for j in 1:len
         @inbounds v[j] = cols[j][i]
     end
-    return v
+    return reduction ? v : copy(v)
 end
 
-function _fast_row_aggregate_collect(fun, v::Vector, cols::Vector)
+function _fast_row_aggregate_collect(fun, v::Vector, cols::Vector, reduction::Bool)
     len = length(v)
     n = length(cols[1])
     @assert all(x -> length(x) == n, cols)
-    return [fun(_populate_v!(v, cols, len, i)) for i in 1:n]
+    return [fun(_populate_v!(v, cols, len, i, reduction)) for i in 1:n]
 end
 
 # this is slower than _sum_fast below, but is required if we want

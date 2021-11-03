@@ -2128,9 +2128,28 @@ end
         end
     end
 
-    # test mutating the working vector
-    df = DataFrame(rand(10, 1000), :auto)
-    @test_throws AssertionError combine(df, AsTable(All()) => ByRow(pop!∘collect))
+    # make sure we are not mutating not reusing worker vector if we are not in reduction mode
+    push0!(x) = push!(x, 0.0)
+    for df in (DataFrame(rand(10, 1000), :auto), DataFrame(rand(1000, 100), :auto))
+        @test combine(df, AsTable(All()) => ByRow(pop!∘collect) => :res) ≃
+            combine(df, AsTable(All()) => ByRow(x -> x |> collect |> pop!) => :res)
+        @test combine(df, AsTable(All()) => ByRow(push0!∘collect) => :res) ≃
+            combine(df, AsTable(All()) => ByRow(x -> x |> collect |> push0!) => :res)
+        @test combine(df, AsTable(All()) => ByRow(identity∘collect) => :res) ≃
+            combine(df, AsTable(All()) => ByRow(x -> x |> collect |> identity) => :res)
+    end
+
+    # test of fast reductions
+    for df in (DataFrame(rand(10, 100), :auto),
+               DataFrame(rand([1:10; missing], 10, 100), :auto)),
+        fun in (sum, sum∘skipmissing, length,
+                mean, mean∘skipmissing, var, var∘skipmissing,
+                std, std∘skipmissing, median, median∘skipmissing,
+                minimum, minimum∘skipmissing, maximum, maximum∘skipmissing,
+                prod, prod∘skipmissing, first, first∘skipmissing, last)
+        @test combine(df, AsTable(All()) => ByRow(fun∘collect) => :res) ≃
+              combine(df, AsTable(All()) => ByRow(x -> x |> collect |> fun) => :res)
+    end
 
     # test promotion over more than two distinct types of columns
     df = DataFrame(x=[true, false], y=1:2, z=1.0:2.0)
