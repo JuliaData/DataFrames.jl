@@ -2151,7 +2151,7 @@ end
               combine(df, AsTable(All()) => ByRow(x -> x |> collect |> fun) => :res)
     end
 
-    # test promotion over more than two distinct types of columns
+    # test promotion for two or more distinct types of columns
     df = DataFrame(x=[true, false], y=1:2, z=1.0:2.0)
     df2 = DataFrame(rand(1:10, 10, 10_000), :auto)
     df2.y = 1.0:10.0
@@ -2166,6 +2166,18 @@ end
               combine(df, AsTable(All()) => ByRow(x -> (eltype∘collect)(x)) => :res) ≃
               DataFrame(res=[Real, Real])
     end
+
+    df4 = DataFrame(rand(1:10, 2, 1000), :auto)
+    df4.y = fill(missing, 2)
+    df5 = copy(df4)
+    df5.z = fill(0x0, 2)
+
+    @test combine(df4, AsTable(All()) => ByRow(eltype∘collect) => :res) ≃
+            combine(df4, AsTable(All()) => ByRow(x -> (eltype∘collect)(x)) => :res) ≃
+            DataFrame(res=[Union{Int, Missing}, Union{Int, Missing}])
+    @test combine(df5, AsTable(All()) => ByRow(eltype∘collect) => :res) ≃
+            combine(df5, AsTable(All()) => ByRow(x -> (eltype∘collect)(x)) => :res) ≃
+            DataFrame(res=[Union{Integer, Missing}, Union{Integer, Missing}])
 
     df = DataFrame(x=1:2, y=PooledArray(1:2), z=view([1, 2], 1:2), copycols=false)
     df2 = DataFrame(rand(1:10, 10, 10_000), :auto)
