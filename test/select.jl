@@ -2140,8 +2140,8 @@ end
     end
 
     # test of fast reductions
-    for df in (DataFrame(rand(10, 100), :auto),
-               DataFrame(rand([1:10; missing], 10, 100), :auto)),
+    for df in (DataFrame(rand(5, 10), :auto),
+               DataFrame(rand([1:10; missing], 5, 10), :auto)),
         fun in (sum, sum∘skipmissing, length,
                 mean, mean∘skipmissing, var, var∘skipmissing,
                 std, std∘skipmissing, median, median∘skipmissing,
