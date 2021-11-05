@@ -494,8 +494,8 @@ Additionally DataFrames.jl extends the [`filter`](@ref) and [`filter!`](@ref)
 functions provided in Julia Base and they also allow to subset a data frame.
 The use of these two functions is discouraged as they have an API that is not
 consistent with other transformation functions in DataFrames.jl. They are kept
-in the API for legacy reason, but it is recommended to use the `subset` and
-`subset!` functions instead.
+in the API for legacy reason, but it is recommended to use the [`subset`](@ref)
+and [`subset!`](@ref) functions instead.
 
 ### Selecting and transforming columns
 
