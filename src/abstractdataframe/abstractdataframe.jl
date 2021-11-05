@@ -549,6 +549,8 @@ where each row represents a variable and each column a summary statistic.
       `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and
       `:nmissing`. The default statistics used are `:mean`, `:min`, `:median`,
       `:max`, `:nmissing`, and `:eltype`.
+    - `:detailed` as the only `Symbol` argument to return all statistics
+      except `first` and `last`.
     - `:all` as the only `Symbol` argument to return all statistics.
     - A `function => name` pair where `name` is a `Symbol` or string. This will
       create a column of summary statistics with the provided name.
@@ -633,8 +635,13 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         predefined_funs = allowed_fields
         i = findfirst(s -> s == :all, stats)
         splice!(stats, i, allowed_fields) # insert in the stats vector to get a good order
-    elseif :all in predefined_funs
-        throw(ArgumentError("`:all` must be the only `Symbol` argument."))
+    elseif predefined_funs == [:detailed]
+        predefined_funs = [:mean, :std, :min, :q25, :median, :q75,
+                           :max, :nunique, :nmissing, :eltype]
+        i = findfirst(s -> s == :detailed, stats)
+        splice!(stats, i, predefined_funs) # insert in the stats vector to get a good order
+    elseif :all in predefined_funs || :detailed in predefined_funs
+        throw(ArgumentError("`:all` and `:detailed` must be the only `Symbol` argument."))
     elseif !issubset(predefined_funs, allowed_fields)
         not_allowed = join(setdiff(predefined_funs, allowed_fields), ", :")
         allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")

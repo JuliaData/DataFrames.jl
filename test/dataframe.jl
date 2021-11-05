@@ -686,8 +686,13 @@ end
     # Test that it works with one stats argument
     @test describe_output[:, [:variable, :mean]] == describe(df, :mean)
 
-    # Test that it works with all keyword arguments
+    # Test that it works with :all
     @test describe_output ≅ describe(df, :all)
+
+    # Test that it works with :detailed
+    @test describe_output[:, [:variable, :mean, :std, :min, :q25, :median, :q75,
+                              :max, :nunique, :nmissing, :eltype]] ≅
+        describe(df, :detailed)
 
     # Test that it works on a custom function
     describe_output.test_std = describe_output.std

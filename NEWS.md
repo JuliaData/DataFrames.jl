@@ -82,6 +82,10 @@
   `Not` selectors when used as `source` or `destination` are properly expanded
   to selected column names within the call data frame scope.
   ([#2918](https://github.com/JuliaData/DataFrames.jl/pull/2918))
+* `describe` now accepts `:detailed` as the `stats` argument
+  to compute standard deviation and quartiles
+  in addition to statistics that are reported by default.
+  ([#2459](https://github.com/JuliaData/DataFrames.jl/pull/2459))
 
 ## Bug fixes
 
