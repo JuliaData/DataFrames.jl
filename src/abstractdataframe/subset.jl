@@ -95,17 +95,22 @@ end
            ungroup::Bool=true)
 
 Return a copy of data frame `df` or parent of `gdf` containing only rows for
-which all values produced by transformation(s) `args` for a given row are `true`.
-All transformations must produce vectors containing `true` or `false` (and
-optionally `missing` if `skipmissing=true`).
+which all values produced by transformation(s) `args` for a given row are
+`true`. All transformations must produce vectors containing `true` or `false`
+(and optionally `missing` if `skipmissing=true`).
 
-Each argument passed in `args` can be either a single column selector or a
-`source_columns => function` transformation specifier following the rules
-described for [`select`](@ref).
+Each argument passed in `args` can be any specifier following the rules
+described for [`select`](@ref) with the restriction that:
+* specifying target column name is not allowed as `subset` does not create new
+  columns;
+* every passed transformation must return a scalar or a vector (returning
+  multi-column values is not supported).
 
-Note that as opposed to [`filter`](@ref) the `subset` function works on whole
-columns (and selects rows within groups for `GroupedDataFrame`
-rather than whole groups) and must return a vector.
+Note that as the `subset` function works in exactly the same way as other
+transformation functions defined in DataFrames.jl this is a preferred way
+to subset rows of a data frame or grouped data frame. In particular it uses
+a different set of rules for specifying transformations than [`filter`](@ref),
+which is kept as a part of DataFrames.jl API to preserve backward compatibility.
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
@@ -205,13 +210,18 @@ which all values produced by transformation(s) `args` for a given row is `true`.
 All transformations must produce vectors containing `true` or `false` (and
 optionally `missing` if `skipmissing=true`).
 
-Each argument passed in `args` can be either a single column selector or a
-`source_columns => function` transformation specifier following the rules
-described for [`select`](@ref).
+Each argument passed in `args` can be any specifier following the rules
+described for [`select`](@ref) with the restriction that:
+* specifying target column name is not allowed as `subset!` does not create new
+  columns;
+* every passed transformation must return a scalar or a vector (returning
+  multi-column values is not supported).
 
-Note that as opposed to [`filter!`](@ref) the `subset!` function works on whole
-columns (and selects rows within groups for `GroupedDataFrame` rather than whole
-groups) and must return a vector.
+Note that as the `subset` function works in exactly the same way as other
+transformation functions defined in DataFrames.jl this is a preferred way
+to subset rows of a data frame or grouped data frame. In particular it uses
+a different set of rules for specifying transformations than [`filter!`](@ref),
+which is kept as a part of DataFrames.jl API to preserve backward compatibility.
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is

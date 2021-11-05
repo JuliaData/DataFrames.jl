@@ -77,6 +77,9 @@
   target column names and taking column names specified by `source`
   as an argument.
   ([#2897](https://github.com/JuliaData/DataFrames.jl/pull/2897))
+* `subset` and `subset!` now allow passing multiple column selectors and
+  vectors or matrices of `Pair`s as specifications of selection conditions
+  ([#2926](https://github.com/JuliaData/DataFrames.jl/pull/2926))
 * When using broadcasting in `source .=> transformation .=> destination`
   transformation specification minilanguage now `All`, `Cols`, `Between`, and
   `Not` selectors when used as `source` or `destination` are properly expanded

@@ -34,8 +34,6 @@ The following are normally implemented for AbstractDataFrames:
 * [`allowmissing`](@ref) : add support for missing values in columns
 * [`allowmissing!`](@ref) : add support for missing values in columns in-place
 * `similar` : a DataFrame with similar columns as `d`
-* `filter` : remove rows
-* `filter!` : remove rows in-place
 
 # Indexing and broadcasting
 
@@ -1008,8 +1006,13 @@ end
     filter(fun, df::AbstractDataFrame; view::Bool=false)
     filter(cols => fun, df::AbstractDataFrame; view::Bool=false)
 
-Return a data frame containing only rows from `df` for which `fun`
-returns `true`.
+Return a data frame containing only rows from `df` for which `fun` returns
+`true`.
+
+The use of this function is discouraged as it has API that is inconsistent with
+other transformation functions like [`select`](@ref). Instead it is recommended
+to use the [`subset`](@ref) function. The [`filter`](@ref) function is supported
+to ensure backward compatibility.
 
 If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
 
@@ -1020,10 +1023,11 @@ corresponding columns as separate positional arguments, unless `cols` is an
 column duplicates are allowed if a vector of `Symbol`s, strings, or integers is
 passed.
 
-If `view=false` a freshly allocated `DataFrame` is returned.
-If `view=true` then a `SubDataFrame` view into `df` is returned.
+If `view=false` a freshly allocated `DataFrame` is returned. If `view=true` then
+a `SubDataFrame` view into `df` is returned.
 
-Passing `cols` leads to a more efficient execution of the operation for large data frames.
+Passing `cols` leads to a more efficient execution of the operation for large
+data frames.
 
 See also: [`filter!`](@ref)
 
@@ -1123,6 +1127,11 @@ _filter_helper_astable(f, nti::Tables.NamedTupleIterator)::BitVector = (x -> f(x
 
 Remove rows from data frame `df` for which `fun` returns `false`.
 
+The use of this function is discouraged as it has API that is inconsistent with
+other transformation functions like [`select`](@ref). Instead it is recommended
+to use the [`subset!`](@ref) function. The [`filter!`](@ref) function is
+supported to ensure backward compatibility.
+
 If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
 
 If `cols` is specified then the predicate `fun` is passed elements of the
@@ -1132,7 +1141,8 @@ corresponding columns as separate positional arguments, unless `cols` is an
 column duplicates are allowed if a vector of `Symbol`s, strings, or integers is
 passed.
 
-Passing `cols` leads to a more efficient execution of the operation for large data frames.
+Passing `cols` leads to a more efficient execution of the operation for large
+data frames.
 
 See also: [`filter`](@ref)
 
