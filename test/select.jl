@@ -2054,6 +2054,158 @@ end
           DataFrame(length_skipmissing=[0, 0, 0])
 end
 
+@testset "test AsTable(...) => fun∘collect and ByRow(fun∘collect)" begin
+    Random.seed!(1234)
+    df1 = DataFrame(rand(10, 100), :auto)
+    df1.id = repeat(1:2, 5)
+    df2 = copy(df1)
+    df2.x50 = 1:10
+    df3 = copy(df1)
+    df3.x60 = [1.0:9.0; missing]
+    df4 = copy(df3)
+    df4.x50 = 1:10
+
+    for df in (df1, df2, df3, df4)
+        dfv = view(df, 2:10, 2:101)
+        for x in (df, dfv), fun in (sum, prod, first, x -> first(x) - sum(x))
+            @test combine(x, AsTable(r"x") => ByRow(fun∘collect) => :res) ≃
+                  combine(x, AsTable(r"x") => ByRow(x -> (fun∘collect)(x)) => :res)
+            @test combine(x, AsTable(r"x") => ByRow(fun∘skipmissing∘collect) => :res) ≃
+                  combine(x, AsTable(r"x") => ByRow(x -> (fun∘skipmissing∘collect)(x)) => :res)
+        end
+    end
+
+    for df in (df1, df2, df3, df4)
+        dfv = view(df, 2:10, 2:101)
+        for x in (df, dfv), fun in (mean, std, var)
+            @test combine(x, AsTable(r"x") => ByRow(fun∘skipmissing∘collect) => :res) ≃
+                  combine(x, AsTable(r"x") => ByRow(x -> (fun∘skipmissing∘collect)(x)) => :res)
+        end
+    end
+
+    for df in (df1, df2, df3, df4)
+        dfv = view(df, 2:10, 2:101)
+        for x in (df, dfv), fun in (std, var, median)
+            if df === df2 || df === df4
+                # mixing Int and Float64 invokes a different implementation of these functions
+                @test combine(x, AsTable(r"x") => ByRow(fun∘skipmissing) => :res) ≈
+                    combine(x, AsTable(r"x") => ByRow(x -> (fun∘skipmissing)(x)) => :res)
+            else
+                @test combine(x, AsTable(r"x") => ByRow(fun∘skipmissing) => :res) ≃
+                    combine(x, AsTable(r"x") => ByRow(x -> (fun∘skipmissing)(x)) => :res)
+            end
+        end
+    end
+
+    df3 .= coalesce.(df3, 0.0)
+    df4 .= coalesce.(df4, 0.0)
+
+    for df in (df1, df2, df3, df4)
+        dfv = view(df, 2:10, 2:101)
+        for x in (df, dfv), fun in (mean, std, var)
+            if df === df2 || df === df4
+                # mixing Int and Float64 invokes a different implementation of these functions
+                @test combine(x, AsTable(r"x") => ByRow(fun∘collect) => :res) ≈
+                    combine(x, AsTable(r"x") => ByRow(x -> (fun∘collect)(x)) => :res)
+            else
+                @test combine(x, AsTable(r"x") => ByRow(fun∘collect) => :res) ≃
+                    combine(x, AsTable(r"x") => ByRow(x -> (fun∘collect)(x)) => :res)
+            end
+        end
+    end
+
+    for df in (df1, df2, df3, df4)
+        dfv = view(df, 2:10, 2:101)
+        for x in (df, dfv), fun in (std, var, median)
+            if fun !== median
+                # mixing Int and Float64 invokes a different implementation of these functions
+                @test combine(x, AsTable(r"x") => ByRow(fun) => :res) ≈
+                    combine(x, AsTable(r"x") => ByRow(x -> fun(x)) => :res)
+            else
+                @test combine(x, AsTable(r"x") => ByRow(fun) => :res) ≃
+                    combine(x, AsTable(r"x") => ByRow(x -> fun(x)) => :res)
+            end
+        end
+    end
+
+    # make sure we are not mutating not reusing worker vector if we are not in reduction mode
+    push0!(x) = push!(x, 0.0)
+    for df in (DataFrame(rand(10, 1000), :auto), DataFrame(rand(1000, 100), :auto))
+        @test combine(df, AsTable(All()) => ByRow(pop!∘collect) => :res) ≃
+            combine(df, AsTable(All()) => ByRow(x -> x |> collect |> pop!) => :res)
+        @test combine(df, AsTable(All()) => ByRow(push0!∘collect) => :res) ≃
+            combine(df, AsTable(All()) => ByRow(x -> x |> collect |> push0!) => :res)
+        @test combine(df, AsTable(All()) => ByRow(identity∘collect) => :res) ≃
+            combine(df, AsTable(All()) => ByRow(x -> x |> collect |> identity) => :res)
+    end
+
+    # test of fast reductions
+    for df in (DataFrame(rand(5, 10), :auto),
+               DataFrame(rand([1:10; missing], 5, 10), :auto)),
+        fun in (sum, sum∘skipmissing, length,
+                mean, mean∘skipmissing, var, var∘skipmissing,
+                std, std∘skipmissing, median, median∘skipmissing,
+                minimum, minimum∘skipmissing, maximum, maximum∘skipmissing,
+                prod, prod∘skipmissing, first, first∘skipmissing, last)
+        @test combine(df, AsTable(All()) => ByRow(fun∘collect) => :res) ≃
+              combine(df, AsTable(All()) => ByRow(x -> x |> collect |> fun) => :res)
+    end
+
+    # test promotion for two or more distinct types of columns
+    df = DataFrame(x=[true, false], y=1:2, z=1.0:2.0)
+    df2 = DataFrame(rand(1:10, 10, 10_000), :auto)
+    df2.y = 1.0:10.0
+    df2.z = repeat([true, false], 5)
+    df3 = DataFrame(rand(1:10, 10, 10_000), :auto)
+    df3.y = 1.0:10.0
+    fun(v::AbstractVector{<:Real}) = sum(v)
+    for x in (df, df2, df3)
+        @test combine(x, AsTable(All()) => ByRow(fun∘collect) => :res) ≃
+            combine(x, AsTable(All()) => ByRow(sum) => :res)
+        @test combine(df, AsTable(All()) => ByRow(eltype∘collect) => :res) ≃
+              combine(df, AsTable(All()) => ByRow(x -> (eltype∘collect)(x)) => :res) ≃
+              DataFrame(res=[Real, Real])
+    end
+
+    df4 = DataFrame(rand(1:10, 2, 1000), :auto)
+    df4.y = fill(missing, 2)
+    df5 = copy(df4)
+    df5.z = fill(0x0, 2)
+
+    @test combine(df4, AsTable(All()) => ByRow(eltype∘collect) => :res) ≃
+            combine(df4, AsTable(All()) => ByRow(x -> (eltype∘collect)(x)) => :res) ≃
+            DataFrame(res=[Union{Int, Missing}, Union{Int, Missing}])
+    # T is Any under Julia 1.0, but Union{Missing, Integer} currently
+    T = Base.promote_typejoin(Missing, Base.promote_typejoin(Int, UInt8))
+    @test combine(df5, AsTable(All()) => ByRow(eltype∘collect) => :res) ≃
+            combine(df5, AsTable(All()) => ByRow(x -> (eltype∘collect)(x)) => :res) ≃
+            DataFrame(res=[T, T])
+
+    df = DataFrame(x=1:2, y=PooledArray(1:2), z=view([1, 2], 1:2), copycols=false)
+    df2 = DataFrame(rand(1:10, 10, 10_000), :auto)
+    df2.y = PooledArray(1:10)
+    df2.z = view([1:10;], 1:10)
+    df3 = DataFrame(rand(1:10, 10, 10_000), :auto)
+    df3.y = PooledArray(1:10)
+    fun2(v::Vector{Int}) = sum(v)
+    for x in (df, df2)
+        @test combine(x, AsTable(All()) => ByRow(fun∘collect) => :res) ≃
+            combine(x, AsTable(All()) => ByRow(sum) => :res)
+        @test combine(df, AsTable(All()) => ByRow(eltype∘collect) => :res) ≃
+              combine(df, AsTable(All()) => ByRow(x -> (eltype∘collect)(x)) => :res) ≃
+              DataFrame(res=[Int, Int])
+    end
+
+    # test without ByRow
+    df = DataFrame(rand(10, 1000), :auto)
+    @test combine(df, AsTable(All()) => sum∘collect => :res) ≃
+          combine(df, AsTable(All()) => sum => :res)
+    @test combine(df, AsTable(All()) => first∘collect => :res) ≃
+          combine(df, :x1 => :res)
+    @test combine(df, AsTable(All()) => last∘collect => :res) ≃
+          combine(df, :x1000 => :res)
+end
+
 @testset "function as target column names specifier" begin
     df_ref = DataFrame(x=[[1, 2], [3, 4]], id=1:2)
     for v in (df_ref, groupby(df_ref, :id))

@@ -17,14 +17,19 @@ It is guaranteed that `df_sel` has at least one column.
 The main use of special `table_transformation` methods is to provide more
 efficient than the default implementations of requested `fun` transformation.
 
-This function is part of the public API of DataFrames.jl.
+This function might become a part of the public API of DataFrames.jl in the
+future, currently it should be considered experimental.
 
 Fast paths are implemented within DataFrames.jl for the following functions `fun`:
 * `sum`, `ByRow(sum), `ByRow(sum∘skipmissing)`
 * `length`, `ByRow(length)`, `ByRow(length∘skipmissing)`
 * `mean`, `ByRow(mean), `ByRow(mean∘skipmissing)`
+* `ByRow(var), `ByRow(var∘skipmissing)`
+* `ByRow(std), `ByRow(std∘skipmissing)`
+* `ByRow(median), `ByRow(median∘skipmissing)`
 * `minimum`, `ByRow(minimum)`, `ByRow(minimum∘skipmissing)`
 * `maximum`, `ByRow(maximum)`, `ByRow(maximum∘skipmissing)`
+* `fun∘collect` and `ByRow(fun∘collect)` where `fun` is any function
 
 Note that in order to improve the performance `ByRow(sum)`,
 `ByRow(sum∘skipmissing)`, `ByRow(mean)`, and `ByRow(mean∘skipmissing)`
@@ -50,14 +55,91 @@ table_transformation(df_sel::AbstractDataFrame, fun) =
     default_table_transformation(df_sel, fun)
 
 """
+    isreadonly(fun)
+
+Trait returning a `Bool` indicator if function `fun` is only reading the passed
+argument. Such a function guarantees not to modify nor return in any form the
+passed argument. By default `false` is returned.
+
+This function might become a part of the public API of DataFrames.jl in the
+future, currently it should be considered experimental. Adding a method to
+`isreadonly` for a specific function `fun` will improve performance of
+`AsTable(...) => ByRow(fun∘collect)` operation.
+"""
+isreadonly(::Any) = false
+isreadonly(::typeof(sum)) = true
+isreadonly(::typeof(sum∘skipmissing)) = true
+isreadonly(::typeof(length)) = true
+isreadonly(::typeof(mean)) = true
+isreadonly(::typeof(mean∘skipmissing)) = true
+isreadonly(::typeof(var)) = true
+isreadonly(::typeof(var∘skipmissing)) = true
+isreadonly(::typeof(std)) = true
+isreadonly(::typeof(std∘skipmissing)) = true
+isreadonly(::typeof(median)) = true
+isreadonly(::typeof(median∘skipmissing)) = true
+isreadonly(::typeof(minimum)) = true
+isreadonly(::typeof(minimum∘skipmissing)) = true
+isreadonly(::typeof(maximum)) = true
+isreadonly(::typeof(maximum∘skipmissing)) = true
+isreadonly(::typeof(prod)) = true
+isreadonly(::typeof(prod∘skipmissing)) = true
+isreadonly(::typeof(first)) = true
+isreadonly(::typeof(first∘skipmissing)) = true
+isreadonly(::typeof(last)) = true
+
+"""
     default_table_transformation(df_sel::AbstractDataFrame, fun)
 
 This is a default implementation called when `AsTable(...) => fun` is requested.
 The `df_sel` argument is a data frame storing columns selected by
 `AsTable(...)` selector.
 """
-default_table_transformation(df_sel::AbstractDataFrame, fun) =
-    fun(Tables.columntable(df_sel))
+function default_table_transformation(df_sel::AbstractDataFrame, fun)
+    if fun isa ByRow && fun.fun isa ComposedFunction{<:Any, typeof(collect)}
+        vT = unique(typeof.(eachcol(df_sel)))
+        if length(vT) == 1 # homogeneous type
+            T = eltype(vT[1])
+            cT = vT[1]
+        elseif length(vT) == 2 # small union
+            # Base.promote_typejoin is used wen collecting NamedTuple elements
+            T = Base.promote_typejoin(eltype(vT[1]), eltype(vT[2]))
+            cT = Union{vT[1], vT[2]}
+        else # large union
+            # use Base.promote_typejoin to make sure that in case all columns
+            # have <:Real eltype the v vector has <:Real eltype which
+            # is required by some functions, eg. in StatsBase.jl
+            T = mapreduce(eltype, Base.promote_typejoin, vT)
+            # use Any for cT, as the common type of columns will be abstract
+            # anyway, so it is better to use Any as it should reduce compilation latency
+            cT = Any
+        end
+        v = Vector{T}(undef, ncol(df_sel))
+        cols = collect(cT, eachcol(df_sel))
+        readonly = isreadonly(fun.fun.outer)
+        return _fast_row_aggregate_collect(fun.fun.outer, v, cols, readonly)
+    elseif fun isa ComposedFunction{<:Any, typeof(collect)}
+        # this will narrow down eltype of the resulting vector
+        # but will not perform conversion
+        return fun(map(identity, eachcol(df_sel)))
+    else
+        return fun(Tables.columntable(df_sel))
+    end
+end
+
+function _populate_v!(v::Vector, cols::Vector, len::Int, i::Int, readonly::Bool)
+    for j in 1:len
+        @inbounds v[j] = cols[j][i]
+    end
+    return readonly ? v : copy(v)
+end
+
+function _fast_row_aggregate_collect(fun, v::Vector, cols::Vector, readonly::Bool)
+    len = length(v)
+    n = length(cols[1])
+    @assert all(x -> length(x) == n, cols)
+    return [fun(_populate_v!(v, cols, len, i, readonly)) for i in 1:n]
+end
 
 # this is slower than _sum_fast below, but is required if we want
 # to produce the same results as we would without using fast path
@@ -349,21 +431,17 @@ function table_transformation(df_sel::AbstractDataFrame, ::typeof(maximum))
     return reduce(max, map(identity, eachcol(df_sel)))
 end
 
-# TODO:
-# Add these transformations in the future
-# - cols => ByRow(coalesce)
-# - cols => *
-# - AsTable(cols) => prod
-# - AsTable(cols) => ByRow(prod)
-# - AsTable(cols) => first
-# - AsTable(cols) => ByRow(first)
-# - AsTable(cols) => ByRow(first∘skipmissing)
-# - AsTable(cols) => last
-# - AsTable(cols) => ByRow(last)
-# - AsTable(cols) => ByRow(last∘skipmissing)
-# - AsTable(cols) => var
-# - AsTable(cols) => ByRow(var)
-# - AsTable(cols) => ByRow(var∘skipmissing)
-# - AsTable(cols) => std
-# - AsTable(cols) => ByRow(std)
-# - AsTable(cols) => ByRow(std∘skipmissing)
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(std))) =
+    table_transformation(df_sel, ByRow(std∘collect))
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(std∘skipmissing))) =
+    table_transformation(df_sel, ByRow(std∘skipmissing∘collect))
+
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(var))) =
+    table_transformation(df_sel, ByRow(var∘collect))
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(var∘skipmissing))) =
+    table_transformation(df_sel, ByRow(var∘skipmissing∘collect))
+
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(median))) =
+    table_transformation(df_sel, ByRow(median!∘collect))
+table_transformation(df_sel::AbstractDataFrame, ::typeof(ByRow(median∘skipmissing))) =
+    table_transformation(df_sel, ByRow(median∘skipmissing∘collect))
