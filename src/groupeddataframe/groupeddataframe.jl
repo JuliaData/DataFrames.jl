@@ -966,10 +966,10 @@ end
 Return a new `GroupedDataFrame` containing only groups for which `fun` returns
 `true`.
 
-The use of this function is discouraged as it has API that is inconsistent with
-other transformation functions like [`select`](@ref). Instead it is recommended
-to use the [`subset`](@ref) function. The [`filter`](@ref) function is supported
-to ensure backward compatibility.
+This method is defined so that DataFrames.jl implements the Julia API for
+collections, but it is generally recommended to use the [`subset`](@ref)
+function instead, as it is both faster and more consistent with other
+DataFrames.jl functions.
 
 If `cols` is not specified then the predicate `fun` is called with a
 `SubDataFrame` for each group.

@@ -104,13 +104,15 @@ described for [`select`](@ref) with the restriction that:
 * specifying target column name is not allowed as `subset` does not create new
   columns;
 * every passed transformation must return a scalar or a vector (returning
-  multi-column values is not supported).
+  `AbstractDataFrame`, `NamedTuple`, `DataFrameRow` or `AbstractMatrix`
+  is not supported).
 
 Note that as the `subset` function works in exactly the same way as other
 transformation functions defined in DataFrames.jl this is a preferred way
-to subset rows of a data frame or grouped data frame. In particular it uses
-a different set of rules for specifying transformations than [`filter`](@ref),
-which is kept as a part of DataFrames.jl API to preserve backward compatibility.
+to subset rows of a data frame or grouped data frame. In particular it uses a
+different set of rules for specifying transformations than [`filter!`](@ref)
+which is slower and is implemented in DataFrames.jl to ensure support for the
+standard Julia API for collections.
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
@@ -215,13 +217,15 @@ described for [`select`](@ref) with the restriction that:
 * specifying target column name is not allowed as `subset!` does not create new
   columns;
 * every passed transformation must return a scalar or a vector (returning
-  multi-column values is not supported).
+  `AbstractDataFrame`, `NamedTuple`, `DataFrameRow` or `AbstractMatrix`
+  is not supported).
 
 Note that as the `subset` function works in exactly the same way as other
-transformation functions defined in DataFrames.jl this is a preferred way
-to subset rows of a data frame or grouped data frame. In particular it uses
-a different set of rules for specifying transformations than [`filter!`](@ref),
-which is kept as a part of DataFrames.jl API to preserve backward compatibility.
+transformation functions defined in DataFrames.jl this is a preferred way to
+subset rows of a data frame or grouped data frame. In particular it uses a
+different set of rules for specifying transformations than [`filter!`](@ref)
+which is slower and is implemented in DataFrames.jl to ensure support for the
+standard Julia API for collections.
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
@@ -231,9 +235,10 @@ returns `missing` are skipped).
 If `ungroup=false` the resulting data frame is re-grouped based on the same
 grouping columns as `gdf` and a `GroupedDataFrame` is returned.
 
-If `GroupedDataFrame` is subsetted then it must include all groups present in the
-`parent` data frame, like in [`select!`](@ref). In this case the passed
-`GroupedDataFrame` is updated to have correct groups after its parent is updated.
+If `GroupedDataFrame` is subsetted then it must include all groups present in
+the `parent` data frame, like in [`select!`](@ref). In this case the passed
+`GroupedDataFrame` is updated to have correct groups after its parent is
+updated.
 
 See also: [`subset`](@ref), [`filter!`](@ref), [`select!`](@ref)
 

@@ -2,38 +2,13 @@
     AbstractDataFrame
 
 An abstract type for which all concrete types expose an interface
-for working with tabular data.
+for working with tabular data. In DataFrames.jl the `DataFrame` and
+`SubDataFrame` types are subtypes of `AbstractDataFrame`.
 
 # Common methods
 
 An `AbstractDataFrame` is a two-dimensional table with `Symbol`s or strings
 for column names.
-
-The following are normally implemented for AbstractDataFrames:
-
-* [`describe`](@ref) : summarize columns
-* `summary` : show number of rows and columns
-* `hcat` : horizontal concatenation
-* `vcat` : vertical concatenation
-* [`repeat`](@ref) : repeat rows
-* `names` : columns names
-* [`rename!`](@ref) : rename columns names based on keyword arguments
-* `length` : number of columns
-* `size` : (nrows, ncols)
-* [`first`](@ref) : first `n` rows
-* [`last`](@ref) : last `n` rows
-* `convert` : convert to an array
-* [`completecases`](@ref) : boolean vector of complete cases (rows with no missings)
-* [`dropmissing`](@ref) : remove rows with missing values
-* [`dropmissing!`](@ref) : remove rows with missing values in-place
-* [`nonunique`](@ref) : indexes of duplicate rows
-* [`unique`](@ref) : remove duplicate rows
-* [`unique!`](@ref) : remove duplicate rows in-place
-* [`disallowmissing`](@ref) : drop support for missing values in columns
-* [`disallowmissing!`](@ref) : drop support for missing values in columns in-place
-* [`allowmissing`](@ref) : add support for missing values in columns
-* [`allowmissing!`](@ref) : add support for missing values in columns in-place
-* `similar` : a DataFrame with similar columns as `d`
 
 # Indexing and broadcasting
 
@@ -1009,10 +984,10 @@ end
 Return a data frame containing only rows from `df` for which `fun` returns
 `true`.
 
-The use of this function is discouraged as it has API that is inconsistent with
-other transformation functions like [`select`](@ref). Instead it is recommended
-to use the [`subset`](@ref) function. The [`filter`](@ref) function is supported
-to ensure backward compatibility.
+This method is defined so that DataFrames.jl implements the Julia API for
+collections, but it is generally recommended to use the [`subset`](@ref)
+function instead, as it is both faster and more consistent with other
+DataFrames.jl functions.
 
 If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
 
@@ -1127,10 +1102,10 @@ _filter_helper_astable(f, nti::Tables.NamedTupleIterator)::BitVector = (x -> f(x
 
 Remove rows from data frame `df` for which `fun` returns `false`.
 
-The use of this function is discouraged as it has API that is inconsistent with
-other transformation functions like [`select`](@ref). Instead it is recommended
-to use the [`subset!`](@ref) function. The [`filter!`](@ref) function is
-supported to ensure backward compatibility.
+This method is defined so that DataFrames.jl implements the Julia API for
+collections, but it is generally recommended to use the [`subset!`](@ref)
+function instead, as it is both faster and more consistent with other
+DataFrames.jl functions.
 
 If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
 

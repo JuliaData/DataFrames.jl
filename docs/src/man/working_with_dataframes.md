@@ -492,7 +492,7 @@ section.
 
 Additionally DataFrames.jl extends the [`filter`](@ref) and [`filter!`](@ref)
 functions provided in Julia Base, which also allow subsetting a data frame.
-These methods are defined so that data frames implement the Julia API
+These methods are defined so that DataFrames.jl implements the Julia API
 for collections, but it is generally recommended to use the [`subset`](@ref)
 and [`subset!`](@ref) functions instead, as they are both faster and
 more consistent with other DataFrames.jl functions.
