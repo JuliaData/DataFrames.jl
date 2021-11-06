@@ -484,14 +484,14 @@ julia> subset(df, :x => x -> iseven.(x), skipmissing=true)
    2 │      4
 ```
 
-The [`subset`](@ref) was designed in a way that is
-consistent how column transformations are specified in functions like
+The [`subset`](@ref) function has been designed in a way that is
+consistent with how column transformations are specified in functions like
 [`combine`](@ref), [`select`](@ref), and [`transform`](@ref). Examples of column
 transformations accepted by these functions are provided in the following
 section.
 
 Additionally DataFrames.jl extends the [`filter`](@ref) and [`filter!`](@ref)
-functions provided in Julia Base and they also allow to subset a data frame.
+functions provided in Julia Base, which also allow subsetting a data frame.
 The use of these two functions is discouraged as they have an API that is not
 consistent with other transformation functions in DataFrames.jl. They are kept
 in the API for legacy reason, but it is recommended to use the [`subset`](@ref)
