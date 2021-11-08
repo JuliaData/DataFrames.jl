@@ -1547,7 +1547,7 @@ and it can take any of the forms listed below:
 #### `source_column_selector`
 The most basic `source_column_selector` is a column name, but there are many more ways to
 select columns as explained in the first section of the 
-[Indexing API documentation](https://dataframes.juliadata.org/stable/lib/indexing/#Indexing).
+[Indexing](@ref) API.
 
 #### `function`
 Here `function` is a function which operates on an entire data frame
