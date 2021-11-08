@@ -1545,9 +1545,9 @@ and it can take any of the forms listed below:
   - *often used with `select` or `select!` for isolating or moving columns*
 
 #### `source_column_selector`
-The most basic `source_column_selector` is a column name, but there are many more ways to
-select columns as explained in the first section of the 
-[Indexing](@ref) API.
+The most basic `source_column_selector` is a column name,
+but there are many more ways to select columns as explained
+in the first section of the [Indexing](@ref) API.
 
 #### `function`
 Here `function` is a function which operates on an entire data frame
