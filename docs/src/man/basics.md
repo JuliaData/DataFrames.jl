@@ -1590,8 +1590,7 @@ More details and examples of the transformation mini-language can be found in
       - `transformation_function(source_dataframe, [transformation1, transformation2])`
       - `transformation_function(source_dataframe, [transformation1 transformation2])`
     - Any of the `transformation` pair syntax forms shown above can also use
-      broadcasting with `.=>` to send multiple columns through the same `function`
-      or rename multiple columns. See the next section for examples.
+      broadcasting with `.=>` to apply multiple transformations at once. See the next section for examples.
     - More complex transformations are available through the syntax
       `transformation_function(function, source_dataframe)`.
       This usage is more advanced,
