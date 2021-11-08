@@ -5,8 +5,6 @@ An abstract type for which all concrete types expose an interface
 for working with tabular data. In DataFrames.jl the `DataFrame` and
 `SubDataFrame` types are subtypes of `AbstractDataFrame`.
 
-# Common methods
-
 An `AbstractDataFrame` is a two-dimensional table with `Symbol`s or strings
 for column names.
 

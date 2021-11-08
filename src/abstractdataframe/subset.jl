@@ -108,7 +108,7 @@ described for [`select`](@ref) with the restriction that:
   is not supported).
 
 Note that as the `subset` function works in exactly the same way as other
-transformation functions defined in DataFrames.jl this is a preferred way
+transformation functions defined in DataFrames.jl this is the preferred way
 to subset rows of a data frame or grouped data frame. In particular it uses a
 different set of rules for specifying transformations than [`filter`](@ref)
 which is slower and is implemented in DataFrames.jl to ensure support for the
@@ -221,7 +221,7 @@ described for [`select`](@ref) with the restriction that:
   is not supported).
 
 Note that as the `subset` function works in exactly the same way as other
-transformation functions defined in DataFrames.jl this is a preferred way to
+transformation functions defined in DataFrames.jl this is the preferred way to
 subset rows of a data frame or grouped data frame. In particular it uses a
 different set of rules for specifying transformations than [`filter!`](@ref)
 which is slower and is implemented in DataFrames.jl to ensure support for the
