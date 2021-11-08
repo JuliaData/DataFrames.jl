@@ -1554,10 +1554,10 @@ Here `function` is a function which operates on an entire data frame
 column passed as a vector.
 If you instead want to apply a function to each element in the column,
 then you can wrap your element-wise function in `ByRow` like
-`ByRow(my_elementwise_function)`,
-which will conveniently collect your element-wise function results
-into a vector.
-When multiple columns are selected,
+`ByRow(my_elementwise_function)`.
+This will apply `my_elementwise_function` to every element in the column
+and then collect the results back into a vector.
+When multiple columns are selected by `source_column_selector`,
 the `function` will receive the columns as multiple positional arguments in the
 order they are selected like `f(column1, column2, column3)`.
 Slurping and splatting with `...` can be used to define a function which can
