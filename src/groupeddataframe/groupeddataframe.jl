@@ -963,8 +963,8 @@ end
     filter(fun, gdf::GroupedDataFrame)
     filter(cols => fun, gdf::GroupedDataFrame)
 
-Return a new `GroupedDataFrame` containing only groups for which `fun`
-returns `true`.
+Return a new `GroupedDataFrame` containing only groups for which `fun` returns
+`true`.
 
 If `cols` is not specified then the predicate `fun` is called with a
 `SubDataFrame` for each group.
@@ -975,6 +975,13 @@ views of the corresponding columns as separate positional arguments, unless
 is passed. `cols` can be any column selector ($COLUMNINDEX_STR;
 $MULTICOLUMNINDEX_STR), and column duplicates are allowed if a vector of
 `Symbol`s, strings, or integers is passed.
+
+!!! note
+
+    This method is defined so that DataFrames.jl implements the Julia API for
+    collections, but it is generally recommended to use the [`subset`](@ref)
+    function instead as it is consistent with other DataFrames.jl functions
+    (as opposed to `filter`).
 
 # Examples
 ```jldoctest
