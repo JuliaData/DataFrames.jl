@@ -1566,6 +1566,8 @@ For example, the function `f(columns...) = max.(columns...)` will return a new c
 containing the largest element from each row for any number of input columns.
 
 #### `new_column_names`
+The results of the transformation will be placed into new columns
+with names defined by `new_column_names`.
 `new_column_names` may be a string, a symbol, a vector of strings,
 or a vector of symbols.
 In the `source_column_selector => function => new_column_names` transformation form,
