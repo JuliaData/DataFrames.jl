@@ -2,11 +2,13 @@
     AbstractDataFrame
 
 An abstract type for which all concrete types expose an interface
-for working with tabular data. In DataFrames.jl the `DataFrame` and
-`SubDataFrame` types are subtypes of `AbstractDataFrame`.
+for working with tabular data.
 
 An `AbstractDataFrame` is a two-dimensional table with `Symbol`s or strings
 for column names.
+
+DataFrames.jl defines two types that are subtypes of `AbstractDataFrame`:
+[`DataFrame`](@ref) and [`SubDataFrame`](@ref).
 
 # Indexing and broadcasting
 
@@ -18,8 +20,8 @@ Columns can be selected using integers, `Symbol`s, or strings.
 In broadcasting `AbstractDataFrame` behavior is similar to a `Matrix`.
 
 A detailed description of `getindex`, `setindex!`, `getproperty`, `setproperty!`,
-broadcasting and broadcasting assignment for data frames is given in
-the ["Indexing" section](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/)
+broadcasting and broadcasting assignment for data frames is given in the
+["Indexing" section](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/)
 of the manual.
 
 """
@@ -982,11 +984,6 @@ end
 Return a data frame containing only rows from `df` for which `fun` returns
 `true`.
 
-This method is defined so that DataFrames.jl implements the Julia API for
-collections, but it is generally recommended to use the [`subset`](@ref)
-function instead, as it is both faster and more consistent with other
-DataFrames.jl functions.
-
 If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
 
 If `cols` is specified then the predicate `fun` is passed elements of the
@@ -1001,6 +998,13 @@ a `SubDataFrame` view into `df` is returned.
 
 Passing `cols` leads to a more efficient execution of the operation for large
 data frames.
+
+!!! note
+
+    This method is defined so that DataFrames.jl implements the Julia API for
+    collections, but it is generally recommended to use the [`subset`](@ref)
+    function instead as it is consistent with other DataFrames.jl functions
+    (as opposed to `filter`).
 
 See also: [`filter!`](@ref)
 
@@ -1100,11 +1104,6 @@ _filter_helper_astable(f, nti::Tables.NamedTupleIterator)::BitVector = (x -> f(x
 
 Remove rows from data frame `df` for which `fun` returns `false`.
 
-This method is defined so that DataFrames.jl implements the Julia API for
-collections, but it is generally recommended to use the [`subset!`](@ref)
-function instead, as it is both faster and more consistent with other
-DataFrames.jl functions.
-
 If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
 
 If `cols` is specified then the predicate `fun` is passed elements of the
@@ -1116,6 +1115,13 @@ passed.
 
 Passing `cols` leads to a more efficient execution of the operation for large
 data frames.
+
+!!! note
+
+    This method is defined so that DataFrames.jl implements the Julia API for
+    collections, but it is generally recommended to use the [`subset!`](@ref)
+    function instead as it is consistent with other DataFrames.jl functions
+    (as opposed to `filter!`).
 
 See also: [`filter`](@ref)
 
