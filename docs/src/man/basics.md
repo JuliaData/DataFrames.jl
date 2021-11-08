@@ -1560,11 +1560,18 @@ into a vector.
 When multiple columns are selected,
 the `function` will receive the columns as multiple positional arguments in the
 order they are selected like `f(column1, column2, column3)`.
-Slurping and splatting with `...` can be used to define a function which can accept any number of columns returned by `source_column_selector`. For example, the function `f(columns...) = max.(columns...)` will return a column with the largest element from each row for any number of columns.
+Slurping and splatting with `...` can be used to define a function which can
+accept any number of columns returned by `source_column_selector`.
+For example, the function `f(columns...) = max.(columns...)` will return a column
+with the largest element from each row for any number of columns.
 
 #### `new_column_names`
-`new_column_names` may be be defined with string(s), symbol(s), or renaming function(s).
-**TODO: Add information about renaming function.**
+`new_column_names` may be a string, a symbol, a vector of strings,
+a vector of symbols, or a renaming function.
+A renaming function is a function which operates on a string or a vector of strings.
+To use a renaming function in the `source_column_selector => new_column_names` form,
+you must **...**
+to differentiate the pair from the `source_column_selector => function` form.
 If `source_column_selector => function` is used, then `new_column_names`
 will be the function name appended to the source column name with an underscore.
 However, if keyword argument `renamecols=false` is passed
