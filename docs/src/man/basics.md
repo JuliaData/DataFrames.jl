@@ -9,6 +9,7 @@ You can do it using the following commands:
 
 ```julia
 julia> using Pkg
+
 julia> Pkg.add("DataFrames")
 ```
 
@@ -25,6 +26,7 @@ with DataFrames.jl, but be warned that it will take more than 30 minutes:
 
 ```julia
 julia> using Pkg
+
 julia> Pkg.test("DataFrames") # Warning! This will take more than 30 minutes.
 ```
 
@@ -214,6 +216,7 @@ instructions:
 
 ```julia
 julia> using Pkg
+
 julia> Pkg.add("CSV")
 ```
 
@@ -702,7 +705,7 @@ Data frame can be indexed in a similar way to matrices.
 In the [Indexing](@ref) section of the manual you can find all details about all
 the available options. Here we highlight the basic ones.
 
-The general syntax fir indexing is `data_frame[selected_rows, selected_columns]`. Observe that, as
+The general syntax for indexing is `data_frame[selected_rows, selected_columns]`. Observe that, as
 opposed to matrices in Julia Base, it is required to always pass both row and column selector.
 The colon `:` indicates that all items (rows or columns depending on its position) should be retained.
 Here are a few examples:
