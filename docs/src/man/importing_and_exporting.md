@@ -124,4 +124,4 @@ Other data formats are supported for reading and writing in the following packag
 * Parquet: [Parquet.jl](https://github.com/JuliaIO/Parquet.jl)
 * Stata, SPSS, and SAS: [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)
 * Microsoft Excel (XLSX): [XLSX.jl](https://github.com/felipenoris/XLSX.jl)
-* Copying/pasting to clipboard: [ClipData.jl](https://github.com/pdeffebach/ClipData.jl)
+* Copying/pasting to clipboard, for sending data to and from spreadsheets: [ClipData.jl](https://github.com/pdeffebach/ClipData.jl)
