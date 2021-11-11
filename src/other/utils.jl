@@ -120,10 +120,10 @@ function gennames(n::Integer)
 end
 
 function funname(f)
-    try
+    if applicable(nameof, f)
         n = nameof(f)
         return String(n)[1] == '#' ? :function : n
-    catch
+    else
         # handle the case of functors that do not support nameof
         return :function
     end
