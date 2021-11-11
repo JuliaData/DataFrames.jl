@@ -120,8 +120,13 @@ function gennames(n::Integer)
 end
 
 function funname(f)
-    n = nameof(f)
-    String(n)[1] == '#' ? :function : n
+    try
+        n = nameof(f)
+        return String(n)[1] == '#' ? :function : n
+    catch
+        # handle the case of functors that do not support nameof
+        return :function
+    end
 end
 
 funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))

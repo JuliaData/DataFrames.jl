@@ -2346,4 +2346,18 @@ end
     @test_throws ArgumentError DataFrames.broadcast_pair(df, 1:3 .=> sum .=> Between(:x1, :x2))
 end
 
+@testset "correct handling of functors" begin
+    struct Identity
+    end
+
+    function (::Identity)(x)
+        return x
+    end
+
+    i = Identity()
+    df = DataFrame(x=1:3)
+    @test_throws ArgumentError combine(df, :x => i) # i is not Callable
+    @test combine(df, :x => identity∘i) == DataFrame(x_identity_function=1:3)
+end
+
 end # module
