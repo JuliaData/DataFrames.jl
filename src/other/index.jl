@@ -290,7 +290,7 @@ function fuzzymatch(l::Dict{Symbol, Int}, idx::Symbol)
         return [s for (d, s) in dist if d <= maxd]
 end
 
-# TODO: revisit after JuliaLang/julia#42561 has been merged
+# see JuliaLang/julia#42561; we keep our own list to ensure things work consistently on earlier versions of Julia
 const _julia_charmap = Dict{Char,Char}(
     Char(0x025B) => Char(0x03B5),
     Char(0x00B5) => Char(0x03BC),
