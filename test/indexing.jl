@@ -2062,9 +2062,12 @@ end
     d3 = DataFrame("noe\u0308\u00EBl" => 1)
     @test d1[:, "no\u00EBl"] == [1]
     @test_throws ArgumentError d1[:, "noe\u0308l"]
+    @test d1[:, Unicode.normalize("noe\u0308l")] == [1]
     @test_throws ArgumentError d2[:, "no\u00EBl"]
+    @test rename(Unicode.normalize, d2)[:, "no\u00EBl"] == [1]
     @test d2[:, "noe\u0308l"] == [1]
     @test_throws ArgumentError d3[:, "no\u00EBe\u0308l"]
+    @test rename(Unicode.normalize, d3)[:, Unicode.normalize("no\u00EBe\u0308l")] == [1]
     @test d3[:, "noe\u0308\u00EBl"] == [1]
 
     rename!(DataFrames.Unicode.normalize, d1)
