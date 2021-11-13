@@ -116,6 +116,12 @@ else
     end
 end
 
+if isdefined(Base, :ComposedFunction) # Julia >= 1.6.0-DEV.85
+    using Base: ComposedFunction
+else
+    using Compat: ComposedFunction
+end
+
 include("other/utils.jl")
 include("other/index.jl")
 
@@ -129,6 +135,7 @@ include("groupeddataframe/utils.jl")
 include("other/broadcasting.jl")
 
 include("abstractdataframe/selection.jl")
+include("abstractdataframe/selectionfast.jl")
 include("abstractdataframe/subset.jl")
 include("abstractdataframe/iteration.jl")
 include("abstractdataframe/reshape.jl")

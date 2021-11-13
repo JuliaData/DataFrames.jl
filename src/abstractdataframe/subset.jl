@@ -49,6 +49,17 @@ end
 # if more than 32 conditions are passed as `args`.
 function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
                                 (args,)::Ref{Any}, skipmissing::Bool)
+    cs_vec = []
+    for v in map(x -> broadcast_pair(df isa GroupedDataFrame ? parent(df) : df, x), args)
+        if v isa AbstractVecOrMat{<:Pair}
+            append!(cs_vec, v)
+        elseif v isa MultiColumnIndex
+            append!(cs_vec, names(df, v))
+        else
+            push!(cs_vec, v)
+        end
+    end
+
     # subset allows a transformation specification without a target column name or a column
     conditions = Any[if a isa ColumnIndex
                          a => Symbol(:x, i)
@@ -56,7 +67,7 @@ function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
                          first(a) => assert_bool_vec(last(a)) => Symbol(:x, i)
                      else
                          throw(ArgumentError("condition specifier $a is not supported by `subset`"))
-                     end for (i, a) in enumerate(args)]
+                     end for (i, a) in enumerate(cs_vec)]
     isempty(conditions) && throw(ArgumentError("at least one condition must be passed"))
 
     if df isa AbstractDataFrame
@@ -84,17 +95,17 @@ end
            ungroup::Bool=true)
 
 Return a copy of data frame `df` or parent of `gdf` containing only rows for
-which all values produced by transformation(s) `args` for a given row are `true`.
-All transformations must produce vectors containing `true` or `false` (and
-optionally `missing` if `skipmissing=true`).
+which all values produced by transformation(s) `args` for a given row are
+`true`. All transformations must produce vectors containing `true` or `false`
+(and optionally `missing` if `skipmissing=true`).
 
-Each argument passed in `args` can be either a single column selector or a
-`source_columns => function` transformation specifier following the rules
-described for [`select`](@ref).
-
-Note that as opposed to [`filter`](@ref) the `subset` function works on whole
-columns (and selects rows within groups for `GroupedDataFrame`
-rather than whole groups) and must return a vector.
+Each argument passed in `args` can be any specifier following the rules
+described for [`select`](@ref) with the restriction that:
+* specifying target column name is not allowed as `subset` does not create new
+  columns;
+* every passed transformation must return a scalar or a vector (returning
+  `AbstractDataFrame`, `NamedTuple`, `DataFrameRow` or `AbstractMatrix`
+  is not supported).
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
@@ -108,6 +119,15 @@ grouping columns as `gdf` and a `GroupedDataFrame` is returned.
 
 If a `GroupedDataFrame` is passed then it must include all groups present in the
 `parent` data frame, like in [`select!`](@ref).
+
+!!! note
+
+    Note that as the `subset` function works in exactly the same way as other
+    transformation functions defined in DataFrames.jl this is the preferred way to
+    subset rows of a data frame or grouped data frame. In particular it uses a
+    different set of rules for specifying transformations than [`filter`](@ref)
+    which is implemented in DataFrames.jl to ensure support for the
+    standard Julia API for collections.
 
 See also: [`subset!`](@ref), [`filter`](@ref), [`select`](@ref)
 
@@ -194,13 +214,13 @@ which all values produced by transformation(s) `args` for a given row is `true`.
 All transformations must produce vectors containing `true` or `false` (and
 optionally `missing` if `skipmissing=true`).
 
-Each argument passed in `args` can be either a single column selector or a
-`source_columns => function` transformation specifier following the rules
-described for [`select`](@ref).
-
-Note that as opposed to [`filter!`](@ref) the `subset!` function works on whole
-columns (and selects rows within groups for `GroupedDataFrame` rather than whole
-groups) and must return a vector.
+Each argument passed in `args` can be any specifier following the rules
+described for [`select`](@ref) with the restriction that:
+* specifying target column name is not allowed as `subset!` does not create new
+  columns;
+* every passed transformation must return a scalar or a vector (returning
+  `AbstractDataFrame`, `NamedTuple`, `DataFrameRow` or `AbstractMatrix`
+  is not supported).
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
@@ -210,9 +230,19 @@ returns `missing` are skipped).
 If `ungroup=false` the resulting data frame is re-grouped based on the same
 grouping columns as `gdf` and a `GroupedDataFrame` is returned.
 
-If `GroupedDataFrame` is subsetted then it must include all groups present in the
-`parent` data frame, like in [`select!`](@ref). In this case the passed
-`GroupedDataFrame` is updated to have correct groups after its parent is updated.
+If `GroupedDataFrame` is subsetted then it must include all groups present in
+the `parent` data frame, like in [`select!`](@ref). In this case the passed
+`GroupedDataFrame` is updated to have correct groups after its parent is
+updated.
+
+!!! note
+
+    Note that as the `subset!` function works in exactly the same way as other
+    transformation functions defined in DataFrames.jl this is the preferred way to
+    subset rows of a data frame or grouped data frame. In particular it uses a
+    different set of rules for specifying transformations than [`filter!`](@ref)
+    which is implemented in DataFrames.jl to ensure support for the
+    standard Julia API for collections.
 
 See also: [`subset`](@ref), [`filter!`](@ref), [`select!`](@ref)
 

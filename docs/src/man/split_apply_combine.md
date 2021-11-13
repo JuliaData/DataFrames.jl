@@ -51,7 +51,11 @@ each subset of the `DataFrame`. This specification can be of the following forms
    `function` returns a single value or a vector; the generated name is created by
    concatenating source column name and `function` name by default (see examples below).
 3. a `cols => function => target_cols` form additionally explicitly specifying
-   the target column or columns.
+   the target column or columns, which must be a single name (as a `Symbol` or a string),
+   a vector of names or `AsTable`. Additionally it can be a `Function` which
+   takes a string or a vector of strings as an argument containing names of columns
+   selected by `cols`, and returns the target columns names (all accepted types
+   except `AsTable` are allowed).
 4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
    must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
 5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
@@ -69,14 +73,20 @@ convenience form `nrow => target_cols` it is always interpreted as
 `cols => function`. In particular the following expression `function => target_cols`
 is not a valid transformation specification.
 
+Note! If `cols` or `target_cols` are one of `All`, `Cols`, `Between`, or `Not`,
+broadcasting using `.=>` is supported and is equivalent to broadcasting
+the result of `names(df, cols)` or `names(df, target_cols)`.
+This behaves as if broadcasting happened after replacing the selector
+with selected column names within the data frame scope.
+
 All functions have two types of signatures. One of them takes a `GroupedDataFrame`
 as the first argument and an arbitrary number of transformations described above
 as following arguments. The second type of signature is when a `Function` or a `Type`
 is passed as the first argument and a `GroupedDataFrame` as the second argument
 (similar to `map`).
 
-As a special rule, with the `cols => function` and `cols => function =>
-target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
+As a special rule, with the `cols => function` and
+`cols => function => target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
 object then a `NamedTuple` containing columns selected by `cols` is passed to
 `function`.
 

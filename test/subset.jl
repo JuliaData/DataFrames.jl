@@ -1,6 +1,6 @@
 module TestSubset
 
-using Test, DataFrames, Statistics
+using Test, DataFrames, Statistics, Random
 
 const ≅ = isequal
 
@@ -275,6 +275,36 @@ end
     @test_throws ArgumentError subset(DataFrame(x=1:3), :x => x -> Any[true, false, 1],
                                       skipmissing=true)
     @test_throws ArgumentError subset(DataFrame(x=1:3), :x => x -> (true for i in 1:3))
+end
+
+@testset "multicolumn selectors" begin
+    dfref = DataFrame(1:10 .!= permutedims(1:11), :auto)
+
+    for df in (dfref, groupby(dfref, :x2), groupby(dfref, :x11))
+        @test subset(df, Not(:x1) .=> identity) ==
+            subset(df, Not(:x1) .=> [identity identity]) ==
+            subset(df, (names(df, Not(:x1)) .=> identity)...)
+        @test subset(df, Not(:x1)) == subset(df, names(df, Not(:x1))...)
+        @test subset(df, :) == subset(df, names(df)) == subset(df, names(df)...)
+        @test subset(df, Cols(:) .=> ByRow(x -> true)) == subset(df, (names(df, Cols(:)) .=> ByRow(x -> true))...)
+        @test subset(df, [], [:x1]) == subset(df, :x1)
+        @test subset(df, Matrix{Any}(undef, 0, 0), [:x1]) == subset(df, :x1)
+        @test subset(df, [:x1, :x3, :x5]) == subset(df, [1, 3, 5]) == subset(df, :x1, :x3, :x5)
+        @test subset(df, [false; fill(true, 10)]) == subset(df, (2:11)...)
+        @test_throws ArgumentError subset(df, [:x1 => identity => :x1])
+        @test_throws ArgumentError subset(df, Not(:x1) .=> identity .=> Not(:x1))
+        @test_throws ArgumentError subset(df, Not(:x1) .=> [identity identity] .=> Not(:x1))
+        @test_throws ArgumentError subset(df, [:y])
+        @test_throws BoundsError subset(df, [-1])
+        @test_throws BoundsError subset(df, [true])
+
+        Random.seed!(12345)
+        df = DataFrame(rand(100, 5), :auto)
+        columns = names(df, Not(Between(:x3, ncol(df))))
+        @test subset(df, vcat.(columns, "x5") .=> ByRow(<)) ==
+              subset(df, [:x1, :x5] => ByRow(<), [:x2, :x5] => ByRow(<)) ==
+              df[(df.x1 .< df.x5) .& (df.x2 .< df.x5), :]
+    end
 end
 
 end

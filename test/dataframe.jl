@@ -668,7 +668,7 @@ end
                                        nothing, nothing, nothing],
                                 min = [1.0, 1.0, "a", "a", Date(2000), 1],
                                 q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
-                                median = [2.5, 2.0, nothing, nothing, nothing, nothing],
+                                median = [2.5, 2.0, nothing, nothing, VERSION >= v"1.7.0-beta1.2" ? Date(2002) : nothing, nothing],
                                 q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
                                 max = [4.0, 3.0, "d", "c", Date(2004), 2],
                                 nunique = [nothing, nothing, 4, 3, 4, 2],
@@ -686,8 +686,13 @@ end
     # Test that it works with one stats argument
     @test describe_output[:, [:variable, :mean]] == describe(df, :mean)
 
-    # Test that it works with all keyword arguments
+    # Test that it works with :all
     @test describe_output ≅ describe(df, :all)
+
+    # Test that it works with :detailed
+    @test describe_output[:, [:variable, :mean, :std, :min, :q25, :median, :q75,
+                              :max, :nunique, :nmissing, :eltype]] ≅
+        describe(df, :detailed)
 
     # Test that it works on a custom function
     describe_output.test_std = describe_output.std
@@ -2019,7 +2024,8 @@ end
         @test names(x, :) == names(x)
         @test names(x, <("a2")) == ["a1"]
 
-        @test_throws TypeError names(x, x -> 1)
+        # before Julia 1.8 it is TypeError; the change is caused by the redesign of ifelse
+        @test_throws Union{MethodError, TypeError} names(x, x -> 1)
     end
 end
 

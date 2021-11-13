@@ -17,8 +17,8 @@ that should be expanded  into multiple columns using `keys` to get column names.
 ```jldoctest
 julia> df1 = DataFrame(a=1:3, b=11:13)
 3×2 DataFrame
- Row │ a      b     
-     │ Int64  Int64 
+ Row │ a      b
+     │ Int64  Int64
 ─────┼──────────────
    1 │     1     11
    2 │     2     12
@@ -26,8 +26,8 @@ julia> df1 = DataFrame(a=1:3, b=11:13)
 
 julia> df2 = select(df1, AsTable([:a, :b]) => ByRow(identity))
 3×1 DataFrame
- Row │ a_b_identity    
-     │ NamedTuple…     
+ Row │ a_b_identity
+     │ NamedTuple…
 ─────┼─────────────────
    1 │ (a = 1, b = 11)
    2 │ (a = 2, b = 12)
@@ -35,21 +35,21 @@ julia> df2 = select(df1, AsTable([:a, :b]) => ByRow(identity))
 
 julia> select(df2, :a_b_identity => AsTable)
 3×2 DataFrame
- Row │ a      b     
-     │ Int64  Int64 
+ Row │ a      b
+     │ Int64  Int64
 ─────┼──────────────
    1 │     1     11
    2 │     2     12
    3 │     3     13
 
 julia> select(df1, AsTable([:a, :b]) => ByRow(nt -> map(x -> x^2, nt)) => AsTable)
-3×2 DataFrame       
- Row │ a      b     
-     │ Int64  Int64 
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
 ─────┼──────────────
-   1 │     1    121 
-   2 │     4    144 
-   3 │     9    169 
+   1 │     1    121
+   2 │     4    144
+   3 │     9    169
 ```
 """
 struct AsTable
@@ -120,14 +120,13 @@ function gennames(n::Integer)
 end
 
 function funname(f)
-    n = nameof(f)
-    String(n)[1] == '#' ? :function : n
-end
-
-if isdefined(Base, :ComposedFunction) # Julia >= 1.6.0-DEV.85
-    using Base: ComposedFunction
-else
-    using Compat: ComposedFunction
+    if applicable(nameof, f)
+        n = nameof(f)
+        return String(n)[1] == '#' ? :function : n
+    else
+        # handle the case of functors that do not support nameof
+        return :function
+    end
 end
 
 funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))

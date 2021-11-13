@@ -72,6 +72,23 @@
   ([#2859](https://github.com/JuliaData/DataFrames.jl/pull/2859))
 * `Cols` now accepts a predicate accepting column names as strings.
   ([#2881](https://github.com/JuliaData/DataFrames.jl/pull/2881))
+* In `source => transformation => destination` transformation specification
+  minilanguage now `destination` can be also a `Function` generating
+  target column names and taking column names specified by `source`
+  as an argument.
+  ([#2897](https://github.com/JuliaData/DataFrames.jl/pull/2897))
+* `subset` and `subset!` now allow passing multiple column selectors and
+  vectors or matrices of `Pair`s as specifications of selection conditions
+  ([#2926](https://github.com/JuliaData/DataFrames.jl/pull/2926))
+* When using broadcasting in `source .=> transformation .=> destination`
+  transformation specification minilanguage now `All`, `Cols`, `Between`, and
+  `Not` selectors when used as `source` or `destination` are properly expanded
+  to selected column names within the call data frame scope.
+  ([#2918](https://github.com/JuliaData/DataFrames.jl/pull/2918))
+* `describe` now accepts `:detailed` as the `stats` argument
+  to compute standard deviation and quartiles
+  in addition to statistics that are reported by default.
+  ([#2459](https://github.com/JuliaData/DataFrames.jl/pull/2459))
 
 ## Bug fixes
 
@@ -79,6 +96,14 @@
   ([#2842](https://github.com/JuliaData/DataFrames.jl/issues/2842))
 * fix a problem with not specialized `Pair` arguments passed as transformations
   ([#2889](https://github.com/JuliaData/DataFrames.jl/issues/2889))
+
+## Performance improvements
+
+* for selected common transformation specifications like e.g.
+  `AsTable(...) => ByRow(sum)` use a custom implementations that
+  lead to lower compilation latency and faster computation
+  ([#2869](https://github.com/JuliaData/DataFrames.jl/pull/2869)),
+  ([#2919](https://github.com/JuliaData/DataFrames.jl/pull/2919))
 
 # DataFrames.jl v1.2.2 Patch Release Notes
 

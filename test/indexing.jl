@@ -2126,4 +2126,21 @@ end
     end
 end
 
+@testset "haskey method error" begin
+    df = DataFrame(a=1:2, b=2:3)
+    sdf = view(df, 1:1, 1:1)
+    for x in [df, sdf]
+        @test_throws ArgumentError haskey(DataFrames.index(x), 1.0)
+        @test_throws ArgumentError haskey(DataFrames.index(x), true)
+        @test_throws ArgumentError haskey(x[1, :], 1.0)
+        @test_throws ArgumentError haskey(x[1, :], true)
+        gdf = groupby(df, :a)
+        @test_throws ArgumentError haskey(gdf, 1.0)
+        @test_throws ArgumentError haskey(gdf, true)
+        key = first(keys(gdf))
+        @test_throws ArgumentError haskey(key, 1.0)
+        @test_throws ArgumentError haskey(key, true)
+    end
+end
+
 end # module

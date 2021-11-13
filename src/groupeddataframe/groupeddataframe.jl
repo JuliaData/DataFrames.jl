@@ -524,6 +524,9 @@ Base.names(key::GroupKey) = string.(parent(key).cols)
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(key::GroupKey, private::Bool=false) = copy(parent(key).cols)
 Base.keys(key::GroupKey) = propertynames(key)
+# a generic fallback for values not handled explicitly
+Base.haskey(::GroupKey, key::Any) =
+    throw(ArgumentError("invalid key: $key of type $(typeof(key))"))
 Base.haskey(key::GroupKey, idx::Symbol) = idx in parent(key).cols
 Base.haskey(key::GroupKey, idx::AbstractString) = haskey(key, Symbol(idx))
 Base.haskey(key::GroupKey, idx::Union{Signed, Unsigned}) = 1 <= idx <= length(key)
@@ -858,6 +861,10 @@ Base.keys(gd::GroupedDataFrame) = GroupKeys(gd)
 Base.in(key::Union{GroupKeyTypes, Signed, Unsigned}, gk::GroupKeys) =
     haskey(parent(gk), key)
 
+# a generic fallback for values not handled explicitly
+Base.haskey(::GroupedDataFrame, key::Any) =
+    throw(ArgumentError("invalid key: $key of type $(typeof(key))"))
+
 function Base.haskey(gd::GroupedDataFrame, key::GroupKey)
     if gd === parent(key)
         if 1 <= getfield(key, :idx) <= length(gd)
@@ -956,8 +963,8 @@ end
     filter(fun, gdf::GroupedDataFrame)
     filter(cols => fun, gdf::GroupedDataFrame)
 
-Return a new `GroupedDataFrame` containing only groups for which `fun`
-returns `true`.
+Return a new `GroupedDataFrame` containing only groups for which `fun` returns
+`true`.
 
 If `cols` is not specified then the predicate `fun` is called with a
 `SubDataFrame` for each group.
@@ -968,6 +975,13 @@ views of the corresponding columns as separate positional arguments, unless
 is passed. `cols` can be any column selector ($COLUMNINDEX_STR;
 $MULTICOLUMNINDEX_STR), and column duplicates are allowed if a vector of
 `Symbol`s, strings, or integers is passed.
+
+!!! note
+
+    This method is defined so that DataFrames.jl implements the Julia API for
+    collections, but it is generally recommended to use the [`subset`](@ref)
+    function instead as it is consistent with other DataFrames.jl functions
+    (as opposed to `filter`).
 
 # Examples
 ```jldoctest

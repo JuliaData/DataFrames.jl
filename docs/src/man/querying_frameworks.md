@@ -9,7 +9,7 @@ DataFramesMeta.jl and Query.jl. They implement a functionality similar to
 
 The [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package
 provides a convenient yet fast macro-based interface to work with `DataFrame`s.
-The instructions below are for version 0.6.0 of DataFramesMeta.jl.
+The instructions below are for version 0.10.0 of DataFramesMeta.jl.
 
 First install the DataFramesMeta.jl package:
 
@@ -18,20 +18,19 @@ using Pkg
 Pkg.add("DataFramesMeta")
 ```
 
-The major benefit of the package is that it allows you to refer to columns of a
-`DataFrame` as `Symbol`s. Therefore instead of writing
-`verylongdataframename.variable` you can simply write `:variable` in
-expressions. Additionally you can chain a sequence of transformations of a
-`DataFrame` using the `@linq` macro.
+The major benefit of the package is it provides a more convenient syntax
+for the transformation functions `transform`, `select`, and `combine` 
+via the macros `@transform`, `@select`, `@combine`, and more.
 
-When a DataFramesMeta.jl macro such as `@select`, `@transform`, `@by`, `@combine`,
-`@where`, or `@orderby` is called inside a `@linq` block, you can omit
-the `@`. Therefore `transform` inside `@linq` is not the same as `transform`
-outside of a `@linq` block.
+DataFramesMeta.jl also reexports the `@chain` macro from 
+[Chain.jl](https://github.com/jkrumbiegel/Chain.jl), allowing users to
+pipe the output of one transformation as an input to another, as with 
+`|>` and `%>%` in R. 
 
-Here is a minimal example of usage of the package. Observe that we refer to
-names of columns using only their names and that chaining is performed using the
-`@linq` macro and the `|>` operator:
+Below we present several selected examples of usage of the package.
+
+First we subset rows of the source data frame using a logical condition
+and select its two columns, renaming one of them:
 
 ```jldoctest dataframesmeta
 julia> using DataFramesMeta
@@ -47,9 +46,10 @@ julia> df = DataFrame(name=["John", "Sally", "Roger"],
    2 │ Sally      34.0         2
    3 │ Roger      79.0         4
 
-julia> @linq df |>
-           where(:age .> 40) |>
-           select(number_of_children=:children, :name)
+julia> @chain df begin
+           @rsubset :age > 40 
+           @select(:number_of_children = :children, :name)
+       end
 2×2 DataFrame
  Row │ number_of_children  name
      │ Int64               String
@@ -79,10 +79,11 @@ julia> df = DataFrame(key=repeat(1:3, 4), value=1:12)
   11 │     2     11
   12 │     3     12
 
-julia> @linq df |>
-           where(:value .> 3) |>
-           by(:key, min=minimum(:value), max=maximum(:value)) |>
-           select(:key, range=:max - :min)
+julia> @chain df begin
+           @rsubset :value > 3 
+           @by(:key, :min = minimum(:value), :max = maximum(:value))
+           @select(:key, :range = :max - :min)
+        end
 3×2 DataFrame
  Row │ key    range
      │ Int64  Int64
@@ -91,9 +92,10 @@ julia> @linq df |>
    2 │     2      6
    3 │     3      6
 
-julia> @linq df |>
-           groupby(:key) |>
-           transform(value0 = :value .- minimum(:value))
+julia> @chain df begin
+           groupby(:key)
+           @transform :value0 = :value .- minimum(:value)
+       end
 12×3 DataFrame
  Row │ key    value  value0
      │ Int64  Int64  Int64

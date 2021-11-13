@@ -113,6 +113,8 @@ rename!(f::Function, x::Index) = rename!(x, [(n=>Symbol(f(string(n)))) for n in 
 # we do not define keys on purpose;
 # use names to get keys as strings with copying
 # or _names to get keys as Symbols without copying
+Base.haskey(::Index, key::Any) =
+    throw(ArgumentError("invalid key: $key of type $(typeof(key))"))
 Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, key)
 Base.haskey(x::Index, key::AbstractString) = haskey(x.lookup, Symbol(key))
 Base.haskey(x::Index, key::Integer) = 1 <= key <= length(x.names)
@@ -507,6 +509,9 @@ Base.@propagate_inbounds SubIndex(parent::AbstractIndex, cols) =
 Base.length(x::SubIndex) = length(x.cols)
 Base.names(x::SubIndex) = string.(_names(x))::Vector{String}
 _names(x::SubIndex) = view(_names(x.parent), x.cols)
+
+Base.haskey(::SubIndex, key::Any) =
+    throw(ArgumentError("invalid key: $key of type $(typeof(key))"))
 
 function Base.haskey(x::SubIndex, key::Symbol)
     haskey(x.parent, key) || return false
