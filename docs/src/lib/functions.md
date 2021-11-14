@@ -134,7 +134,6 @@ empty!
 filter
 filter!
 first
-keepat!
 last
 only
 nonunique

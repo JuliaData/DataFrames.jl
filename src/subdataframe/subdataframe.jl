@@ -293,9 +293,6 @@ Base.copy(sdf::SubDataFrame) = parent(sdf)[rows(sdf), parentcols(index(sdf), :)]
 Base.deleteat!(df::SubDataFrame, ind) =
     throw(ArgumentError("SubDataFrame does not support deleting rows"))
 
-keepat!(df::SubDataFrame, ind) =
-    throw(ArgumentError("SubDataFrame does not support deleting rows"))
-
 function DataFrame(sdf::SubDataFrame; copycols::Bool=true)
     if copycols
         sdf[:, :]

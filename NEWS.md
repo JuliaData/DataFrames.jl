@@ -61,7 +61,7 @@
   (with `false` default) that specifies if columns should be inserted after
   or before `col`.
   ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2829))
-* Added support fro `deleteat!` and `keepat!`
+* Added support for `deleteat!`
   ([#2854](https://github.com/JuliaData/DataFrames.jl/issues/2854))
 * `leftjoin!` performing a left join of two data frame objects by updating the
   left data frame with the joined columns from right data frame.

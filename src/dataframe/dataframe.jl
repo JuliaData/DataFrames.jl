@@ -1004,7 +1004,8 @@ end
 Delete rows specified by `inds` from a `DataFrame` `df` in place and return it.
 
 Internally `deleteat!` is called for all columns so `inds` must be:
-a vector of sorted and unique integers, a boolean vector, an integer, or `Not`.
+a vector of sorted and unique integers, a boolean vector, an integer.
+Additionally `Not` any valid selector is accepted.
 
 # Examples
 ```jldoctest
@@ -1078,36 +1079,6 @@ function _deleteat!_helper(df::DataFrame, drop)
 
     return df
 end
-
-"""
-    keepat!(df::DataFrame, inds)
-
-Keep only rows specified by `inds` in a `DataFrame` `df` in place and return it.
-
-Internally [`deleteat!`](@ref) is called with `Not(inds)` selector. In consequence,
-as opposed to `[`deleteat!`](@ref)`, if the passed `inds` is a collection of
-integer indices does not have to be sorted and may contain duplicates.
-
-# Examples
-```jldoctest
-julia> df = DataFrame(a=1:3, b=4:6)
-3×2 DataFrame
- Row │ a      b
-     │ Int64  Int64
-─────┼──────────────
-   1 │     1      4
-   2 │     2      5
-   3 │     3      6
-
-julia> keepat!(df, 2)
-1×2 DataFrame
- Row │ a      b
-     │ Int64  Int64
-─────┼──────────────
-   1 │     2      5
-```
-"""
-keepat!(df::DataFrame, inds) = deleteat!(df, Not(inds))
 
 """
     empty!(df::DataFrame)

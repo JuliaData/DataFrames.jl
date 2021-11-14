@@ -99,14 +99,6 @@ else
     export only
 end
 
-if isdefined(Base, :keepat!)  # Introduced in 1.7.0
-    import Base.keepat!
-else
-    # uncomment when https://github.com/JuliaLang/Compat.jl/issues/750 is resolved
-    # import Compat.keepat!
-    export keepat!
-end
-
 if VERSION >= v"1.3"
     using Base.Threads: @spawn
 else
