@@ -316,7 +316,7 @@ function _norm_eq(a1::String, a2::String, idx::Symbol)
             throw(ArgumentError("column name :$idx not found in the " *
                                 "data frame. However there is a similar " *
                                 "column name in the data frame where character $c2 " *
-                                "(codepoint: $(UInt32(c2))) is used is instead of $c1 " *
+                                "(codepoint: $(UInt32(c2))) is used instead of $c1 " *
                                 "(codepoint: $(UInt32(c1))). The " *
                                 "error is most likely caused by the Julia parser which " *
                                 "normalizes `Symbol` literals containing such " *
@@ -340,17 +340,18 @@ function normalized_match_test(l::Dict{Symbol, Int}, idx::Symbol)
             if !idx_ok
                 if x_ok
                     throw(ArgumentError("column name :$idx not found in the " *
-                                        "data frame. However there is a match of " *
-                                        "Unicode normalized passed column name with " *
-                                        "column name found in the data frame. " *
+                                        "data frame. However, after applying Unicode " *
+                                        "normalization to it, the passed column name " *
+                                        "matches a column name found in the data frame." *
                                         "You can use the `Unicode.normalize` " *
-                                        "function to normailize the passed column name."))
+                                        "function to normalize the passed column name."))
                 else
                     throw(ArgumentError("column name :$idx not found in the " *
-                                        "data frame. However there is a match of " *
-                                        "Unicode normalized passed column name with " *
-                                        "a normalized column name found in the " *
-                                        "data frame. In the call both passed column and " *
+                                        "data frame. However, there is a match " *
+                                        "after applying Unicode normalization both " *
+                                        "to the passed column names " *
+                                        "and to the column names of the data frame. " *
+                                        "In the call both passed column and " *
                                         "matching column found in the data frame were not " *
                                         "normalized. It is recommended to use " *
                                         "normalized column names and then refer to them " *
@@ -359,14 +360,15 @@ function normalized_match_test(l::Dict{Symbol, Int}, idx::Symbol)
                                         "an existing data frame `df` do " *
                                         "`using Unicode; rename!(Unicode.normalize, df)`. " *
                                         "Similarly, you can use the `Unicode.normalize` " *
-                                        "function to normailize the passed column name."))
+                                        "function to normalize the passed column name."))
                 end
             else
                 @assert !x_ok
                 throw(ArgumentError("column name :$idx not found in the " *
-                                    "data frame. However there is a match of " *
-                                    "passed column name with a normalized column name " *
-                                    "found in the data frame. It is recommended to use " *
+                                    "data frame. However, the passed column name " *
+                                    "matches a column name found in the data frame " *
+                                    "after applying Unicode normalization to the latter." *
+                                    "It is recommended to use " *
                                     "normalized column names to avoid ambiguity. " *
                                     "In order to normalize column names in " *
                                     "an existing data frame `df` do " *
