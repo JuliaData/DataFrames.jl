@@ -263,7 +263,7 @@ corrupt_msg(gd::GroupedDataFrame) =
     "rows it contained when GroupedDataFrame was created which was " *
     "$(length(getfield(gd, :groups))). The number of rows in the parent " *
     "data frame has likely been changed unintentionally " *
-    "(e.g. using subset!, filter!, delete!, push!, or append! functions)."
+    "(e.g. using subset!, filter!, deleteat!, push!, or append! functions)."
 
 function Base.getproperty(gd::GroupedDataFrame, f::Symbol)
     @assert length(getfield(gd, :groups)) == nrow(getfield(gd, :parent)) corrupt_msg(gd)

@@ -128,7 +128,7 @@ valuecols
 
 ## Filtering rows
 ```@docs
-delete!
+deleteat!
 empty
 empty!
 filter

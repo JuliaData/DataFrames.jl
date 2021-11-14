@@ -319,7 +319,7 @@ julia> df
 """
 function subset!(df::AbstractDataFrame, @nospecialize(args...); skipmissing::Bool=false)
     row_selector = _get_subset_conditions(df, Ref{Any}(args), skipmissing)
-    return delete!(df, findall(!, row_selector))
+    return deleteat!(df, findall(!, row_selector))
 end
 
 function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Bool=false,
@@ -329,7 +329,7 @@ function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Boo
     lazy_lock = gdf.lazy_lock
     row_selector = _get_subset_conditions(gdf, Ref{Any}(args), skipmissing)
     df = parent(gdf)
-    res = delete!(df, findall(!, row_selector))
+    res = deleteat!(df, findall(!, row_selector))
     if nrow(res) == length(groups) # we have not removed any rows
         return ungroup ? res : gdf
     end

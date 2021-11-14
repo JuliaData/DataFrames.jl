@@ -222,10 +222,10 @@ end
     @test names(df) == names(x)[[4, 2]]
 end
 
-@testset "delete!" begin
+@testset "deleteat!" begin
     y = 1.0:10.0
     df = view(DataFrame(y=y), 2:6, :)
-    @test_throws ArgumentError delete!(df, 1)
+    @test_throws ArgumentError deleteat!(df, 1)
 end
 
 @testset "parent" begin

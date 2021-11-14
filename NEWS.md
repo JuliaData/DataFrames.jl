@@ -53,6 +53,7 @@
   filled with `missing` values.
   If `SubDataFrame` was not created with `:` as column selector the resulting operation
   must produce the same column names as stored in the source `SubDataFrame` or an error is thrown.
+
 * `Tables.materializer` when passed the following types or their subtypes:
   `AbstractDataFrame`, `DataFrameRows`, `DataFrameColumns` returns `DataFrame`.
   ([#2839](https://github.com/JuliaData/DataFrames.jl/pull/2839))
@@ -60,6 +61,8 @@
   (with `false` default) that specifies if columns should be inserted after
   or before `col`.
   ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2829))
+* Added support for `deleteat!`
+  ([#2854](https://github.com/JuliaData/DataFrames.jl/issues/2854))
 * `leftjoin!` performing a left join of two data frame objects by updating the
   left data frame with the joined columns from right data frame.
   ([#2843](https://github.com/JuliaData/DataFrames.jl/pull/2843))
@@ -104,6 +107,11 @@
   lead to lower compilation latency and faster computation
   ([#2869](https://github.com/JuliaData/DataFrames.jl/pull/2869)),
   ([#2919](https://github.com/JuliaData/DataFrames.jl/pull/2919))
+
+## Deprecations
+
+* `delete!` is deprecated in favor of `deleteat!`
+  ([#2854](https://github.com/JuliaData/DataFrames.jl/issues/2854))
 
 ## Planned changes
 

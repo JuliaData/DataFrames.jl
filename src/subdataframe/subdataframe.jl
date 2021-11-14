@@ -290,7 +290,7 @@ Base.setproperty!(::SubDataFrame, col_ind::AbstractString, v::Any) =
 
 Base.copy(sdf::SubDataFrame) = parent(sdf)[rows(sdf), parentcols(index(sdf), :)]
 
-Base.delete!(df::SubDataFrame, ind) =
+Base.deleteat!(df::SubDataFrame, ind) =
     throw(ArgumentError("SubDataFrame does not support deleting rows"))
 
 function DataFrame(sdf::SubDataFrame; copycols::Bool=true)

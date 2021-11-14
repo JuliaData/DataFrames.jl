@@ -130,4 +130,14 @@ end
       @test df3.x1 === x
 end
 
+@testset "delete!" begin
+    df = DataFrame(a=1:4, b=1, c=2)
+    @test delete!(copy(df), 1) == deleteat!(copy(df), 1)
+    @test delete!(copy(df), [1, 3]) == deleteat!(copy(df), [1, 3])
+    @test delete!(copy(df), [true, false, false, true]) == deleteat!(copy(df), [true, false, false, true])
+    @test delete!(copy(df), Not(1)) == deleteat!(copy(df), Not(1))
+    delete!(df, 2)
+    @test df == DataFrame(a=[1, 3, 4], b=1, c=2)
+end
+
 end # module

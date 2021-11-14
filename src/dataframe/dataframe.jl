@@ -999,12 +999,13 @@ function Base.copy(df::DataFrame; copycols::Bool=true)
 end
 
 """
-    delete!(df::DataFrame, inds)
+    deleteat!(df::DataFrame, inds)
 
 Delete rows specified by `inds` from a `DataFrame` `df` in place and return it.
 
 Internally `deleteat!` is called for all columns so `inds` must be:
-a vector of sorted and unique integers, a boolean vector, an integer, or `Not`.
+a vector of sorted and unique integers, a boolean vector, an integer,
+or `Not` wrapping any valid selector.
 
 # Examples
 ```jldoctest
@@ -1017,7 +1018,7 @@ julia> df = DataFrame(a=1:3, b=4:6)
    2 │     2      5
    3 │     3      6
 
-julia> delete!(df, 2)
+julia> deleteat!(df, 2)
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -1025,9 +1026,8 @@ julia> delete!(df, 2)
    1 │     1      4
    2 │     3      6
 ```
-
 """
-function Base.delete!(df::DataFrame, inds)
+function Base.deleteat!(df::DataFrame, inds)
     if !isempty(inds) && size(df, 2) == 0
         throw(BoundsError(df, (inds, :)))
     end
@@ -1039,10 +1039,10 @@ function Base.delete!(df::DataFrame, inds)
 
     # we require ind to be stored and unique like in Base
     # otherwise an error will be thrown and the data frame will get corrupted
-    return _delete!_helper(df, inds)
+    return _deleteat!_helper(df, inds)
 end
 
-function Base.delete!(df::DataFrame, inds::AbstractVector{Bool})
+function Base.deleteat!(df::DataFrame, inds::AbstractVector{Bool})
     if length(inds) != size(df, 1)
         throw(BoundsError(df, (inds, :)))
     end
@@ -1051,12 +1051,12 @@ function Base.delete!(df::DataFrame, inds::AbstractVector{Bool})
     if VERSION <= v"1.6.2" && drop isa UnitRange{<:Integer}
         drop = collect(drop)
     end
-    return _delete!_helper(df, drop)
+    return _deleteat!_helper(df, drop)
 end
 
-Base.delete!(df::DataFrame, inds::Not) = delete!(df, axes(df, 1)[inds])
+Base.deleteat!(df::DataFrame, inds::Not) = deleteat!(df, axes(df, 1)[inds])
 
-function _delete!_helper(df::DataFrame, drop)
+function _deleteat!_helper(df::DataFrame, drop)
     cols = _columns(df)
     isempty(cols) && return df
 

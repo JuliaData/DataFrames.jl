@@ -582,74 +582,77 @@ end
     @test_throws ArgumentError push!(df, "ab")
 end
 
-@testset "delete!" begin
+@testset "deleteat!" begin
     df = DataFrame(a=[1, 2], b=[3.0, 4.0])
-    @test_throws BoundsError delete!(df, [true, true, true])
-    @test delete!(df, 1) === df
+    @test_throws BoundsError deleteat!(df, [true, true, true])
+    @test deleteat!(df, 1) === df
     @test df == DataFrame(a=[2], b=[4.0])
 
     df = DataFrame(a=[1, 2], b=[3.0, 4.0])
-    @test delete!(df, 2) === df
+    @test deleteat!(df, 2) === df
     @test df == DataFrame(a=[1], b=[3.0])
 
     df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
-    @test delete!(df, 1) === df
+    @test deleteat!(df, 1) === df
     @test df == DataFrame(a=[2], b=[4.0])
 
     df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
-    @test delete!(df, 2) === df
+    @test deleteat!(df, 2) === df
     @test df == DataFrame(a=[1], b=[3.0])
 
     for v in (2:3, [2, 3])
         df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
-        @test delete!(df, v) === df
+        @test deleteat!(df, v) === df
         @test df == DataFrame(a=[1], b=[3.0])
 
         df = DataFrame(a=[1, 2, 3], b=[3.0, 4.0, 5.0])
-        @test delete!(df, v) === df
+        @test deleteat!(df, v) === df
         @test df == DataFrame(a=[1], b=[3.0])
     end
 
     df = DataFrame()
-    @test_throws BoundsError delete!(df, 10)
-    @test_throws BoundsError delete!(df, [10])
+    @test_throws BoundsError deleteat!(df, 10)
+    @test_throws BoundsError deleteat!(df, [10])
 
     df = DataFrame(a=[])
-    @test_throws BoundsError delete!(df, 10)
-    # the exception type changed between Julia 1.0.2 and Julia 1.1
-    # so we use their supertype below
-    @test_throws Exception delete!(df, [10])
+    @test_throws BoundsError deleteat!(df, 10)
+
+    if VERSION >= v"1.1"
+        @test_throws BoundsError deleteat!(df, [10])
+    else
+        @test_throws InexactError deleteat!(df, [10])
+    end
 
     df = DataFrame(a=[1, 2, 3], b=[3, 2, 1])
-    @test_throws ArgumentError delete!(df, [3, 2])
-    @test_throws ArgumentError delete!(df, [2, 2])
-    @test delete!(df, [false, true, false]) === df
+    @test_throws ArgumentError deleteat!(df, [3, 2])
+    @test_throws ArgumentError deleteat!(df, [2, 2])
+    @test deleteat!(df, [false, true, false]) === df
     @test df == DataFrame(a=[1, 3], b=[3, 1])
 
     for v in (1, [1], 1:1, [true, false, false])
         x = [1, 2, 3]
         df = DataFrame(x=x)
-        @test delete!(df, v) == DataFrame(x=[2, 3])
+        @test deleteat!(df, v) == DataFrame(x=[2, 3])
         @test x == [1, 2, 3]
     end
 
     for v in (1, [1], 1:1, [true, false, false], Not(2, 3), Not([false, true, true]))
         x = [1, 2, 3]
         df = DataFrame(x=x, copycols=false)
-        @test delete!(df, v) == DataFrame(x=[2, 3])
+        @test deleteat!(df, v) == DataFrame(x=[2, 3])
         @test x == [2, 3]
     end
 
     for inds in (1, [1], [true, false])
         df = DataFrame(x1=[1, 2])
         df.x2 = df.x1
-        @test delete!(df, inds) === df
+        @test deleteat!(df, inds) === df
         @test df == DataFrame(x1=[2], x2=[2])
     end
 
     df = DataFrame(a=1, b=2)
     push!(df.b, 3)
-    @test_throws AssertionError delete!(df, 1)
+    @test_throws AssertionError deleteat!(df, 1)
 end
 
 @testset "describe" begin

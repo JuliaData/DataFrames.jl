@@ -192,14 +192,14 @@ end
     @test eltype(dropmissing!(df).b) == Int
 end
 
-@testset "delete! https://github.com/JuliaLang/julia/pull/41646 bug workaround" begin
+@testset "deleteat! https://github.com/JuliaLang/julia/pull/41646 bug workaround" begin
     # these tests will crash Julia if they are not correct
     df = DataFrame(a= Vector{Union{Bool,Missing}}(missing, 10^4));
-    delete!(df, 2:(nrow(df) - 5))
+    deleteat!(df, 2:(nrow(df) - 5))
     @test nrow(df) == 6
 
     df = DataFrame(a= Vector{Union{Bool,Missing}}(missing, 10^4));
-    delete!(df, [false; trues(nrow(df) - 6); falses(5)])
+    deleteat!(df, [false; trues(nrow(df) - 6); falses(5)])
     @test nrow(df) == 6
 end
 
