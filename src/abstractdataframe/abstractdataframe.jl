@@ -4,38 +4,11 @@
 An abstract type for which all concrete types expose an interface
 for working with tabular data.
 
-# Common methods
-
 An `AbstractDataFrame` is a two-dimensional table with `Symbol`s or strings
 for column names.
 
-The following are normally implemented for AbstractDataFrames:
-
-* [`describe`](@ref) : summarize columns
-* `summary` : show number of rows and columns
-* `hcat` : horizontal concatenation
-* `vcat` : vertical concatenation
-* [`repeat`](@ref) : repeat rows
-* `names` : columns names
-* [`rename!`](@ref) : rename columns names based on keyword arguments
-* `length` : number of columns
-* `size` : (nrows, ncols)
-* [`first`](@ref) : first `n` rows
-* [`last`](@ref) : last `n` rows
-* `convert` : convert to an array
-* [`completecases`](@ref) : boolean vector of complete cases (rows with no missings)
-* [`dropmissing`](@ref) : remove rows with missing values
-* [`dropmissing!`](@ref) : remove rows with missing values in-place
-* [`nonunique`](@ref) : indexes of duplicate rows
-* [`unique`](@ref) : remove duplicate rows
-* [`unique!`](@ref) : remove duplicate rows in-place
-* [`disallowmissing`](@ref) : drop support for missing values in columns
-* [`disallowmissing!`](@ref) : drop support for missing values in columns in-place
-* [`allowmissing`](@ref) : add support for missing values in columns
-* [`allowmissing!`](@ref) : add support for missing values in columns in-place
-* `similar` : a DataFrame with similar columns as `d`
-* `filter` : remove rows
-* `filter!` : remove rows in-place
+DataFrames.jl defines two types that are subtypes of `AbstractDataFrame`:
+[`DataFrame`](@ref) and [`SubDataFrame`](@ref).
 
 # Indexing and broadcasting
 
@@ -47,8 +20,8 @@ Columns can be selected using integers, `Symbol`s, or strings.
 In broadcasting `AbstractDataFrame` behavior is similar to a `Matrix`.
 
 A detailed description of `getindex`, `setindex!`, `getproperty`, `setproperty!`,
-broadcasting and broadcasting assignment for data frames is given in
-the ["Indexing" section](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/)
+broadcasting and broadcasting assignment for data frames is given in the
+["Indexing" section](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/)
 of the manual.
 
 """
@@ -61,8 +34,12 @@ abstract type AbstractDataFrame end
 ##############################################################################
 
 """
-    names(df::AbstractDataFrame)
-    names(df::AbstractDataFrame, cols)
+    names(df::AbstractDataFrame, cols=:)
+    names(df::DataFrameRow, cols=:)
+    names(df::GroupedDataFrame, cols=:)
+    names(df::DataFrameRows, cols=:)
+    names(df::DataFrameColumns, cols=:)
+    names(df::GroupKey)
 
 Return a freshly allocated `Vector{String}` of names of columns contained in `df`.
 
@@ -76,6 +53,51 @@ selector (this is useful in particular with regular expressions, `Cols`, `Not`, 
   for columns that should be kept
 
 See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(x1=[1, missing, missing], x2=[3, 2, 4], x3=[3, missing, 2], x4=Union{Int, Missing}[2, 4, 4])
+3×4 DataFrame
+ Row │ x1       x2     x3       x4
+     │ Int64?   Int64  Int64?   Int64?
+─────┼─────────────────────────────────
+   1 │       1      3        3       2
+   2 │ missing      2  missing       4
+   3 │ missing      4        2       4
+
+julia> names(df)
+4-element Vector{String}:
+ "x1"
+ "x2"
+ "x3"
+ "x4"
+
+julia> names(df, Int) # pick columns whose element type is Int
+1-element Vector{String}:
+ "x2"
+
+julia> names(df, x -> x[end] == '2') # pick columns for which last character in their name is '2'
+1-element Vector{String}:
+ "x2"
+
+julia> fun(col) = sum(skipmissing(col)) >= 10
+fun (generic function with 1 method)
+
+julia> names(df, fun.(eachcol(df))) # pick columns for which sum of their elements is at least 10
+1-element Vector{String}:
+ "x4"
+
+julia> names(df, eltype.(eachcol(df)) .>: Missing) # pick columns that allow missing values
+3-element Vector{String}:
+ "x1"
+ "x3"
+ "x4"
+
+julia> names(df, any.(ismissing, eachcol(df))) # pick columns that contain missing values
+2-element Vector{String}:
+ "x1"
+ "x3"
+```
 """
 Base.names(df::AbstractDataFrame, cols::Colon=:) = names(index(df))
 
@@ -500,6 +522,8 @@ where each row represents a variable and each column a summary statistic.
       `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and
       `:nmissing`. The default statistics used are `:mean`, `:min`, `:median`,
       `:max`, `:nmissing`, and `:eltype`.
+    - `:detailed` as the only `Symbol` argument to return all statistics
+      except `first` and `last`.
     - `:all` as the only `Symbol` argument to return all statistics.
     - A `function => name` pair where `name` is a `Symbol` or string. This will
       create a column of summary statistics with the provided name.
@@ -584,8 +608,13 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         predefined_funs = allowed_fields
         i = findfirst(s -> s == :all, stats)
         splice!(stats, i, allowed_fields) # insert in the stats vector to get a good order
-    elseif :all in predefined_funs
-        throw(ArgumentError("`:all` must be the only `Symbol` argument."))
+    elseif predefined_funs == [:detailed]
+        predefined_funs = [:mean, :std, :min, :q25, :median, :q75,
+                           :max, :nunique, :nmissing, :eltype]
+        i = findfirst(s -> s == :detailed, stats)
+        splice!(stats, i, predefined_funs) # insert in the stats vector to get a good order
+    elseif :all in predefined_funs || :detailed in predefined_funs
+        throw(ArgumentError("`:all` and `:detailed` must be the only `Symbol` argument."))
     elseif !issubset(predefined_funs, allowed_fields)
         not_allowed = join(setdiff(predefined_funs, allowed_fields), ", :")
         allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
@@ -654,10 +683,23 @@ function get_stats(@nospecialize(col::Union{AbstractVector, Base.SkipMissing}),
     d = Dict{Symbol, Any}()
 
     if :q25 in stats || :median in stats || :q75 in stats
-        q = try quantile(col, [.25, .5, .75]) catch; (nothing, nothing, nothing) end
-        d[:q25] = q[1]
-        d[:median] = q[2]
-        d[:q75] = q[3]
+        # types that do not support basic arithmetic (like strings) will only fail
+        # after sorting the data, so check this beforehand to fail early
+        T = eltype(col)
+        if isconcretetype(T) && !hasmethod(-, Tuple{T, T})
+            d[:q25] = d[:median] = d[:q75] = nothing
+        else
+            mcol = Base.copymutable(col)
+            if :q25 in stats
+                d[:q25] = try quantile!(mcol, 0.25) catch; nothing; end
+            end
+            if :median in stats
+                d[:median] = try quantile!(mcol, 0.50) catch; nothing; end
+            end
+            if :q75 in stats
+                d[:q75] = try quantile!(mcol, 0.75) catch; nothing; end
+            end
+        end
     end
 
     if :min in stats || :max in stats
@@ -946,8 +988,8 @@ end
     filter(fun, df::AbstractDataFrame; view::Bool=false)
     filter(cols => fun, df::AbstractDataFrame; view::Bool=false)
 
-Return a data frame containing only rows from `df` for which `fun`
-returns `true`.
+Return a data frame containing only rows from `df` for which `fun` returns
+`true`.
 
 If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
 
@@ -958,10 +1000,18 @@ corresponding columns as separate positional arguments, unless `cols` is an
 column duplicates are allowed if a vector of `Symbol`s, strings, or integers is
 passed.
 
-If `view=false` a freshly allocated `DataFrame` is returned.
-If `view=true` then a `SubDataFrame` view into `df` is returned.
+If `view=false` a freshly allocated `DataFrame` is returned. If `view=true` then
+a `SubDataFrame` view into `df` is returned.
 
-Passing `cols` leads to a more efficient execution of the operation for large data frames.
+Passing `cols` leads to a more efficient execution of the operation for large
+data frames.
+
+!!! note
+
+    This method is defined so that DataFrames.jl implements the Julia API for
+    collections, but it is generally recommended to use the [`subset`](@ref)
+    function instead as it is consistent with other DataFrames.jl functions
+    (as opposed to `filter`).
 
 See also: [`filter!`](@ref)
 
@@ -1070,7 +1120,15 @@ corresponding columns as separate positional arguments, unless `cols` is an
 column duplicates are allowed if a vector of `Symbol`s, strings, or integers is
 passed.
 
-Passing `cols` leads to a more efficient execution of the operation for large data frames.
+Passing `cols` leads to a more efficient execution of the operation for large
+data frames.
+
+!!! note
+
+    This method is defined so that DataFrames.jl implements the Julia API for
+    collections, but it is generally recommended to use the [`subset!`](@ref)
+    function instead as it is consistent with other DataFrames.jl functions
+    (as opposed to `filter!`).
 
 See also: [`filter`](@ref)
 
@@ -1124,7 +1182,7 @@ julia> filter!(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
    3 │     1  b
 ```
 """
-Base.filter!(f, df::AbstractDataFrame) = deleteat!(df, findall(!f, eachrow(df)))
+Base.filter!(f::Function, df::AbstractDataFrame) = deleteat!(df, findall(!f, eachrow(df)))
 Base.filter!((col, f)::Pair{<:ColumnIndex}, df::AbstractDataFrame) =
     _filter!_helper(df, f, df[!, col])
 Base.filter!((cols, f)::Pair{<:AbstractVector{Symbol}}, df::AbstractDataFrame) =
@@ -1158,7 +1216,7 @@ _filter!_helper_astable(df::AbstractDataFrame, nti::Tables.NamedTupleIterator, f
     deleteat!(df, _findall((x -> !(f(x)::Bool)).(nti)))
 
 function Base.Matrix(df::AbstractDataFrame)
-    T = reduce(promote_type, (eltype(v) for v in eachcol(df)))
+    T = reduce(promote_type, (eltype(v) for v in eachcol(df)), init=Union{})
     return Matrix{T}(df)
 end
 

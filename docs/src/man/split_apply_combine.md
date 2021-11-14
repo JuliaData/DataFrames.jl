@@ -51,7 +51,11 @@ each subset of the `DataFrame`. This specification can be of the following forms
    `function` returns a single value or a vector; the generated name is created by
    concatenating source column name and `function` name by default (see examples below).
 3. a `cols => function => target_cols` form additionally explicitly specifying
-   the target column or columns.
+   the target column or columns, which must be a single name (as a `Symbol` or a string),
+   a vector of names or `AsTable`. Additionally it can be a `Function` which
+   takes a string or a vector of strings as an argument containing names of columns
+   selected by `cols`, and returns the target columns names (all accepted types
+   except `AsTable` are allowed).
 4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
    must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
 5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
@@ -69,14 +73,20 @@ convenience form `nrow => target_cols` it is always interpreted as
 `cols => function`. In particular the following expression `function => target_cols`
 is not a valid transformation specification.
 
+Note! If `cols` or `target_cols` are one of `All`, `Cols`, `Between`, or `Not`,
+broadcasting using `.=>` is supported and is equivalent to broadcasting
+the result of `names(df, cols)` or `names(df, target_cols)`.
+This behaves as if broadcasting happened after replacing the selector
+with selected column names within the data frame scope.
+
 All functions have two types of signatures. One of them takes a `GroupedDataFrame`
 as the first argument and an arbitrary number of transformations described above
 as following arguments. The second type of signature is when a `Function` or a `Type`
 is passed as the first argument and a `GroupedDataFrame` as the second argument
 (similar to `map`).
 
-As a special rule, with the `cols => function` and `cols => function =>
-target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
+As a special rule, with the `cols => function` and
+`cols => function => target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
 object then a `NamedTuple` containing columns selected by `cols` is passed to
 `function`.
 
@@ -166,7 +176,7 @@ julia> iris = CSV.read((joinpath(dirname(pathof(DataFrames)),
                        DataFrame)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         5.1         3.5          1.4         0.2  Iris-setosa
    2 │         4.9         3.0          1.4         0.2  Iris-setosa
@@ -190,7 +200,7 @@ julia> gdf = groupby(iris, :Species)
 GroupedDataFrame with 3 groups based on key: Species
 First Group (50 rows): Species = "Iris-setosa"
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼───────────────────────────────────────────────────────────────
    1 │         5.1         3.5          1.4         0.2  Iris-setosa
    2 │         4.9         3.0          1.4         0.2  Iris-setosa
@@ -213,7 +223,7 @@ First Group (50 rows): Species = "Iris-setosa"
 ⋮
 Last Group (50 rows): Species = "Iris-virginica"
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         6.3         3.3          6.0         2.5  Iris-virginica
    2 │         5.8         2.7          5.1         1.9  Iris-virginica
@@ -237,7 +247,7 @@ Last Group (50 rows): Species = "Iris-virginica"
 julia> combine(gdf, :PetalLength => mean)
 3×2 DataFrame
  Row │ Species          PetalLength_mean
-     │ String           Float64
+     │ String15         Float64
 ─────┼───────────────────────────────────
    1 │ Iris-setosa                 1.464
    2 │ Iris-versicolor             4.26
@@ -246,7 +256,7 @@ julia> combine(gdf, :PetalLength => mean)
 julia> combine(gdf, nrow)
 3×2 DataFrame
  Row │ Species          nrow
-     │ String           Int64
+     │ String15         Int64
 ─────┼────────────────────────
    1 │ Iris-setosa         50
    2 │ Iris-versicolor     50
@@ -255,7 +265,7 @@ julia> combine(gdf, nrow)
 julia> combine(gdf, nrow, :PetalLength => mean => :mean)
 3×3 DataFrame
  Row │ Species          nrow   mean
-     │ String           Int64  Float64
+     │ String15         Int64  Float64
 ─────┼─────────────────────────────────
    1 │ Iris-setosa         50    1.464
    2 │ Iris-versicolor     50    4.26
@@ -265,7 +275,7 @@ julia> combine(gdf, [:PetalLength, :SepalLength] => ((p, s) -> (a=mean(p)/mean(s
                AsTable) # multiple columns are passed as arguments
 3×3 DataFrame
  Row │ Species          a         b
-     │ String           Float64   Float64
+     │ String15         Float64   Float64
 ─────┼────────────────────────────────────
    1 │ Iris-setosa      0.292449     73.2
    2 │ Iris-versicolor  0.717655    213.0
@@ -276,7 +286,7 @@ julia> combine(gdf,
                x -> std(x.PetalLength) / std(x.SepalLength)) # passing a NamedTuple
 3×2 DataFrame
  Row │ Species          PetalLength_SepalLength_function
-     │ String           Float64
+     │ String15         Float64
 ─────┼───────────────────────────────────────────────────
    1 │ Iris-setosa                              0.492245
    2 │ Iris-versicolor                          0.910378
@@ -285,7 +295,7 @@ julia> combine(gdf,
 julia> combine(x -> std(x.PetalLength) / std(x.SepalLength), gdf) # passing a SubDataFrame
 3×2 DataFrame
  Row │ Species          x1
-     │ String           Float64
+     │ String15         Float64
 ─────┼───────────────────────────
    1 │ Iris-setosa      0.492245
    2 │ Iris-versicolor  0.910378
@@ -294,7 +304,7 @@ julia> combine(x -> std(x.PetalLength) / std(x.SepalLength), gdf) # passing a Su
 julia> combine(gdf, 1:2 => cor, nrow)
 3×3 DataFrame
  Row │ Species          SepalLength_SepalWidth_cor  nrow
-     │ String           Float64                     Int64
+     │ String15         Float64                     Int64
 ─────┼────────────────────────────────────────────────────
    1 │ Iris-setosa                        0.74678      50
    2 │ Iris-versicolor                    0.525911     50
@@ -303,7 +313,7 @@ julia> combine(gdf, 1:2 => cor, nrow)
 julia> combine(gdf, :PetalLength => (x -> [extrema(x)]) => [:min, :max])
 3×3 DataFrame
  Row │ Species          min      max
-     │ String           Float64  Float64
+     │ String15         Float64  Float64
 ─────┼───────────────────────────────────
    1 │ Iris-setosa          1.0      1.9
    2 │ Iris-versicolor      3.0      5.1
@@ -356,7 +366,7 @@ julia> combine(gdf) do df
        end
 3×3 DataFrame
  Row │ Species          m        s²
-     │ String           Float64  Float64
+     │ String15         Float64  Float64
 ─────┼─────────────────────────────────────
    1 │ Iris-setosa        1.464  0.0301061
    2 │ Iris-versicolor    4.26   0.220816
@@ -478,7 +488,7 @@ julia> gd = groupby(iris, :Species)
 GroupedDataFrame with 3 groups based on key: Species
 First Group (50 rows): Species = "Iris-setosa"
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼───────────────────────────────────────────────────────────────
    1 │         5.1         3.5          1.4         0.2  Iris-setosa
    2 │         4.9         3.0          1.4         0.2  Iris-setosa
@@ -501,7 +511,7 @@ First Group (50 rows): Species = "Iris-setosa"
 ⋮
 Last Group (50 rows): Species = "Iris-virginica"
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         6.3         3.3          6.0         2.5  Iris-virginica
    2 │         5.8         2.7          5.1         1.9  Iris-virginica
@@ -525,7 +535,7 @@ Last Group (50 rows): Species = "Iris-virginica"
 julia> combine(gd, valuecols(gd) .=> mean)
 3×5 DataFrame
  Row │ Species          SepalLength_mean  SepalWidth_mean  PetalLength_mean  P ⋯
-     │ String           Float64           Float64          Float64           F ⋯
+     │ String15         Float64           Float64          Float64           F ⋯
 ─────┼──────────────────────────────────────────────────────────────────────────
    1 │ Iris-setosa                 5.006            3.418             1.464    ⋯
    2 │ Iris-versicolor             5.936            2.77              4.26

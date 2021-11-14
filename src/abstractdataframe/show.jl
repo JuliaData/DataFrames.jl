@@ -82,7 +82,7 @@ function batch_compacttype(types::Vector{Any}, maxwidths::Vector{Int})
     end
 end
 
-function batch_compacttype(types::Vector{Any}, maxwidth::Int=8)
+function batch_compacttype(types::Vector{Any}, maxwidth::Int)
     cache = Dict{Type, String}()
     return map(types) do T
         get!(cache, T) do
@@ -100,7 +100,7 @@ For displaying data frame we do not want string representation of type to be
 longer than `maxwidth`. This function implements rules how type names are
 cropped if they are longer than `maxwidth`.
 """
-function compacttype(T::Type, maxwidth::Int=8)
+function compacttype(T::Type, maxwidth::Int)
     maxwidth = max(8, maxwidth)
 
     T === Any && return "Any"
@@ -132,8 +132,13 @@ function compacttype(T::Type, maxwidth::Int=8)
     elseif T isa Union
         return "Union…" * suffix
     else
+        sTfull = sT
         sT = string(nameof(T))
     end
+
+    # handle the case when the type printed is not parametric but string(T)
+    # prefixed it with the module name which caused it to be overlong
+    textwidth(sT) ≤ maxwidth + 1 && endswith(sTfull, sT) && return sT
 
     cumwidth = 0
     stop = 0

@@ -22,6 +22,12 @@
   (notably `PooledArray` and `CategoricalArray`) or when they contained only
   integers in a small range.
   ([#2812](https://github.com/JuliaData/DataFrames.jl/pull/2812))
+* the `unstack` function receives new keyword argument `fill`
+  (with `missing` default) that is used to fill combinations of not encountered
+  rows and columns. This feature allows to distinguish between missings in
+  value column and just missing row/column combinations and to easily fill
+  with zeros non existing combinations in case of counting.
+  ([#2828](https://github.com/JuliaData/DataFrames.jl/pull/2828))
 
 * Allow adding new columns to a `SubDataFrame` created with `:` as column selector
   ([#2794](https://github.com/JuliaData/DataFrames.jl/pull/2794)).
@@ -56,17 +62,56 @@
   or before `col`.
   ([#2829](https://github.com/JuliaData/DataFrames.jl/pull/2829))
 * Added support fro `deleteat!` and `keepat!`
-  ([#XXXX](https://github.com/JuliaData/DataFrames.jl/issues/XXXX))
+  ([#2854](https://github.com/JuliaData/DataFrames.jl/issues/2854))
+* `leftjoin!` performing a left join of two data frame objects by updating the
+  left data frame with the joined columns from right data frame.
+  ([#2843](https://github.com/JuliaData/DataFrames.jl/pull/2843))
+* the `DataFrame` constructor when column names are passed to it as a second
+  argument now determines if a passed vector of column names is valid based on
+  its contents and not element type
+  ([#2859](https://github.com/JuliaData/DataFrames.jl/pull/2859))
+* the `DataFrame` constructor when matrix is passed to it as a first
+  argument now allows `copycols` keyword argument
+  ([#2859](https://github.com/JuliaData/DataFrames.jl/pull/2859))
+* `Cols` now accepts a predicate accepting column names as strings.
+  ([#2881](https://github.com/JuliaData/DataFrames.jl/pull/2881))
+* In `source => transformation => destination` transformation specification
+  minilanguage now `destination` can be also a `Function` generating
+  target column names and taking column names specified by `source`
+  as an argument.
+  ([#2897](https://github.com/JuliaData/DataFrames.jl/pull/2897))
+* `subset` and `subset!` now allow passing multiple column selectors and
+  vectors or matrices of `Pair`s as specifications of selection conditions
+  ([#2926](https://github.com/JuliaData/DataFrames.jl/pull/2926))
+* When using broadcasting in `source .=> transformation .=> destination`
+  transformation specification minilanguage now `All`, `Cols`, `Between`, and
+  `Not` selectors when used as `source` or `destination` are properly expanded
+  to selected column names within the call data frame scope.
+  ([#2918](https://github.com/JuliaData/DataFrames.jl/pull/2918))
+* `describe` now accepts `:detailed` as the `stats` argument
+  to compute standard deviation and quartiles
+  in addition to statistics that are reported by default.
+  ([#2459](https://github.com/JuliaData/DataFrames.jl/pull/2459))
 
 ## Bug fixes
 
 * fix a problem with `unstack` on empty data frame
   ([#2842](https://github.com/JuliaData/DataFrames.jl/issues/2842))
+* fix a problem with not specialized `Pair` arguments passed as transformations
+  ([#2889](https://github.com/JuliaData/DataFrames.jl/issues/2889))
+
+## Performance improvements
+
+* for selected common transformation specifications like e.g.
+  `AsTable(...) => ByRow(sum)` use a custom implementations that
+  lead to lower compilation latency and faster computation
+  ([#2869](https://github.com/JuliaData/DataFrames.jl/pull/2869)),
+  ([#2919](https://github.com/JuliaData/DataFrames.jl/pull/2919))
 
 ## Deprecations
 
 * `delete!` is deprecated in favor of `deleteat!`
-  ([#XXXX](https://github.com/JuliaData/DataFrames.jl/issues/XXXX))
+  ([#2854](https://github.com/JuliaData/DataFrames.jl/issues/2854))
 
 # DataFrames.jl v1.2.2 Patch Release Notes
 

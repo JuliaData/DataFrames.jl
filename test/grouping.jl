@@ -1717,14 +1717,14 @@ end
     @test gd[(a=:A, b=1.0)] ≅ gd[1]
 
     @test get(gd, (a=:A, b=1), nothing) ≅ gd[1]
-    @test get(gd, (a=:A, b=3), nothing) == nothing
+    @test get(gd, (a=:A, b=3), nothing) === nothing
     @test get(gd, (:A, 1), nothing) ≅ gd[1]
-    @test get(gd, (:A, 3), nothing) == nothing
+    @test get(gd, (:A, 3), nothing) === nothing
     @test get(gd, first(keys(gd)), gd) ≅ gd[1]
     @test get(gd, Dict("a" => :A, "b" => 1), nothing) ≅ gd[1]
     @test get(gd, Dict(:a => :A, :b => 1), nothing) ≅ gd[1]
     @test get(gd, Dict(:b => 1, :a => :A), nothing) ≅ gd[1]
-    @test get(gd, Dict(:a => :A, :b => 3), nothing) == nothing
+    @test get(gd, Dict(:a => :A, :b => 3), nothing) === nothing
 
     # Wrong values
     @test_throws KeyError gd[(a=:A, b=3)]
@@ -2015,7 +2015,7 @@ end
     @test !haskey(gdf, 0)
     @test haskey(gdf, 1)
     @test !haskey(gdf, 2)
-    @test_throws MethodError haskey(gdf, true)
+    @test_throws ArgumentError haskey(gdf, true)
 
     @test haskey(gdf, k)
     @test_throws ArgumentError haskey(gdf, keys(groupby_checked(DataFrame(a=1, b=2, c=3), [:a, :b]))[1])

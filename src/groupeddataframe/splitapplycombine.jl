@@ -27,8 +27,11 @@ function _combine_prepare(gd::GroupedDataFrame,
                           keepkeys::Bool, ungroup::Bool, copycols::Bool,
                           keeprows::Bool, renamecols::Bool)
     for cei in cs
-        @assert cei isa Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
-                              AbstractVecOrMat{<:Pair}}
+        if !(cei isa AbstractMatrix && isempty(cei))
+            @assert cei isa Union{Pair, Base.Callable, ColumnIndex,
+                                  MultiColumnIndex,
+                                  AbstractVecOrMat{<:Pair}}
+        end
     end
     if !ungroup && !keepkeys
         throw(ArgumentError("keepkeys=false when ungroup=false is not allowed"))
@@ -40,7 +43,7 @@ function _combine_prepare(gd::GroupedDataFrame,
             push!(cs_vec, nrow => :nrow)
         elseif p isa AbstractVecOrMat{<:Pair}
             append!(cs_vec, p)
-        else
+        else !(p isa AbstractMatrix && isempty(p))
             push!(cs_vec, p)
         end
     end
@@ -62,7 +65,7 @@ function _combine_prepare_norm(gd::GroupedDataFrame,
     cs_norm = []
     optional_transform = Bool[]
     for c in cs_vec
-        arg = normalize_selection(index(parent(gd)), c, renamecols)
+        arg = normalize_selection(index(parent(gd)), make_pair_concrete(c), renamecols)
         if arg isa AbstractVector{Int}
             for col_idx in arg
                 push!(cs_norm, col_idx => identity => _names(gd)[col_idx])
@@ -702,10 +705,11 @@ combine(@nospecialize(f::Pair), gd::GroupedDataFrame;
                         "value to be processed as having multiple columns add `=> AsTable` suffix to the pair."))
 
 combine(gd::GroupedDataFrame,
-        @nospecialize(cs::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
-                                AbstractVecOrMat{<:Pair}}...);
+        @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
+                                  AbstractVecOrMat}...);
         keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
-    _combine_prepare(gd, Ref{Any}(cs), keepkeys=keepkeys, ungroup=ungroup,
+    _combine_prepare(gd, Ref{Any}(map(x -> broadcast_pair(parent(gd), x), args)),
+                     keepkeys=keepkeys, ungroup=ungroup,
                      copycols=true, keeprows=false, renamecols=renamecols)
 
 function select(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols::Bool=true,
@@ -716,11 +720,11 @@ function select(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols:
     return select(gd, f, copycols=copycols, keepkeys=keepkeys, ungroup=ungroup)
 end
 
-
 select(gd::GroupedDataFrame, @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
-                                                       AbstractVecOrMat{<:Pair}}...);
+                                                       AbstractVecOrMat}...);
        copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
-    _combine_prepare(gd, Ref{Any}(args), copycols=copycols, keepkeys=keepkeys,
+    _combine_prepare(gd, Ref{Any}(map(x -> broadcast_pair(parent(gd), x), args)),
+                     copycols=copycols, keepkeys=keepkeys,
                      ungroup=ungroup, keeprows=true, renamecols=renamecols)
 
 function transform(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols::Bool=true,
@@ -732,7 +736,7 @@ function transform(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copyco
 end
 
 function transform(gd::GroupedDataFrame, @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
-                                                                   AbstractVecOrMat{<:Pair}}...);
+                                                                   AbstractVecOrMat}...);
                    copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
     res = select(gd, :, args..., copycols=copycols, keepkeys=keepkeys,
                  ungroup=ungroup, renamecols=renamecols)
@@ -751,7 +755,7 @@ end
 
 function select!(gd::GroupedDataFrame,
                  @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
-                                           AbstractVecOrMat{<:Pair}}...);
+                                           AbstractVecOrMat}...);
                  ungroup::Bool=true, renamecols::Bool=true)
     df = parent(gd)
     if df isa DataFrame
@@ -773,7 +777,7 @@ end
 
 function transform!(gd::GroupedDataFrame,
                     @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
-                                              AbstractVecOrMat{<:Pair}}...);
+                                              AbstractVecOrMat}...);
                     ungroup::Bool=true, renamecols::Bool=true)
     df = parent(gd)
     if df isa DataFrame

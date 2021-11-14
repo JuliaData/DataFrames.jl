@@ -27,38 +27,38 @@ anti = left[Bool[ismissing(x) for x in left.Job], [:ID, :Name]]
 
 @testset "join types" begin
     # Join on symbols or vectors of symbols
-    innerjoin(name, job, on = :ID)
-    innerjoin(name, job, on = [:ID])
+    innerjoin(name, job, on=:ID)
+    innerjoin(name, job, on=[:ID])
 
     @test_throws ArgumentError innerjoin(name, job)
-    @test_throws ArgumentError innerjoin(name, job, on = :ID, matchmissing=:errors)
-    @test_throws ArgumentError innerjoin(name, job, on = :ID, matchmissing=:weirdmatch)
-    @test_throws ArgumentError outerjoin(name, job, on = :ID, matchmissing=:notequal)
+    @test_throws ArgumentError innerjoin(name, job, on=:ID, matchmissing=:errors)
+    @test_throws ArgumentError innerjoin(name, job, on=:ID, matchmissing=:weirdmatch)
+    @test_throws ArgumentError outerjoin(name, job, on=:ID, matchmissing=:notequal)
 
-    @test innerjoin(name, job, on = :ID) == inner
-    @test outerjoin(name, job, on = :ID) ≅ outer
-    @test leftjoin(name, job, on = :ID) ≅ left
-    @test rightjoin(name, job, on = :ID) ≅ right
-    @test semijoin(name, job, on = :ID) == semi
-    @test antijoin(name, job, on = :ID) == anti
+    @test innerjoin(name, job, on=:ID) == inner
+    @test outerjoin(name, job, on=:ID) ≅ outer
+    @test leftjoin(name, job, on=:ID) ≅ left
+    @test rightjoin(name, job, on=:ID) ≅ right
+    @test semijoin(name, job, on=:ID) == semi
+    @test antijoin(name, job, on=:ID) == anti
 
     # Join with no non-key columns
     on = [:ID]
     nameid = name[:, on]
     jobid = job[:, on]
 
-    @test innerjoin(nameid, jobid, on = :ID) == inner[:, on]
-    @test outerjoin(nameid, jobid, on = :ID) == outer[:, on]
-    @test leftjoin(nameid, jobid, on = :ID) == left[:, on]
-    @test rightjoin(nameid, jobid, on = :ID) == right[:, on]
-    @test semijoin(nameid, jobid, on = :ID) == semi[:, on]
-    @test antijoin(nameid, jobid, on = :ID) == anti[:, on]
+    @test innerjoin(nameid, jobid, on=:ID) == inner[:, on]
+    @test outerjoin(nameid, jobid, on=:ID) == outer[:, on]
+    @test leftjoin(nameid, jobid, on=:ID) == left[:, on]
+    @test rightjoin(nameid, jobid, on=:ID) == right[:, on]
+    @test semijoin(nameid, jobid, on=:ID) == semi[:, on]
+    @test antijoin(nameid, jobid, on=:ID) == anti[:, on]
 
     # Join on multiple keys
     df1 = DataFrame(A = 1, B = 2, C = 3)
     df2 = DataFrame(A = 1, B = 2, D = 4)
 
-    @test innerjoin(df1, df2, on = [:A, :B]) == DataFrame(A = 1, B = 2, C = 3, D = 4)
+    @test innerjoin(df1, df2, on=[:A, :B]) == DataFrame(A = 1, B = 2, C = 3, D = 4)
 
     # Test output of cross joins
     df1 = DataFrame(A = 1:2, B = 'a':'b')
@@ -74,31 +74,31 @@ anti = left[Bool[ismissing(x) for x in left.Job], [:ID, :Name]]
     @test size(crossjoin(df1, df1, makeunique=true)) == (4, 4)
 
     # Cross joins don't take keys
-    @test_throws MethodError crossjoin(df1, df2, on = :A)
+    @test_throws MethodError crossjoin(df1, df2, on=:A)
 end
 
 @testset "Test empty inputs 1" begin
     simple_df(len::Int, col=:A) = (df = DataFrame();
                                    df[!, col]=Vector{Union{Int, Missing}}(1:len);
                                    df)
-    @test leftjoin(simple_df(0), simple_df(0), on = :A) == simple_df(0)
-    @test leftjoin(simple_df(2), simple_df(0), on = :A) == simple_df(2)
-    @test leftjoin(simple_df(0), simple_df(2), on = :A) == simple_df(0)
-    @test rightjoin(simple_df(0), simple_df(0), on = :A) == simple_df(0)
-    @test rightjoin(simple_df(0), simple_df(2), on = :A) == simple_df(2)
-    @test rightjoin(simple_df(2), simple_df(0), on = :A) == simple_df(0)
-    @test innerjoin(simple_df(0), simple_df(0), on = :A) == simple_df(0)
-    @test innerjoin(simple_df(0), simple_df(2), on = :A) == simple_df(0)
-    @test innerjoin(simple_df(2), simple_df(0), on = :A) == simple_df(0)
-    @test outerjoin(simple_df(0), simple_df(0), on = :A) == simple_df(0)
-    @test outerjoin(simple_df(0), simple_df(2), on = :A) == simple_df(2)
-    @test outerjoin(simple_df(2), simple_df(0), on = :A) == simple_df(2)
-    @test semijoin(simple_df(0), simple_df(0), on = :A) == simple_df(0)
-    @test semijoin(simple_df(2), simple_df(0), on = :A) == simple_df(0)
-    @test semijoin(simple_df(0), simple_df(2), on = :A) == simple_df(0)
-    @test antijoin(simple_df(0), simple_df(0), on = :A) == simple_df(0)
-    @test antijoin(simple_df(2), simple_df(0), on = :A) == simple_df(2)
-    @test antijoin(simple_df(0), simple_df(2), on = :A) == simple_df(0)
+    @test leftjoin(simple_df(0), simple_df(0), on=:A) == simple_df(0)
+    @test leftjoin(simple_df(2), simple_df(0), on=:A) == simple_df(2)
+    @test leftjoin(simple_df(0), simple_df(2), on=:A) == simple_df(0)
+    @test rightjoin(simple_df(0), simple_df(0), on=:A) == simple_df(0)
+    @test rightjoin(simple_df(0), simple_df(2), on=:A) == simple_df(2)
+    @test rightjoin(simple_df(2), simple_df(0), on=:A) == simple_df(0)
+    @test innerjoin(simple_df(0), simple_df(0), on=:A) == simple_df(0)
+    @test innerjoin(simple_df(0), simple_df(2), on=:A) == simple_df(0)
+    @test innerjoin(simple_df(2), simple_df(0), on=:A) == simple_df(0)
+    @test outerjoin(simple_df(0), simple_df(0), on=:A) == simple_df(0)
+    @test outerjoin(simple_df(0), simple_df(2), on=:A) == simple_df(2)
+    @test outerjoin(simple_df(2), simple_df(0), on=:A) == simple_df(2)
+    @test semijoin(simple_df(0), simple_df(0), on=:A) == simple_df(0)
+    @test semijoin(simple_df(2), simple_df(0), on=:A) == simple_df(0)
+    @test semijoin(simple_df(0), simple_df(2), on=:A) == simple_df(0)
+    @test antijoin(simple_df(0), simple_df(0), on=:A) == simple_df(0)
+    @test antijoin(simple_df(2), simple_df(0), on=:A) == simple_df(2)
+    @test antijoin(simple_df(0), simple_df(2), on=:A) == simple_df(0)
     @test crossjoin(simple_df(0), simple_df(0, :B)) == DataFrame(A=Int[], B=Int[])
     @test crossjoin(simple_df(0), simple_df(2, :B)) == DataFrame(A=Int[], B=Int[])
     @test crossjoin(simple_df(2), simple_df(0, :B)) == DataFrame(A=Int[], B=Int[])
@@ -106,24 +106,24 @@ end
 
 @testset "Test empty inputs 2" begin
     simple_df(len::Int, col=:A) = (df = DataFrame(); df[!, col]=collect(1:len); df)
-    @test leftjoin(simple_df(0), simple_df(0), on = :A) ==  simple_df(0)
-    @test leftjoin(simple_df(2), simple_df(0), on = :A) ==  simple_df(2)
-    @test leftjoin(simple_df(0), simple_df(2), on = :A) ==  simple_df(0)
-    @test rightjoin(simple_df(0), simple_df(0), on = :A) == simple_df(0)
-    @test rightjoin(simple_df(0), simple_df(2), on = :A) == simple_df(2)
-    @test rightjoin(simple_df(2), simple_df(0), on = :A) == simple_df(0)
-    @test innerjoin(simple_df(0), simple_df(0), on = :A) == simple_df(0)
-    @test innerjoin(simple_df(0), simple_df(2), on = :A) == simple_df(0)
-    @test innerjoin(simple_df(2), simple_df(0), on = :A) == simple_df(0)
-    @test outerjoin(simple_df(0), simple_df(0), on = :A) == simple_df(0)
-    @test outerjoin(simple_df(0), simple_df(2), on = :A) == simple_df(2)
-    @test outerjoin(simple_df(2), simple_df(0), on = :A) == simple_df(2)
-    @test semijoin(simple_df(0), simple_df(0), on = :A) ==  simple_df(0)
-    @test semijoin(simple_df(2), simple_df(0), on = :A) ==  simple_df(0)
-    @test semijoin(simple_df(0), simple_df(2), on = :A) ==  simple_df(0)
-    @test antijoin(simple_df(0), simple_df(0), on = :A) ==  simple_df(0)
-    @test antijoin(simple_df(2), simple_df(0), on = :A) ==  simple_df(2)
-    @test antijoin(simple_df(0), simple_df(2), on = :A) ==  simple_df(0)
+    @test leftjoin(simple_df(0), simple_df(0), on=:A) ==  simple_df(0)
+    @test leftjoin(simple_df(2), simple_df(0), on=:A) ==  simple_df(2)
+    @test leftjoin(simple_df(0), simple_df(2), on=:A) ==  simple_df(0)
+    @test rightjoin(simple_df(0), simple_df(0), on=:A) == simple_df(0)
+    @test rightjoin(simple_df(0), simple_df(2), on=:A) == simple_df(2)
+    @test rightjoin(simple_df(2), simple_df(0), on=:A) == simple_df(0)
+    @test innerjoin(simple_df(0), simple_df(0), on=:A) == simple_df(0)
+    @test innerjoin(simple_df(0), simple_df(2), on=:A) == simple_df(0)
+    @test innerjoin(simple_df(2), simple_df(0), on=:A) == simple_df(0)
+    @test outerjoin(simple_df(0), simple_df(0), on=:A) == simple_df(0)
+    @test outerjoin(simple_df(0), simple_df(2), on=:A) == simple_df(2)
+    @test outerjoin(simple_df(2), simple_df(0), on=:A) == simple_df(2)
+    @test semijoin(simple_df(0), simple_df(0), on=:A) ==  simple_df(0)
+    @test semijoin(simple_df(2), simple_df(0), on=:A) ==  simple_df(0)
+    @test semijoin(simple_df(0), simple_df(2), on=:A) ==  simple_df(0)
+    @test antijoin(simple_df(0), simple_df(0), on=:A) ==  simple_df(0)
+    @test antijoin(simple_df(2), simple_df(0), on=:A) ==  simple_df(2)
+    @test antijoin(simple_df(0), simple_df(2), on=:A) ==  simple_df(0)
     @test crossjoin(simple_df(0), simple_df(0, :B)) == DataFrame(A=Int[], B=Int[])
     @test crossjoin(simple_df(0), simple_df(2, :B)) == DataFrame(A=Int[], B=Int[])
     @test crossjoin(simple_df(2), simple_df(0, :B)) == DataFrame(A=Int[], B=Int[])
@@ -133,7 +133,7 @@ end
     df1 = DataFrame(A = categorical(1:50),
                     B = categorical(1:50),
                     C = 1)
-    @test innerjoin(df1, df1, on = [:A, :B], makeunique=true)[!, 1:3] == df1
+    @test innerjoin(df1, df1, on=[:A, :B], makeunique=true)[!, 1:3] == df1
     # Test that join works when mixing Array{Union{T, Missing}} with Array{T} (issue #1088)
     df = DataFrame(Name = Union{String, Missing}["A", "B", "C"],
                 Mass = [1.5, 2.2, 1.1])
@@ -147,9 +147,9 @@ end
     df = DataFrame([collect(1:10), collect(2:11)], [:x, :y])
     dfmissing = DataFrame(x = Vector{Union{Int, Missing}}(1:10),
                         z = Vector{Union{Int, Missing}}(3:12))
-    @test innerjoin(df, dfmissing, on = :x) ==
+    @test innerjoin(df, dfmissing, on=:x) ==
         DataFrame([collect(1:10), collect(2:11), collect(3:12)], [:x, :y, :z])
-    @test innerjoin(dfmissing, df, on = :x) ==
+    @test innerjoin(dfmissing, df, on=:x) ==
         DataFrame([Vector{Union{Int, Missing}}(1:10), Vector{Union{Int, Missing}}(3:12),
                 collect(2:11)], [:x, :z, :y])
 end
@@ -167,12 +167,12 @@ end
     @test typeof.(eachcol(crossjoin(df1, df2, makeunique=true))) ==
         [Vector{Int}, Vector{Float64}, Vector{Int}, Vector{Float64}]
 
-    i(on) = innerjoin(df1, df2, on = on, makeunique=true)
-    l(on) = leftjoin(df1, df2, on = on, makeunique=true)
-    r(on) = rightjoin(df1, df2, on = on, makeunique=true)
-    o(on) = outerjoin(df1, df2, on = on, makeunique=true)
-    s(on) = semijoin(df1, df2, on = on, makeunique=true)
-    a(on) = antijoin(df1, df2, on = on, makeunique=true)
+    i(on) = innerjoin(df1, df2, on=on, makeunique=true)
+    l(on) = leftjoin(df1, df2, on=on, makeunique=true)
+    r(on) = rightjoin(df1, df2, on=on, makeunique=true)
+    o(on) = outerjoin(df1, df2, on=on, makeunique=true)
+    s(on) = semijoin(df1, df2, on=on, makeunique=true)
+    a(on) = antijoin(df1, df2, on=on, makeunique=true)
 
     @test s(:id) ==
           s(:fid) ==
@@ -251,12 +251,12 @@ end
     @test all(isa.(eachcol(crossjoin(df1, df2, makeunique=true)),
                    [CategoricalVector{T} for T in (Int, Float64, Int, Float64)]))
 
-    i(on) = innerjoin(df1, df2, on = on, makeunique=true)
-    l(on) = leftjoin(df1, df2, on = on, makeunique=true)
-    r(on) = rightjoin(df1, df2, on = on, makeunique=true)
-    o(on) = outerjoin(df1, df2, on = on, makeunique=true)
-    s(on) = semijoin(df1, df2, on = on, makeunique=true)
-    a(on) = antijoin(df1, df2, on = on, makeunique=true)
+    i(on) = innerjoin(df1, df2, on=on, makeunique=true)
+    l(on) = leftjoin(df1, df2, on=on, makeunique=true)
+    r(on) = rightjoin(df1, df2, on=on, makeunique=true)
+    o(on) = outerjoin(df1, df2, on=on, makeunique=true)
+    s(on) = semijoin(df1, df2, on=on, makeunique=true)
+    a(on) = antijoin(df1, df2, on=on, makeunique=true)
 
     @test s(:id) ==
           s(:fid) ==
@@ -382,55 +382,55 @@ end
     left = DataFrame(id = 1:7, sid = string.(1:7))
     right = DataFrame(ID = 3:10, SID = string.(3:10))
 
-    @test innerjoin(left, right, on = :id => :ID) ==
+    @test innerjoin(left, right, on=:id => :ID) ==
         DataFrame(id = 3:7, sid = string.(3:7), SID = string.(3:7))
-    @test innerjoin(left, right, on = [:id => :ID]) ==
+    @test innerjoin(left, right, on=[:id => :ID]) ==
         DataFrame(id = 3:7, sid = string.(3:7), SID = string.(3:7))
-    @test innerjoin(left, right, on = [:id => :ID, :sid => :SID]) ==
+    @test innerjoin(left, right, on=[:id => :ID, :sid => :SID]) ==
         DataFrame(id = 3:7, sid = string.(3:7))
 
-    @test leftjoin(left, right, on = :id => :ID) ≅
+    @test leftjoin(left, right, on=:id => :ID) ≅
         DataFrame(id = [3:7; 1:2], sid = string.([3:7; 1:2]),
                   SID = [string.(3:7)..., missing, missing])
-    @test leftjoin(left, right, on = [:id => :ID]) ≅
+    @test leftjoin(left, right, on=[:id => :ID]) ≅
         DataFrame(id = [3:7; 1:2], sid = string.([3:7; 1:2]),
                   SID = [string.(3:7)..., missing, missing])
-    @test leftjoin(left, right, on = [:id => :ID, :sid => :SID]) ==
+    @test leftjoin(left, right, on=[:id => :ID, :sid => :SID]) ==
         DataFrame(id = [3:7; 1:2], sid = string.([3:7; 1:2]))
 
-    @test rightjoin(left, right, on = :id => :ID) ≅
+    @test rightjoin(left, right, on=:id => :ID) ≅
         DataFrame(id = 3:10, sid = [string.(3:7)..., missing, missing, missing],
                  SID = string.(3:10))
-    @test rightjoin(left, right, on = [:id => :ID]) ≅
+    @test rightjoin(left, right, on=[:id => :ID]) ≅
         DataFrame(id = 3:10, sid = [string.(3:7)..., missing, missing, missing],
                  SID = string.(3:10))
-    @test rightjoin(left, right, on = [:id => :ID, :sid => :SID]) ≅
+    @test rightjoin(left, right, on=[:id => :ID, :sid => :SID]) ≅
         DataFrame(id = 3:10, sid = string.(3:10))
 
-    @test outerjoin(left, right, on = :id => :ID) ≅
+    @test outerjoin(left, right, on=:id => :ID) ≅
         DataFrame(id = [3:7; 1:2; 8:10], sid = [string.([3:7; 1:2])..., missing, missing, missing],
                   SID = [string.(3:7)..., missing, missing, string.(8:10)...])
-    @test outerjoin(left, right, on = [:id => :ID]) ≅
+    @test outerjoin(left, right, on=[:id => :ID]) ≅
         DataFrame(id = [3:7; 1:2; 8:10], sid = [string.([3:7; 1:2])..., missing, missing, missing],
                   SID = [string.(3:7)..., missing, missing, string.(8:10)...])
-    @test outerjoin(left, right, on = [:id => :ID, :sid => :SID]) ≅
+    @test outerjoin(left, right, on=[:id => :ID, :sid => :SID]) ≅
         DataFrame(id = [3:7; 1:2; 8:10], sid = string.([3:7; 1:2; 8:10]))
 
-    @test semijoin(left, right, on = :id => :ID) ==
+    @test semijoin(left, right, on=:id => :ID) ==
         DataFrame(id = 3:7, sid = string.(3:7))
-    @test semijoin(left, right, on = [:id => :ID]) ==
+    @test semijoin(left, right, on=[:id => :ID]) ==
         DataFrame(id = 3:7, sid = string.(3:7))
-    @test semijoin(left, right, on = [:id => :ID, :sid => :SID]) ==
+    @test semijoin(left, right, on=[:id => :ID, :sid => :SID]) ==
         DataFrame(id = 3:7, sid = string.(3:7))
 
-    @test antijoin(left, right, on = :id => :ID) ==
+    @test antijoin(left, right, on=:id => :ID) ==
         DataFrame(id = 1:2, sid = string.(1:2))
-    @test antijoin(left, right, on = [:id => :ID]) ==
+    @test antijoin(left, right, on=[:id => :ID]) ==
         DataFrame(id = 1:2, sid = string.(1:2))
-    @test antijoin(left, right, on = [:id => :ID, :sid => :SID]) ==
+    @test antijoin(left, right, on=[:id => :ID, :sid => :SID]) ==
         DataFrame(id = 1:2, sid = string.(1:2))
 
-    @test_throws ArgumentError innerjoin(left, right, on = (:id, :ID))
+    @test_throws ArgumentError innerjoin(left, right, on=(:id, :ID))
 end
 
 @testset "join with a column of type Any" begin
@@ -545,9 +545,9 @@ end
     # Check that input data frame isn't modified (#1434)
     pre_join_name = copy(name)
     pre_join_job = copy(job)
-    @test outerjoin(name, job, on = :ID, source=:_merge,
+    @test outerjoin(name, job, on=:ID, source=:_merge,
                makeunique=true) ≅
-          outerjoin(name, job, on = :ID, source="_merge",
+          outerjoin(name, job, on=:ID, source="_merge",
                makeunique=true) ≅ outer_indicator
 
     @test name ≅ pre_join_name
@@ -566,7 +566,7 @@ end
                                 _left_1 = [1, 1, 1, missing, 1],
                                 _left_2 = ["both", "both", "both", "left_only", "right_only"])
 
-    @test outerjoin(name2, job2, on = :ID, source=:_left,
+    @test outerjoin(name2, job2, on=:ID, source=:_left,
                makeunique=true) ≅ outer_indicator
 end
 
@@ -667,16 +667,16 @@ end
     cname = copy(name)
     cjob = copy(job)
     push!(cname[!, 1], cname[1, 1])
-    @test_throws AssertionError innerjoin(cname, cjob, on = :ID)
+    @test_throws AssertionError innerjoin(cname, cjob, on=:ID)
 
     cname = copy(name)
     cjob = copy(job)
     push!(cjob[!, 1], cjob[1, 1])
-    @test_throws AssertionError innerjoin(cname, cjob, on = :ID)
+    @test_throws AssertionError innerjoin(cname, cjob, on=:ID)
 
     cname = copy(name)
     push!(DataFrames._columns(cname), cname[:, 1])
-    @test_throws AssertionError innerjoin(cname, cjob, on = :ID)
+    @test_throws AssertionError innerjoin(cname, cjob, on=:ID)
 end
 
 @testset "multi data frame join" begin
@@ -1095,12 +1095,21 @@ end
         insertcols!(df_semi3, 4, :id3 => df_semi3.id)
         insertcols!(df_anti3, 4, :id3 => df_anti3.id)
 
+        test_leftjoin! =
+            (any(nonunique(df2, :id)) ||
+             df_left ≅ sort(leftjoin!(copy(df1), df2, on=:id, matchmissing=:equal), [:x, :y])) &&
+            (any(nonunique(df2x, [:id, :id2])) ||
+             df_left2 ≅ sort(leftjoin!(copy(df1x), df2x, on=[:id, :id2], matchmissing=:equal), [:x, :y])) &&
+            (any(nonunique(df2x2, [:id, :id2, :id3])) ||
+             df_left3 ≅ sort(leftjoin!(copy(df1x2), df2x2, on=[:id, :id2, :id3], matchmissing=:equal), [:x, :y]))
+
         return df_inner ≅ sort(innerjoin(df1, df2, on=:id, matchmissing=:equal), [:x, :y]) &&
                df_inner2 ≅ sort(innerjoin(df1x, df2x, on=[:id, :id2], matchmissing=:equal), [:x, :y]) &&
                df_inner3 ≅ sort(innerjoin(df1x2, df2x2, on=[:id, :id2, :id3], matchmissing=:equal), [:x, :y]) &&
                df_left ≅ sort(leftjoin(df1, df2, on=:id, matchmissing=:equal), [:x, :y]) &&
                df_left2 ≅ sort(leftjoin(df1x, df2x, on=[:id, :id2], matchmissing=:equal), [:x, :y]) &&
                df_left3 ≅ sort(leftjoin(df1x2, df2x2, on=[:id, :id2, :id3], matchmissing=:equal), [:x, :y]) &&
+               test_leftjoin! &&
                df_right ≅ sort(rightjoin(df1, df2, on=:id, matchmissing=:equal), [:x, :y]) &&
                df_right2 ≅ sort(rightjoin(df1x, df2x, on=[:id, :id2], matchmissing=:equal), [:x, :y]) &&
                df_right3 ≅ sort(rightjoin(df1x2, df2x2, on=[:id, :id2, :id3], matchmissing=:equal), [:x, :y]) &&
@@ -1415,9 +1424,9 @@ end
                     b2 = rand(Union{Symbol, Missing}[:A, :B, :C], 5),
                     v2 = Vector{Union{Float64, Missing}}(randn(5)))
 
-    m1 = innerjoin(df1, df2, on = :a)
+    m1 = innerjoin(df1, df2, on=:a)
     @test m1[!, :a] == df1[!, :a][df1[!, :a] .<= 5] # preserves df1 order
-    m2 = outerjoin(df1, df2, on = :a)
+    m2 = outerjoin(df1, df2, on=:a)
     @test m2[!, :a] != df1[!, :a] # does not preserve df1 order
     @test m2[!, :b] != df1[!, :b] # does not preserve df1 order
     @test sort(m2[!, [:a, :b]]) == sort(df1[!, [:a, :b]]) # but keeps values
@@ -1434,16 +1443,16 @@ end
     df2 = DataFrame(a = Union{Int, Missing}[1, 2, 4],
                     c = Union{String, Missing}["New World", "Old World", "New World"])
 
-    m1 = innerjoin(df1, df2, on = :a)
+    m1 = innerjoin(df1, df2, on=:a)
     @test m1[!, :a] == [1, 2]
 
-    m2 = leftjoin(df1, df2, on = :a)
+    m2 = leftjoin(df1, df2, on=:a)
     @test m2[!, :a] == [1, 2, 3]
 
-    m3 = rightjoin(df1, df2, on = :a)
+    m3 = rightjoin(df1, df2, on=:a)
     @test m3[!, :a] == [1, 2, 4]
 
-    m4 = outerjoin(df1, df2, on = :a)
+    m4 = outerjoin(df1, df2, on=:a)
     @test m4[!, :a] == [1, 2, 3, 4]
 
     # test with missings (issue #185)
@@ -1455,13 +1464,13 @@ end
     df2[!, :A] = ["a", missing, "c"]
     df2[!, :C] = Union{Int, Missing}[1, 2, 4]
 
-    @test_throws ArgumentError innerjoin(df1, df2, on = :A)
-    m1 = innerjoin(df1, df2, on = :A, matchmissing=:equal)
+    @test_throws ArgumentError innerjoin(df1, df2, on=:A)
+    m1 = innerjoin(df1, df2, on=:A, matchmissing=:equal)
     @test size(m1) == (3, 3)
     @test m1[!, :A] ≅ ["a", "a", missing]
 
-    @test_throws ArgumentError outerjoin(df1, df2, on = :A)
-    m2 = outerjoin(df1, df2, on = :A, matchmissing=:equal)
+    @test_throws ArgumentError outerjoin(df1, df2, on=:A)
+    m2 = outerjoin(df1, df2, on=:A, matchmissing=:equal)
     @test size(m2) == (5, 3)
     @test m2[!, :A] ≅ ["a", "a", missing, "b", "c"]
 end
@@ -1476,12 +1485,12 @@ end
                     v2 = 1:6)
     df2[1, :a] = missing
 
-    m1 = innerjoin(df1, df2, on = [:a, :b], matchmissing=:equal)
+    m1 = innerjoin(df1, df2, on=[:a, :b], matchmissing=:equal)
     @test sort(m1) == sort(DataFrame(a=[:x, :x, :x, :x, :x, :y, :x, :x],
                                      b=[:A, :A, :A, :A, :B, :B, :A, :A],
                                      v1=[1, 1, 2, 2, 3, 4, 5, 5],
                                      v2=[3, 6, 3, 6, 4, 2, 3, 6]))
-    m2 = outerjoin(df1, df2, on = [:a, :b], matchmissing=:equal)
+    m2 = outerjoin(df1, df2, on=[:a, :b], matchmissing=:equal)
     @test sort(m2) ≅ sort(DataFrame(a=[:x, :x, :x, :x, :x, :y, :x, :x, :x, missing, :x],
                                     b=[:A, :A, :A, :A, :B, :B, :A, :A, :D, :A, :C],
                                     v1=[1, 1, 2, 2, 3, 4, 5, 5, 6, missing, missing],
@@ -1493,8 +1502,8 @@ end
     transform!(df1, :a => ByRow(collect) => AsTable)
     transform!(df2, :a => ByRow(collect) => AsTable)
 
-    m1 = innerjoin(df1, df2, on = :a, makeunique=true)
-    m2 = innerjoin(df1, df2, on = [:x1, :x2, :x3], makeunique=true)
+    m1 = innerjoin(df1, df2, on=:a, makeunique=true)
+    m2 = innerjoin(df1, df2, on=[:x1, :x2, :x3], makeunique=true)
     @test m1[!, :a] == m2[!, :a]
 end
 
@@ -1608,6 +1617,8 @@ end
     for name in names, job in jobs
         @test leftjoin(name, dropmissing(job, :ID), on=:ID, matchmissing=:equal) ≅
             leftjoin(name, job, on=:ID, matchmissing=:notequal)
+        @test leftjoin!(copy(name), dropmissing(unique(job, :ID), :ID), on=:ID, matchmissing=:equal) ≅
+            leftjoin!(copy(name), unique(job, :ID), on=:ID, matchmissing=:notequal)
         @test semijoin(name, dropmissing(job, :ID), on=:ID, matchmissing=:equal) ≅
             semijoin(name, job, on=:ID, matchmissing=:notequal)
         @test antijoin(name, dropmissing(job, :ID), on=:ID, matchmissing=:equal) ≅
@@ -1687,6 +1698,8 @@ end
     for name in names2, job in jobs2
         @test leftjoin(name, dropmissing(job, k), on=k, matchmissing=:equal) ≅
             leftjoin(name, job, on=k, matchmissing=:notequal)
+        @test leftjoin!(copy(name), dropmissing(unique(job, k), k), on=k, matchmissing=:equal) ≅
+            leftjoin!(copy(name), unique(job, k), on=k, matchmissing=:notequal)
         @test semijoin(name, dropmissing(job, k), on=k, matchmissing=:equal) ≅
             semijoin(name, job, on=k, matchmissing=:notequal)
         @test antijoin(name, dropmissing(job, k), on=k, matchmissing=:equal) ≅
@@ -1696,6 +1709,290 @@ end
         @test innerjoin(dropmissing(name, k), dropmissing(job, k), on=k, matchmissing=:equal) ≅
             innerjoin(name, job, on=k, matchmissing=:notequal)
     end
+end
+
+@testset "leftjoin!" begin
+    dfl = copy(name)
+    @test_throws ArgumentError leftjoin!(dfl, job, on=:ID)
+    @test isequal_coltyped(name, dfl)
+
+    df1 = DataFrame(A = 1, B = 2, C = 3)
+    df2 = DataFrame(A = 1, B = 2, D = 4)
+    @test leftjoin!(df1, df2, on=[:A, :B]) === df1
+    @test df1 == DataFrame(A = 1, B = 2, C = 3, D = 4)
+
+    simple_df1(len::Int) = DataFrame(A=allowmissing(1:len))
+    @test leftjoin!(simple_df1(0), simple_df1(0), on=:A) == simple_df1(0)
+    @test leftjoin!(simple_df1(2), simple_df1(0), on=:A) == simple_df1(2)
+
+    simple_df2(len::Int) = DataFrame(A=1:len)
+    @test leftjoin!(simple_df2(0), simple_df2(0), on=:A) ==  simple_df2(0)
+    @test leftjoin!(simple_df2(2), simple_df2(0), on=:A) ==  simple_df2(2)
+    @test leftjoin!(simple_df2(0), simple_df2(2), on=:A) ==  simple_df2(0)
+
+    df = DataFrame(Name = Union{String, Missing}["A", "B", "C"],
+                   Mass = [1.5, 2.2, 1.1])
+    df2 = DataFrame(Name = ["A", "B", "C", "A"],
+                    Quantity = [3, 3, 2, 4])
+    @test leftjoin!(df2, df, on=:Name) == DataFrame(Name = ["A", "B", "C", "A"],
+                                                    Quantity = [3, 3, 2, 4],
+                                                    Mass = [1.5, 2.2, 1.1, 1.5])
+
+    df1 = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
+    df2 = DataFrame(Any[[0, 1, 2, 3, 4], [0.0, 1.0, 2.0, 3.0, 4.0]], [:id, :fid])
+    l(on) = leftjoin!(copy(df1), df2, on=on, makeunique=true)
+    on = :id
+    @test l(on) ≅ DataFrame(id = [1, 3, 5],
+                            fid = [1, 3, 5],
+                            fid_1 = [1, 3, missing])
+    @test typeof.(eachcol(l(on))) ==
+        [Vector{Int}, Vector{Float64}, Vector{Union{Float64, Missing}}]
+    on = :fid
+    @test l(on) ≅ DataFrame(id = [1, 3, 5],
+                            fid = [1, 3, 5],
+                            id_1 = [1, 3, missing])
+    @test typeof.(eachcol(l(on))) == [Vector{Int}, Vector{Float64},
+                                     Vector{Union{Int, Missing}}]
+    on = [:id, :fid]
+    @test l(on) == DataFrame(id = [1, 3, 5], fid = [1, 3, 5])
+    @test typeof.(eachcol(l(on))) == [Vector{Int}, Vector{Float64}]
+
+    df1 = DataFrame(Any[CategoricalArray([1, 3, 5]),
+                        CategoricalArray([1.0, 3.0, 5.0])], [:id, :fid])
+    df2 = DataFrame(Any[CategoricalArray([0, 1, 2, 3, 4]),
+                        CategoricalArray([0.0, 1.0, 2.0, 3.0, 4.0])], [:id, :fid])
+    on = :id
+    @test l(on) ≅ DataFrame(id = [1, 3, 5],
+                            fid = [1, 3, 5],
+                            fid_1 = [1, 3, missing])
+    @test all(isa.(eachcol(l(on)),
+                   [CategoricalVector{T} for T in (Int, Float64, Union{Float64, Missing})]))
+    on = :fid
+    @test l(on) ≅ DataFrame(id = [1, 3, 5],
+                            fid = [1, 3, 5],
+                            id_1 = [1, 3, missing])
+    @test all(isa.(eachcol(l(on)),
+                   [CategoricalVector{T} for T in (Int, Float64, Union{Int, Missing})]))
+    on = [:id, :fid]
+    @test l(on) == DataFrame(id = [1, 3, 5],
+                             fid = [1, 3, 5])
+    @test all(isa.(eachcol(l(on)),
+                   [CategoricalVector{T} for T in (Int, Float64)]))
+
+    A = DataFrame(a = [1, 2, 3], b = ["a", "b", "c"])
+    B = DataFrame(b = ["a", "b", "c"], c = CategoricalVector(["a", "b", "b"]))
+    levels!(B.c, ["b", "a"])
+    @test levels(leftjoin!(copy(A), B, on=:b).c) == ["b", "a"]
+    A = DataFrame(a = [1, 2, 3, 4], b = CategoricalVector(["a", "b", "c", "d"]))
+    levels!(A.b, ["d", "c", "b", "a"])
+    B = DataFrame(b = CategoricalVector(["a", "b", "c"]), c = [5, 6, 7])
+    @test levels(leftjoin!(copy(A), B, on=:b).b) == ["d", "c", "b", "a"]
+    @test levels(leftjoin!(copy(B), A, on=:b).b) == ["a", "b", "c"]
+    A = DataFrame(a = [1, 2, 3, 4], b = CategoricalVector(["a", "b", "c", "d"]))
+    levels!(A.b, ["d", "c", "b", "a"])
+    B = DataFrame(b = ["a", "b", "c"], c = [5, 6, 7])
+    @test levels(leftjoin!(copy(A), B, on=:b).b) == ["d", "c", "b", "a"]
+    @test levels(leftjoin!(copy(B), A, on=:b).b) == ["a", "b", "c"]
+
+    left = DataFrame(id = 1:7, sid = string.(1:7))
+    right = DataFrame(ID = 3:10, SID = string.(3:10))
+    @test leftjoin!(copy(left), right, on=:id => :ID) ≅
+        DataFrame(id = 1:7, sid = string.(1:7),
+                  SID = [missing, missing, string.(3:7)...])
+    @test leftjoin!(copy(left), right, on=[:id => :ID]) ≅
+        DataFrame(id = 1:7, sid = string.(1:7),
+                  SID = [missing, missing, string.(3:7)...])
+    @test leftjoin!(copy(left), right, on=[:id => :ID, :sid => :SID]) ==
+        DataFrame(id = 1:7, sid = string.(1:7))
+    @test_throws ArgumentError leftjoin!(left, right, on=(:id, :ID))
+
+    ldf = DataFrame(a=Any[1:7;], b=[1:7;])
+    rdf = DataFrame(a=Any[3:10;], b=[3:10;])
+    @test leftjoin!(copy(ldf), rdf, on=[:a, :b]) ≅ DataFrame(a=1:7, b=1:7)
+    @test eltype.(eachcol(leftjoin!(copy(ldf), rdf, on=[:a, :b]))) == [Any, Int]
+    @test leftjoin!(copy(ldf), rdf, on=:b, makeunique=true) ≅
+        DataFrame(a=1:7, b=1:7, a_1=[missing; missing; 3:7])
+    @test eltype.(eachcol(leftjoin!(copy(ldf), rdf, on=:b, makeunique=true))) == [Any, Int, Any]
+
+    ldf = DataFrame(a=1:3, b=categorical(["a", "b", "c"]))
+    rdf = DataFrame(a=4:5, b=categorical(["d", "e"]))
+    nl = size(ldf, 1)
+    nr = size(rdf, 1)
+    CS = eltype(ldf.b)
+    @test leftjoin!(copy(ldf), rdf, on=[:a, :b]) ≅ DataFrame(a=ldf.a, b=ldf.b)
+    @test eltype.(eachcol(leftjoin!(copy(ldf), rdf, on=[:a, :b]))) == [Int, CS]
+    @test leftjoin!(copy(ldf), rdf, on=:a, makeunique=true) ≅
+        DataFrame(a=ldf.a, b=ldf.b, b_1=similar_missing(rdf.b, nl))
+    @test eltype.(eachcol(leftjoin!(copy(ldf), rdf, on=:a, makeunique=true))) ==
+        [Int, CS, Union{CS, Missing}]
+    @test leftjoin!(copy(ldf), rdf, on=:b, makeunique=true) ≅
+        DataFrame(a=ldf.a, b=ldf.b, a_1=fill(missing, nl))
+    @test eltype.(eachcol(leftjoin!(copy(ldf), rdf, on=:b, makeunique=true))) ==
+        [Int, CS, Union{Int, Missing}]
+
+    namedf = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+    jobdf = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+    @test leftjoin!(namedf, jobdf, on=:ID) ≅
+        DataFrame(ID = [1, 2, 3],
+                    Name = ["John Doe", "Jane Doe", "Joe Blogs"],
+                    Job = ["Lawyer", "Doctor", missing])
+    jobdf2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+    @test leftjoin!(namedf, jobdf2, on=:ID => :identifier, makeunique=true, source=:source) ≅
+        DataFrame(ID = [1, 2, 3],
+                    Name = ["John Doe", "Jane Doe", "Joe Blogs"],
+                    Job = ["Lawyer", "Doctor", missing],
+                    Job_1 = ["Lawyer", "Doctor", missing],
+                    source = ["both", "both", "left_only"])
+
+    jobdf = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+    for special in [missing, NaN, -0.0]
+        name_w_special = DataFrame(ID = [1, 2, 3, special],
+                                   Name = ["John Doe", "Jane Doe", "Joe Blogs", "Maria Tester"])
+        @test_throws ArgumentError leftjoin!(name_w_special, jobdf, on=:ID)
+    end
+    for special in [missing, 0.0]
+        name_w_special = DataFrame(ID = [1, 2, 3, special],
+                                   Name = ["John Doe", "Jane Doe", "Joe Blogs", "Maria Tester"])
+        @test leftjoin!(copy(name_w_special), jobdf, on=:ID, matchmissing=:equal) ≅
+              hcat(name_w_special, DataFrame(Job=["Lawyer", "Doctor", missing, missing]))
+        jobdf2 = DataFrame(ID = [1, 2, special], Job = ["Lawyer", "Doctor", "Farmer"])
+        @test leftjoin!(copy(name_w_special), jobdf2, on=:ID, matchmissing=:equal) ≅
+              hcat(name_w_special, DataFrame(Job=["Lawyer", "Doctor", missing, "Farmer"]))
+    end
+    for special in [NaN, -0.0]
+        name_w_special = DataFrame(ID = categorical([1, 2, 3, special]),
+                                   Name = ["John Doe", "Jane Doe", "Joe Blogs", "Maria Tester"])
+        @test leftjoin!(copy(name_w_special),
+                        transform(jobdf, :ID => categorical => :ID), on=:ID) ≅
+              hcat(name_w_special, DataFrame(Job=["Lawyer", "Doctor", missing, missing]))
+    end
+
+    name_w_zeros = DataFrame(ID = categorical([1, 2, 3, 0.0, -0.0]),
+                             Name = ["John Doe", "Jane Doe",
+                                     "Joe Blogs", "Maria Tester",
+                                     "Jill Jillerson"])
+    name_w_zeros2 = DataFrame(ID = categorical([1, 2, 3, 0.0, -0.0]),
+                              Name = ["John Doe", "Jane Doe",
+                                      "Joe Blogs", "Maria Tester",
+                                      "Jill Jillerson"],
+                              Name_1 = ["John Doe", "Jane Doe",
+                                        "Joe Blogs", "Maria Tester",
+                                        "Jill Jillerson"])
+    @test leftjoin!(copy(name_w_zeros), name_w_zeros, on=:ID,
+                    makeunique=true) ≅ name_w_zeros2
+
+    name_multi = DataFrame(ID1 = [1, 1, 2],
+                           ID2 = ["a", "b", "a"],
+                           Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+    job_multi = DataFrame(ID1 = [1, 2, 2, 4],
+                          ID2 = ["a", "b", "b", "c"],
+                          Job = ["Lawyer", "Doctor", "Florist", "Farmer"])
+    # job_multi has non-offending duplicates
+    @test leftjoin!(copy(name_multi), job_multi, on=[:ID1, :ID2]) ≅
+          hcat(name_multi, DataFrame(Job=["Lawyer", missing, missing]))
+    @test leftjoin!(copy(job_multi), name_multi, on=[:ID1, :ID2]) ≅
+          hcat(job_multi, DataFrame(Name=["John Doe", missing, missing, missing]))
+
+    namedf = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+    jobdf = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+    cname = copy(namedf)
+    cjob = copy(jobdf)
+    push!(cname[!, 1], cname[1, 1])
+    @test_throws AssertionError innerjoin(cname, cjob, on=:ID)
+    cname = copy(namedf)
+    push!(cjob[!, 1], cjob[1, 1])
+    @test_throws AssertionError innerjoin(cname, cjob, on=:ID)
+    cjob = copy(jobdf)
+    push!(DataFrames._columns(cname), cname[:, 1])
+    @test_throws AssertionError innerjoin(cname, cjob, on=:ID)
+
+    df1 = DataFrame(id=[1, 2, 3], id2=[11, 12, 13], x=[1, 2, 3])
+    df2 = DataFrame(id=[1, 2, 4], ID2=[11, 12, 14], y=[1, 2, 4])
+    @test leftjoin!(copy(df1), df2, on=[:id, :id2=>:ID2]) ≅
+          hcat(df1, DataFrame(y=[1, 2, missing]))
+    @test leftjoin!(copy(df1), df2, on=[:id2=>:ID2, :id]) ≅
+          hcat(df1, DataFrame(y=[1, 2, missing]))
+    @test leftjoin!(copy(df1), df2, on=[:id=>:id, :id2=>:ID2]) ≅
+          hcat(df1, DataFrame(y=[1, 2, missing]))
+    @test leftjoin!(copy(df1), df2, on=[:id2=>:ID2, :id=>:id]) ≅
+          hcat(df1, DataFrame(y=[1, 2, missing]))
+
+    df = DataFrame(a=1)
+    @test_throws ArgumentError leftjoin!(copy(df), df, on=:a, source=:a)
+    @test leftjoin!(copy(df), df, on=:a, source=:a, makeunique=true) == DataFrame(a=1, a_1="both")
+    @test leftjoin!(copy(df), df, on=:a, source="_left") == DataFrame(a=1, _left="both")
+    @test leftjoin!(copy(df), df, on=:a, source="_right") == DataFrame(a=1, _right="both")
+    df = DataFrame(_left=1)
+    @test leftjoin!(copy(df), df, on=:_left, source="_leftX") == DataFrame(_left=1, _leftX="both")
+    df = DataFrame(_right=1)
+    @test leftjoin!(copy(df), df, on=:_right, source="_rightX") == DataFrame(_right=1, _rightX="both")
+
+    Random.seed!(1234)
+    for i in 5:15, j in 5:15
+        df1 = DataFrame(id=rand(1:10, i), x=1:i)
+        df2 = unique(DataFrame(id=rand(1:10, j), y=1:j), :id)
+        @test leftjoin!(copy(df1), df2, on=:id, source=:ind) ≅
+              sort!(leftjoin(df1, df2, on=:id, source=:ind), :x)
+    end
+
+    @test isequal_coltyped(leftjoin!(DataFrame(id=[]), DataFrame(id=[]), on=:id),
+                           DataFrame(id=[]))
+    @test isequal_coltyped(leftjoin!(DataFrame(id=[]), DataFrame(id=[1, 2, 3]), on=:id),
+                           DataFrame(id=[]))
+    @test isequal_coltyped(leftjoin!(DataFrame(id=[1, 2, 3]), DataFrame(id=[]), on=:id),
+                           DataFrame(id=[1, 2, 3]))
+    @test isequal_coltyped(leftjoin!(DataFrame(id=[4, 5, 6]), DataFrame(id=[1, 2, 3]), on=:id),
+                           DataFrame(id=Int[4, 5, 6]))
+    @test isequal_coltyped(leftjoin!(DataFrame(id=[1, 2, 3]), DataFrame(id=[4, 5, 6]), on=:id),
+                           DataFrame(id=Int[1, 2, 3]))
+    @test isequal_coltyped(leftjoin!(DataFrame(id=[missing]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
+                           DataFrame(id=[missing]))
+    @test isequal_coltyped(leftjoin!(DataFrame(id=Missing[]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
+                           DataFrame(id=Missing[]))
+    @test isequal_coltyped(leftjoin!(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[1]), on=:id, matchmissing=:equal),
+                           DataFrame(id=Union{Int, Missing}[]))
+    @test isequal_coltyped(leftjoin!(DataFrame(id=Union{Int, Missing}[]), DataFrame(id=[2, 1, 2]), on=:id, matchmissing=:equal),
+                           DataFrame(id=Union{Int, Missing}[]))
+    @test isequal_coltyped(leftjoin!(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1]),
+                                    on=:id, matchmissing=:equal) ,
+                           DataFrame(id=Union{Int, Missing}[missing]))
+    @test isequal_coltyped(leftjoin!(DataFrame(id=[missing]), DataFrame(id=[1, missing]),
+                                    on=:id, matchmissing=:equal),
+                           DataFrame(id=[missing]))
+    @test isequal_coltyped(leftjoin!(DataFrame(id=Union{Int, Missing}[missing]), DataFrame(id=[1, missing]),
+                                    on=:id, matchmissing=:equal),
+                           DataFrame(id=Union{Int, Missing}[missing]))
+    @test isequal_coltyped(leftjoin!(DataFrame(id=[typemin(Int) + 1, typemin(Int)]), DataFrame(id=[typemin(Int)]), on=:id),
+                           DataFrame(id=[typemin(Int) + 1, typemin(Int)]))
+    @test isequal_coltyped(leftjoin!(DataFrame(id=[typemax(Int), typemax(Int) - 1]), DataFrame(id=[typemax(Int)]), on=:id),
+                           DataFrame(id=[typemax(Int), typemax(Int) - 1]))
+    @test isequal_coltyped(leftjoin!(DataFrame(id=[2000, 2, 100]), DataFrame(id=[2000, 1, 100]), on=:id),
+                           DataFrame(id=[2000, 2, 100]))
+
+    @test_throws ArgumentError leftjoin!(DataFrame(), DataFrame())
+    @test_throws ArgumentError leftjoin!(DataFrame(), DataFrame(), on=Symbol[])
+    @test_throws ArgumentError leftjoin!(DataFrame(a=1, b=2), DataFrame(a=1, b=2), on=:a)
+
+    @test_throws ArgumentError leftjoin!(view(DataFrame(a=1, b=2), :, 1:2), DataFrame(a=1, c=2), on=:a)
+
+    df1 = DataFrame(id=1:5, x=1:5)
+    df2 = DataFrame(id=1:5, y=1:5)
+    df1v = view(df1, [3, 2], :)
+    @test leftjoin!(df1v, df2, on=:id) == DataFrame(id=[3, 2], x=[3, 2], y=[3, 2])
+    @test df1 ≅ DataFrame(id=1:5, x=1:5, y=[missing, 2, 3, missing, missing])
+
+    df1 = DataFrame(id=1, x=1:5)
+    df2 = DataFrame(id=1:5, y=1:5)
+    df1v = view(df1, [3, 2], :)
+    @test leftjoin!(df1v, df2, on=:id) == DataFrame(id=[1, 1], x=[3, 2], y=[1, 1])
+    @test df1 ≅ DataFrame(id=1, x=1:5, y=[missing, 1, 1, missing, missing])
+
+    df1 = DataFrame(id=1:5, x=1:5)
+    df2 = DataFrame(id=1:5, y=1:5)
+    df1v = view(df1, 1:0, :)
+    @test leftjoin!(df1v, df2, on=:id) == DataFrame(id=[], x=[], y=[])
+    @test df1 ≅ DataFrame(id=1:5, x=1:5, y=[missing, missing, missing, missing, missing])
+    @test df1.y isa Vector{Union{Int, Missing}}
 end
 
 end # module

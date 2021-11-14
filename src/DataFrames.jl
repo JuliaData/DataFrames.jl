@@ -21,6 +21,8 @@ import DataAPI,
        DataAPI.semijoin,
        DataAPI.antijoin,
        DataAPI.crossjoin,
+       DataAPI.nrow,
+       DataAPI.ncol,
        Tables,
        Tables.columnindex,
        Future.copy!
@@ -53,6 +55,7 @@ export AbstractDataFrame,
        innerjoin,
        insertcols!,
        leftjoin,
+       leftjoin!,
        mapcols,
        mapcols!,
        ncol,
@@ -121,6 +124,12 @@ else
     end
 end
 
+if isdefined(Base, :ComposedFunction) # Julia >= 1.6.0-DEV.85
+    using Base: ComposedFunction
+else
+    using Compat: ComposedFunction
+end
+
 include("other/utils.jl")
 include("other/index.jl")
 
@@ -134,12 +143,14 @@ include("groupeddataframe/utils.jl")
 include("other/broadcasting.jl")
 
 include("abstractdataframe/selection.jl")
+include("abstractdataframe/selectionfast.jl")
 include("abstractdataframe/subset.jl")
 include("abstractdataframe/iteration.jl")
 include("abstractdataframe/reshape.jl")
 
 include("join/composer.jl")
 include("join/core.jl")
+include("join/inplace.jl")
 
 include("groupeddataframe/splitapplycombine.jl")
 include("groupeddataframe/callprocessing.jl")

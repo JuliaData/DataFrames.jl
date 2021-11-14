@@ -45,7 +45,11 @@ const TRANSFORMATION_COMMON_RULES =
        `function` returns a single value or a vector; the generated name is created by
        concatenating source column name and `function` name by default (see examples below).
     3. a `cols => function => target_cols` form additionally explicitly specifying
-       the target column or columns.
+       the target column or columns, which must be a single name (as a `Symbol` or a string),
+       a vector of names or `AsTable`. Additionally it can be a `Function` which
+       takes a string or a vector of strings as an argument containing names of columns
+       selected by `cols`, and returns the target columns names (all accepted types
+       except `AsTable` are allowed).
     4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
        must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
     5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
@@ -62,6 +66,12 @@ const TRANSFORMATION_COMMON_RULES =
     convenience form `nrow => target_cols` it is always interpreted as
     `cols => function`. In particular the following expression `function => target_cols`
     is not a valid transformation specification.
+
+    Note! If `cols` or `target_cols` are one of `All`, `Cols`, `Between`, or `Not`,
+    broadcasting using `.=>` is supported and is equivalent to broadcasting
+    the result of `names(df, cols)` or `names(df, target_cols)`.
+    This behaves as if broadcasting happened after replacing the selector
+    with selected column names within the data frame scope.
 
     All functions have two types of signatures. One of them takes a `GroupedDataFrame`
     as the first argument and an arbitrary number of transformations described above
@@ -162,7 +172,118 @@ const TRANSFORMATION_COMMON_RULES =
     variables (i.e. they should be pure), or use locks to control parallel accesses.
     In the future, parallelism may be extended to other cases, so this requirement
     also holds for `DataFrame` inputs.
+
+    In order to improve the performance of the operations some transformations
+    invoke optimized implementation, see [`table_transformation`](@ref) for details.
     """
+
+broadcast_pair(df::AbstractDataFrame, @nospecialize(p::Any)) = p
+
+function broadcast_pair(df::AbstractDataFrame, @nospecialize(p::Pair))
+    src, second = p
+    src_broadcast = src isa Union{InvertedIndices.BroadcastedInvertedIndex,
+                                  DataAPI.BroadcastedSelector}
+    second_broadcast = second isa Union{InvertedIndices.BroadcastedInvertedIndex,
+                                        DataAPI.BroadcastedSelector}
+    if second isa Pair
+        fun, dst = second
+        dst_broadcast = dst isa Union{InvertedIndices.BroadcastedInvertedIndex,
+                                      DataAPI.BroadcastedSelector}
+        if src_broadcast || dst_broadcast
+            new_src = src_broadcast ? names(df, src.sel) : src
+            new_dst = dst_broadcast ? names(df, dst.sel) : dst
+            new_p = new_src .=> fun .=> new_dst
+            return isempty(new_p) ? [] : new_p
+        else
+            return p
+        end
+    else
+        if src_broadcast || second_broadcast
+            new_src = src_broadcast ? names(df, src.sel) : src
+            new_second = second_broadcast ? names(df, second.sel) : second
+            new_p = new_src .=> new_second
+            return isempty(new_p) ? [] : new_p
+        else
+            return p
+        end
+    end
+end
+
+# this is needed in broadcasting when one of dimensions has length 0
+# as then broadcasting produces Matrix{Any} rather than Matrix{<:Pair}
+broadcast_pair(df::AbstractDataFrame, @nospecialize(p::AbstractMatrix)) =
+    isempty(p) ? [] : p
+
+function broadcast_pair(df::AbstractDataFrame, @nospecialize(p::AbstractVecOrMat{<:Pair}))
+    isempty(p) && return []
+    need_broadcast = false
+
+    src = first.(p)
+    first_src = first(src)
+    if first_src isa Union{InvertedIndices.BroadcastedInvertedIndex,
+                           DataAPI.BroadcastedSelector}
+        if any(!=(first_src), src)
+            throw(ArgumentError("when broadcasting column selector it must " *
+                                "have a constant value"))
+        end
+        need_broadcast = true
+        new_names = names(df, first_src.sel)
+        if !(length(new_names) == size(p, 1) || size(p, 1) == 1)
+            throw(ArgumentError("broadcasted dimension does not match the " *
+                                "number of selected columns"))
+        end
+        new_src = new_names
+    else
+        new_src = src
+    end
+
+    second = last.(p)
+    first_second = first(second)
+    if first_second isa Union{InvertedIndices.BroadcastedInvertedIndex,
+                              DataAPI.BroadcastedSelector}
+        if any(!=(first_second), second)
+            throw(ArgumentError("when using broadcasted column selector it " *
+                                "must have a constant value"))
+        end
+        need_broadcast = true
+        new_names = names(df, first_second.sel)
+        if !(length(new_names) == size(p, 1) || size(p, 1) == 1)
+            throw(ArgumentError("broadcasted dimension does not match the " *
+                                "number of selected columns"))
+        end
+        new_second = new_names
+    else
+        if first_second isa Pair
+            fun, dst = first_second
+            if dst isa Union{InvertedIndices.BroadcastedInvertedIndex,
+                             DataAPI.BroadcastedSelector}
+                if !all(x -> x isa Pair && last(x) == dst, second)
+                    throw(ArgumentError("when using broadcasted column selector " *
+                                        "it must have a constant value"))
+                end
+                need_broadcast = true
+                new_names = names(df, dst.sel)
+                if !(length(new_names) == size(p, 1) || size(p, 1) == 1)
+                    throw(ArgumentError("broadcasted dimension does not match the " *
+                                        "number of selected columns"))
+                end
+                new_dst = new_names
+                new_second = first.(second) .=> new_dst
+            else
+                new_second = second
+            end
+        else
+            new_second = second
+        end
+    end
+
+    if need_broadcast
+        new_p = new_src .=> new_second
+        return isempty(new_p) ? [] : new_p
+    else
+        return p
+    end
+end
 
 """
     ByRow
@@ -181,6 +302,10 @@ end
 
 # add a method to funname defined in other/utils.jl
 funname(row::ByRow) = funname(row.fun)
+
+make_pair_concrete(@nospecialize(x::Pair)) =
+    make_pair_concrete(x.first) => make_pair_concrete(x.second)
+make_pair_concrete(@nospecialize(x)) = x
 
 normalize_selection(idx::AbstractIndex, @nospecialize(sel), renamecols::Bool) =
     try
@@ -240,7 +365,8 @@ function normalize_selection(idx::AbstractIndex,
                                                      <:Pair{<:Base.Callable,
                                                             <:Union{Symbol, AbstractString, DataType,
                                                                     AbstractVector{Symbol},
-                                                                    AbstractVector{<:AbstractString}}}}),
+                                                                    AbstractVector{<:AbstractString},
+                                                                    Function}}}),
                              renamecols::Bool)
     lls = last(last(sel))
 
@@ -272,6 +398,20 @@ function normalize_selection(idx::AbstractIndex,
             end
     end
 
+    if lls isa Function
+        fun_colnames = _names(idx)[c]
+        # if AsTable was used as source we always treat it as multicolumn selector
+        if wanttable && fun_colnames isa Symbol
+            fun_colnames = [fun_colnames]
+        end
+        lls = lls(string.(fun_colnames))
+        if !(lls isa Union{Symbol, AbstractString, AbstractVector{Symbol},
+                           AbstractVector{<:AbstractString}})
+            throw(ArgumentError("function producing target column names must " *
+                                "return a Symbol, a string, a vector of Symbols " *
+                                "or a vector of strings"))
+        end
+    end
     if lls isa AbstractString
         combine_target_col = Symbol(lls)
     elseif lls isa AbstractVector{<:AbstractString}
@@ -377,22 +517,44 @@ _transformation_helper(df::AbstractDataFrame, col_idx::Int, (fun,)::Ref{Any}) =
 _empty_astable_helper(fun, len) = [fun(NamedTuple()) for _ in 1:len]
 
 function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,)::Ref{Any})
-    tbl = Tables.columntable(select(df, col_idx.cols, copycols=false))
-    if isempty(tbl) && fun isa ByRow
-        return _empty_astable_helper(fun.fun, nrow(df))
+    df_sel = select(df, col_idx.cols, copycols=false)
+    if ncol(df_sel) == 0
+        if fun isa ByRow
+            # work around fact that length∘skipmissing is not supported in Julia Base yet
+            if fun === ByRow(length∘skipmissing)
+                return _empty_astable_helper(length, nrow(df))
+            else
+                return _empty_astable_helper(fun.fun, nrow(df))
+            end
+        else
+            return fun(NamedTuple())
+        end
     else
-        return fun(tbl)
+        return table_transformation(df_sel, fun)
     end
 end
 
 _empty_selector_helper(fun, len) = [fun() for _ in 1:len]
 
 function _transformation_helper(df::AbstractDataFrame, col_idx::AbstractVector{Int}, (fun,)::Ref{Any})
-    if isempty(col_idx) && fun isa ByRow
-        return _empty_selector_helper(fun.fun, nrow(df))
+    if isempty(col_idx)
+        if fun isa ByRow
+            return _empty_selector_helper(fun.fun, nrow(df))
+        else
+            return fun()
+        end
     else
         cdf = eachcol(df)
-        return fun(map(c -> cdf[c], col_idx)...)
+        cols = map(c -> cdf[c], col_idx)
+        if (fun === +) || fun === ByRow(+) # removing parentheses leads to a parsing error
+            return reduce(+, cols)
+        elseif fun === ByRow(min)
+            return _minmax_row_fast(cols, min)
+        elseif fun === ByRow(max)
+            return _minmax_row_fast(cols, max)
+        else
+            return fun(cols...)
+        end
     end
 end
 
@@ -774,7 +936,7 @@ julia> select(df, :, [:a, :b] => (a, b) -> a .+ b .- sum(b)/length(b))
    2 │     2      5           2.0
    3 │     3      6           4.0
 
-julia> select(df, names(df) .=> [minimum maximum])
+julia> select(df, All() .=> [minimum maximum])
 3×4 DataFrame
  Row │ a_minimum  b_minimum  a_maximum  b_maximum
      │ Int64      Int64      Int64      Int64
@@ -786,6 +948,15 @@ julia> select(df, names(df) .=> [minimum maximum])
 julia> using Statistics
 
 julia> select(df, AsTable(:) => ByRow(mean), renamecols=false)
+3×1 DataFrame
+ Row │ a_b
+     │ Float64
+─────┼─────────
+   1 │     2.5
+   2 │     3.5
+   3 │     4.5
+
+julia> select(df, AsTable(:) => ByRow(mean) => x -> join(x, "_"))
 3×1 DataFrame
  Row │ a_b
      │ Float64
@@ -955,10 +1126,10 @@ julia> select(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
    7 │     1      2      7      9
    8 │     2      1      8      9
 ```
-
 """
 select(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true) =
-    manipulate(df, args..., copycols=copycols, keeprows=true, renamecols=renamecols)
+    manipulate(df, map(x -> broadcast_pair(df, x), args)...,
+               copycols=copycols, keeprows=true, renamecols=renamecols)
 
 function select(@nospecialize(arg::Base.Callable), df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
@@ -1103,7 +1274,7 @@ julia> combine(df, :, [:a, :b] => (a, b) -> a .+ b .- sum(b)/length(b))
    2 │     2      5           2.0
    3 │     3      6           4.0
 
-julia> combine(df, names(df) .=> [minimum maximum])
+julia> combine(df, All() .=> [minimum maximum])
 1×4 DataFrame
  Row │ a_minimum  b_minimum  a_maximum  b_maximum
      │ Int64      Int64      Int64      Int64
@@ -1113,6 +1284,15 @@ julia> combine(df, names(df) .=> [minimum maximum])
 julia> using Statistics
 
 julia> combine(df, AsTable(:) => ByRow(mean), renamecols=false)
+3×1 DataFrame
+ Row │ a_b
+     │ Float64
+─────┼─────────
+   1 │     2.5
+   2 │     3.5
+   3 │     4.5
+
+julia> combine(df, AsTable(:) => ByRow(mean) => x -> join(x, "_"))
 3×1 DataFrame
  Row │ a_b
      │ Float64
@@ -1305,7 +1485,8 @@ julia> combine(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
 ```
 """
 combine(df::AbstractDataFrame, @nospecialize(args...); renamecols::Bool=true) =
-    manipulate(df, args..., copycols=true, keeprows=false, renamecols=renamecols)
+    manipulate(df, map(x -> broadcast_pair(df, x), args)...,
+               copycols=true, keeprows=false, renamecols=renamecols)
 
 function combine(@nospecialize(arg::Base.Callable), df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
@@ -1328,7 +1509,7 @@ function manipulate(df::DataFrame, @nospecialize(cs...); copycols::Bool, keeprow
             push!(cs_vec, v)
         end
     end
-    return _manipulate(df, Any[normalize_selection(index(df), c, renamecols) for c in cs_vec],
+    return _manipulate(df, Any[normalize_selection(index(df), make_pair_concrete(c), renamecols) for c in cs_vec],
                     copycols, keeprows)
 end
 
@@ -1412,13 +1593,14 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
     if copycols
         cs_vec = []
         for v in args
-            if v isa AbstractVector{<:Pair}
+            if v isa AbstractVecOrMat{<:Pair}
                 append!(cs_vec, v)
             else
                 push!(cs_vec, v)
             end
         end
-        return _manipulate(dfv, Any[normalize_selection(index(dfv), c, renamecols) for c in cs_vec],
+        return _manipulate(dfv, Any[normalize_selection(index(dfv),
+                                    make_pair_concrete(c), renamecols) for c in cs_vec],
                            true, keeprows)
     else
         # we do not support transformations here
@@ -1436,7 +1618,7 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
                     push!(seen_single_column, ind_idx)
                 end
             else
-                newind = normalize_selection(index(dfv), ind, renamecols)
+                newind = normalize_selection(index(dfv), make_pair_concrete(ind), renamecols)
                 if newind isa Pair
                     throw(ArgumentError("transforming and renaming columns of a " *
                                         "SubDataFrame is not allowed when `copycols=false`"))
