@@ -2109,6 +2109,14 @@ end
         @test d[:, string(a)] == [1]
         @test d[:, Symbol(a)] == [1]
     end
+
+    d = DataFrame("\u00B7" => 1)
+    a = "\u0387"
+    @test_throws ArgumentError d[:, string(a)]
+    d = DataFrame("\u0387" => 1)
+    a = "\u00B7"
+    @test_throws ArgumentError d[:, string(a)]
+
 end
 
 @testset "haskey method error" begin
