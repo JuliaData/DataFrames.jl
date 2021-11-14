@@ -1004,8 +1004,8 @@ end
 Delete rows specified by `inds` from a `DataFrame` `df` in place and return it.
 
 Internally `deleteat!` is called for all columns so `inds` must be:
-a vector of sorted and unique integers, a boolean vector, an integer.
-Additionally `Not` any valid selector is accepted.
+a vector of sorted and unique integers, a boolean vector, an integer,
+or `Not` wrapping any valid selector.
 
 # Examples
 ```jldoctest
