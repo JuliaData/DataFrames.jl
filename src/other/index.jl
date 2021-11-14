@@ -340,37 +340,37 @@ function normalized_match_test(l::Dict{Symbol, Int}, idx::Symbol)
             if !idx_ok
                 if x_ok
                     throw(ArgumentError("column name :$idx not found in the " *
-                                "data frame. However there is a match of " *
-                                "Unicode normalized passed column name with " *
-                                "column name found in the data frame. " *
-                                "You can use the `Unicode.normalize` " *
-                                "function to normailize the passed column name."))
+                                        "data frame. However there is a match of " *
+                                        "Unicode normalized passed column name with " *
+                                        "column name found in the data frame. " *
+                                        "You can use the `Unicode.normalize` " *
+                                        "function to normailize the passed column name."))
                 else
                     throw(ArgumentError("column name :$idx not found in the " *
-                                "data frame. However there is a match of " *
-                                "Unicode normalized passed column name with " *
-                                "a normalized column name found in the " *
-                                "data frame. In the call both passed column and " *
-                                "matching column found in the data frame were not " *
-                                "normalized. It is recommended to use " *
-                                "normalized column names and then refer to them " *
-                                "using normalized names to avoid ambiguity. " *
-                                "In order to normalize column names in " *
-                                "an existing data frame `df` do " *
-                                "`using Unicode; rename!(Unicode.normalize, df)`. " *
-                                "Similarly, you can use the `Unicode.normalize` " *
-                                "function to normailize the passed column name."))
+                                        "data frame. However there is a match of " *
+                                        "Unicode normalized passed column name with " *
+                                        "a normalized column name found in the " *
+                                        "data frame. In the call both passed column and " *
+                                        "matching column found in the data frame were not " *
+                                        "normalized. It is recommended to use " *
+                                        "normalized column names and then refer to them " *
+                                        "using normalized names to avoid ambiguity. " *
+                                        "In order to normalize column names in " *
+                                        "an existing data frame `df` do " *
+                                        "`using Unicode; rename!(Unicode.normalize, df)`. " *
+                                        "Similarly, you can use the `Unicode.normalize` " *
+                                        "function to normailize the passed column name."))
                 end
             else
                 @assert !x_ok
                 throw(ArgumentError("column name :$idx not found in the " *
-                    "data frame. However there is a match of " *
-                    "passed column name with a normalized column name " *
-                    "found in the data frame. It is recommended to use " *
-                    "normalized column names to avoid ambiguity. " *
-                    "In order to normalize column names in " *
-                    "an existing data frame `df` do " *
-                    "`using Unicode; rename!(Unicode.normalize, df)`."))
+                                    "data frame. However there is a match of " *
+                                    "passed column name with a normalized column name " *
+                                    "found in the data frame. It is recommended to use " *
+                                    "normalized column names to avoid ambiguity. " *
+                                    "In order to normalize column names in " *
+                                    "an existing data frame `df` do " *
+                                    "`using Unicode; rename!(Unicode.normalize, df)`."))
             end
         end
     end
