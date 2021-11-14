@@ -326,7 +326,7 @@ function _norm_eq(a1::String, a2::String, idx::Symbol)
         end
     end
     throw(AssertionError("Unreachable reached. Please report issue to " *
-                         "DataFrames.jl repository on GitHub"))
+                         "DataFrames.jl repository on GitHub."))
 end
 
 function normalized_match_test(l::Dict{Symbol, Int}, idx::Symbol)
