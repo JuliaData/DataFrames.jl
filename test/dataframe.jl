@@ -616,9 +616,12 @@ end
 
     df = DataFrame(a=[])
     @test_throws BoundsError deleteat!(df, 10)
-    # the exception type changed between Julia 1.0.2 and Julia 1.1
-    # so we use their supertype below
-    @test_throws Exception deleteat!(df, [10])
+
+    if VERSION >= v"1.1"
+        @test_throws BoundsError deleteat!(df, [10])
+    else
+        @test_throws InexactError deleteat!(df, [10])
+    end
 
     df = DataFrame(a=[1, 2, 3], b=[3, 2, 1])
     @test_throws ArgumentError deleteat!(df, [3, 2])
