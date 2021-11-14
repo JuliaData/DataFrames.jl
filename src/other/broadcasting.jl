@@ -140,7 +140,7 @@ if isdefined(Base, :dotgetproperty)
             # TODO: remove the deprecation in DataFrames.jl 1.4 release
             Base.depwarn("In the 1.4 release of DataFrames.jl this operation will allocate a new column " *
                          "instead of performing an in-place assignment. "
-                         "To perform an in-place assignment `df[:, col] .= ...` instead.",
+                         "To perform an in-place assignment use `df[:, col] .= ...` instead.",
                          :dotgetproperty)
             return getproperty(df, col)
         end
