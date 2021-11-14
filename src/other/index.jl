@@ -313,6 +313,12 @@ function _norm_eq(a1::String, a2::String, idx::Symbol)
             refc1 = get(_julia_charmap, c1, c1)
             refc2 = get(_julia_charmap, c2, c2)
             @assert refc1 == refc2
+            if VERSION >= v"1.8-"
+                suffix = "use the Unicode.normalize function setting its " *
+                         "chartransform keyword argument to Unicode.julia_chartransform."
+            else
+                suffix = "use only $refc1 (codepoint: $(UInt32(refc1))) in column names."
+            end
             throw(ArgumentError("column name :$idx not found in the " *
                                 "data frame. However there is a similar " *
                                 "column name in the data frame where character $c2 " *
@@ -320,8 +326,7 @@ function _norm_eq(a1::String, a2::String, idx::Symbol)
                                 "(codepoint: $(UInt32(c1))). The " *
                                 "error is most likely caused by the Julia parser which " *
                                 "normalizes `Symbol` literals containing such " *
-                                "characters. In order to avoid such problems use only " *
-                                "$refc1 (codepoint: $(UInt32(refc1))) in column names."))
+                                "characters. In order to avoid such problems " * suffix))
         end
     end
     throw(AssertionError("Unreachable reached. Please report issue to " *

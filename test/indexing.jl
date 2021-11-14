@@ -2088,31 +2088,13 @@ end
         # needed for cdot
         a = Unicode.normalize(string(a))[1]
         idx = Symbol(b)
-        referr = ArgumentError("column name :$idx not found in the " *
-                                "data frame. However there is a similar " *
-                                "column name in the data frame where character $a " *
-                                "(codepoint: $(UInt32(a))) is used is instead of $b " *
-                                "(codepoint: $(UInt32(b))). The " *
-                                "error is most likely caused by the Julia parser which " *
-                                "normalizes `Symbol` literals containing such " *
-                                "characters. In order to avoid such problems use only " *
-                                "$b (codepoint: $(UInt32(b))) in column names.")
         d = DataFrame(string(a) => 1)
-        @test_throws referr d[:, string(b)]
+        @test_throws ArgumentError d[:, string(b)]
         @test d[:, string(a)] == [1]
 
         idx = Symbol(a)
-        referr = ArgumentError("column name :$idx not found in the " *
-                                "data frame. However there is a similar " *
-                                "column name in the data frame where character $b " *
-                                "(codepoint: $(UInt32(b))) is used is instead of $a " *
-                                "(codepoint: $(UInt32(a))). The " *
-                                "error is most likely caused by the Julia parser which " *
-                                "normalizes `Symbol` literals containing such " *
-                                "characters. In order to avoid such problems use only " *
-                                "$b (codepoint: $(UInt32(b))) in column names.")
         d = DataFrame(string(b) => 1)
-        @test_throws referr d[:, string(a)]
+        @test_throws ArgumentError d[:, string(a)]
         @test d[:, string(b)] == [1]
     end
 
