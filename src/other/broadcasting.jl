@@ -127,8 +127,6 @@ function Base.dotview(df::AbstractDataFrame, ::typeof(!), cols)
     return LazyNewColDataFrame(df, cols isa AbstractString ? Symbol(cols) : cols)
 end
 
-# TODO: remove the deprecations when Julia 1.7 functionality is commonly used
-#       by the community
 if isdefined(Base, :dotgetproperty)
     function Base.dotgetproperty(df::AbstractDataFrame, col::SymbolOrString)
         if columnindex(df, col) == 0
@@ -139,7 +137,8 @@ if isdefined(Base, :dotgetproperty)
             # TODO: double check that this is tested
             return LazyNewColDataFrame(df, Symbol(col))
         else
-            Base.depwarn("In the future this operation will allocate a new column " *
+            # TODO: remove the deprecation in DataFrames.jl 1.4 release
+            Base.depwarn("In the 1.4 release of DataFrames.jl this operation will allocate a new column " *
                          "instead of performing an in-place assignment.", :dotgetproperty)
             return getproperty(df, col)
         end

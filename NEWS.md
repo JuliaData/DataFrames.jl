@@ -105,6 +105,13 @@
   ([#2869](https://github.com/JuliaData/DataFrames.jl/pull/2869)),
   ([#2919](https://github.com/JuliaData/DataFrames.jl/pull/2919))
 
+## Planned changes
+
+* In DataFrames.jl 1.4 release on Julia 1.7 or newer broadcasting assignment
+  into an existing column of a data frame will replace it. Under Julia 1.6
+  or older it will be an in place operation.
+  ([#2937](https://github.com/JuliaData/DataFrames.jl/pull/2937)
+
 # DataFrames.jl v1.2.2 Patch Release Notes
 
 ## Bug fixes
