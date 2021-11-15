@@ -1,6 +1,6 @@
 module TestIndexing
 
-using Test, DataFrames
+using Test, DataFrames, Unicode, Random
 
 @testset "getindex DataFrame" begin
     df = DataFrame(a=1:3, b=4:6, c=7:9)
@@ -2034,6 +2034,89 @@ end
             @test DataFrame(mat[rowrange, colrange], :auto) == df[rowrange, colrange]
         end
     end
+end
+
+@testset "name normalization" begin
+    Random.seed!(1234)
+
+    for (a1, a2) in [("", ""), ("", "1"), ("1", ""),
+                     ("a", "a"), ("a", "a1"), ("a1", "a"),
+                     ("ab", "ab"), ("ab", "ac"), ("ab", "ab1"), ("ab1", "ab"),]
+        @test DataFrames._norm_eq(a1, a2, Symbol(a1)) == (a1 == a2)
+    end
+
+    for _ in 1:100
+        x = randstring(5)
+        y1 = String(chop(x))
+        y2 = y1 * "α"
+        y3 = x * "α"
+
+        @test DataFrames._norm_eq(x, x, :x)
+        @test !DataFrames._norm_eq(x, y1, :x)
+        @test !DataFrames._norm_eq(x, y2, :x)
+        @test !DataFrames._norm_eq(x, y3, :x)
+    end
+
+    d1 = DataFrame("no\u00EBl" => 1)
+    d2 = DataFrame("noe\u0308l" => 1)
+    d3 = DataFrame("noe\u0308\u00EBl" => 1)
+    @test d1[:, "no\u00EBl"] == [1]
+    @test_throws ArgumentError d1[:, "noe\u0308l"]
+    @test d1[:, Unicode.normalize("noe\u0308l")] == [1]
+    @test_throws ArgumentError d2[:, "no\u00EBl"]
+    @test rename(Unicode.normalize, d2)[:, "no\u00EBl"] == [1]
+    @test d2[:, "noe\u0308l"] == [1]
+    @test_throws ArgumentError d3[:, "no\u00EBe\u0308l"]
+    @test rename(Unicode.normalize, d3)[:, Unicode.normalize("no\u00EBe\u0308l")] == [1]
+    @test d3[:, "noe\u0308\u00EBl"] == [1]
+
+    rename!(DataFrames.Unicode.normalize, d1)
+    rename!(DataFrames.Unicode.normalize, d2)
+    rename!(DataFrames.Unicode.normalize, d3)
+    @test d1[:, DataFrames.Unicode.normalize("no\u00EBl")] == [1]
+    @test d1[:, DataFrames.Unicode.normalize("noe\u0308l")] == [1]
+    @test d2[:, DataFrames.Unicode.normalize("no\u00EBl")] == [1]
+    @test d2[:, DataFrames.Unicode.normalize("noe\u0308l")] == [1]
+    @test d3[:, DataFrames.Unicode.normalize("no\u00EBe\u0308l")] == [1]
+    @test d3[:, DataFrames.Unicode.normalize("noe\u0308\u00EBl")] == [1]
+
+    d = DataFrame("power_µW" => 1:3)
+    @test_throws ArgumentError d.power_µW
+    @test d."power_µW" == 1:3
+
+    for (a, b) in pairs(DataFrames._julia_charmap)
+        # needed for cdot
+        a = Unicode.normalize(string(a))[1]
+        idx = Symbol(b)
+        d = DataFrame(string(a) => 1)
+        @test_throws ArgumentError d[:, string(b)]
+        @test d[:, string(a)] == [1]
+
+        idx = Symbol(a)
+        d = DataFrame(string(b) => 1)
+        @test_throws ArgumentError d[:, string(a)]
+        @test d[:, string(b)] == [1]
+    end
+
+    for a in keys(DataFrames._julia_charmap)
+        d = DataFrame(string(a) => 1)
+        @test d[:, string(a)] == [1]
+        @test d[:, Symbol(a)] == [1]
+    end
+
+    for a in values(DataFrames._julia_charmap)
+        d = DataFrame(string(a) => 1)
+        @test d[:, string(a)] == [1]
+        @test d[:, Symbol(a)] == [1]
+    end
+
+    d = DataFrame("\u00B7" => 1)
+    a = "\u0387"
+    @test_throws ArgumentError d[:, string(a)]
+    d = DataFrame("\u0387" => 1)
+    a = "\u00B7"
+    @test_throws ArgumentError d[:, string(a)]
+
 end
 
 @testset "haskey method error" begin

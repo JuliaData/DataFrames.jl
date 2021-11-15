@@ -290,9 +290,99 @@ function fuzzymatch(l::Dict{Symbol, Int}, idx::Symbol)
         return [s for (d, s) in dist if d <= maxd]
 end
 
+# see JuliaLang/julia#42561; we keep our own list to ensure things work consistently on earlier versions of Julia
+const _julia_charmap = Dict{Char,Char}(
+    Char(0x025B) => Char(0x03B5),
+    Char(0x00B5) => Char(0x03BC),
+    Char(0x00B7) => Char(0x22C5),
+    Char(0x0387) => Char(0x22C5),
+    Char(0x2212) => Char(0x002D)
+)
+
+function _norm_eq(a1::String, a2::String, idx::Symbol)
+    a1 == a2 && return true
+    a1_std = [get(_julia_charmap, c, c) for c in a1]
+    a2_std = [get(_julia_charmap, c, c) for c in a2]
+
+    a1_std == a2_std || return false
+
+    # here we are sure a1 and a2 have the same length
+    # but are equal only because we performed character mapping
+    for (c1, c2) in zip(a1, a2)
+        if c1 != c2
+            refc1 = get(_julia_charmap, c1, c1)
+            refc2 = get(_julia_charmap, c2, c2)
+            @assert refc1 == refc2
+            throw(ArgumentError("column name :$idx not found in the " *
+                                "data frame. However there is a similar " *
+                                "column name in the data frame where character $c2 " *
+                                "(codepoint: $(UInt32(c2))) is used instead of $c1 " *
+                                "(codepoint: $(UInt32(c1))). The " *
+                                "error is most likely caused by the Julia parser which " *
+                                "normalizes `Symbol` literals containing such " *
+                                "characters. If the passed name is intended " *
+                                "to match the column name found in the data frame " *
+                                "replace the non-matching character with the correct one."))
+        end
+    end
+    throw(AssertionError("Unreachable reached. Please report issue to " *
+                         "DataFrames.jl repository on GitHub."))
+end
+
+function normalized_match_test(l::Dict{Symbol, Int}, idx::Symbol)
+    idx_raw = string(idx)
+    idxs = Unicode.normalize(idx_raw)
+    for x in keys(l)
+        x_raw = string(x)
+        xs = Unicode.normalize(x_raw)
+        if _norm_eq(idxs, xs, idx)
+            idx_ok = idx_raw == idxs
+            x_ok = x_raw == xs
+            if !idx_ok
+                if x_ok
+                    throw(ArgumentError("column name :$idx not found in the " *
+                                        "data frame. However, after applying Unicode " *
+                                        "normalization to it, the passed column name " *
+                                        "matches a column name found in the data frame. " *
+                                        "You can use the `Unicode.normalize` " *
+                                        "function to normalize the passed column name."))
+                else
+                    throw(ArgumentError("column name :$idx not found in the " *
+                                        "data frame. However, there is a match " *
+                                        "after applying Unicode normalization both " *
+                                        "to the passed column names " *
+                                        "and to the column names of the data frame. " *
+                                        "In the call both passed column and " *
+                                        "matching column found in the data frame were not " *
+                                        "normalized. It is recommended to use " *
+                                        "normalized column names and then refer to them " *
+                                        "using normalized names to avoid ambiguity. " *
+                                        "In order to normalize column names in " *
+                                        "an existing data frame `df` do " *
+                                        "`using Unicode; rename!(Unicode.normalize, df)`. " *
+                                        "Similarly, you can use the `Unicode.normalize` " *
+                                        "function to normalize the passed column name."))
+                end
+            else
+                @assert !x_ok
+                throw(ArgumentError("column name :$idx not found in the " *
+                                    "data frame. However, the passed column name " *
+                                    "matches a column name found in the data frame " *
+                                    "after applying Unicode normalization to the latter. " *
+                                    "It is recommended to use " *
+                                    "normalized column names to avoid ambiguity. " *
+                                    "In order to normalize column names in " *
+                                    "an existing data frame `df` do " *
+                                    "`using Unicode; rename!(Unicode.normalize, df)`."))
+            end
+        end
+    end
+end
+
 @inline function lookupname(l::Dict{Symbol, Int}, idx::Symbol)
     i = get(l, idx, nothing)
     if i === nothing
+        normalized_match_test(l, idx)
         candidates = fuzzymatch(l, idx)
         if isempty(candidates)
             if isempty(l)
