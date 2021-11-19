@@ -50,6 +50,8 @@ The rules for a valid type of index into a column are the following:
 
 The rules for a valid type of index into a row are the following:
 * a value, later denoted as `row`:
+    * a `Symbol`;
+    * an `AbstractString`;
     * an `Integer` that is not `Bool`;
 * a vector, later denoted as `rows`:
     * a vector of `Integer` other than `Bool` (does not have to be a subtype of
