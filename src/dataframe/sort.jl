@@ -5,15 +5,18 @@
           rev::Bool=false, order::Ordering=Forward)
 
 Sort data frame `df` by column(s) `cols`.
+Sorting on multiple columns is done lexicographicallly.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
 on the type of the sorting columns and on the number of rows in `df`.
+
 If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
 only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
 corresponding column index (see example below).
+
 See other methods for a description of other keyword arguments.
 
 # Examples
