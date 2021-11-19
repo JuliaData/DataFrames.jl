@@ -4,7 +4,8 @@
           alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
           rev::Bool=false, order::Ordering=Forward)
 
-Sort data frame `df` by column(s) `cols`. Sorting on multiple columns is done lexicographicallly.
+Sort data frame `df` by column(s) `cols`.
+Sorting on multiple columns is done lexicographicallly.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
