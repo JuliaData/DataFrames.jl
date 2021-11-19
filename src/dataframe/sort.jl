@@ -15,6 +15,7 @@ on the type of the sorting columns and on the number of rows in `df`.
 If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
 only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
 corresponding column index (see example below).
+
 See other methods for a description of other keyword arguments.
 
 # Examples
