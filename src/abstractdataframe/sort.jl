@@ -364,7 +364,7 @@ end
          alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
          rev::Bool=false, order::Ordering=Forward, view::Bool=false)
 
-Return a data frame containing the rows in `df` sorted by column(s) `cols`.
+Return a data frame containing the rows in `df` sorted by column(s) `cols`. Sorting on multiple columns is done lexicographically.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
