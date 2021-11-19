@@ -1036,6 +1036,14 @@ julia> filter(row -> row.x > 1, df)
    1 │     3  b
    2 │     2  a
 
+julia> filter(row -> row[Not(:y)]... > 1, df)
+2×2 DataFrame
+ Row │ x      y      
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     2  a                                                                    
+
 julia> filter(:x => x -> x > 1, df)
 2×2 DataFrame
  Row │ x      y
