@@ -992,6 +992,7 @@ Return a data frame containing only rows from `df` for which `fun` returns
 `true`.
 
 If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
+Column selectors may be used to index `DataFrameRow`s inside `fun`.
 
 If `cols` is specified then the predicate `fun` is passed elements of the
 corresponding columns as separate positional arguments, unless `cols` is an
