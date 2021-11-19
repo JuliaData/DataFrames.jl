@@ -336,13 +336,40 @@ Sort.defalg(df::AbstractDataFrame, o::Ordering; alg=nothing, cols=[]) =
              lt=isless, by=identity, rev::Bool=false, order::Ordering=Forward)
 
 Test whether data frame `df` sorted by column(s) `cols`.
+If no column is specified, it checks if the `df` is sorted lexicographically.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
 only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
 corresponding column index (see example below).
+
 See other methods for a description of other keyword arguments.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a = [1,2,3,4], b = [4,3,2,1])
+4×2 DataFrame
+ Row │ a      b     
+     │ Int64  Int64 
+─────┼──────────────
+   1 │     1      4
+   2 │     2      3
+   3 │     3      2
+   4 │     4      1
+
+julia> issorted(df)
+true
+
+julia> issorted(df, :a)
+true
+
+julia> issorted(df, :b)
+false
+
+julia> issorted(df, :b, rev = true)
+true
+```
 """
 function Base.issorted(df::AbstractDataFrame, cols=[];
                        lt=isless, by=identity, rev=false, order=Forward)
@@ -448,6 +475,7 @@ end
 
 Return a permutation vector of row indices of data frame `df` that puts them in
 sorted order according to column(s) `cols`.
+If `cols` were not specified, it returns row indices that sorts `df` lexicographically.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
