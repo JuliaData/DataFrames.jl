@@ -332,7 +332,7 @@ Sort.defalg(df::AbstractDataFrame, o::Ordering; alg=nothing, cols=[]) =
 ########################
 
 """
-    issorted(df::AbstractDataFrame, cols;
+    issorted(df::AbstractDataFrame, cols=All();
              lt=isless, by=identity, rev::Bool=false, order::Ordering=Forward)
 
 Test whether data frame `df` sorted by column(s) `cols`.
@@ -371,7 +371,7 @@ julia> issorted(df, :b, rev=true)
 true
 ```
 """
-function Base.issorted(df::AbstractDataFrame, cols=[];
+function Base.issorted(df::AbstractDataFrame, cols=All();
                        lt=isless, by=identity, rev=false, order=Forward)
     # exclude AbstractVector as in that case cols can contain order(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
@@ -387,7 +387,7 @@ function Base.issorted(df::AbstractDataFrame, cols=[];
 end
 
 """
-    sort(df::AbstractDataFrame, cols;
+    sort(df::AbstractDataFrame, cols=All();
          alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
          rev::Bool=false, order::Ordering=Forward, view::Bool=false)
 
@@ -463,14 +463,14 @@ julia> sort(df, [:x, order(:y, rev=true)])
    4 │     3  b
 ```
 """
-@inline function Base.sort(df::AbstractDataFrame, cols=[]; alg=nothing, lt=isless,
+@inline function Base.sort(df::AbstractDataFrame, cols=All(); alg=nothing, lt=isless,
                            by=identity, rev=false, order=Forward, view::Bool=false)
     rowidxs = sortperm(df, cols, alg=alg, lt=lt, by=by, rev=rev, order=order)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
 """
-    sortperm(df::AbstractDataFrame, cols;
+    sortperm(df::AbstractDataFrame, cols=All();
              alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
              rev::Bool=false, order::Ordering=Forward)
 
@@ -532,7 +532,7 @@ julia> sortperm(df, [:x, order(:y, rev=true)])
  1
 ```
 """
-function Base.sortperm(df::AbstractDataFrame, cols=[];
+function Base.sortperm(df::AbstractDataFrame, cols=All();
                   alg=nothing, lt=isless, by=identity, rev=false, order=Forward)
     if !(by isa Base.Callable || (by isa AbstractVector && eltype(by) <: Base.Callable))
         msg = "'by' must be a Function or a vector of Functions. " *
