@@ -479,7 +479,7 @@ sorted order according to column(s) `cols`.
 If `cols` were not specified, it returns row indices that sorts `df` lexicographically.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-If column selector selects no columns, it returns row indices that sorts `df` lexicographically.
+If `cols` selects no columns, return permutation vector based on sorting all columns.
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
