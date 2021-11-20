@@ -367,7 +367,7 @@ true
 julia> issorted(df, :b)
 false
 
-julia> issorted(df, :b, rev = true)
+julia> issorted(df, :b, rev=true)
 true
 ```
 """
