@@ -336,7 +336,7 @@ Sort.defalg(df::AbstractDataFrame, o::Ordering; alg=nothing, cols=[]) =
              lt=isless, by=identity, rev::Bool=false, order::Ordering=Forward)
 
 Test whether data frame `df` sorted by column(s) `cols`.
-If no column is specified, it checks if the `df` is sorted lexicographically.
+If column selector selects no columns, it checks if the `df` is sorted lexicographically.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
@@ -395,6 +395,7 @@ Return a data frame containing the rows in `df` sorted by column(s) `cols`.
 Sorting on multiple columns is done lexicographically.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+If column selector selects no columns, then the sorting would be done lexicographically.
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
@@ -478,6 +479,7 @@ sorted order according to column(s) `cols`.
 If `cols` were not specified, it returns row indices that sorts `df` lexicographically.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+If column selector selects no columns, it returns row indices that sorts `df` lexicographically.
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
