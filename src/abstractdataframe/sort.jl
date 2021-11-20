@@ -336,6 +336,8 @@ Sort.defalg(df::AbstractDataFrame, o::Ordering; alg=nothing, cols=[]) =
              lt=isless, by=identity, rev::Bool=false, order::Ordering=Forward)
 
 Test whether data frame `df` sorted by column(s) `cols`.
+Checking against multiple columns is done lexicographically.
+
 If `cols` selects no columns, check whether `df` is sorted on all columns
 (this behaviour is deprecated and will change in future versions).
 
