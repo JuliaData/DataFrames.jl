@@ -2033,7 +2033,7 @@ end
             colrange in [:, axes(df, 2), collect(axes(df, 2)), 1:ncol(df) - 1]
             df2 = df[rowrange, colrange]
             for j in axes(df2, 2)
-                @test df2[!, j] == view(mat, rowrange, c)
+                @test df2[!, j] == view(mat, rowrange, j)
             end
         end
     end
