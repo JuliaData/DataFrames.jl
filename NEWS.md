@@ -112,7 +112,7 @@
 
 * `delete!` is deprecated in favor of `deleteat!`
   ([#2854](https://github.com/JuliaData/DataFrames.jl/issues/2854))
-* In `sort`, `sort!`, `issorted` and `soerperm` it is now documented
+* In `sort`, `sort!`, `issorted` and `sortperm` it is now documented
   that the result of passing an empty column selector uses lexicographic
   ordering of all columns, but this behavior is deprecated.
   ([#2941](https://github.com/JuliaData/DataFrames.jl/issues/2941))

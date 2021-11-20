@@ -483,13 +483,11 @@ end
 
 Return a permutation vector of row indices of data frame `df` that puts them in
 sorted order according to column(s) `cols`.
-Order on multiple columns is done lexicographically.
-
-If `cols` select no columns, it returns row indices that sorts `df` lexicographically
-(this behaviour is deprecated and will change in future versions).
+Order on multiple columns is computed lexicographically.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-If `cols` selects no columns, return permutation vector based on sorting all columns.
+If `cols` selects no columns, return permutation vector based on sorting all columns
+(this behaviour is deprecated and will change in future versions).
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
