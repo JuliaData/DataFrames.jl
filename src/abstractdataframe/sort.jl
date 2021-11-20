@@ -351,7 +351,7 @@ See other methods for a description of other keyword arguments.
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(a = [1,2,3,4], b = [4,3,2,1])
+julia> df = DataFrame(a = [1, 2, 3, 4], b = [4, 3, 2, 1])
 4×2 DataFrame
  Row │ a      b     
      │ Int64  Int64 
@@ -480,7 +480,9 @@ end
 
 Return a permutation vector of row indices of data frame `df` that puts them in
 sorted order according to column(s) `cols`.
-If `cols` were not specified, it returns row indices that sorts `df` lexicographically
+Order on multiple columns is done lexicographically.
+
+If `cols` select no columns, it returns row indices that sorts `df` lexicographically
 (this behaviour is deprecated and will change in future versions).
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
