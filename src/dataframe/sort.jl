@@ -8,7 +8,8 @@ Sort data frame `df` by column(s) `cols`.
 Sorting on multiple columns is done lexicographicallly.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-If `cols` selects no columns, sort `df` on all columns.
+If `cols` selects no columns, sort `df` on all columns
+(this behaviour is deprecated and will change in future versions).
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending

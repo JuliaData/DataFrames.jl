@@ -336,7 +336,8 @@ Sort.defalg(df::AbstractDataFrame, o::Ordering; alg=nothing, cols=[]) =
              lt=isless, by=identity, rev::Bool=false, order::Ordering=Forward)
 
 Test whether data frame `df` sorted by column(s) `cols`.
-If `cols` selects no columns, check whether `df` is sorted on all columns.
+If `cols` selects no columns, check whether `df` is sorted on all columns
+(this behaviour is deprecated and will change in future versions).
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
@@ -395,7 +396,8 @@ Return a data frame containing the rows in `df` sorted by column(s) `cols`.
 Sorting on multiple columns is done lexicographically.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-If `cols` selects no columns, sort `df` on all columns.
+If `cols` selects no columns, sort `df` on all columns
+(this behaviour is deprecated and will change in future versions).
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
@@ -476,7 +478,8 @@ end
 
 Return a permutation vector of row indices of data frame `df` that puts them in
 sorted order according to column(s) `cols`.
-If `cols` were not specified, it returns row indices that sorts `df` lexicographically.
+If `cols` were not specified, it returns row indices that sorts `df` lexicographically
+(this behaviour is deprecated and will change in future versions).
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 If `cols` selects no columns, return permutation vector based on sorting all columns.
