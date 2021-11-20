@@ -2031,7 +2031,12 @@ end
         df = DataFrame(mat, :auto)
         for rowrange in [:, 1:nrow(df)-5, collect(1:nrow(df)-5), axes(df, 1) .< nrow(df)-5],
             colrange in [:, axes(df, 2), collect(axes(df, 2)), 1:ncol(df) - 1]
-            @test DataFrame(mat[rowrange, colrange], :auto) == df[rowrange, colrange]
+            # Equivalent but using less memory than:
+            # @test DataFrame(mat[rowrange, colrange], :auto) == df[rowrange, colrange]
+            df2 = df[rowrange, colrange]
+            for j in axes(df2, 2)
+                @test df2[!, j] == view(mat, rowrange, j)
+            end
         end
     end
 end
