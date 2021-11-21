@@ -209,6 +209,8 @@ function ordering(df::AbstractDataFrame, cols::AbstractVector, lt::Function,
                   by::Function, rev::Bool, order::Ordering)
 
     if length(cols) == 0
+        Base.depwarn("When empty column selector is passed ordering is done on all colums. " *
+                     "This behavior is deprecated and will change in the future.", :ordering)
         return ordering(df, lt, by, rev, order)
     end
 
@@ -332,19 +334,50 @@ Sort.defalg(df::AbstractDataFrame, o::Ordering; alg=nothing, cols=[]) =
 ########################
 
 """
-    issorted(df::AbstractDataFrame, cols;
+    issorted(df::AbstractDataFrame, cols=All();
              lt=isless, by=identity, rev::Bool=false, order::Ordering=Forward)
 
 Test whether data frame `df` sorted by column(s) `cols`.
+Checking against multiple columns is done lexicographically.
+
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+If `cols` selects no columns, check whether `df` is sorted on all columns
+(this behaviour is deprecated and will change in future versions).
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
 only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
 corresponding column index (see example below).
+
 See other methods for a description of other keyword arguments.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a = [1, 2, 3, 4], b = [4, 3, 2, 1])
+4×2 DataFrame
+ Row │ a      b     
+     │ Int64  Int64 
+─────┼──────────────
+   1 │     1      4
+   2 │     2      3
+   3 │     3      2
+   4 │     4      1
+
+julia> issorted(df)
+true
+
+julia> issorted(df, :a)
+true
+
+julia> issorted(df, :b)
+false
+
+julia> issorted(df, :b, rev=true)
+true
+```
 """
-function Base.issorted(df::AbstractDataFrame, cols=[];
+function Base.issorted(df::AbstractDataFrame, cols=All();
                        lt=isless, by=identity, rev=false, order=Forward)
     # exclude AbstractVector as in that case cols can contain order(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
@@ -360,7 +393,7 @@ function Base.issorted(df::AbstractDataFrame, cols=[];
 end
 
 """
-    sort(df::AbstractDataFrame, cols;
+    sort(df::AbstractDataFrame, cols=All();
          alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
          rev::Bool=false, order::Ordering=Forward, view::Bool=false)
 
@@ -368,6 +401,8 @@ Return a data frame containing the rows in `df` sorted by column(s) `cols`.
 Sorting on multiple columns is done lexicographically.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+If `cols` selects no columns, sort `df` on all columns
+(this behaviour is deprecated and will change in future versions).
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
@@ -435,21 +470,24 @@ julia> sort(df, [:x, order(:y, rev=true)])
    4 │     3  b
 ```
 """
-@inline function Base.sort(df::AbstractDataFrame, cols=[]; alg=nothing, lt=isless,
+@inline function Base.sort(df::AbstractDataFrame, cols=All(); alg=nothing, lt=isless,
                            by=identity, rev=false, order=Forward, view::Bool=false)
     rowidxs = sortperm(df, cols, alg=alg, lt=lt, by=by, rev=rev, order=order)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
 """
-    sortperm(df::AbstractDataFrame, cols;
+    sortperm(df::AbstractDataFrame, cols=All();
              alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
              rev::Bool=false, order::Ordering=Forward)
 
 Return a permutation vector of row indices of data frame `df` that puts them in
 sorted order according to column(s) `cols`.
+Order on multiple columns is computed lexicographically.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+If `cols` selects no columns, return permutation vector based on sorting all columns
+(this behaviour is deprecated and will change in future versions).
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
@@ -502,7 +540,7 @@ julia> sortperm(df, [:x, order(:y, rev=true)])
  1
 ```
 """
-function Base.sortperm(df::AbstractDataFrame, cols=[];
+function Base.sortperm(df::AbstractDataFrame, cols=All();
                   alg=nothing, lt=isless, by=identity, rev=false, order=Forward)
     if !(by isa Base.Callable || (by isa AbstractVector && eltype(by) <: Base.Callable))
         msg = "'by' must be a Function or a vector of Functions. " *

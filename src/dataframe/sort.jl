@@ -1,6 +1,6 @@
 
 """
-    sort!(df::AbstractDataFrame, cols;
+    sort!(df::AbstractDataFrame, cols=All();
           alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
           rev::Bool=false, order::Ordering=Forward)
 
@@ -8,6 +8,8 @@ Sort data frame `df` by column(s) `cols`.
 Sorting on multiple columns is done lexicographicallly.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+If `cols` selects no columns, sort `df` on all columns
+(this behaviour is deprecated and will change in future versions).
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
@@ -72,7 +74,7 @@ julia> sort!(df, [:x, order(:y, rev=true)])
    4 │     3  b
 ```
 """
-function Base.sort!(df::DataFrame, cols=[]; alg=nothing,
+function Base.sort!(df::DataFrame, cols=All(); alg=nothing,
                     lt=isless, by=identity, rev=false, order=Forward)
     if !(isa(by, Function) || eltype(by) <: Function)
         msg = "'by' must be a Function or a vector of Functions. " *
