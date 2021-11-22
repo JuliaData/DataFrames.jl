@@ -15,8 +15,8 @@ The following rules explain target functionality of how `getindex`, `setindex!`,
 `view`, and broadcasting are intended to work with `DataFrame`, `SubDataFrame`
 and `DataFrameRow` objects.
 
-The following are a valid column index:
-* a value, later denoted as `col`:
+The following values are a valid column index:
+* a scalar, later denoted as `col`:
     * a `Symbol`;
     * an `AbstractString`;
     * an `Integer` that is not `Bool`;
@@ -48,8 +48,8 @@ The following are a valid column index:
       all columns, equivalent to `:`;
     * a literal colon `:` (selects all columns).
 
-The following are a valid row index:
-* a value, later denoted as `row`:
+The following values are a valid row index:
+* a scalar, later denoted as `row`:
     * an `Integer` that is not `Bool`;
 * a vector, later denoted as `rows`:
     * a vector of `Integer` that are not `Bool` (does not have to be a subtype of
