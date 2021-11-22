@@ -1120,8 +1120,8 @@ _filter_helper_astable(f, nti::Tables.NamedTupleIterator)::BitVector = (x -> f(x
 
 Remove rows from data frame `df` for which `fun` returns `false`.
 
-    If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
-    Elements of a `DataFrameRow` may be accessed with dot syntax or column indexing inside `fun`.
+If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
+Elements of a `DataFrameRow` may be accessed with dot syntax or column indexing inside `fun`.
 
 If `cols` is specified then the predicate `fun` is passed elements of the
 corresponding columns as separate positional arguments, unless `cols` is an
