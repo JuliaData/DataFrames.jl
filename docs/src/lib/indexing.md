@@ -28,8 +28,8 @@ The following values are a valid column index:
     * a vector of `Integer` that are not `Bool` (does not have to be a subtype of
       `AbstractVector{<:Integer}`);
     * a vector of `Bool` (must be a subtype of `AbstractVector{Bool}`);
-    * a [regular expression](https://docs.julialang.org/en/v1/manual/strings/#Regular-Expressions) (will be expanded to a vector of matching column
-      names);
+    * a [regular expression](https://docs.julialang.org/en/v1/manual/strings/#Regular-Expressions)
+      (will be expanded to a vector of matching column names);
     * a `Not` expression (see
       [InvertedIndices.jl](https://github.com/JuliaData/InvertedIndices.jl));
       `Not(idx)` selects all indices not in the passed `idx`;
