@@ -992,7 +992,8 @@ Return a data frame containing only rows from `df` for which `fun` returns
 `true`.
 
 If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
-(Column selectors may be used to index `DataFrameRow`s inside `fun`.)
+(Individual elements may be accessed by indexing the passed `DataFrameRow`s
+with column selectors inside the definition of `fun.)
 
 If `cols` is specified then the predicate `fun` is passed elements of the
 corresponding columns as separate positional arguments, unless `cols` is an
@@ -1121,7 +1122,8 @@ _filter_helper_astable(f, nti::Tables.NamedTupleIterator)::BitVector = (x -> f(x
 Remove rows from data frame `df` for which `fun` returns `false`.
 
 If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
-(Column selectors may be used to index `DataFrameRow`s inside `fun`.)
+(Individual elements may be accessed by indexing the passed `DataFrameRow`s
+with column selectors inside the definition of `fun.)
 
 If `cols` is specified then the predicate `fun` is passed elements of the
 corresponding columns as separate positional arguments, unless `cols` is an
