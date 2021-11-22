@@ -58,7 +58,7 @@ The following values are a valid row index:
     * a `Not` expression (see
       [InvertedIndices.jl](https://github.com/JuliaData/InvertedIndices.jl));
     * a literal colon `:` (selects all rows with copying);
-    * an literal exclamation mark `!` (selects all rows without copying).
+    * a literal exclamation mark `!` (selects all rows without copying).
 
 Additionally it is allowed to index into an `AbstractDataFrame` using a
 two-dimensional `CartesianIndex`.
