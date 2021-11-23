@@ -1518,9 +1518,9 @@ In DataFrames.jl there are seven functions that can be used to transform data fr
 | `transform!` | Modifies an existing data frame. | Retains both source and transformed columns. | Retains same number of rows as source data frame. |
 | `select`     | Creates a new data frame.        | Retains only transformed columns. | Retains same number of rows as source data frame. |
 | `select!`    | Modifies an existing data frame. | Retains only transformed columns. | Retains same number of rows as source data frame. |
-| `subset`     | Creates a new data frame.        | Retains both source and transformed columns. | Number of rows may change.                        |
-| `subset!`    | Modifies an existing data frame. | Retains both source and transformed columns. | Number of rows may change.                        |
-| `combine`    | Creates a new data frame.        | Retains only transformed columns. | Number of rows may change.                        |
+| `subset`     | Creates a new data frame.        | Retains both source and transformed columns. | Number of rows may differ from source data frame.                        |
+| `subset!`    | Modifies an existing data frame. | Retains both source and transformed columns. | Number of rows may differ from source data frame.                        |
+| `combine`    | Creates a new data frame.        | Retains only transformed columns. | Number of rows may differ from source data frame.                        |
 
 ### Constructing Transformation Pairs
 All of the functions above use the same syntax which is commonly
