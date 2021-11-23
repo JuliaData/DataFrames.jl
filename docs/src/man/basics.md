@@ -1512,15 +1512,15 @@ julia> german[Not(5), r"S"]
 
 In DataFrames.jl there are seven functions that can be used to transform data frame columns:
 
-| Function     | Memory Usage                     | Column Retention | Row Retention |
-| ------------ | -------------------------------- | ---------------- | ------------ |
-| `transform`  | Creates a new data frame.        | Retains both source and transformed columns. | Retains same number of rows as source data frame. |
-| `transform!` | Modifies an existing data frame. | Retains both source and transformed columns. | Retains same number of rows as source data frame. |
-| `select`     | Creates a new data frame.        | Retains only transformed columns. | Retains same number of rows as source data frame. |
-| `select!`    | Modifies an existing data frame. | Retains only transformed columns. | Retains same number of rows as source data frame. |
-| `subset`     | Creates a new data frame.        | Retains both source and transformed columns. | Number of rows may differ from source data frame.                        |
-| `subset!`    | Modifies an existing data frame. | Retains both source and transformed columns. | Number of rows may differ from source data frame.                        |
-| `combine`    | Creates a new data frame.        | Retains only transformed columns. | Number of rows may differ from source data frame.                        |
+| Function     | Memory Usage                     | Column Retention                             | Row Retention                                       |
+| ------------ | -------------------------------- | -------------------------------------------- | --------------------------------------------------- |
+| `transform`  | Creates a new data frame.        | Retains both source and transformed columns. | Retains same number of rows as source data frame.   |
+| `transform!` | Modifies an existing data frame. | Retains both source and transformed columns. | Retains same number of rows as source data frame.   |
+| `select`     | Creates a new data frame.        | Retains only transformed columns.            | Retains same number of rows as source data frame.   |
+| `select!`    | Modifies an existing data frame. | Retains only transformed columns.            | Retains same number of rows as source data frame.   |
+| `subset`     | Creates a new data frame.        | Retains both source and transformed columns. | Number of rows is determined by the transformation. |
+| `subset!`    | Modifies an existing data frame. | Retains both source and transformed columns. | Number of rows is determined by the transformation. |
+| `combine`    | Creates a new data frame.        | Retains only transformed columns.            | Number of rows is determined by the transformation. |
 
 ### Constructing Transformation Pairs
 All of the functions above use the same syntax which is commonly
