@@ -15,8 +15,8 @@ The following rules explain target functionality of how `getindex`, `setindex!`,
 `view`, and broadcasting are intended to work with `DataFrame`, `SubDataFrame`
 and `DataFrameRow` objects.
 
-The rules for a valid type of index into a column are the following:
-* a value, later denoted as `col`:
+The following values are a valid column index:
+* a scalar, later denoted as `col`:
     * a `Symbol`;
     * an `AbstractString`;
     * an `Integer` that is not `Bool`;
@@ -25,13 +25,13 @@ The rules for a valid type of index into a column are the following:
       `AbstractVector{Symbol}`);
     * a vector of `AbstractString` (does not have to be a subtype of
       `AbstractVector{<:AbstractString}`);
-    * a vector of `Integer` other than `Bool` (does not have to be a subtype of
+    * a vector of `Integer` that are not `Bool` (does not have to be a subtype of
       `AbstractVector{<:Integer}`);
-    * a vector of `Bool` that has to be a subtype of `AbstractVector{Bool}`;
-    * a regular expression, which gets expanded to a vector of matching column
-      names;
+    * a vector of `Bool` (must be a subtype of `AbstractVector{Bool}`);
+    * a [regular expression](https://docs.julialang.org/en/v1/manual/strings/#Regular-Expressions)
+      (will be expanded to a vector of matching column names);
     * a `Not` expression (see
-      [InvertedIndices.jl](https://github.com/mbauman/InvertedIndices.jl)); the
+      [InvertedIndices.jl](https://github.com/JuliaData/InvertedIndices.jl));
       `Not(idx)` selects all indices not in the passed `idx`;
     * a `Cols` expression (see
       [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl)); `Cols(idxs...)`
@@ -42,22 +42,23 @@ The rules for a valid type of index into a column are the following:
       selected.
     * a `Between` expression (see
       [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl));
-      `Between(first, last)` selects the columns between `first` and `last`;
+      `Between(first, last)` selects the columns between `first` and `last` inclusively;
     * an `All` expression (see
       [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl)); `All()` selects
       all columns, equivalent to `:`;
-    * a colon literal `:`.
+    * a literal colon `:` (selects all columns).
 
-The rules for a valid type of index into a row are the following:
-* a value, later denoted as `row`:
+The following values are a valid row index:
+* a scalar, later denoted as `row`:
     * an `Integer` that is not `Bool`;
 * a vector, later denoted as `rows`:
-    * a vector of `Integer` other than `Bool` (does not have to be a subtype of
+    * a vector of `Integer` that are not `Bool` (does not have to be a subtype of
       `AbstractVector{<:Integer}`);
-    * a vector of `Bool` that has to be a subtype of `AbstractVector{Bool}`;
-    * a `Not` expression;
-    * a colon literal `:`;
-* an exclamation mark `!`.
+    * a vector of `Bool` (must be a subtype of `AbstractVector{Bool}`);
+    * a `Not` expression (see
+      [InvertedIndices.jl](https://github.com/JuliaData/InvertedIndices.jl));
+    * a literal colon `:` (selects all rows with copying);
+    * a literal exclamation mark `!` (selects all rows without copying).
 
 Additionally it is allowed to index into an `AbstractDataFrame` using a
 two-dimensional `CartesianIndex`.

@@ -992,6 +992,7 @@ Return a data frame containing only rows from `df` for which `fun` returns
 `true`.
 
 If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
+Elements of a `DataFrameRow` may be accessed with dot syntax or column indexing inside `fun`.
 
 If `cols` is specified then the predicate `fun` is passed elements of the
 corresponding columns as separate positional arguments, unless `cols` is an
@@ -1034,6 +1035,14 @@ julia> filter(row -> row.x > 1, df)
 ─────┼───────────────
    1 │     3  b
    2 │     2  a
+
+julia> filter(row -> row["x"] > 1, df)
+2×2 DataFrame
+ Row │ x      y      
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     2  a                                                                    
 
 julia> filter(:x => x -> x > 1, df)
 2×2 DataFrame
@@ -1112,6 +1121,7 @@ _filter_helper_astable(f, nti::Tables.NamedTupleIterator)::BitVector = (x -> f(x
 Remove rows from data frame `df` for which `fun` returns `false`.
 
 If `cols` is not specified then the predicate `fun` is passed `DataFrameRow`s.
+Elements of a `DataFrameRow` may be accessed with dot syntax or column indexing inside `fun`.
 
 If `cols` is specified then the predicate `fun` is passed elements of the
 corresponding columns as separate positional arguments, unless `cols` is an
@@ -1151,6 +1161,14 @@ julia> filter!(row -> row.x > 1, df)
 ─────┼───────────────
    1 │     3  b
    2 │     2  a
+                                                                                        
+julia> filter!(row -> row["x"] > 1, df)
+2×2 DataFrame
+ Row │ x      y      
+     │ Int64  String
+─────┼───────────────
+   1 │     3  b
+   2 │     2  a                                                                                          
 
 julia> filter!(:x => x -> x == 3, df)
 1×2 DataFrame
