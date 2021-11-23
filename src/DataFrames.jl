@@ -156,7 +156,6 @@ include("dataframerow/show.jl")
 include("abstractdataframe/io.jl")
 
 include("abstractdataframe/sort.jl")
-include("dataframe/sort.jl")
 
 include("other/tables.jl")
 include("other/names.jl")
