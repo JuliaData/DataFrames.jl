@@ -698,7 +698,7 @@ end
         describe(df, :detailed)
 
     # Test that it works on a custom function
-    describe_output.test_std=describe_output.std
+    describe_output.test_std = describe_output.std
     # Test that describe works with a Pair and a symbol
     @test describe_output[:, [:variable, :mean, :test_std]] ≅
           describe(df, :mean, std => :test_std)
