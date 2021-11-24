@@ -662,7 +662,7 @@ function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.
         if any(j -> c[j] === col, 1:i-1)
             push!(toskip, i)
         elseif any(j -> Base.mightalias(c[j], col), 1:i-1)
-            throw(ArgumentError("non identical columns that share the same memory passed"))
+            throw(ArgumentError("data frame contains non identical columns that share the same memory"))
         end
     end
 
