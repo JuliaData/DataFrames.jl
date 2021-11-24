@@ -2239,3 +2239,41 @@ Base.getindex(::AbstractDataFrame, ::Union{Symbol, Integer, AbstractString}) =
 
 Base.setindex!(::AbstractDataFrame, ::Any, ::Union{Symbol, Integer, AbstractString}) =
     throw(ArgumentError("syntax df[column] is not supported use df[!, column] instead"))
+
+"""
+    reverse(df::AbstractDataFrame)
+
+This function reverses the current order of the rows in `df`.
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(a = 1:5, b = 6:10, c = 11:15)
+5×3 DataFrame
+ Row │ a      b      c     
+     │ Int64  Int64  Int64 
+─────┼─────────────────────
+   1 │     1      6     11
+   2 │     2      7     12
+   3 │     3      8     13
+   4 │     4      9     14
+   5 │     5     10     15
+   
+julia> reverse(df)
+5×3 DataFrame
+Row │ a      b      c     
+    │ Int64  Int64  Int64 
+────┼─────────────────────
+  1 │     5     10     15
+  2 │     4      9     14
+  3 │     3      8     13
+  4 │     2      7     12
+  5 │     1      6     11
+```
+"""
+function Base.reverse(df::AbstractDataFrame)
+    for column in 1:size(df, 2)
+        df[!, column] = Base.reverse(df[!, column])
+    end
+    return df
+end

@@ -158,8 +158,6 @@ include("abstractdataframe/io.jl")
 include("abstractdataframe/sort.jl")
 include("dataframe/sort.jl")
 
-include("abstractdataframe/reverse.jl")
-
 include("other/tables.jl")
 include("other/names.jl")
 
