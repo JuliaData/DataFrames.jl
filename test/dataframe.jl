@@ -2032,7 +2032,7 @@ end
     end
 end
 
-@testset "reverse --DataFrame" begin
+@testset "reverse DataFrame" begin
     df = DataFrame(a = 1:5, b = 5:-1:1)
     @test reverse(df) == DataFrame(a = 5:-1:1, b = 1:5)
     @test reverse(DataFrame(a = 1, b = 1)) == DataFrame(a = 1, b = 1)
