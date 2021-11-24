@@ -80,6 +80,7 @@ push!
 reduce
 repeat
 repeat!
+reverse
 select
 select!
 transform

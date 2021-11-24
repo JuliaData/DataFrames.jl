@@ -2032,4 +2032,15 @@ end
     end
 end
 
+@testset "reverse --DataFrame" begin
+    df = DataFrame(a = 1:5, b = 5:-1:1)
+    @test reverse(df) == DataFrame(a = 5:-1:1, b = 1:5)
+    @test reverse(DataFrame(a = 1, b = 1)) == DataFrame(a = 1, b = 1)
+end
+
+@testset "reverse --SubDataFrame" begin
+    df = view(DataFrame(a = 1:5, b = 5:-1:1, c = 11:15), 1:3, :)
+    @test reverse(df) == DataFrame(a = [3, 2, 1], b = [3, 4, 5], c = [13, 12, 11])
+end
+
 end # module
