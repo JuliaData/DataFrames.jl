@@ -2248,7 +2248,7 @@ This function reverses the current order of the rows in `df`.
 # Examples
 
 ```jldoctest
-julia> df = DataFrame(a = 1:5, b = 6:10, c = 11:15)
+julia> df = DataFrame(a=1:5, b=6:10, c=11:15)
 5×3 DataFrame
  Row │ a      b      c 
      │ Int64  Int64  Int64
