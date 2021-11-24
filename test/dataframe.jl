@@ -2038,7 +2038,7 @@ end
     @test reverse(DataFrame(a = 1, b = 1)) == DataFrame(a = 1, b = 1)
 end
 
-@testset "reverse --SubDataFrame" begin
+@testset "reverse SubDataFrame" begin
     df = DataFrame(a = 1:10, b = 10:-1:1, c = 11:20)
     @test reverse(view(df, 1:3, 1:2)) == DataFrame(a = [3, 2, 1], b = [8, 9, 10])
     @test reverse(view(df, 1:5, 1:3)) == DataFrame(a = 5:-1:1, b = 6:10, c = 15:-1:11)
