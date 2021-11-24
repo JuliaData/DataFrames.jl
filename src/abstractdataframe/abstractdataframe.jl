@@ -760,8 +760,8 @@ Use `findall(completecases(df))` to get the indices of the rows.
 
 ```jldoctest
 julia> df = DataFrame(i=1:5,
-                        x=[missing, 4, missing, 2, 1],
-                        y=[missing, missing, "c", "d", "e"])
+                      x=[missing, 4, missing, 2, 1],
+                      y=[missing, missing, "c", "d", "e"])
 5×3 DataFrame
  Row │ i      x        y
      │ Int64  Int64?   String?
