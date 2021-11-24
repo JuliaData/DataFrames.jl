@@ -208,4 +208,57 @@ end
     end
 end
 
+@testset "sort! tests" begin
+    # safe aliasing test
+    df = DataFrame()
+    x = [10:-1:1;]
+    df.x1 = view(x, 2:5)
+    df.x2 = view(x, 2:5)
+    sort!(df)
+    @test issorted(df)
+    @test x == [10, 6, 7, 8, 9, 5, 4, 3, 2, 1]
+    @test df == DataFrame(x1=6:9, x2=6:9)
+
+    df = DataFrame()
+    x = [10:-1:1;]
+    df.x1 = view(x, 2:5)
+    df.x2 = view(x, 2:5)
+    dfv = view(df, 2:4, :)
+    sort!(dfv)
+    @test issorted(dfv)
+    @test x == [10, 9, 6, 7, 8, 5, 4, 3, 2, 1]
+    @test df == DataFrame(x1=[9; 6:8], x2=[9; 6:8])
+
+    # unsafe aliasing test
+    df = DataFrame()
+    x = [10:-1:1;]
+    df.x1 = view(x, 2:5)
+    df.x2 = view(x, 3:6)
+    @test_throws ArgumentError sort!(df)
+    @test x == 10:-1:1
+    @test df == DataFrame(x1=9:-1:6, x2=8:-1:5)
+
+    df = DataFrame()
+    x = [10:-1:1;]
+    df.x1 = view(x, 2:5)
+    df.x2 = view(x, 3:6)
+    dfv = view(df, 2:4, :)
+    @test_throws ArgumentError sort!(dfv)
+    @test x == 10:-1:1
+    @test df == DataFrame(x1=9:-1:6, x2=8:-1:5)
+
+    # complex view sort test
+    Random.seed!(1234)
+    df = DataFrame(rand(100, 10), :auto)
+    insertcols!(df, 1, :id => axes(df, 1))
+    df2 = copy(df)
+    dfv = view(df, 100:-2:1, [5, 3, 1])
+    sort!(dfv, :id)
+    @test issorted(dfv, :id)
+    @test select(df, Not([1, 3, 5])) == select(df2, Not([1, 3, 5]))
+    @test sort(select(df, [1, 3, 5]), :id) == select(df2, [1, 3, 5])
+    @test select(df, [1, 3, 5]) ==
+          select(df2, [1, 3, 5])[[isodd(i) ? i : (102 - i) for i in 1:100], :]
+end
+
 end # module

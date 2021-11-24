@@ -654,20 +654,26 @@ function Base.sort!(df::AbstractDataFrame, cols=All(); alg=nothing,
 end
 
 function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering)
-    p = _sortperm(df, a, o)
-    pp = similar(p)
     c = collect(eachcol(df))
+
+    toskip = Set{Int}()
     for (i, col) in enumerate(c)
         # Check if this column has been sorted already
         if any(j -> c[j] === col, 1:i-1)
-            continue
-        end
-        if any(j -> Base.mightalias(c[j], col), 1:i-1)
+            push!(toskip, i)
+        elseif any(j -> Base.mightalias(c[j], col), 1:i-1)
             throw(ArgumentError("non identical columns that share the same memory passed"))
         end
+    end
 
-        copyto!(pp, p)
-        Base.permute!!(col, pp)
+    p = _sortperm(df, a, o)
+    pp = similar(p)
+
+    for (i, col) in enumerate(c)
+        if !(i in toskip)
+            copyto!(pp, p)
+            Base.permute!!(col, pp)
+        end
     end
     return df
 end
