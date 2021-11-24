@@ -2271,6 +2271,4 @@ julia> reverse(df)
    5 │     1      6     11
 ```
 """
-function Base.reverse(df::AbstractDataFrame)
-    return df[nrow(df):-1:1, :]
-end
+Base.reverse(df::AbstractDataFrame) = df[nrow(df):-1:1, :]
