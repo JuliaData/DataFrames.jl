@@ -92,6 +92,8 @@
   to compute standard deviation and quartiles
   in addition to statistics that are reported by default.
   ([#2459](https://github.com/JuliaData/DataFrames.jl/pull/2459))
+* `sort!` now supports general `AbstractDataFrame`
+  ([#2946](https://github.com/JuliaData/DataFrames.jl/pull/2946))
 
 ## Bug fixes
 
