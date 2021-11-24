@@ -64,8 +64,8 @@ each subset of the `DataFrame`. This specification can be of the following forms
 6. vectors or matrices containing transformations specified by the `Pair` syntax
    described in points 2 to 5
 7. a function which will be called with a `SubDataFrame` corresponding to each group
-   when `GroupedDataFrame` is processed or the passed source data frame if
-   `AbstractDataFrame` is processed;
+   if a `GroupedDataFrame` is processed, or with the data frame itself if
+   an `AbstractDataFrame` is processed;
    this form should be avoided due to its poor performance unless the number of groups
    is small or a very large number of columns are processed
    (in which case `SubDataFrame` avoids excessive compilation)
