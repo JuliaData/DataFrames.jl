@@ -101,6 +101,10 @@
   ([#2842](https://github.com/JuliaData/DataFrames.jl/issues/2842))
 * fix a problem with not specialized `Pair` arguments passed as transformations
   ([#2889](https://github.com/JuliaData/DataFrames.jl/issues/2889))
+* sorting related functions now more carefully check passed arguments for
+  correctness. Now all keyword arguments are correctly checked to be either
+  scalars of vectors of scalars.
+  ([#2946](https://github.com/JuliaData/DataFrames.jl/pull/2946))
 
 ## Performance improvements
 

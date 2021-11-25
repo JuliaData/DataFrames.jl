@@ -14,6 +14,24 @@
 #                  which allows a user to specify column specific orderings
 #                  with "order(column, rev=true, ...)"
 
+function _check_sort_args(lt, by, rev, order)
+    if !(lt isa Function || lt isa AbstractVector{<:Function})
+        msg = "'lt' must be a Function or a vector of Functions."
+        throw(ArgumentError(msg))
+    end
+    if !(by isa Function || by isa AbstractVector{<:Function})
+        msg = "'by' must be a Function or a vector of Functions."
+        throw(ArgumentError(msg))
+    end
+    if !(rev isa Bool || rev isa AbstractVector{Bool})
+        msg = "'rev' must be a Bool or a vector of Bool."
+        throw(ArgumentError(msg))
+    end
+    if !(order isa Base.Order.Ordering || order isa AbstractVector{<:Base.Order.Ordering})
+        msg = "'order' must be a an ordering or a vector of orderings."
+        throw(ArgumentError(msg))
+    end
+end
 struct UserColOrdering{T<:ColumnIndex}
     col::T
     kwargs
@@ -257,7 +275,7 @@ function ordering(df::AbstractDataFrame, cols::AbstractVector, lt::AbstractVecto
     end
 
     if length(cols) == 1
-        return ordering(df, cols[1], lt[1], by[1], rev[1], order[1])
+        return ordering(df, only(cols), only(lt), only(by), only(rev), only(order))
     end
 
     # Collect per-column ordering info
@@ -333,24 +351,38 @@ Sort.defalg(df::AbstractDataFrame, o::Ordering; alg=nothing, cols=[]) =
 ## Actual sort functions
 ########################
 
+const SORT_ARGUMENTS =
 """
-    issorted(df::AbstractDataFrame, cols=All();
-             lt=isless, by=identity, rev::Bool=false, order::Ordering=Forward)
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR). If
+`cols` selects no columns, check whether `df` is sorted on all columns (this
+behaviour is deprecated and will change in future versions).
 
-Test whether data frame `df` sorted by column(s) `cols`.
-Checking against multiple columns is done lexicographically.
-
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-If `cols` selects no columns, check whether `df` is sorted on all columns
-(this behaviour is deprecated and will change in future versions).
-
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-
-If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
-only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
+If `rev` is `true`, reverse sorting is performed. To enable reverse sorting only
+for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
 corresponding column index (see example below).
 
-See other methods for a description of other keyword arguments.
+The `by` keyword lets you provide a function that will be applied to each
+element before comparison; the `lt` keyword allows providing a custom "less
+than" function. If both `by` and `lt` are specified, the `lt` function is
+applied to the result of the `by` function.
+
+All the keyword arguments can be passed as a single value, which is applied to
+all columns or as a vector of length equal to the number of columns that the
+operation is performed on. In such a case the passed values are applied to
+consecutive columns.
+"""
+
+"""
+    issorted(df::AbstractDataFrame, cols=All();
+             lt::Union{Function, AbstractVector{<:Function}}=isless,
+             by::Union{Function, AbstractVector{<:Function}}=identity,
+             rev::Union{Bool, AbstractVector{Bool}}=false,
+             order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
+
+Test whether data frame `df` sorted by column(s) `cols`. Checking against
+multiple columns is done lexicographically.
+
+$SORT_ARGUMENTS
 
 # Examples
 ```jldoctest
@@ -379,14 +411,21 @@ true
 """
 function Base.issorted(df::AbstractDataFrame, cols=All();
                        lt=isless, by=identity, rev=false, order=Forward)
+    _check_sort_args(lt, by, rev, order)
+
+    to_scalar(x::AbstractVector) = only(x)
+    to_scalar(x::Any) = x
+
     # exclude AbstractVector as in that case cols can contain order(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
     end
     if cols isa ColumnIndex
-        return issorted(df[!, cols], lt=lt, by=by, rev=rev, order=order)
+        return issorted(df[!, cols], lt=to_scalar(lt), by=to_scalar(by),
+                        rev=to_scalar(rev), order=to_scalar(order))
     elseif cols isa AbstractVector{<:ColumnIndex} && length(cols) == 1
-        return issorted(df[!, cols[1]], lt=lt, by=by, rev=rev, order=order)
+        return issorted(df[!, cols[1]], lt=to_scalar(lt), by=to_scalar(by),
+                        rev=to_scalar(rev), order=to_scalar(order))
     else
         return issorted(1:nrow(df), ordering(df, cols, lt, by, rev, order))
     end
@@ -400,22 +439,14 @@ end
 Return a data frame containing the rows in `df` sorted by column(s) `cols`.
 Sorting on multiple columns is done lexicographically.
 
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-If `cols` selects no columns, sort `df` on all columns
-(this behaviour is deprecated and will change in future versions).
+$SORT_ARGUMENTS
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
 on the type of the sorting columns and on the number of rows in `df`.
 
-If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
-only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
-corresponding column index (see example below).
-
 If `view=false` a freshly allocated `DataFrame` is returned.
 If `view=true` then a `SubDataFrame` view into `df` is returned.
-
-See [`sort!`](@ref) for a description of other keyword arguments.
 
 # Examples
 ```jldoctest
@@ -485,19 +516,11 @@ Return a permutation vector of row indices of data frame `df` that puts them in
 sorted order according to column(s) `cols`.
 Order on multiple columns is computed lexicographically.
 
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-If `cols` selects no columns, return permutation vector based on sorting all columns
-(this behaviour is deprecated and will change in future versions).
+$SORT_ARGUMENTS
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
 on the type of the sorting columns and on the number of rows in `df`.
-
-If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
-only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
-corresponding column index (see example below).
-
-See other methods for a description of other keyword arguments.
 
 # Examples
 ```jldoctest
@@ -542,11 +565,8 @@ julia> sortperm(df, [:x, order(:y, rev=true)])
 """
 function Base.sortperm(df::AbstractDataFrame, cols=All();
                   alg=nothing, lt=isless, by=identity, rev=false, order=Forward)
-    if !(by isa Base.Callable || (by isa AbstractVector && eltype(by) <: Base.Callable))
-        msg = "'by' must be a Function or a vector of Functions. " *
-              " Perhaps you wanted 'cols'."
-        throw(ArgumentError(msg))
-    end
+    _check_sort_args(lt, by, rev, order)
+
     # exclude AbstractVector as in that case cols can contain order(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
@@ -570,19 +590,11 @@ _sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) =
 Sort data frame `df` by column(s) `cols`.
 Sorting on multiple columns is done lexicographicallly.
 
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-If `cols` selects no columns, sort `df` on all columns
-(this behaviour is deprecated and will change in future versions).
+$SORT_ARGUMENTS
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
 on the type of the sorting columns and on the number of rows in `df`.
-
-If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
-only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
-corresponding column index (see example below).
-
-See other methods for a description of other keyword arguments.
 
 # Examples
 ```jldoctest
@@ -639,11 +651,8 @@ julia> sort!(df, [:x, order(:y, rev=true)])
 """
 function Base.sort!(df::AbstractDataFrame, cols=All(); alg=nothing,
                     lt=isless, by=identity, rev=false, order=Forward)
-    if !(isa(by, Function) || eltype(by) <: Function)
-        msg = "'by' must be a Function or a vector of Functions. " *
-              "Perhaps you wanted 'cols'."
-        throw(ArgumentError(msg))
-    end
+    _check_sort_args(lt, by, rev, order)
+
     # exclude AbstractVector as in that case cols can contain order(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]

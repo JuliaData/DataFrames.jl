@@ -29,33 +29,33 @@ using DataFrames, Random, Test, CategoricalArrays
 
     ds = sort(df, [order(:rank, rev=true), :chrom, :pos])
     @test issorted(ds, [order(:rank, rev=true), :chrom, :pos])
-    @test issorted(ds, rev=(true, false, false))
+    @test issorted(ds, rev=[true, false, false])
 
     ds = sort(df, [order("rank", rev=true), "chrom", "pos"])
     @test issorted(ds, [order("rank", rev=true), "chrom", "pos"])
-    @test issorted(ds, rev=(true, false, false))
+    @test issorted(ds, rev=[true, false, false])
 
-    ds2 = sort(df, [:rank, :chrom, :pos], rev=(true, false, false))
+    ds2 = sort(df, [:rank, :chrom, :pos], rev=[true, false, false])
     @test issorted(ds2, [order(:rank, rev=true), :chrom, :pos])
-    @test issorted(ds2, rev=(true, false, false))
+    @test issorted(ds2, rev=[true, false, false])
 
     @test ds2 == ds
 
-    ds2 = sort(df, ["rank", "chrom", "pos"], rev=(true, false, false))
+    ds2 = sort(df, ["rank", "chrom", "pos"], rev=[true, false, false])
     @test issorted(ds2, [order("rank", rev=true), "chrom", "pos"])
-    @test issorted(ds2, rev=(true, false, false))
+    @test issorted(ds2, rev=[true, false, false])
 
     @test ds2 == ds
 
-    sort!(df, [:rank, :chrom, :pos], rev=(true, false, false))
+    sort!(df, [:rank, :chrom, :pos], rev=[true, false, false])
     @test issorted(df, [order(:rank, rev=true), :chrom, :pos])
-    @test issorted(df, rev=(true, false, false))
+    @test issorted(df, rev=[true, false, false])
 
     @test df == ds
 
-    sort!(df, ["rank", "chrom", "pos"], rev=(true, false, false))
+    sort!(df, ["rank", "chrom", "pos"], rev=[true, false, false])
     @test issorted(df, [order("rank", rev=true), "chrom", "pos"])
-    @test issorted(df, rev=(true, false, false))
+    @test issorted(df, rev=[true, false, false])
 
     @test df == ds
 
@@ -259,6 +259,68 @@ end
     @test sort(select(df, [1, 3, 5]), :id) == select(df2, [1, 3, 5])
     @test select(df, [1, 3, 5]) ==
           select(df2, [1, 3, 5])[[isodd(i) ? i : (102 - i) for i in 1:100], :]
+end
+
+@testset "check sorting kwarg argument correctness" begin
+    for df in (DataFrame(x=1:3), DataFrame(x=1:3, y=1:3)), fun in (issorted, sort, sortperm, sort!)
+        @test_throws ArgumentError fun(df, by=Int)
+        @test_throws ArgumentError fun(df, lt=Int)
+        @test_throws ArgumentError fun(df, rev=Int)
+        @test_throws ArgumentError fun(df, order=Int)
+        @test_throws ArgumentError fun(df, by=1)
+        @test_throws ArgumentError fun(df, lt=1)
+        @test_throws ArgumentError fun(df, rev=1)
+        @test_throws ArgumentError fun(df, order=1)
+        @test_throws ArgumentError fun(df, by=(identity,))
+        @test_throws ArgumentError fun(df, lt=(isless,))
+        @test_throws ArgumentError fun(df, rev=(true,))
+        @test_throws ArgumentError fun(df, order=(Base.Forward,))
+        @test_throws ArgumentError fun(df, by=(identity, identity))
+        @test_throws ArgumentError fun(df, lt=(isless, isless))
+        @test_throws ArgumentError fun(df, rev=(true, true))
+        @test_throws ArgumentError fun(df, order=(Base.Forward, Base.Forward))
+    end
+
+    for df in (DataFrame(x=1:3), DataFrame(x=1:3, y=1:3)), fun in (sort, sort!)
+        dfc = copy(df)
+        @test fun(df, by=identity) == dfc
+        @test fun(df, by=fill(identity, ncol(df))) == dfc
+        @test fun(df, lt=isless) == dfc
+        @test fun(df, lt=fill(isless, ncol(df))) == dfc
+        @test fun(df, rev=false) == dfc
+        @test fun(df, rev=fill(false, ncol(df))) == dfc
+        @test fun(df, order=Base.Forward) == dfc
+        @test fun(df, order=fill(Base.Forward, ncol(df))) == dfc
+    end
+
+    for df in (DataFrame(x=1:3), DataFrame(x=1:3, y=1:3))
+        @test issorted(df, by=identity)
+        @test issorted(df, by=fill(identity, ncol(df)))
+        @test issorted(df, lt=isless)
+        @test issorted(df, lt=fill(isless, ncol(df)))
+        @test issorted(df, rev=false)
+        @test issorted(df, rev=fill(false, ncol(df)))
+        @test issorted(df, order=Base.Forward)
+        @test issorted(df, order=fill(Base.Forward, ncol(df)))
+
+        @test issorted(df, :x, by=identity)
+        @test issorted(df, :x, by=[identity])
+        @test issorted(df, :x, lt=isless)
+        @test issorted(df, :x, lt=[isless])
+        @test issorted(df, :x, rev=false)
+        @test issorted(df, :x, rev=[false])
+        @test issorted(df, :x, order=Base.Forward)
+        @test issorted(df, :x, order=[Base.Forward])
+
+        @test sortperm(df, by=identity) == 1:3
+        @test sortperm(df, by=fill(identity, ncol(df))) == 1:3
+        @test sortperm(df, lt=isless) == 1:3
+        @test sortperm(df, lt=fill(isless, ncol(df))) == 1:3
+        @test sortperm(df, rev=false) == 1:3
+        @test sortperm(df, rev=fill(false, ncol(df))) == 1:3
+        @test sortperm(df, order=Base.Forward) == 1:3
+        @test sortperm(df, order=fill(Base.Forward, ncol(df))) == 1:3
+    end
 end
 
 end # module
