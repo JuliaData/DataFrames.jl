@@ -14,24 +14,6 @@
 #                  which allows a user to specify column specific orderings
 #                  with "order(column, rev=true, ...)"
 
-function _check_sort_args(lt, by, rev, order)
-    if !(lt isa Function || lt isa AbstractVector{<:Function})
-        msg = "'lt' must be a Function or a vector of Functions."
-        throw(ArgumentError(msg))
-    end
-    if !(by isa Function || by isa AbstractVector{<:Function})
-        msg = "'by' must be a Function or a vector of Functions."
-        throw(ArgumentError(msg))
-    end
-    if !(rev isa Bool || rev isa AbstractVector{Bool})
-        msg = "'rev' must be a Bool or a vector of Bool."
-        throw(ArgumentError(msg))
-    end
-    if !(order isa Base.Order.Ordering || order isa AbstractVector{<:Base.Order.Ordering})
-        msg = "'order' must be a an ordering or a vector of orderings."
-        throw(ArgumentError(msg))
-    end
-end
 struct UserColOrdering{T<:ColumnIndex}
     col::T
     kwargs
@@ -410,9 +392,11 @@ true
 ```
 """
 function Base.issorted(df::AbstractDataFrame, cols=All();
-                       lt=isless, by=identity, rev=false, order=Forward)
-    _check_sort_args(lt, by, rev, order)
-
+                       lt::Union{Function, AbstractVector{<:Function}}=isless,
+                       by::Union{Function, AbstractVector{<:Function}}=identity,
+                       rev::Union{Bool, AbstractVector{Bool}}=false,
+                       order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+)
     to_scalar(x::AbstractVector) = only(x)
     to_scalar(x::Any) = x
 
@@ -433,8 +417,12 @@ end
 
 """
     sort(df::AbstractDataFrame, cols=All();
-         alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
-         rev::Bool=false, order::Ordering=Forward, view::Bool=false)
+         alg::Union{Algorithm, Nothing}=nothing,
+         lt::Union{Function, AbstractVector{<:Function}}=isless,
+         by::Union{Function, AbstractVector{<:Function}}=identity,
+         rev::Union{Bool, AbstractVector{Bool}}=false,
+         order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+         view::Bool=false)
 
 Return a data frame containing the rows in `df` sorted by column(s) `cols`.
 Sorting on multiple columns is done lexicographically.
@@ -501,16 +489,24 @@ julia> sort(df, [:x, order(:y, rev=true)])
    4 │     3  b
 ```
 """
-@inline function Base.sort(df::AbstractDataFrame, cols=All(); alg=nothing, lt=isless,
-                           by=identity, rev=false, order=Forward, view::Bool=false)
+@inline function Base.sort(df::AbstractDataFrame, cols=All();
+                          alg::Union{Algorithm, Nothing}=nothing,
+                          lt::Union{Function, AbstractVector{<:Function}}=isless,
+                          by::Union{Function, AbstractVector{<:Function}}=identity,
+                          rev::Union{Bool, AbstractVector{Bool}}=false,
+                          order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+                          view::Bool=false)
     rowidxs = sortperm(df, cols, alg=alg, lt=lt, by=by, rev=rev, order=order)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
 """
     sortperm(df::AbstractDataFrame, cols=All();
-             alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
-             rev::Bool=false, order::Ordering=Forward)
+             alg::Union{Algorithm, Nothing}=nothing,
+             lt::Union{Function, AbstractVector{<:Function}}=isless,
+             by::Union{Function, AbstractVector{<:Function}}=identity,
+             rev::Union{Bool, AbstractVector{Bool}}=false,
+             order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
 
 Return a permutation vector of row indices of data frame `df` that puts them in
 sorted order according to column(s) `cols`.
@@ -564,9 +560,11 @@ julia> sortperm(df, [:x, order(:y, rev=true)])
 ```
 """
 function Base.sortperm(df::AbstractDataFrame, cols=All();
-                  alg=nothing, lt=isless, by=identity, rev=false, order=Forward)
-    _check_sort_args(lt, by, rev, order)
-
+                       alg::Union{Algorithm, Nothing}=nothing,
+                       lt::Union{Function, AbstractVector{<:Function}}=isless,
+                       by::Union{Function, AbstractVector{<:Function}}=identity,
+                       rev::Union{Bool, AbstractVector{Bool}}=false,
+                       order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
     # exclude AbstractVector as in that case cols can contain order(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
@@ -584,8 +582,11 @@ _sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) =
 
 """
     sort!(df::AbstractDataFrame, cols=All();
-          alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
-          rev::Bool=false, order::Ordering=Forward)
+          alg::Union{Algorithm, Nothing}=nothing,
+          lt::Union{Function, AbstractVector{<:Function}}=isless,
+          by::Union{Function, AbstractVector{<:Function}}=identity,
+          rev::Union{Bool, AbstractVector{Bool}}=false,
+          order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
 
 Sort data frame `df` by column(s) `cols`.
 Sorting on multiple columns is done lexicographicallly.
@@ -649,9 +650,12 @@ julia> sort!(df, [:x, order(:y, rev=true)])
    4 │     3  b
 ```
 """
-function Base.sort!(df::AbstractDataFrame, cols=All(); alg=nothing,
-                    lt=isless, by=identity, rev=false, order=Forward)
-    _check_sort_args(lt, by, rev, order)
+function Base.sort!(df::AbstractDataFrame, cols=All();
+                    alg::Union{Algorithm, Nothing}=nothing,
+                    lt::Union{Function, AbstractVector{<:Function}}=isless,
+                    by::Union{Function, AbstractVector{<:Function}}=identity,
+                    rev::Union{Bool, AbstractVector{Bool}}=false,
+                    order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
 
     # exclude AbstractVector as in that case cols can contain order(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
