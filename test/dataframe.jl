@@ -122,7 +122,7 @@ end
 
 @testset "copying" begin
     df = DataFrame(a=Union{Int, Missing}[2, 3],
-                   b=Union{DataFrame, Missing}[DataFrame(c = 1), DataFrame(d = 2)])
+                   b=Union{DataFrame, Missing}[DataFrame(c=1), DataFrame(d=2)])
     dfc = copy(df)
     dfcc = copy(df, copycols=false)
     dfdc = deepcopy(df)
@@ -345,7 +345,7 @@ end
 end
 
 @testset "unsupported insertcols!" begin
-    df = DataFrame(x = 1:2)
+    df = DataFrame(x=1:2)
     @test_throws ArgumentError insertcols!(df, 2, y=2:3)
 end
 
@@ -378,10 +378,10 @@ end
 @testset "DataFrame constructors" begin
     @test DataFrame([Union{Int, Missing}[1, 2, 3], Union{Float64, Missing}[2.5, 4.5, 6.5]],
                     [:A, :B]) ==
-        DataFrame(A = Union{Int, Missing}[1, 2, 3], B = Union{Float64, Missing}[2.5, 4.5, 6.5])
+        DataFrame(A=Union{Int, Missing}[1, 2, 3], B=Union{Float64, Missing}[2.5, 4.5, 6.5])
 
     # This assignment was missing before
-    df = DataFrame(Column = [:A])
+    df = DataFrame(Column=[:A])
     df[1, :Column] = :Testing
 
     # zero-row DataFrame and subDataFrame test
@@ -657,29 +657,29 @@ end
 
 @testset "describe" begin
     # Construct the test dataframe
-    df = DataFrame(number = [1, 2, 3, 4],
-                   number_missing = [1, 2, 3, missing],
-                   string = ["a", "b", "c", "d"],
-                   string_missing = ["a", "b", "c", missing],
-                   dates  = Date.([2000, 2001, 2003, 2004]),
-                   catarray = CategoricalArray([1, 2, 1, 2]))
+    df = DataFrame(number=[1, 2, 3, 4],
+                   number_missing=[1, 2, 3, missing],
+                   string=["a", "b", "c", "d"],
+                   string_missing=["a", "b", "c", missing],
+                   dates=Date.([2000, 2001, 2003, 2004]),
+                   catarray=CategoricalArray([1, 2, 1, 2]))
 
-    describe_output = DataFrame(variable = [:number, :number_missing, :string,
-                                            :string_missing, :dates, :catarray],
-                                mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                std = [std(df[!, :number]), 1.0, nothing,
+    describe_output = DataFrame(variable=[:number, :number_missing, :string,
+                                          :string_missing, :dates, :catarray],
+                                mean=[2.5, 2.0, nothing, nothing, nothing, nothing],
+                                std=[std(df[!, :number]), 1.0, nothing,
                                        nothing, nothing, nothing],
-                                min = [1.0, 1.0, "a", "a", Date(2000), 1],
-                                q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
-                                median = [2.5, 2.0, nothing, nothing, VERSION >= v"1.7.0-beta1.2" ? Date(2002) : nothing, nothing],
-                                q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
-                                max = [4.0, 3.0, "d", "c", Date(2004), 2],
-                                nunique = [nothing, nothing, 4, 3, 4, 2],
-                                nmissing = [0, 1, 0, 1, 0, 0],
-                                first = [1, 1, "a", "a", Date(2000), 1],
-                                last = [4, missing, "d", missing, Date(2004), 2],
-                                eltype = [Int, Union{Missing, Int}, String,
-                                          Union{Missing, String}, Date, CategoricalValue{Int, UInt32}])
+                                min=[1.0, 1.0, "a", "a", Date(2000), 1],
+                                q25=[1.75, 1.5, nothing, nothing, nothing, nothing],
+                                median=[2.5, 2.0, nothing, nothing, VERSION >= v"1.7.0-beta1.2" ? Date(2002) : nothing, nothing],
+                                q75=[3.25, 2.5, nothing, nothing, nothing, nothing],
+                                max=[4.0, 3.0, "d", "c", Date(2004), 2],
+                                nunique=[nothing, nothing, 4, 3, 4, 2],
+                                nmissing=[0, 1, 0, 1, 0, 0],
+                                first=[1, 1, "a", "a", Date(2000), 1],
+                                last=[4, missing, "d", missing, Date(2004), 2],
+                                eltype=[Int, Union{Missing, Int}, String,
+                                        Union{Missing, String}, Date, CategoricalValue{Int, UInt32}])
 
     default_fields = [:mean, :min, :median, :max, :nmissing, :eltype]
 
@@ -710,19 +710,19 @@ end
                     median=[2.5, nothing], max=[4, "4"], nmissing=[0, 0], eltype=[Int, String])
 
     # Test that describe works with a dataframe with no observations
-    df = DataFrame(a = Int[], b = String[], c = [])
-    @test describe(df, :mean) ≅ DataFrame(variable = [:a, :b, :c],
-                                          mean = [NaN, nothing, nothing])
+    df = DataFrame(a=Int[], b=String[], c=[])
+    @test describe(df, :mean) ≅ DataFrame(variable=[:a, :b, :c],
+                                          mean=[NaN, nothing, nothing])
 
     @test describe(df, :all, cols=Not(1)) ≅ describe(select(df, Not(1)), :all)
     @test describe(df, cols=Not(1)) ≅ describe(select(df, Not(1)))
     @test describe(df, cols=Not("a")) ≅ describe(select(df, Not(1)))
 
-    @test describe(DataFrame(a=[1, 2]), cols = :a, :min, minimum => :min2, maximum => "max2", :max) ==
+    @test describe(DataFrame(a=[1, 2]), cols=:a, :min, minimum => :min2, maximum => "max2", :max) ==
           DataFrame(variable=:a, min=1, min2=1, max2=2, max=2)
 
     @test_throws ArgumentError describe(df, :mean, :all)
-    @test_throws MethodError describe(DataFrame(a=[1, 2]), cols = :a, "max2" => maximum)
+    @test_throws MethodError describe(DataFrame(a=[1, 2]), cols=:a, "max2" => maximum)
     @test_throws ArgumentError describe(df, :min, :min)
     @test_throws ArgumentError describe(df, :minimum)
 end
@@ -730,20 +730,20 @@ end
 @testset "append!" begin
     buf = IOBuffer()
     sl = SimpleLogger(buf)
-    df = DataFrame(A = 1:2, B = 1:2)
-    df2 = DataFrame(A = 1:4, B = 1:4)
-    @test append!(df, DataFrame(A = 3:4, B = [3.0, 4.0])) == df2
+    df = DataFrame(A=1:2, B=1:2)
+    df2 = DataFrame(A=1:4, B=1:4)
+    @test append!(df, DataFrame(A=3:4, B=[3.0, 4.0])) == df2
     with_logger(sl) do
-        @test_throws InexactError append!(df, DataFrame(A = 3:4, B = [3.5, 4.5]))
+        @test_throws InexactError append!(df, DataFrame(A=3:4, B=[3.5, 4.5]))
     end
     @test df == df2
     @test occursin("Error adding value to column :B", String(take!(buf)))
     with_logger(sl) do
-        @test_throws MethodError append!(df, DataFrame(A = 3:4, B = ["a", "b"]))
+        @test_throws MethodError append!(df, DataFrame(A=3:4, B=["a", "b"]))
     end
     @test df == df2
     @test occursin("Error adding value to column :B", String(take!(buf)))
-    @test_throws ArgumentError append!(df, DataFrame(A = 1:4, C = 1:4))
+    @test_throws ArgumentError append!(df, DataFrame(A=1:4, C=1:4))
     @test df == df2
 
     dfx = DataFrame()
@@ -781,21 +781,21 @@ end
     rename!(df, [:a, :b, :z])
     @test_throws ArgumentError append!(df, dfc)
 
-    df = DataFrame(A = 1:2, B = 1:2)
-    df2 = DataFrame(A = 1:4, B = 1:4)
-    @test append!(copy(df), DataFrame(A = 3:4, B = [3.0, 4.0])) == df2
-    @test append!(copy(df), DataFrame(A = 3:4, B = [3.0, 4.0]), cols=:setequal) == df2
-    @test append!(copy(df), DataFrame(B = 3:4, A = [3.0, 4.0])) == df2
-    @test append!(copy(df), DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:setequal) == df2
+    df = DataFrame(A=1:2, B=1:2)
+    df2 = DataFrame(A=1:4, B=1:4)
+    @test append!(copy(df), DataFrame(A=3:4, B=[3.0, 4.0])) == df2
+    @test append!(copy(df), DataFrame(A=3:4, B=[3.0, 4.0]), cols=:setequal) == df2
+    @test append!(copy(df), DataFrame(B=3:4, A=[3.0, 4.0])) == df2
+    @test append!(copy(df), DataFrame(B=3:4, A=[3.0, 4.0]), cols=:setequal) == df2
     @test append!(copy(df), Dict(:A => 3:4, :B => [3.0, 4.0])) == df2
     @test append!(copy(df), Dict(:A => 3:4, :B => [3.0, 4.0]), cols=:setequal) == df2
-    @test append!(copy(df), DataFrame(A = 3:4, B = [3.0, 4.0]), cols=:orderequal) == df2
+    @test append!(copy(df), DataFrame(A=3:4, B=[3.0, 4.0]), cols=:orderequal) == df2
     @test append!(copy(df), OrderedDict(:A => 3:4, :B => [3.0, 4.0]), cols=:orderequal) == df2
     @test_throws ArgumentError append!(df, Dict(:A => 3:4, :B => [3.0, 4.0]), cols=:orderequal)
-    @test_throws ArgumentError append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:orderequal)
+    @test_throws ArgumentError append!(df, DataFrame(B=3:4, A=[3.0, 4.0]), cols=:orderequal)
     @test_throws ArgumentError append!(df, OrderedDict(:B => 3:4, :A => [3.0, 4.0]), cols=:orderequal)
-    @test_throws ArgumentError append!(df, DataFrame(B = 3:4, A = [3.0, 4.0]), cols=:xxx)
-    @test df == DataFrame(A = 1:2, B = 1:2)
+    @test_throws ArgumentError append!(df, DataFrame(B=3:4, A=[3.0, 4.0]), cols=:xxx)
+    @test df == DataFrame(A=1:2, B=1:2)
 end
 
 @testset "append! default options" begin
@@ -987,8 +987,8 @@ end
 
 @testset "rename" begin
     for asview in (false, true)
-        df = DataFrame(A = 1:3, B = 'A':'C')
-        asview && (df = view(df, :, :))
+        df = DataFrame(A=1:3, B='A':'C')
+        asview && (df=view(df, :, :))
         @test names(rename(df, :A => :A_1)) == ["A_1", "B"]
         @test names(df) == ["A", "B"]
         @test names(rename(df, :A => :A_1, :B => :B_1)) == ["A_1", "B_1"]
@@ -1011,7 +1011,7 @@ end
         @test rename!(lowercase, df) === df
         @test propertynames(df) == [:a_4, :b_4]
 
-        df = DataFrame(A = 1:3, B = 'A':'C', C = [:x, :y, :z])
+        df = DataFrame(A=1:3, B='A':'C', C=[:x, :y, :z])
         asview && (df = view(df, :, :))
         @test rename!(df, :A => :B, :B => :A) === df
         @test propertynames(df) == [:B, :A, :C]
@@ -1043,7 +1043,7 @@ end
         @test df == cdf
 
         df = DataFrame(A=1)
-        asview && (df = view(df, :, :))
+        asview && (df=view(df, :, :))
         @test rename(x -> 1, df) == DataFrame(Symbol("1") => 1)
     end
 
@@ -1082,7 +1082,7 @@ end
 end
 
 @testset "size" begin
-    df = DataFrame(A = 1:3, B = 'A':'C')
+    df = DataFrame(A=1:3, B='A':'C')
     @test_throws ArgumentError size(df, 3)
     @test ndims(df) == 2
     @test ndims(typeof(df)) == 2
@@ -1093,17 +1093,17 @@ end
 end
 
 @testset "first, last and only" begin
-    df = DataFrame(A = 1:10)
+    df = DataFrame(A=1:10)
 
     @test first(df) == df[1, :]
     @test last(df) == df[end, :]
     @test_throws BoundsError first(DataFrame(x=[]))
     @test_throws BoundsError last(DataFrame(x=[]))
 
-    @test first(df, 6) == DataFrame(A = 1:6)
-    @test first(df, 1) == DataFrame(A = 1)
-    @test last(df, 6) == DataFrame(A = 5:10)
-    @test last(df, 1) == DataFrame(A = 10)
+    @test first(df, 6) == DataFrame(A=1:6)
+    @test first(df, 1) == DataFrame(A=1)
+    @test last(df, 6) == DataFrame(A=5:10)
+    @test last(df, 1) == DataFrame(A=10)
 
     @test_throws ArgumentError only(df)
     @test_throws ArgumentError only(DataFrame())
@@ -1251,13 +1251,13 @@ end
         @test eltype(df.d) == Int
     end
 
-    df = DataFrame(x=[1], y = Union{Int, Missing}[1], z=[missing])
+    df = DataFrame(x=[1], y=Union{Int, Missing}[1], z=[missing])
     disallowmissing!(df, error=false)
     @test eltype(df.x) == Int
     @test eltype(df.y) == Int
     @test eltype(df.z) == Missing
 
-    df = DataFrame(x=[1], y = Union{Int, Missing}[1], z=[missing])
+    df = DataFrame(x=[1], y=Union{Int, Missing}[1], z=[missing])
     disallowmissing!(df, 2:3, error=false)
     @test eltype(df.x) == Int
     @test eltype(df.y) == Int
@@ -1391,10 +1391,10 @@ end
 end
 
 @testset "similar" begin
-    df = DataFrame(a = ["foo"],
-                   b = CategoricalArray(["foo"]),
-                   c = [0.0],
-                   d = CategoricalArray([0.0]))
+    df = DataFrame(a=["foo"],
+                   b=CategoricalArray(["foo"]),
+                   c=[0.0],
+                   d=CategoricalArray([0.0]))
     @test eltype.(eachcol(similar(df))) == eltype.(eachcol(df))
     @test size(similar(df)) == size(df)
 
@@ -1556,14 +1556,14 @@ end
 end
 
 @testset "duplicate column names" begin
-    x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
-    v = DataFrame(a = [5, 6, 7], b = [8, 9, 10])
+    x = DataFrame(a=[1, 2, 3], b=[4, 5, 6])
+    v = DataFrame(a=[5, 6, 7], b=[8, 9, 10])
     z = vcat(v, x)
     @test_throws ArgumentError z[:, [1, 1, 2]]
 end
 
 @testset "parent, size and axes" begin
-    x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
+    x = DataFrame(a=[1, 2, 3], b=[4, 5, 6])
     @test parent(x) === x
     @test parentindices(x) === (Base.OneTo(3), Base.OneTo(2))
     @test size(x) == (3, 2)
@@ -2002,9 +2002,9 @@ end
 end
 
 @testset "names for Type, predicate + standard tests of cols" begin
-    df_long = DataFrame(a1 = 1:3, a2 = [1, missing, 3],
-                        b1 = 1.0:3.0, b2 = [1.0, missing, 3.0],
-                        c1 = '1':'3', c2 = ['1', missing, '3'], x=1:3)
+    df_long = DataFrame(a1=1:3, a2=[1, missing, 3],
+                        b1=1.0:3.0, b2=[1.0, missing, 3.0],
+                        c1='1':'3', c2=['1', missing, '3'], x=1:3)
     for x in (df_long[:, Not(end)], @view(df_long[:, Not(end)]),
               groupby(df_long[:, Not(end)], :a1), groupby(@view(df_long[:, Not(end)]), :a1),
               eachrow(df_long[:, Not(end)]), eachrow(@view(df_long[:, Not(end)])),
@@ -2030,6 +2030,21 @@ end
         # before Julia 1.8 it is TypeError; the change is caused by the redesign of ifelse
         @test_throws Union{MethodError, TypeError} names(x, x -> 1)
     end
+end
+
+@testset "reverse DataFrame" begin
+    df = DataFrame(a=1:5, b=5:-1:1)
+    @test reverse(df) == DataFrame(a=5:-1:1, b=1:5)
+    @test reverse(DataFrame(a=1, b=1)) == DataFrame(a=1, b=1)
+    @test typeof(reverse(df)) == DataFrame
+end
+
+@testset "reverse SubDataFrame" begin
+    df = DataFrame(a=1:10, b=10:-1:1, c=11:20)
+    @test reverse(view(df, 1:3, 1:2)) == DataFrame(a=[3, 2, 1], b=[8, 9, 10])
+    @test reverse(view(df, 1:5, 1:3)) == DataFrame(a=5:-1:1, b=6:10, c=15:-1:11)
+    @test reverse(view(df, :, 1:2)) == DataFrame(a=10:-1:1, b=1:10)
+    @test typeof(reverse(view(df, :, 1:2))) == DataFrame
 end
 
 end # module

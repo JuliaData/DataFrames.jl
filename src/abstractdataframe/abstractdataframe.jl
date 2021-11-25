@@ -759,9 +759,9 @@ Use `findall(completecases(df))` to get the indices of the rows.
 # Examples
 
 ```jldoctest
-julia> df = DataFrame(i = 1:5,
-                            x = [missing, 4, missing, 2, 1],
-                            y = [missing, missing, "c", "d", "e"])
+julia> df = DataFrame(i=1:5,
+                      x=[missing, 4, missing, 2, 1],
+                      y=[missing, missing, "c", "d", "e"])
 5×3 DataFrame
  Row │ i      x        y
      │ Int64  Int64?   String?
@@ -850,9 +850,9 @@ See also: [`completecases`](@ref) and [`dropmissing!`](@ref).
 # Examples
 
 ```jldoctest
-julia> df = DataFrame(i = 1:5,
-                      x = [missing, 4, missing, 2, 1],
-                      y = [missing, missing, "c", "d", "e"])
+julia> df = DataFrame(i=1:5,
+                      x=[missing, 4, missing, 2, 1],
+                      y=[missing, missing, "c", "d", "e"])
 5×3 DataFrame
  Row │ i      x        y
      │ Int64  Int64?   String?
@@ -927,9 +927,9 @@ get converted using [`disallowmissing!`](@ref).
 See also: [`dropmissing`](@ref) and [`completecases`](@ref).
 
 ```jldoctest
-julia> df = DataFrame(i = 1:5,
-                      x = [missing, 4, missing, 2, 1],
-                      y = [missing, missing, "c", "d", "e"])
+julia> df = DataFrame(i=1:5,
+                      x=[missing, 4, missing, 2, 1],
+                      y=[missing, missing, "c", "d", "e"])
 5×3 DataFrame
  Row │ i      x        y
      │ Int64  Int64?   String?
@@ -1018,7 +1018,7 @@ See also: [`filter!`](@ref)
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+julia> df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
 4×2 DataFrame
  Row │ x      y
      │ Int64  String
@@ -1144,7 +1144,7 @@ See also: [`filter`](@ref)
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+julia> df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
 4×2 DataFrame
  Row │ x      y
      │ Int64  String
@@ -1177,7 +1177,7 @@ julia> filter!(:x => x -> x == 3, df)
 ─────┼───────────────
    1 │     3  b
 
-julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"]);
+julia> df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"]);
 
 julia> filter!([:x, :y] => (x, y) -> x == 1 || y == "b", df)
 3×2 DataFrame
@@ -1188,7 +1188,7 @@ julia> filter!([:x, :y] => (x, y) -> x == 1 || y == "b", df)
    2 │     1  c
    3 │     1  b
 
-julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"]);
+julia> df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"]);
 
 julia> filter!(AsTable(:) => nt -> nt.x == 1 || nt.y == "b", df)
 3×2 DataFrame
@@ -1279,7 +1279,7 @@ See also [`unique`](@ref) and [`unique!`](@ref).
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(i = 1:4, x = [1, 2, 1, 2])
+julia> df = DataFrame(i=1:4, x=[1, 2, 1, 2])
 4×2 DataFrame
  Row │ i      x
      │ Int64  Int64
@@ -1387,7 +1387,7 @@ specifying the column(s) to compare.
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(i = 1:4, x = [1, 2, 1, 2])
+julia> df = DataFrame(i=1:4, x=[1, 2, 1, 2])
 4×2 DataFrame
  Row │ i      x
      │ Int64  Int64
@@ -1879,7 +1879,7 @@ of rows is repeated.
 
 # Example
 ```jldoctest
-julia> df = DataFrame(a = 1:2, b = 3:4)
+julia> df = DataFrame(a=1:2, b=3:4)
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -1887,7 +1887,7 @@ julia> df = DataFrame(a = 1:2, b = 3:4)
    1 │     1      3
    2 │     2      4
 
-julia> repeat(df, inner = 2, outer = 3)
+julia> repeat(df, inner=2, outer=3)
 12×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -1920,7 +1920,7 @@ specified by `count`.
 
 # Example
 ```jldoctest
-julia> df = DataFrame(a = 1:2, b = 3:4)
+julia> df = DataFrame(a=1:2, b=3:4)
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -1980,7 +1980,7 @@ See also [`size`](@ref).
 **Examples**
 
 ```jldoctest
-julia> df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10));
+julia> df = DataFrame(i=1:10, x=rand(10), y=rand(["a", "b", "c"], 10));
 
 julia> size(df)
 (10, 3)
@@ -2129,7 +2129,7 @@ returned `DataFrame` will affect `df`.
 # Examples
 
 ```jldoctest
-julia> df1 = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7, 8]])
+julia> df1 = DataFrame(a=[1, 2], b=[[1, 2], [3, 4]], c=[[5, 6], [7, 8]])
 2×3 DataFrame
  Row │ a      b       c
      │ Int64  Array…  Array…
@@ -2157,7 +2157,7 @@ julia> flatten(df1, [:b, :c])
    3 │     2      3      7
    4 │     2      4      8
 
-julia> df2 = DataFrame(a = [1, 2], b = [("p", "q"), ("r", "s")])
+julia> df2 = DataFrame(a=[1, 2], b=[("p", "q"), ("r", "s")])
 2×2 DataFrame
  Row │ a      b
      │ Int64  Tuple…
@@ -2175,7 +2175,7 @@ julia> flatten(df2, :b)
    3 │     2  r
    4 │     2  s
 
-julia> df3 = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7]])
+julia> df3 = DataFrame(a=[1, 2], b=[[1, 2], [3, 4]], c=[[5, 6], [7]])
 2×3 DataFrame
  Row │ a      b       c
      │ Int64  Array…  Array…
@@ -2239,3 +2239,36 @@ Base.getindex(::AbstractDataFrame, ::Union{Symbol, Integer, AbstractString}) =
 
 Base.setindex!(::AbstractDataFrame, ::Any, ::Union{Symbol, Integer, AbstractString}) =
     throw(ArgumentError("syntax df[column] is not supported use df[!, column] instead"))
+
+"""
+    reverse(df::AbstractDataFrame)
+
+Return a data frame containing the rows in `df` in reversed order.
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(a=1:5, b=6:10, c=11:15)
+5×3 DataFrame
+ Row │ a      b      c 
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      6     11
+   2 │     2      7     12
+   3 │     3      8     13
+   4 │     4      9     14
+   5 │     5     10     15
+
+julia> reverse(df)
+5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     5     10     15
+   2 │     4      9     14
+   3 │     3      8     13
+   4 │     2      7     12
+   5 │     1      6     11
+```
+"""
+Base.reverse(df::AbstractDataFrame) = df[nrow(df):-1:1, :]
