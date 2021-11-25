@@ -395,8 +395,7 @@ function Base.issorted(df::AbstractDataFrame, cols=All();
                        lt::Union{Function, AbstractVector{<:Function}}=isless,
                        by::Union{Function, AbstractVector{<:Function}}=identity,
                        rev::Union{Bool, AbstractVector{Bool}}=false,
-                       order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
-)
+                       order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
     to_scalar(x::AbstractVector) = only(x)
     to_scalar(x::Any) = x
 
@@ -427,8 +426,8 @@ end
 Return a data frame containing the rows in `df` sorted by column(s) `cols`.
 Sorting on multiple columns is done lexicographically.
 
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR). If
-`cols` selects no columns, return permutation vector based on sorting all columns
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+ If `cols` selects no columns, sort `df` on all columns
 (this behaviour is deprecated and will change in future versions).
 
 $SORT_ARGUMENTS
@@ -494,12 +493,12 @@ julia> sort(df, [:x, order(:y, rev=true)])
 ```
 """
 @inline function Base.sort(df::AbstractDataFrame, cols=All();
-                          alg::Union{Algorithm, Nothing}=nothing,
-                          lt::Union{Function, AbstractVector{<:Function}}=isless,
-                          by::Union{Function, AbstractVector{<:Function}}=identity,
-                          rev::Union{Bool, AbstractVector{Bool}}=false,
-                          order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
-                          view::Bool=false)
+                           alg::Union{Algorithm, Nothing}=nothing,
+                           lt::Union{Function, AbstractVector{<:Function}}=isless,
+                           by::Union{Function, AbstractVector{<:Function}}=identity,
+                           rev::Union{Bool, AbstractVector{Bool}}=false,
+                           order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+                           view::Bool=false)
     rowidxs = sortperm(df, cols, alg=alg, lt=lt, by=by, rev=rev, order=order)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
@@ -516,9 +515,9 @@ Return a permutation vector of row indices of data frame `df` that puts them in
 sorted order according to column(s) `cols`.
 Order on multiple columns is computed lexicographically.
 
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR). If
-`cols` selects no columns, check whether `df` is sorted on all columns (this
-behaviour is deprecated and will change in future versions).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+If `cols` selects no columns, return permutation vector based on sorting all columns
+(this behaviour is deprecated and will change in future versions).
 
 $SORT_ARGUMENTS
 
