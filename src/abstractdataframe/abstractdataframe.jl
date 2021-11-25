@@ -552,7 +552,7 @@ access missing values.
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(i=1:10, x=0.1:0.1:1.0, y='a':'j')
+julia> df = DataFrame(i=1:10, x=0.1:0.1:1.0, y='a':'j');
 
 julia> describe(df)
 3×7 DataFrame
