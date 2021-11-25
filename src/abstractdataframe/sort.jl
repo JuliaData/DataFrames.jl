@@ -427,7 +427,7 @@ Return a data frame containing the rows in `df` sorted by column(s) `cols`.
 Sorting on multiple columns is done lexicographically.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
- If `cols` selects no columns, sort `df` on all columns
+If `cols` selects no columns, sort `df` on all columns
 (this behaviour is deprecated and will change in future versions).
 
 $SORT_ARGUMENTS
