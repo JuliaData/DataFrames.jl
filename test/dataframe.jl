@@ -2036,6 +2036,7 @@ end
     df = DataFrame(a=1:5, b=5:-1:1)
     @test reverse(df) == DataFrame(a=5:-1:1, b=1:5)
     @test reverse(DataFrame(a=1, b=1)) == DataFrame(a=1, b=1)
+    @test typeof(reverse(df)) == DataFrame
 end
 
 @testset "reverse SubDataFrame" begin
@@ -2043,6 +2044,7 @@ end
     @test reverse(view(df, 1:3, 1:2)) == DataFrame(a=[3, 2, 1], b=[8, 9, 10])
     @test reverse(view(df, 1:5, 1:3)) == DataFrame(a=5:-1:1, b=6:10, c=15:-1:11)
     @test reverse(view(df, :, 1:2)) == DataFrame(a=10:-1:1, b=1:10)
+    @test typeof(reverse(view(df, :, 1:2))) == DataFrame
 end
 
 end # module
