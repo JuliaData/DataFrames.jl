@@ -343,15 +343,15 @@ If `rev` is `true`, reverse sorting is performed. To enable reverse sorting only
 for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
 corresponding column index (see example below).
 
-The `by` keyword lets you provide a function that will be applied to each
-element before comparison; the `lt` keyword allows providing a custom "less
+The `by` keyword allows providing a function that will be applied to each
+cell before comparison; the `lt` keyword allows providing a custom "less
 than" function. If both `by` and `lt` are specified, the `lt` function is
 applied to the result of the `by` function.
 
-All the keyword arguments can be passed as a single value, which is applied to
-all columns or as a vector of length equal to the number of columns that the
-operation is performed on. In such a case the passed values are applied to
-consecutive columns.
+All the keyword arguments can be either a single value, which is applied to
+all columns, or a vector of length equal to the number of columns that the
+operation is performed on. In such a case each entry is used for the
+column in the corresponding position in `cols`.
 """
 
 """
