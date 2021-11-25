@@ -2243,7 +2243,7 @@ Base.setindex!(::AbstractDataFrame, ::Any, ::Union{Symbol, Integer, AbstractStri
 """
     reverse(df::AbstractDataFrame)
 
-This function reverses the current order of the rows in `df`.
+Return a data frame containing the rows in `df` in reversed order.
 
 # Examples
 
