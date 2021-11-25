@@ -94,7 +94,7 @@ using DataFrames, Random, Test, CategoricalArrays
     @test x.y == [1, 2, 3, 4]
     @test x.x == [1, 3, 2, 4]
 
-    @test_throws ArgumentError sort(x, by=:x)
+    @test_throws TypeError sort(x, by=:x)
 
     Random.seed!(1)
     # here there will be probably no ties
@@ -263,22 +263,22 @@ end
 
 @testset "check sorting kwarg argument correctness" begin
     for df in (DataFrame(x=1:3), DataFrame(x=1:3, y=1:3)), fun in (issorted, sort, sortperm, sort!)
-        @test_throws ArgumentError fun(df, by=Int)
-        @test_throws ArgumentError fun(df, lt=Int)
-        @test_throws ArgumentError fun(df, rev=Int)
-        @test_throws ArgumentError fun(df, order=Int)
-        @test_throws ArgumentError fun(df, by=1)
-        @test_throws ArgumentError fun(df, lt=1)
-        @test_throws ArgumentError fun(df, rev=1)
-        @test_throws ArgumentError fun(df, order=1)
-        @test_throws ArgumentError fun(df, by=(identity,))
-        @test_throws ArgumentError fun(df, lt=(isless,))
-        @test_throws ArgumentError fun(df, rev=(true,))
-        @test_throws ArgumentError fun(df, order=(Base.Forward,))
-        @test_throws ArgumentError fun(df, by=(identity, identity))
-        @test_throws ArgumentError fun(df, lt=(isless, isless))
-        @test_throws ArgumentError fun(df, rev=(true, true))
-        @test_throws ArgumentError fun(df, order=(Base.Forward, Base.Forward))
+        @test_throws TypeError fun(df, by=Int)
+        @test_throws TypeError fun(df, lt=Int)
+        @test_throws TypeError fun(df, rev=Int)
+        @test_throws TypeError fun(df, order=Int)
+        @test_throws TypeError fun(df, by=1)
+        @test_throws TypeError fun(df, lt=1)
+        @test_throws TypeError fun(df, rev=1)
+        @test_throws TypeError fun(df, order=1)
+        @test_throws TypeError fun(df, by=(identity,))
+        @test_throws TypeError fun(df, lt=(isless,))
+        @test_throws TypeError fun(df, rev=(true,))
+        @test_throws TypeError fun(df, order=(Base.Forward,))
+        @test_throws TypeError fun(df, by=(identity, identity))
+        @test_throws TypeError fun(df, lt=(isless, isless))
+        @test_throws TypeError fun(df, rev=(true, true))
+        @test_throws TypeError fun(df, order=(Base.Forward, Base.Forward))
     end
 
     for df in (DataFrame(x=1:3), DataFrame(x=1:3, y=1:3)), fun in (sort, sort!)
