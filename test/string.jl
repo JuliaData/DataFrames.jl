@@ -64,10 +64,10 @@ end
     end
 
     wide = DataFrame(id=1:12,
-                     a =repeat([1:3;], inner=[4]),
-                     b =repeat([1:4;], inner=[3]),
-                     c =randn(12),
-                     d =randn(12))
+                     a=repeat([1:3;], inner=[4]),
+                     b=repeat([1:4;], inner=[3]),
+                     c=randn(12),
+                     d=randn(12))
 
     long = stack(wide)
     @test unstack(long, :variable, :value) == unstack(long, "variable", "value")
