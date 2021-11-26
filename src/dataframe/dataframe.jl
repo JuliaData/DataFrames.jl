@@ -1710,7 +1710,7 @@ function Base.push!(df::DataFrame, row::Any; promote::Bool=false)
 end
 
 """
-    repeat!(df::DataFrame; inner::Integer = 1, outer::Integer = 1)
+    repeat!(df::DataFrame; inner::Integer=1, outer::Integer=1)
 
 Update a data frame `df` in-place by repeating its rows. `inner` specifies how many
 times each row is repeated, and `outer` specifies how many times the full set
@@ -1718,7 +1718,7 @@ of rows is repeated. Columns of `df` are freshly allocated.
 
 # Example
 ```jldoctest
-julia> df = DataFrame(a = 1:2, b = 3:4)
+julia> df = DataFrame(a=1:2, b=3:4)
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -1726,7 +1726,7 @@ julia> df = DataFrame(a = 1:2, b = 3:4)
    1 │     1      3
    2 │     2      4
 
-julia> repeat!(df, inner = 2, outer = 3);
+julia> repeat!(df, inner=2, outer=3);
 
 julia> df
 12×2 DataFrame
@@ -1747,7 +1747,7 @@ julia> df
   12 │     2      4
 ```
 """
-function repeat!(df::DataFrame; inner::Integer = 1, outer::Integer = 1)
+function repeat!(df::DataFrame; inner::Integer=1, outer::Integer=1)
     inner < 0 && throw(ArgumentError("inner keyword argument must be non-negative"))
     outer < 0 && throw(ArgumentError("outer keyword argument must be non-negative"))
     return mapcols!(x -> repeat(x, inner = Int(inner), outer = Int(outer)), df)
@@ -1761,7 +1761,7 @@ specified by `count`. Columns of `df` are freshly allocated.
 
 # Example
 ```jldoctest
-julia> df = DataFrame(a = 1:2, b = 3:4)
+julia> df = DataFrame(a=1:2, b=3:4)
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64

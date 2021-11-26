@@ -73,9 +73,9 @@ a new `DataFrame` or mutate the original in-place respectively.
 ```jldoctest missings
 julia> using DataFrames
 
-julia> df = DataFrame(i = 1:5,
-                      x = [missing, 4, missing, 2, 1],
-                      y = [missing, missing, "c", "d", "e"])
+julia> df = DataFrame(i=1:5,
+                      x=[missing, 4, missing, 2, 1],
+                      y=[missing, missing, "c", "d", "e"])
 5×3 DataFrame
  Row │ i      x        y
      │ Int64  Int64?   String?

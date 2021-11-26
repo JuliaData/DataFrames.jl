@@ -262,18 +262,18 @@ end
     @test_throws ArgumentError insertcols!(df, 2, a=1, b=2)
 
     df = DataFrame()
-    @test insertcols!(df, 1, :x=>[1]) == DataFrame(x = [1])
+    @test insertcols!(df, 1, :x=>[1]) == DataFrame(x=[1])
     df = DataFrame()
     @test_throws ArgumentError insertcols!(df, 2, :x=>[1])
     df = DataFrame()
-    @test insertcols!(df, 1, :x=>1:2) == DataFrame(x = 1:2)
+    @test insertcols!(df, 1, :x=>1:2) == DataFrame(x=1:2)
     @test df.x isa Vector{Int}
     x = [1, 2]
     df = DataFrame()
-    @test insertcols!(df, 1, :x=>x, copycols=true) == DataFrame(x = 1:2)
+    @test insertcols!(df, 1, :x=>x, copycols=true) == DataFrame(x=1:2)
     @test df.x !== x
     df = DataFrame()
-    @test insertcols!(df, 1, :x=>x, copycols=false) == DataFrame(x = 1:2)
+    @test insertcols!(df, 1, :x=>x, copycols=false) == DataFrame(x=1:2)
     @test df.x === x
 
     df = DataFrame()
@@ -1323,7 +1323,7 @@ end
     @test_throws MethodError disallowmissing(DataFrame(x=[1, missing]))
     @test disallowmissing(DataFrame(x=[1, missing]), error=false) ≅ DataFrame(x=[1, missing])
 
-    df = DataFrame(x=[1], y = Union{Int, Missing}[1], z=[missing])
+    df = DataFrame(x=[1], y=Union{Int, Missing}[1], z=[missing])
     df2 = disallowmissing(df, error=false)
     @test eltype(df2.x) == Int
     @test eltype(df2.y) == Int

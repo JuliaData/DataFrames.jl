@@ -3,7 +3,7 @@ module TestSubDataFrame
 using Test, DataFrames
 
 @testset "copy - SubDataFrame" begin
-    df = DataFrame(x = 1:10, y = 1.0:10.0)
+    df = DataFrame(x=1:10, y=1.0:10.0)
     sdf = view(df, 1:2, 1:1)
     @test sdf isa SubDataFrame
     @test copy(sdf) isa DataFrame
@@ -13,7 +13,7 @@ using Test, DataFrames
 end
 
 @testset "view -- DataFrame" begin
-    df = DataFrame(x = 1:10, y = 1.0:10.0)
+    df = DataFrame(x=1:10, y=1.0:10.0)
     @test view(df, 1, :) == DataFrameRow(df, 1, :)
     @test view(df, UInt(1), :) == DataFrameRow(df, 1, :)
     @test view(df, BigInt(1), :) == DataFrameRow(df, 1, :)
@@ -106,7 +106,7 @@ end
 end
 
 @testset "view -- SubDataFrame" begin
-    df = view(DataFrame(x = 1:10, y = 1.0:10.0), 1:10, :)
+    df = view(DataFrame(x=1:10, y=1.0:10.0), 1:10, :)
 
     @test view(df, 1, :) == DataFrameRow(df, 1, :)
     @test view(df, UInt(1), :) == DataFrameRow(df, 1, :)
@@ -270,7 +270,7 @@ end
 end
 
 @testset "setindex! in view" begin
-    df = DataFrame(A = Vector{Union{Int, Missing}}(1:4), B = Union{String, Missing}["M", "F", "F", "M"])
+    df = DataFrame(A=Vector{Union{Int, Missing}}(1:4), B=Union{String, Missing}["M", "F", "F", "M"])
 
     s1 = view(df, 1:3, :)
     s1[2, :A] = 4

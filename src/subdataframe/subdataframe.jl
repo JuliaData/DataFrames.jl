@@ -14,9 +14,9 @@ even if they are added or removed after its creation.
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-                      b = repeat([2, 1], outer=[4]),
-                      c = 1:8)
+julia> df = DataFrame(a=repeat([1, 2, 3, 4], outer=[2]),
+                      b=repeat([2, 1], outer=[4]),
+                      c=1:8)
 8×3 DataFrame
  Row │ a      b      c
      │ Int64  Int64  Int64

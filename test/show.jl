@@ -29,8 +29,8 @@ function capture_stdout(f::Function)
 end
 
 @testset "Basic show test with allrows and allcols" begin
-    df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
-                   C = Float32[1.0, 2.0, 3.0, 4.0], D = ['\'', '∀', '$', '\n'])
+    df = DataFrame(A=Int64[1:4;], B=["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
+                   C=Float32[1.0, 2.0, 3.0, 4.0], D=['\'', '∀', '$', '\n'])
 
     refstr = """
     4×4 DataFrame
@@ -53,7 +53,7 @@ end
         @test str == refstr
     end
 
-    df = DataFrame(A = Vector{String}(undef, 3))
+    df = DataFrame(A=Vector{String}(undef, 3))
     @test sprint(show, df) == """
         3×1 DataFrame
          Row │ A
@@ -165,8 +165,8 @@ end
 end
 
 @testset "IOContext parameters test" begin
-    df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
-                   C = Float32[1.0, 2.0, 3.0, 4.0])
+    df = DataFrame(A=Int64[1:4;], B=["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
+                   C=Float32[1.0, 2.0, 3.0, 4.0])
     str1, size = capture_stdout() do
         show(df)
     end
@@ -187,8 +187,8 @@ end
 end
 
 @testset "SubDataFrame show test" begin
-    df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
-                   C = Float32[1.0, 2.0, 3.0, 4.0])
+    df = DataFrame(A=Int64[1:4;], B=["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
+                   C=Float32[1.0, 2.0, 3.0, 4.0])
     subdf = view(df, [2, 3], :)
     io = IOBuffer()
     show(io, subdf, allrows=true, allcols=false)
@@ -217,7 +217,7 @@ end
 @testset "Test colors and non-standard values: missing and nothing" begin
     # TODO: update when https://github.com/KristofferC/Crayons.jl/issues/47 is resolved
     if VERSION >= v"1.6" && Base.get_have_color()
-        df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
+        df = DataFrame(Fish=["Suzy", "Amir"], Mass=[1.5, missing])
         @test sprint(show, df, context=:color=>true) == """
             \e[1m2×2 DataFrame\e[0m
             \e[1m Row \e[0m│\e[1m Fish   \e[0m\e[1m Mass      \e[0m
@@ -226,9 +226,9 @@ end
                1 │ Suzy          1.5
                2 │ Amir   \e[90m missing   \e[0m"""
 
-        df = DataFrame(A = [:Symbol, missing, :missing],
-                       B = [missing, "String", "missing"],
-                       C = [:missing, "missing", missing])
+        df = DataFrame(A=[:Symbol, missing, :missing],
+                       B=[missing, "String", "missing"],
+                       C=[:missing, "missing", missing])
         @test sprint(show, df, context=:color=>true) == """
             \e[1m3×3 DataFrame\e[0m
             \e[1m Row \e[0m│\e[1m A       \e[0m\e[1m B       \e[0m\e[1m C       \e[0m
@@ -239,7 +239,7 @@ end
                3 │ missing  missing \e[90m missing \e[0m"""
     end
 
-    df_nothing = DataFrame(A = [1.0, 2.0, 3.0], B = ["g", "g", nothing])
+    df_nothing = DataFrame(A=[1.0, 2.0, 3.0], B=["g", "g", nothing])
     @test sprint(show, df_nothing) == """
         3×2 DataFrame
          Row │ A        B
@@ -262,7 +262,7 @@ end
 
 @testset "Test showing special types" begin
     # strings with escapes
-    df = DataFrame(a = ["1\n1", "2\t2", "3\r3", "4\$4", "5\"5", "6\\6"])
+    df = DataFrame(a=["1\n1", "2\t2", "3\r3", "4\$4", "5\"5", "6\\6"])
     @test sprint(show, df) == """
         6×1 DataFrame
          Row │ a
@@ -276,7 +276,7 @@ end
            6 │ 6\\\\6"""
 
     # categorical
-    df = DataFrame(a = categorical([1, 2, 3]), b = categorical(["a", "b", missing]))
+    df = DataFrame(a=categorical([1, 2, 3]), b=categorical(["a", "b", missing]))
     @test sprint(show, df) == """
         3×2 DataFrame
          Row │ a     b
@@ -287,7 +287,7 @@ end
            3 │ 3     missing"""
 
     # BigFloat
-    df = DataFrame(a = [big(1.0), missing])
+    df = DataFrame(a=[big(1.0), missing])
     @test sprint(show, df) == """
         2×1 DataFrame
          Row │ a
@@ -297,7 +297,7 @@ end
            2 │ missing"""
 
     # date types
-    df = DataFrame(a = Date(2020, 2, 11), b = DateTime(2020, 2, 11, 15), c = Day(1))
+    df = DataFrame(a=Date(2020, 2, 11), b=DateTime(2020, 2, 11, 15), c=Day(1))
     @test sprint(show, df) == """
         1×3 DataFrame
          Row │ a           b                    c
@@ -306,7 +306,7 @@ end
            1 │ 2020-02-11  2020-02-11T15:00:00  1 day"""
 
     # Irrational
-    df = DataFrame(a = π)
+    df = DataFrame(a=π)
     if VERSION < v"1.2.0-DEV.276"
         @test sprint(show, df) == """
             1×1 DataFrame
@@ -325,7 +325,7 @@ end
 end
 
 @testset "Test using :compact parameter of IOContext" begin
-    df = DataFrame(x = [float(pi)])
+    df = DataFrame(x=[float(pi)])
     @test sprint(show, df) == """
         1×1 DataFrame
          Row │ x
@@ -342,7 +342,7 @@ end
 end
 
 @testset "Test of DataFrameRows and DataFrameColumns" begin
-    df = DataFrame(x = [float(pi)])
+    df = DataFrame(x=[float(pi)])
     @test sprint(show, eachrow(df)) == """
         1×1 DataFrameRows
          Row │ x
@@ -371,18 +371,18 @@ end
 end
 
 @testset "Test empty data frame and DataFrameRow" begin
-    df = DataFrame(x = [float(pi)])
+    df = DataFrame(x=[float(pi)])
     @test sprint(show, df[:, 2:1]) == "0×0 DataFrame"
     @test sprint(show, @view df[:, 2:1]) == "0×0 SubDataFrame"
     @test sprint(show, df[1, 2:1]) == "DataFrameRow"
 end
 
 @testset "consistency" begin
-    df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
+    df = DataFrame(a=[1, 1, 2, 2], b=[5, 6, 7, 8], c=1:4)
     push!(df.c, 5)
     @test_throws AssertionError sprint(show, df)
 
-    df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
+    df = DataFrame(a=[1, 1, 2, 2], b=[5, 6, 7, 8], c=1:4)
     push!(DataFrames._columns(df), df[:, :a])
     @test_throws AssertionError sprint(show, df)
 end
@@ -432,7 +432,7 @@ end
 end
 
 @testset "wide type name" begin
-    df = DataFrame(A = Int32.(1:3), B = ["x", "y", "z"])
+    df = DataFrame(A=Int32.(1:3), B=["x", "y", "z"])
 
     io = IOBuffer()
     show(io, df, eltypes=true)
@@ -473,7 +473,7 @@ end
 end
 
 @testset "wide output and column trimming" begin
-    df = DataFrame(x = "0123456789"^4)
+    df = DataFrame(x="0123456789"^4)
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))
@@ -495,7 +495,7 @@ end
            1 │ 0 ⋯
         1 column omitted"""
 
-    df = DataFrame(x = "😄"^20)
+    df = DataFrame(x="😄"^20)
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))
@@ -508,11 +508,11 @@ end
 end
 
 @testset "Floating point alignment" begin
-    df = DataFrame(a = [i == 2 ? missing : 10^i for i = -7:1.0:7],
-                   b = Int64.(1:1:15),
-                   c = [i % 2 == 0 for i = 1:15],
-                   d = [i == 2 ? "test" : 10^i for i = -7:1.0:7],
-                   e = [i == 2 ? -0.0 : i == 3 ? +0.0 : 10^i for i = -7:1.0:7])
+    df = DataFrame(a=[i == 2 ? missing : 10^i for i = -7:1.0:7],
+                   b=Int64.(1:1:15),
+                   c=[i % 2 == 0 for i = 1:15],
+                   d=[i == 2 ? "test" : 10^i for i = -7:1.0:7],
+                   e=[i == 2 ? -0.0 : i == 3 ? +0.0 : 10^i for i = -7:1.0:7])
 
     io = IOBuffer()
     show(io, df)
@@ -562,7 +562,7 @@ end
           14 │       1.0e6   14   true  1.0e6          1.0e6
           15 │       1.0e7   15  false  1.0e7          1.0e7"""
 
-    df = DataFrame(This_is_a_very_big_name = 1.0, b = 2.0, c = 3.0)
+    df = DataFrame(This_is_a_very_big_name=1.0, b=2.0, c=3.0)
 
     io = IOBuffer()
     show(io, df, eltypes = false)
@@ -573,9 +573,9 @@ end
         ─────┼───────────────────────────────────
            1 │                     1.0  2.0  3.0"""
 
-    df = DataFrame(This_is_a_very_big_name = [10.0^i for i = -5:1:5],
-                   This_is_smaller = 1.0:2:22,
-                   T = 100001:1.0:100011)
+    df = DataFrame(This_is_a_very_big_name=[10.0^i for i = -5:1:5],
+                   This_is_smaller=1.0:2:22,
+                   T=100001:1.0:100011)
 
     io = IOBuffer()
     show(io, df)
@@ -597,8 +597,8 @@ end
           10 │              10000.0                19.0  100010.0
           11 │             100000.0                21.0  100011.0"""
 
-    df = DataFrame(😄😄😄😄😄😄😄 = [10.0^i for i = -5:1:5],
-                   🚀🚀🚀🚀🚀 = 1.0:2:22)
+    df = DataFrame(😄😄😄😄😄😄😄=[10.0^i for i = -5:1:5],
+                   🚀🚀🚀🚀🚀=1.0:2:22)
 
     io = IOBuffer()
     show(io, df)
@@ -620,8 +620,8 @@ end
           10 │     10000.0           19.0
           11 │    100000.0           21.0"""
 
-    df = DataFrame(😄😄😄😄😄😄😄😄😄 = [10.0^i + pi for i = -5:1:5],
-                   🚀🚀🚀🚀🚀🚀🚀 = collect(1.0:2:22) .+ pi)
+    df = DataFrame(😄😄😄😄😄😄😄😄😄=[10.0^i + pi for i = -5:1:5],
+                   🚀🚀🚀🚀🚀🚀🚀=collect(1.0:2:22) .+ pi)
 
     io = IOBuffer()
     show(io, df)
@@ -708,10 +708,10 @@ end
     b = Int64[i ≤ 6 ? -1 * 10^(i - 1) : 10^(i - 7) for i = 1:12]
     c = Union{Missing, Float64}[i == 5 ? missing : 10.0^(i-4) for i = 1:12]
     d = ComplexF64[(-1)^(i % 3 == 0) * 10.0^(i-6) + (-1)^i * (10.0)^(11-i-6) * im for i = 1:12]
-    df = DataFrame(very_big_column_name_1 = a,
-                   very_big_column_name_2 = b,
-                   very_big_column_name_3 = c,
-                   very_big_column_name_4 = d)
+    df = DataFrame(very_big_column_name_1=a,
+                   very_big_column_name_2=b,
+                   very_big_column_name_3=c,
+                   very_big_column_name_4=d)
 
     io = IOContext(IOBuffer())
     show(io, df)
@@ -737,7 +737,7 @@ end
 end
 
 @testset "Issue #2673 - Vertical line when not showing row numbers" begin
-    df = DataFrame(a = Int64[10, 20], b = Int64[30, 40], c = Int64[50, 60])
+    df = DataFrame(a=Int64[10, 20], b=Int64[30, 40], c=Int64[50, 60])
 
     io = IOContext(IOBuffer())
     show(io, df)
@@ -785,7 +785,7 @@ end
 end
 
 @testset "cover all corner cases of compacttype" begin
-    df = DataFrame(x2345678901234567 = categorical(["1"]))
+    df = DataFrame(x2345678901234567=categorical(["1"]))
     @test sprint(show, df) === """
         1×1 DataFrame
          Row │ x2345678901234567

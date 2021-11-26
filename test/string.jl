@@ -27,9 +27,9 @@ using Test, DataFrames
 end
 
 @testset "joins" begin
-    df1 = DataFrame(a = 1, b = 2)
-    df2 = DataFrame(a = 1, c = 2)
-    df3 = DataFrame(a = 1, d = 2)
+    df1 = DataFrame(a=1, b=2)
+    df2 = DataFrame(a=1, c=2)
+    df3 = DataFrame(a=1, d=2)
 
     # only check if the output is the same in all cases
     for f in (innerjoin, leftjoin, rightjoin, outerjoin, antijoin, semijoin)
@@ -52,10 +52,10 @@ end
 end
 
 @testset "reshape" begin
-    df = DataFrame(a = repeat([1:3;], inner = [4]),
-                   b = repeat([1:4;], inner = [3]),
-                   c = 1:12, d = 1.0:12.0,
-                   e = map(string, 'a':'l'))
+    df = DataFrame(a=repeat([1:3;], inner=[4]),
+                   b=repeat([1:4;], inner=[3]),
+                   c=1:12, d=1.0:12.0,
+                   e=map(string, 'a':'l'))
 
     # only check if the output is the same in all cases
     for v in (true, false)
@@ -63,11 +63,11 @@ end
               stack(df, ["c", "d"], ["a"], variable_name="varn", value_name="valn", view=v)
     end
 
-    wide = DataFrame(id = 1:12,
-                     a  = repeat([1:3;], inner = [4]),
-                     b  = repeat([1:4;], inner = [3]),
-                     c  = randn(12),
-                     d  = randn(12))
+    wide = DataFrame(id=1:12,
+                     a=repeat([1:3;], inner=[4]),
+                     b=repeat([1:4;], inner=[3]),
+                     c=randn(12),
+                     d=randn(12))
 
     long = stack(wide)
     @test unstack(long, :variable, :value) == unstack(long, "variable", "value")
@@ -80,7 +80,7 @@ end
 end
 
 @testset "selection" begin
-    df = DataFrame(a = 1:2, b=3:4)
+    df = DataFrame(a=1:2, b=3:4)
     # only check if the output is the same in all cases
     @test select(df, :a, :b => :d, :b => identity => :d2, :b => identity,
                  [:a, :a] => (+), [:a, :a] => (+) => :e, AsTable(:a) => ByRow(first),
@@ -107,15 +107,15 @@ end
                   ["a", "a"] => (+), ["a", "a"] => (+) => "e", AsTable("a") => ByRow(first),
                   nrow => "xxx")
 
-    df = DataFrame(a = 1:2, b=3:4)
+    df = DataFrame(a=1:2, b=3:4)
     df2 = copy(df)
     @test select!(df, [:a]) == select!(df2, ["a"])
 
-    df = DataFrame(a = 1:2, b=3:4)
+    df = DataFrame(a=1:2, b=3:4)
     df2 = copy(df)
     @test select!(df, :a) == select!(df2, "a")
 
-    df = DataFrame(a = 1:2, b=3:4)
+    df = DataFrame(a=1:2, b=3:4)
     df2 = copy(df)
     @test transform!(df, :a, :b => :d, :b => identity => :d2, :b => identity,
                     [:a, :a] => (+), [:a, :a] => (+) => :e, AsTable(:a) => ByRow(first),
@@ -124,22 +124,22 @@ end
                     ["a", "a"] => (+), ["a", "a"] => (+) => "e", AsTable("a") => ByRow(first),
                     nrow => "xxx")
 
-    df = DataFrame(a = 1:2, b=3:4)
+    df = DataFrame(a=1:2, b=3:4)
     df2 = copy(df)
     @test transform!(df, [:a]) == transform!(df2, ["a"])
 
-    df = DataFrame(a = 1:2, b=3:4)
+    df = DataFrame(a=1:2, b=3:4)
     df2 = copy(df)
     @test transform!(df, :a) == transform!(df2, "a")
 
-    df = DataFrame(a = 1:2, b=3:4)
+    df = DataFrame(a=1:2, b=3:4)
     @test_throws ArgumentError select(df, [:a, "b"])
     @test_throws ArgumentError select(df, ["a", :b])
     @test_throws ArgumentError select(df, ["a", "b", "a"])
 end
 
 @testset "tables" begin
-    df = DataFrame(a = 1:2, b=3:4)
+    df = DataFrame(a=1:2, b=3:4)
 
     @test columnindex(df, :a) == columnindex(df, "a")
     @test columnindex(df, :c) == columnindex(df, "c")

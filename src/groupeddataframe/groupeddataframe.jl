@@ -108,9 +108,9 @@ and none of them is equal to `-0.0`.
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-                      b = repeat([2, 1], outer=[4]),
-                      c = 1:8);
+julia> df = DataFrame(a=repeat([1, 2, 3, 4], outer=[2]),
+                      b=repeat([2, 1], outer=[4]),
+                      c=1:8);
 
 julia> gd = groupby(df, :a)
 GroupedDataFrame with 4 groups based on key: a
@@ -787,9 +787,9 @@ the groups of `gd` under iteration and integer indexing.
 # Examples
 
 ```jldoctest groupkeys
-julia> df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[4]),
-                      b = repeat([2, 1], outer=[6]),
-                      c = 1:12);
+julia> df = DataFrame(a=repeat([:foo, :bar, :baz], outer=[4]),
+                      b=repeat([2, 1], outer=[6]),
+                      c=1:12);
 
 julia> gd = groupby(df, [:a, :b])
 GroupedDataFrame with 6 groups based on keys: a, b
@@ -912,9 +912,9 @@ order of the arguments does not matter.
 # Examples
 
 ```jldoctest
-julia> df = DataFrame(a = repeat([:foo, :bar, :baz], outer=[2]),
-                      b = repeat([2, 1], outer=[3]),
-                      c = 1:6);
+julia> df = DataFrame(a=repeat([:foo, :bar, :baz], outer=[2]),
+                      b=repeat([2, 1], outer=[3]),
+                      c=1:6);
 
 julia> gd = groupby(df, :a)
 GroupedDataFrame with 3 groups based on key: a

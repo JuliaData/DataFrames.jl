@@ -42,11 +42,11 @@ that return views into the original data frame.
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(a = repeat(1:3, inner = 2),
-                             b = repeat(1:2, inner = 3),
-                             c = repeat(1:1, inner = 6),
-                             d = repeat(1:6, inner = 1),
-                             e = string.('a':'f'))
+julia> df = DataFrame(a=repeat(1:3, inner=2),
+                      b=repeat(1:2, inner=3),
+                      c=repeat(1:1, inner=6),
+                      d=repeat(1:6, inner=1),
+                      e=string.('a':'f'))
 6×5 DataFrame
  Row │ a      b      c      d      e
      │ Int64  Int64  Int64  Int64  String
@@ -237,11 +237,11 @@ Row and column keys will be ordered in the order of their first appearance.
 # Examples
 
 ```jldoctest
-julia> wide = DataFrame(id = 1:6,
-                                a  = repeat(1:3, inner = 2),
-                                b  = repeat(1.0:2.0, inner = 3),
-                                c  = repeat(1.0:1.0, inner = 6),
-                                d  = repeat(1.0:3.0, inner = 2))
+julia> wide = DataFrame(id=1:6,
+                        a=repeat(1:3, inner=2),
+                        b=repeat(1.0:2.0, inner=3),
+                        c=repeat(1.0:1.0, inner=6),
+                        d=repeat(1.0:3.0, inner=2))
 6×5 DataFrame
  Row │ id     a      b        c        d
      │ Int64  Int64  Float64  Float64  Float64

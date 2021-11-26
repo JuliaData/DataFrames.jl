@@ -103,21 +103,21 @@ end
 end
 
 @testset "broadcasting of AbstractDataFrame objects corner cases" begin
-    df = DataFrame(c11 = categorical(["a", "b"]), c12 = categorical([missing, "b"]), c13 = categorical(["a", missing]),
-                   c21 = categorical([1, 2]), c22 = categorical([missing, 2]), c23 = categorical([1, missing]),
-                   p11 = PooledArray(["a", "b"]), p12 = PooledArray([missing, "b"]), p13 = PooledArray(["a", missing]),
-                   p21 = PooledArray([1, 2]), p22 = PooledArray([missing, 2]), p23 = PooledArray([1, missing]),
-                   b1 = [true, false], b2 = [missing, false], b3 = [true, missing],
-                   f1 = [1.0, 2.0], f2 = [missing, 2.0], f3 = [1.0, missing],
-                   s1 = ["a", "b"], s2 = [missing, "b"], s3 = ["a", missing])
+    df = DataFrame(c11=categorical(["a", "b"]), c12=categorical([missing, "b"]), c13=categorical(["a", missing]),
+                   c21=categorical([1, 2]), c22=categorical([missing, 2]), c23=categorical([1, missing]),
+                   p11=PooledArray(["a", "b"]), p12=PooledArray([missing, "b"]), p13=PooledArray(["a", missing]),
+                   p21=PooledArray([1, 2]), p22=PooledArray([missing, 2]), p23=PooledArray([1, missing]),
+                   b1=[true, false], b2=[missing, false], b3=[true, missing],
+                   f1=[1.0, 2.0], f2=[missing, 2.0], f3=[1.0, missing],
+                   s1=["a", "b"], s2=[missing, "b"], s3=["a", missing])
 
-    df2 = DataFrame(c11 = categorical(["a", "b"]), c12 = [nothing, "b"], c13 = ["a", nothing],
-                    c21 = categorical([1, 2]), c22 = [nothing, 2], c23 = [1, nothing],
-                    p11 = ["a", "b"], p12 = [nothing, "b"], p13 = ["a", nothing],
-                    p21 = [1, 2], p22 = [nothing, 2], p23 = [1, nothing],
-                    b1 = [true, false], b2 = [nothing, false], b3 = [true, nothing],
-                    f1 = [1.0, 2.0], f2 = [nothing, 2.0], f3 = [1.0, nothing],
-                    s1 = ["a", "b"], s2 = [nothing, "b"], s3 = ["a", nothing])
+    df2 = DataFrame(c11=categorical(["a", "b"]), c12=[nothing, "b"], c13=["a", nothing],
+                    c21=categorical([1, 2]), c22=[nothing, 2], c23=[1, nothing],
+                    p11=["a", "b"], p12=[nothing, "b"], p13=["a", nothing],
+                    p21=[1, 2], p22=[nothing, 2], p23=[1, nothing],
+                    b1=[true, false], b2=[nothing, false], b3=[true, nothing],
+                    f1=[1.0, 2.0], f2=[nothing, 2.0], f3=[1.0, nothing],
+                    s1=["a", "b"], s2=[nothing, "b"], s3=["a", nothing])
 
     @test df ≅ identity.(df)
     @test df ≅ (x->x).(df)
@@ -132,7 +132,7 @@ end
     @test all(isa.(eachcol(df4), Ref(CategoricalArray)))
     @test all(eachcol(df4) .== Ref(categorical(["a", "a"])))
 
-    df5 = DataFrame(x = Any[1, 2, 3], y = Any[1, 2.0, big(3)])
+    df5 = DataFrame(x=Any[1, 2, 3], y=Any[1, 2.0, big(3)])
     @test identity.(df5) == df5
     @test (x->x).(df5) == df5
     @test df5 .+ 1 == DataFrame(Matrix(df5) .+ 1, names(df5))
@@ -1007,7 +1007,7 @@ end
 end
 
 @testset "scalar broadcasting" begin
-    a = DataFrame(x = zeros(2))
+    a = DataFrame(x=zeros(2))
     a .= 1 ./ (1 + 2)
     @test a.x == [1/3, 1/3]
     a .= 1 ./ (1 .+ 3)
@@ -1652,7 +1652,7 @@ end
 end
 
 @testset "make sure that : is in place and ! allocates" begin
-    df = DataFrame(a = [1, 2, 3])
+    df = DataFrame(a=[1, 2, 3])
     a = df.a
     df[:, :a] .+= 1
     @test a == [2, 3, 4]
@@ -1662,7 +1662,7 @@ end
     @test df.a == [3, 4, 5]
     @test df.a !== a
 
-    df = DataFrame(a = [1, 2, 3])
+    df = DataFrame(a=[1, 2, 3])
     a = df.a
     df[:, "a"] .+= 1
     @test a == [2, 3, 4]
@@ -1817,7 +1817,7 @@ end
 end
 
 @testset "broadcasting over heterogenous columns" begin
-    df = DataFrame(x = [1, 1.0, big(1), "1"])
+    df = DataFrame(x=[1, 1.0, big(1), "1"])
     f_identity(x) = x
     @test df == f_identity.(df)
 end

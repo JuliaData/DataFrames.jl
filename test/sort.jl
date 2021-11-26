@@ -8,7 +8,7 @@ using DataFrames, Random, Test, CategoricalArrays
     dv3 = Vector{Union{Int, Missing}}(1:8)
     cv1 = CategoricalArray(dv1, ordered=true)
 
-    d = DataFrame(dv1 = dv1, dv2 = dv2, dv3 = dv3, cv1 = cv1)
+    d = DataFrame(dv1=dv1, dv2=dv2, dv3=dv3, cv1=cv1)
 
     @test sortperm(d) == sortperm(dv1)
     @test sortperm(d[:, [:dv3, :dv1]]) == sortperm(dv3)
@@ -61,11 +61,11 @@ using DataFrames, Random, Test, CategoricalArrays
 
     @test_throws ArgumentError sort(df, (:rank, :chrom, :pos))
 
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
     @test !issorted(df, :x)
     @test issorted(sort(df, :x), :x)
 
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
     @test !issorted(df, "x")
     @test issorted(sort(df, "x"), "x")
 

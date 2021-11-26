@@ -23,7 +23,7 @@ DataFrame(CSV.File(input))
 
 A `DataFrame` can be written to a CSV file at path `output` using
 ```julia
-df = DataFrame(x = 1, y = 2)
+df = DataFrame(x=1, y=2)
 CSV.write(output, df)
 ```
 

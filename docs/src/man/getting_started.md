@@ -37,7 +37,7 @@ each corresponding to a column or variable. The simplest way of constructing a
 ```jldoctest dataframe
 julia> using DataFrames
 
-julia> df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
+julia> df = DataFrame(A=1:4, B=["M", "F", "F", "M"])
 4×2 DataFrame
  Row │ A      B
      │ Int64  String
@@ -221,7 +221,7 @@ data frame with two columns (note that the first column can only contain
 integers and the second one can only contain strings):
 
 ```jldoctest dataframe
-julia> df = DataFrame(A = Int[], B = String[])
+julia> df = DataFrame(A=Int[], B=String[])
 0×2 DataFrame
 ```
 
@@ -308,4 +308,3 @@ julia> Tables.rowtable(df)
  (a = 1, b = 2)
  (a = 3, b = 4)
 ```
-

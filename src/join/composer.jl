@@ -511,7 +511,7 @@ See also: [`leftjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
 
 # Examples
 ```jldoctest
-julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+julia> name = DataFrame(ID=[1, 2, 3], Name=["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
  Row │ ID     Name
      │ Int64  String
@@ -520,7 +520,7 @@ julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blo
    2 │     2  Jane Doe
    3 │     3  Joe Blogs
 
-julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+julia> job = DataFrame(ID=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
  Row │ ID     Job
      │ Int64  String
@@ -537,7 +537,7 @@ julia> innerjoin(name, job, on = :ID)
    1 │     1  John Doe  Lawyer
    2 │     2  Jane Doe  Doctor
 
-julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+julia> job2 = DataFrame(identifier=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
  Row │ identifier  Job
      │ Int64       String
@@ -651,7 +651,7 @@ See also: [`innerjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
 
 # Examples
 ```jldoctest
-julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+julia> name = DataFrame(ID=[1, 2, 3], Name=["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
  Row │ ID     Name
      │ Int64  String
@@ -660,7 +660,7 @@ julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blo
    2 │     2  Jane Doe
    3 │     3  Joe Blogs
 
-julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+julia> job = DataFrame(ID=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
  Row │ ID     Job
      │ Int64  String
@@ -678,7 +678,7 @@ julia> leftjoin(name, job, on = :ID)
    2 │     2  Jane Doe   Doctor
    3 │     3  Joe Blogs  missing
 
-julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+julia> job2 = DataFrame(identifier=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
  Row │ identifier  Job
      │ Int64       String
@@ -798,7 +798,7 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`outerjoin`](@ref),
 
 # Examples
 ```jldoctest
-julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+julia> name = DataFrame(ID=[1, 2, 3], Name=["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
  Row │ ID     Name
      │ Int64  String
@@ -807,7 +807,7 @@ julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blo
    2 │     2  Jane Doe
    3 │     3  Joe Blogs
 
-julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+julia> job = DataFrame(ID=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
  Row │ ID     Job
      │ Int64  String
@@ -825,7 +825,7 @@ julia> rightjoin(name, job, on = :ID)
    2 │     2  Jane Doe  Doctor
    3 │     4  missing   Farmer
 
-julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+julia> job2 = DataFrame(identifier=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
  Row │ identifier  Job
      │ Int64       String
@@ -954,7 +954,7 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
 
 # Examples
 ```jldoctest
-julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+julia> name = DataFrame(ID=[1, 2, 3], Name=["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
  Row │ ID     Name
      │ Int64  String
@@ -963,7 +963,7 @@ julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blo
    2 │     2  Jane Doe
    3 │     3  Joe Blogs
 
-julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+julia> job = DataFrame(ID=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
  Row │ ID     Job
      │ Int64  String
@@ -982,7 +982,7 @@ julia> outerjoin(name, job, on = :ID)
    3 │     3  Joe Blogs  missing
    4 │     4  missing    Farmer
 
-julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+julia> job2 = DataFrame(identifier=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
  Row │ identifier  Job
      │ Int64       String
@@ -1096,7 +1096,7 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
 
 # Examples
 ```jldoctest
-julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+julia> name = DataFrame(ID=[1, 2, 3], Name=["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
  Row │ ID     Name
      │ Int64  String
@@ -1105,7 +1105,7 @@ julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blo
    2 │     2  Jane Doe
    3 │     3  Joe Blogs
 
-julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+julia> job = DataFrame(ID=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
  Row │ ID     Job
      │ Int64  String
@@ -1122,7 +1122,7 @@ julia> semijoin(name, job, on = :ID)
    1 │     1  John Doe
    2 │     2  Jane Doe
 
-julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+julia> job2 = DataFrame(identifier=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
  Row │ identifier  Job
      │ Int64       String
@@ -1202,7 +1202,7 @@ See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
 
 # Examples
 ```jldoctest
-julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+julia> name = DataFrame(ID=[1, 2, 3], Name=["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
  Row │ ID     Name
      │ Int64  String
@@ -1211,7 +1211,7 @@ julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blo
    2 │     2  Jane Doe
    3 │     3  Joe Blogs
 
-julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+julia> job = DataFrame(ID=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
  Row │ ID     Job
      │ Int64  String
@@ -1227,7 +1227,7 @@ julia> antijoin(name, job, on = :ID)
 ─────┼──────────────────
    1 │     3  Joe Blogs
 
-julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+julia> job2 = DataFrame(identifier=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
  Row │ identifier  Job
      │ Int64       String

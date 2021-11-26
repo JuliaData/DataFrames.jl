@@ -155,7 +155,7 @@ See also: [`rename`](@ref)
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(i = 1, x = 2, y = 3)
+julia> df = DataFrame(i=1, x=2, y=3)
 1×3 DataFrame
  Row │ i      x      y
      │ Int64  Int64  Int64
@@ -276,7 +276,7 @@ See also: [`rename!`](@ref)
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(i = 1, x = 2, y = 3)
+julia> df = DataFrame(i=1, x=2, y=3)
 1×3 DataFrame
  Row │ i      x      y
      │ Int64  Int64  Int64
@@ -1038,11 +1038,11 @@ julia> filter(row -> row.x > 1, df)
 
 julia> filter(row -> row["x"] > 1, df)
 2×2 DataFrame
- Row │ x      y      
+ Row │ x      y
      │ Int64  String
 ─────┼───────────────
    1 │     3  b
-   2 │     2  a                                                                    
+   2 │     2  a
 
 julia> filter(:x => x -> x > 1, df)
 2×2 DataFrame
@@ -1161,14 +1161,14 @@ julia> filter!(row -> row.x > 1, df)
 ─────┼───────────────
    1 │     3  b
    2 │     2  a
-                                                                                        
+
 julia> filter!(row -> row["x"] > 1, df)
 2×2 DataFrame
- Row │ x      y      
+ Row │ x      y
      │ Int64  String
 ─────┼───────────────
    1 │     3  b
-   2 │     2  a                                                                                          
+   2 │     2  a
 
 julia> filter!(:x => x -> x == 3, df)
 1×2 DataFrame
@@ -2250,7 +2250,7 @@ Return a data frame containing the rows in `df` in reversed order.
 ```jldoctest
 julia> df = DataFrame(a=1:5, b=6:10, c=11:15)
 5×3 DataFrame
- Row │ a      b      c 
+ Row │ a      b      c
      │ Int64  Int64  Int64
 ─────┼─────────────────────
    1 │     1      6     11
