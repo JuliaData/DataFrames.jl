@@ -10,14 +10,14 @@ import Main: QuoteTestType
 
 # Test LaTeX export
 @testset "LaTeX export" begin
-    df = DataFrame(A = Int64.( 1:4 ),
-                B = ["\$10.0", "M&F", "A~B", "\\alpha"],
-                C = ["A", "B", "C", "S"],
-                D = [1.0, 2.0, missing, 3.0],
-                E = CategoricalArray(["a", missing, "c", "d"]),
-                F = Vector{String}(undef, 4),
-                G = [ md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)", md"###A", md"``\frac{A}{B}``", md"*A*b**A**"]
-                )
+    df = DataFrame(A=Int64.( 1:4 ),
+                   B=["\$10.0", "M&F", "A~B", "\\alpha"],
+                   C=["A", "B", "C", "S"],
+                   D=[1.0, 2.0, missing, 3.0],
+                   E=CategoricalArray(["a", missing, "c", "d"]),
+                   F=Vector{String}(undef, 4),
+                   G=[ md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)", md"###A", md"``\frac{A}{B}``", md"*A*b**A**"]
+                  )
     str = """
         \\begin{tabular}{r|ccccccc}
         \t& A & B & C & D & E & F & G\\\\
@@ -52,7 +52,7 @@ end
 
 #Test HTML output for IJulia and similar
 @testset "HTML output" begin
-    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
+    df = DataFrame(Fish=["Suzy", "Amir"], Mass=[1.5, missing])
     io = IOBuffer()
     show(io, "text/html", df)
     str = String(take!(io))
@@ -66,7 +66,7 @@ end
                  "<tr><th>2</th><td>Amir</td><td><em>missing</em></td></tr>" *
                  "</tbody></table></div>"
 
-    df = DataFrame(Fish = Vector{String}(undef, 2), Mass = [1.5, missing])
+    df = DataFrame(Fish=Vector{String}(undef, 2), Mass=[1.5, missing])
     io = IOBuffer()
     show(io, "text/html", df)
     str = String(take!(io))
@@ -231,14 +231,15 @@ end
 end
 
 @testset "printtable" begin
-    df = DataFrame(A = 1:3,
-                B = 'a':'c',
-                C = ["A", "B", "C"],
-                D = CategoricalArray(string.('a':'c')),
-                E = CategoricalArray(["A", "B", missing]),
-                F = Vector{Union{Int, Missing}}(1:3),
-                G = missings(3),
-                H = fill(missing, 3))
+    df = DataFrame(A=1:3,
+                   B='a':'c',
+                   C=["A", "B", "C"],
+                   D=CategoricalArray(string.('a':'c')),
+                   E=CategoricalArray(["A", "B", missing]),
+                   F=Vector{Union{Int, Missing}}(1:3),
+                   G=missings(3),
+                   H=fill(missing, 3)
+                  )
 
     @test sprint(DataFrames.printtable, df) ==
         """
@@ -250,7 +251,7 @@ end
 end
 
 @testset "csv/tsv output" begin
-    df = DataFrame(a = [1,2], b = [1.0, 2.0])
+    df = DataFrame(a=[1,2], b=[1.0, 2.0])
 
     for x in [df, eachcol(df), eachrow(df)]
         @test sprint(show, "text/csv", x) == """
@@ -381,7 +382,7 @@ end
 end
 
 @testset "empty data frame and DataFrameRow" begin
-    df = DataFrame(a = [1,2], b = [1.0, 2.0])
+    df = DataFrame(a=[1,2], b=[1.0, 2.0])
 
     @test sprint(show, "text/csv", df[:, 2:1]) == ""
     @test sprint(show, "text/tab-separated-values", df[:, 2:1]) == ""
@@ -411,14 +412,14 @@ end
 end
 
 @testset "consistency" begin
-    df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
+    df = DataFrame(a=[1, 1, 2, 2], b=[5, 6, 7, 8], c=1:4)
     push!(df.c, 5)
     @test_throws AssertionError sprint(show, "text/html", df)
     @test_throws AssertionError sprint(show, "text/latex", df)
     @test_throws AssertionError sprint(show, "text/csv", df)
     @test_throws AssertionError sprint(show, "text/tab-separated-values", df)
 
-    df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8], c = 1:4)
+    df = DataFrame(a=[1, 1, 2, 2], b=[5, 6, 7, 8], c=1:4)
     push!(DataFrames._columns(df), df[:, :a])
     @test_throws AssertionError sprint(show, "text/html", df)
     @test_throws AssertionError sprint(show, "text/latex", df)
@@ -445,7 +446,7 @@ end
 end
 
 @testset "eltypes tests" begin
-    df = DataFrame(A = Int32.(1:3), B = ["x", "y", "z"])
+    df = DataFrame(A=Int32.(1:3), B=["x", "y", "z"])
 
     io = IOBuffer()
     show(io, MIME("text/plain"), df, eltypes=true)
@@ -601,7 +602,7 @@ end
 end
 
 @testset "improved printing of special types" begin
-    df = DataFrame(A=Int64.(1:9), B = Vector{Any}(undef, 9))
+    df = DataFrame(A=Int64.(1:9), B=Vector{Any}(undef, 9))
     df.B[1:8] = [df, # DataFrame
                  df[1,:], # DataFrameRow
                  view(df,1:1, :), # SubDataFrame
@@ -734,7 +735,7 @@ end
 end
 
 @testset "check truncate keyword argument" begin
-    df = DataFrame(x = "0123456789"^10)
+    df = DataFrame(x="0123456789"^10)
 
     # no truncation
     io = IOBuffer()
@@ -820,7 +821,7 @@ end
            1 │ 01234…"""
 
 
-    df = DataFrame(x12345678901234567890 = "0123456789"^10)
+    df = DataFrame(x12345678901234567890="0123456789"^10)
     io = IOBuffer()
     show(io, df, truncate=1, rowlabel=:r12345678901234567890)
     str = String(take!(io))

@@ -4,7 +4,7 @@ import Compat
 using Test, DataFrames
 
 @testset "eachrow and eachcol" begin
-    df = DataFrame(A = Vector{Union{Int, Missing}}(1:2), B = Vector{Union{Int, Missing}}(2:3))
+    df = DataFrame(A=Vector{Union{Int, Missing}}(1:2), B=Vector{Union{Int, Missing}}(2:3))
 
     @test size(eachrow(df)) == (size(df, 1),)
     @test parent(eachrow(df)) === df
@@ -49,7 +49,7 @@ using Test, DataFrames
 
     @test map(x -> minimum(Vector(x)), eachrow(df)) == [1, 2]
     @test map(Vector, eachrow(df)) == [[1, 2], [2, 3]]
-    @test mapcols(minimum, df) == DataFrame(A = [1], B = [2])
+    @test mapcols(minimum, df) == DataFrame(A=[1], B=[2])
     @test map(minimum, eachcol(df)) == [1, 2]
     @test eltype.(eachcol(mapcols(Vector{Float64}, df))) == [Float64, Float64]
     @test eltype(map(Vector{Float64}, eachcol(df))) == Vector{Float64}

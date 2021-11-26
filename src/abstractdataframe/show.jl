@@ -330,7 +330,7 @@ and `allrows`, `allcols` and `allgroups` default to `false`.
 ```jldoctest
 julia> using DataFrames
 
-julia> df = DataFrame(A = 1:3, B = ["x", "y", "z"]);
+julia> df = DataFrame(A=1:3, B=["x", "y", "z"]);
 
 julia> show(df, show_row_number=false)
 3×2 DataFrame

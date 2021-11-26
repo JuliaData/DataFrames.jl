@@ -36,7 +36,7 @@ const ≅ = isequal
         @test df == DataFrame(vecvec, :auto, copycols=copycolsarg)
         @test df == DataFrame(collect(Any, vecvec), :auto, copycols=copycolsarg)
         @test df == DataFrame(collect(AbstractVector, vecvec), :auto, copycols=copycolsarg)
-        @test df == DataFrame(x1 = vecvec[1], x2 = vecvec[2], copycols=copycolsarg)
+        @test df == DataFrame(x1=vecvec[1], x2=vecvec[2], copycols=copycolsarg)
 
         for cols in ([:x1, :x2], ["x1", "x2"])
             @test df == DataFrame(vecvec, cols, copycols=copycolsarg)
@@ -62,14 +62,14 @@ const ≅ = isequal
     @test df !== DataFrame(df)
     @test df == DataFrame(df)
 
-    @test df == DataFrame(x1 = Union{Float64, Missing}[0.0, 0.0, 0.0],
-                          x2 = Union{Float64, Missing}[1.0, 1.0, 1.0])
-    @test df == DataFrame(x1 = Union{Float64, Missing}[0.0, 0.0, 0.0],
-                          x2 = Union{Float64, Missing}[1.0, 1.0, 1.0],
-                          x3 = Union{Float64, Missing}[2.0, 2.0, 2.0])[:, [:x1, :x2]]
-    @test df == DataFrame(x1 = Union{Float64, Missing}[0.0, 0.0, 0.0],
-                          x2 = Union{Float64, Missing}[1.0, 1.0, 1.0],
-                          x3 = Union{Float64, Missing}[2.0, 2.0, 2.0])[:, ["x1", "x2"]]
+    @test df == DataFrame(x1=Union{Float64, Missing}[0.0, 0.0, 0.0],
+                          x2=Union{Float64, Missing}[1.0, 1.0, 1.0])
+    @test df == DataFrame(x1=Union{Float64, Missing}[0.0, 0.0, 0.0],
+                          x2=Union{Float64, Missing}[1.0, 1.0, 1.0],
+                          x3=Union{Float64, Missing}[2.0, 2.0, 2.0])[:, [:x1, :x2]]
+    @test df == DataFrame(x1=Union{Float64, Missing}[0.0, 0.0, 0.0],
+                          x2=Union{Float64, Missing}[1.0, 1.0, 1.0],
+                          x3=Union{Float64, Missing}[2.0, 2.0, 2.0])[:, ["x1", "x2"]]
 
     @test_throws BoundsError SubDataFrame(DataFrame(A=1), 0:0, :)
     @test_throws ArgumentError SubDataFrame(DataFrame(A=1), 0, :)
@@ -163,7 +163,7 @@ end
     df = DataFrame([:x1 => zeros(3), :x2 => ones(3)])
     @test size(df, 1) == 3
     @test size(df, 2) == 2
-    @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
+    @test isequal(df, DataFrame(x1=[0.0, 0.0, 0.0], x2=[1.0, 1.0, 1.0]))
 
     df = DataFrame(:type => [], :begin => [])
     @test propertynames(df) == [:type, :begin]
@@ -182,7 +182,7 @@ end
     @inferred DataFrame("x1" => zeros(3), "x2" => ones(3))
     @test size(df, 1) == 3
     @test size(df, 2) == 2
-    @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
+    @test isequal(df, DataFrame(x1=[0.0, 0.0, 0.0], x2=[1.0, 1.0, 1.0]))
 
     df = DataFrame("type" => [], "begin" => [])
     @test propertynames(df) == [:type, :begin]
@@ -203,7 +203,7 @@ end
 @testset "associative" begin
     df = DataFrame(Dict(:A => 1:3, :B => 4:6))
     @inferred DataFrame(Dict(:A => 1:3, :B => 4:6))
-    @test df == DataFrame(A = 1:3, B = 4:6)
+    @test df == DataFrame(A=1:3, B=4:6)
     @test eltype.(eachcol(df)) == [Int, Int]
 
     a=[1, 2, 3]
@@ -218,7 +218,7 @@ end
 
     df = DataFrame(Dict("A" => 1:3, "B" => 4:6))
     @inferred DataFrame(Dict("A" => 1:3, "B" => 4:6))
-    @test df == DataFrame(A = 1:3, B = 4:6)
+    @test df == DataFrame(A=1:3, B=4:6)
     @test eltype.(eachcol(df)) == [Int, Int]
 
     a=[1, 2, 3]
@@ -298,8 +298,8 @@ end
 end
 
 @testset "recyclers" begin
-    @test DataFrame(a = 1:5, b = 1) == DataFrame(a = collect(1:5), b = fill(1, 5))
-    @test DataFrame(a = 1, b = 1:5) == DataFrame(a = fill(1, 5), b = collect(1:5))
+    @test DataFrame(a=1:5, b=1) == DataFrame(a=collect(1:5), b=fill(1, 5))
+    @test DataFrame(a=1, b=1:5) == DataFrame(a=fill(1, 5), b=collect(1:5))
     @test size(DataFrame(a=1, b=[])) == (0, 2)
     @test size(DataFrame(a=1, b=[], copycols=false)) == (0, 2)
 end
@@ -307,8 +307,8 @@ end
 @testset "constructor thrown exceptions" begin
     for copycolsarg in (true, false)
         @test_throws DimensionMismatch DataFrame(Any[collect(1:10)], DataFrames.Index([:A, :B]), copycols=copycolsarg)
-        @test_throws ArgumentError DataFrame(A = rand(2, 2), copycols=copycolsarg)
-        @test_throws ArgumentError DataFrame(A = rand(2, 1), copycols=copycolsarg)
+        @test_throws ArgumentError DataFrame(A=rand(2, 2), copycols=copycolsarg)
+        @test_throws ArgumentError DataFrame(A=rand(2, 1), copycols=copycolsarg)
         @test_throws ArgumentError DataFrame([1, 2, 3], :auto, copycols=copycolsarg)
         @test_throws DimensionMismatch DataFrame(AbstractVector[1:3, [1, 2]], :auto, copycols=copycolsarg)
         @test_throws ArgumentError DataFrame([1:3, 1], [:x1, :x2], copycols=copycolsarg)
@@ -318,7 +318,7 @@ end
 end
 
 @testset "column types" begin
-    df = DataFrame(A = 1:3, B = 2:4, C = 3:5)
+    df = DataFrame(A=1:3, B=2:4, C=3:5)
     answer = [Array{Int, 1}, Array{Int, 1}, Array{Int, 1}]
     @test map(typeof, eachcol(df)) == answer
     df[!, :D] = [4, 5, missing]

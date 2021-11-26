@@ -8,12 +8,12 @@ A sample data set can be created using the following code:
 using DataFrames
 using Statistics
 
-df = DataFrame(grp = repeat(1:2, 3), x = 6:-1:1, y = 4:9, z = [3:7; missing], id = 'a':'f')
-df2 = DataFrame(grp = [1, 3], w = [10, 11])
+df = DataFrame(grp=repeat(1:2, 3), x=6:-1:1, y=4:9, z=[3:7; missing], id='a':'f')
+df2 = DataFrame(grp=[1, 3], w=[10, 11])
 ```
 
 !!! note
-    
+
     Some of the operations mutate the tables so every operation assumes that it is done on the original data frame.
 
 Note that in the comparisons presented below predicates like `x -> x >= 1` can
@@ -173,7 +173,7 @@ This section includes more complex examples.
 | Row-wise operation                     | `df.assign(x_y_min = df.apply(lambda v: min(v.x, v.y), axis=1))`             | `transform(df, [:x, :y] => ByRow(min))`                                 |
 |                                        | `df.assign(x_y_argmax = df.apply(lambda v: df.columns[v.argmax()], axis=1))` | `transform(df, AsTable([:x, :y]) => ByRow(argmax))`                     |
 | DataFrame as input                     | `df.groupby('grp').head(2)`                                                  | `combine(d -> first(d, 2), groupby(df, :grp))`                          |
-| DataFrame as output                    | `df[['x']].agg(lambda x: [min(x), max(x)])`                                  | `combine(df, :x => (x -> (x = [minimum(x), maximum(x)],)) => AsTable)`  |
+| DataFrame as output                    | `df[['x']].agg(lambda x: [min(x), max(x)])`                                  | `combine(df, :x => (x -> (x=[minimum(x), maximum(x)],)) => AsTable)`  |
 
 Note that pandas preserves the same row order after `groupby` whereas DataFrames.jl
 shows them grouped by the provided keys after the `combine` operation,
@@ -249,7 +249,7 @@ The following table compares the main functions of DataFrames.jl with the R pack
 library(data.table)
 df  <- data.table(grp = rep(1:2, 3), x = 6:1, y = 4:9,
                   z = c(3:7, NA), id = letters[1:6])
-df2 <- data.table(grp=c(1,3), w = c(10,11))                 
+df2 <- data.table(grp=c(1,3), w = c(10,11))
 ```
 
 | Operation                          | data.table                                       | DataFrames.jl                                |

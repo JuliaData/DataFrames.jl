@@ -8,7 +8,7 @@ columns that fits on screen:
 ```jldoctest dataframe
 julia> using DataFrames
 
-julia> df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
+julia> df = DataFrame(A=1:2:1000, B=repeat(1:10, inner=50), C=1:500)
 500×3 DataFrame
  Row │ A      B      C
      │ Int64  Int64  Int64
@@ -72,8 +72,8 @@ its columns. For example in this case:
 ```jldoctest dataframe
 julia> using CategoricalArrays
 
-julia> DataFrame(a = 1:2, b = [1.0, missing],
-                 c = categorical('a':'b'), d = [1//2, missing])
+julia> DataFrame(a=1:2, b=[1.0, missing],
+                 c=categorical('a':'b'), d=[1//2, missing])
 2×4 DataFrame
  Row │ a      b          c     d
      │ Int64  Float64?   Cat…  Rational…?
@@ -323,7 +323,7 @@ The indexing syntax can also be used to select rows based on conditions on
 variables:
 
 ```jldoctest dataframe
-julia> df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
+julia> df = DataFrame(A=1:2:1000, B=repeat(1:10, inner=50), C=1:500)
 500×3 DataFrame
  Row │ A      B      C
      │ Int64  Int64  Int64
@@ -731,7 +731,7 @@ The `describe` function returns a data frame summarizing the elementary
 statistics and information about each column:
 
 ```jldoctest dataframe
-julia> df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
+julia> df = DataFrame(A=1:4, B=["M", "F", "F", "M"])
 4×2 DataFrame
  Row │ A      B
      │ Int64  String
@@ -777,7 +777,7 @@ We can also apply a function to each column of a `DataFrame` using `combine`.
 For example:
 
 ```jldoctest dataframe
-julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+julia> df = DataFrame(A=1:4, B=4.0:-1.0:1.0)
 4×2 DataFrame
  Row │ A      B
      │ Int64  Float64
@@ -811,7 +811,7 @@ Functions that transform a `DataFrame` to produce a
 new `DataFrame` always perform a copy of the columns by default, for example:
 
 ```jldoctest dataframe
-julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+julia> df = DataFrame(A=1:4, B=4.0:-1.0:1.0)
 4×2 DataFrame
  Row │ A      B
      │ Int64  Float64
@@ -933,8 +933,8 @@ Replacement operations affecting a single column can be performed using `replace
 ```jldoctest replace
 julia> using DataFrames
 
-julia> df = DataFrame(a = ["a", "None", "b", "None"], b = 1:4,
-                      c = ["None", "j", "k", "h"], d = ["x", "y", "None", "z"])
+julia> df = DataFrame(a=["a", "None", "b", "None"], b=1:4,
+                      c=["None", "j", "k", "h"], d=["x", "y", "None", "z"])
 4×4 DataFrame
  Row │ a       b      c       d
      │ String  Int64  String  String

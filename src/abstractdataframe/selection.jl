@@ -995,9 +995,9 @@ julia> select(df, AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => :stats
    2 │ (mean = 5.0, std = 3.0)      5.0      3.0
    3 │ (mean = 6.0, std = 3.0)      6.0      3.0
 
-julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
-                      b = repeat([2, 1], outer=[4]),
-                      c = 1:8)
+julia> df = DataFrame(a=[1, 1, 1, 2, 2, 1, 1, 2],
+                      b=repeat([2, 1], outer=[4]),
+                      c=1:8)
 8×3 DataFrame
  Row │ a      b      c
      │ Int64  Int64  Int64
@@ -1034,9 +1034,9 @@ Last Group (3 rows): a = 2
 
 # specifying a name for target column
 ```jldoctest
-julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
-                      b = repeat([2, 1], outer=[4]),
-                      c = 1:8);
+julia> df = DataFrame(a=[1, 1, 1, 2, 2, 1, 1, 2],
+                      b=repeat([2, 1], outer=[4]),
+                      c=1:8);
 
 julia> gd = groupby(df, :a);
 
@@ -1071,9 +1071,9 @@ julia> select(gd, [:b, :c] .=> sum) # passing a vector of pairs
 
 # multiple arguments, renaming and keepkeys
 ```jldoctest
-julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
-                      b = repeat([2, 1], outer=[4]),
-                      c = 1:8);
+julia> df = DataFrame(a=[1, 1, 1, 2, 2, 1, 1, 2],
+                      b=repeat([2, 1], outer=[4]),
+                      c=1:8);
 
 julia> gd = groupby(df, :a);
 
@@ -1094,9 +1094,9 @@ julia> select(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
 
 # broadcasting and column expansion
 ```jldoctest
-julia> df = DataFrame(a = [1, 1, 1, 2, 2, 1, 1, 2],
-                      b = repeat([2, 1], outer=[4]),
-                      c = 1:8);
+julia> df = DataFrame(a=[1, 1, 1, 2, 2, 1, 1, 2],
+                      b=repeat([2, 1], outer=[4]),
+                      c=1:8);
 
 julia> gd = groupby(df, :a);
 
@@ -1329,9 +1329,9 @@ julia> combine(df, AsTable(:) => ByRow(x -> (mean=mean(x), std=std(x))) => :stat
    2 │ (mean = 5.0, std = 3.0)      5.0      3.0
    3 │ (mean = 6.0, std = 3.0)      6.0      3.0
 
-julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-                      b = repeat([2, 1], outer=[4]),
-                      c = 1:8);
+julia> df = DataFrame(a=repeat([1, 2, 3, 4], outer=[2]),
+                      b=repeat([2, 1], outer=[4]),
+                      c=1:8);
 
 julia> gd = groupby(df, :a);
 
@@ -1408,9 +1408,9 @@ julia> combine(gd) do sdf # dropping group when DataFrame() is returned
 
 # auto-splatting, renaming and keepkeys
 ```jldoctest
-julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-                      b = repeat([2, 1], outer=[4]),
-                      c = 1:8);
+julia> df = DataFrame(a=repeat([1, 2, 3, 4], outer=[2]),
+                      b=repeat([2, 1], outer=[4]),
+                      c=1:8);
 
 julia> gd = groupby(df, :a);
 
@@ -1431,9 +1431,9 @@ julia> combine(gd, :b => :b1, :c => :c1, [:b, :c] => +, keepkeys=false)
 
 # broadcasting and column expansion
 ```jldoctest
-julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-                      b = repeat([2, 1], outer=[4]),
-                      c = 1:8);
+julia> df = DataFrame(a=repeat([1, 2, 3, 4], outer=[2]),
+                      b=repeat([2, 1], outer=[4]),
+                      c=1:8);
 
 julia> gd = groupby(df, :a);
 

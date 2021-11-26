@@ -30,7 +30,7 @@ See also: [`sort!`](@ref), [`sort`](@ref)
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(x = [-3, -1, 0, 2, 4], y = 1:5)
+julia> df = DataFrame(x=[-3, -1, 0, 2, 4], y=1:5)
 5×2 DataFrame
  Row │ x      y
      │ Int64  Int64
@@ -368,7 +368,7 @@ $SORT_ARGUMENTS
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(a = [1, 2, 3, 4], b = [4, 3, 2, 1])
+julia> df = DataFrame(a=[1, 2, 3, 4], b=[4, 3, 2, 1])
 4×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -441,7 +441,7 @@ If `view=true` then a `SubDataFrame` view into `df` is returned.
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+julia> df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
 4×2 DataFrame
  Row │ x      y
      │ Int64  String
@@ -527,7 +527,7 @@ on the type of the sorting columns and on the number of rows in `df`.
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+julia> df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
 4×2 DataFrame
  Row │ x      y
      │ Int64  String
@@ -610,7 +610,7 @@ on the type of the sorting columns and on the number of rows in `df`.
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+julia> df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
 4×2 DataFrame
  Row │ x      y
      │ Int64  String

@@ -4,9 +4,9 @@ using Test, DataFrames, Random, PooledArrays, CategoricalArrays
 const ≅ = isequal
 
 @testset "the output of unstack" begin
-    df = DataFrame(Fish = CategoricalArray{Union{String, Missing}}(["Bob", "Bob", "Batman", "Batman"]),
-                   Key = CategoricalArray{Union{String, Missing}}(["Mass", "Color", "Mass", "Color"]),
-                   Value = Union{String, Missing}["12 g", "Red", "18 g", "Grey"])
+    df = DataFrame(Fish=CategoricalArray{Union{String, Missing}}(["Bob", "Bob", "Batman", "Batman"]),
+                   Key=CategoricalArray{Union{String, Missing}}(["Mass", "Color", "Mass", "Color"]),
+                   Value=Union{String, Missing}["12 g", "Red", "18 g", "Grey"])
     # Check that reordering levels does not confuse unstack
     levels!(df[!, 1], ["XXX", "Bob", "Batman"])
     levels!(df[!, 2], ["YYY", "Color", "Mass"])
@@ -17,9 +17,9 @@ const ≅ = isequal
     #Unstack without specifying a row column
     df3 = unstack(df, :Key, :Value)
     # The expected output is in order of appearance
-    df4 = DataFrame(Fish = Union{String, Missing}["Bob", "Batman"],
-                    Mass = Union{String, Missing}["12 g", "18 g"],
-                    Color = Union{String, Missing}["Red", "Grey"])
+    df4 = DataFrame(Fish=Union{String, Missing}["Bob", "Batman"],
+                    Mass=Union{String, Missing}["12 g", "18 g"],
+                    Color=Union{String, Missing}["Red", "Grey"])
     @test df2 ≅ df4
     @test typeof(df2[!, :Fish]) <: CategoricalVector{Union{String, Missing}}
     # first column stays as CategoricalArray in df3
@@ -31,30 +31,30 @@ const ≅ = isequal
     df4[1, :Mass] = missing
     @test df2 ≅ df4
 
-    df = DataFrame(Fish = CategoricalArray{Union{String, Missing}}(["Bob", "Bob", "Batman", "Batman"]),
-                   Key = CategoricalArray{Union{String, Missing}}(["Mass", "Color", "Mass", "Color"]),
-                   Value = Union{String, Missing}["12 g", "Red", "18 g", "Grey"])
+    df = DataFrame(Fish=CategoricalArray{Union{String, Missing}}(["Bob", "Bob", "Batman", "Batman"]),
+                   Key=CategoricalArray{Union{String, Missing}}(["Mass", "Color", "Mass", "Color"]),
+                   Value=Union{String, Missing}["12 g", "Red", "18 g", "Grey"])
     levels!(df[!, 1], ["XXX", "Bob", "Batman"])
     levels!(df[!, 2], ["YYY", "Color", "Mass"])
     df2 = unstack(df, :Fish, :Key, :Value, renamecols=x->string("_", uppercase(string(x)), "_"))
     df3 = unstack(df, :Key, :Value, renamecols=x->string("_", uppercase(string(x)), "_"))
-    df4 = DataFrame(Fish = Union{String, Missing}["Bob", "Batman"],
-                    _MASS_ = Union{String, Missing}["12 g", "18 g"],
-                    _COLOR_ = Union{String, Missing}["Red", "Grey"])
+    df4 = DataFrame(Fish=Union{String, Missing}["Bob", "Batman"],
+                    _MASS_=Union{String, Missing}["12 g", "18 g"],
+                    _COLOR_=Union{String, Missing}["Red", "Grey"])
     @test df2 == df4
     @test df3 == df4
 
     #The same as above but without CategoricalArray
-    df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"],
-                   Key = ["Mass", "Color", "Mass", "Color"],
-                   Value = ["12 g", "Red", "18 g", "Grey"])
+    df = DataFrame(Fish=["Bob", "Bob", "Batman", "Batman"],
+                   Key=["Mass", "Color", "Mass", "Color"],
+                   Value=["12 g", "Red", "18 g", "Grey"])
     #Unstack specifying a row column
     df2 = unstack(df, :Fish, :Key, :Value)
     #Unstack without specifying a row column
     df3 = unstack(df, :Key, :Value)
-    df4 = DataFrame(Fish = ["Bob", "Batman"],
-                    Mass = ["12 g", "18 g"],
-                    Color = ["Red", "Grey"])
+    df4 = DataFrame(Fish=["Bob", "Batman"],
+                    Mass=["12 g", "18 g"],
+                    Color=["Red", "Grey"])
     @test df2 ≅ df4
     @test typeof(df2[!, :Fish]) <: Vector{String}
     # first column stays as CategoricalArray in df3
@@ -68,14 +68,14 @@ const ≅ = isequal
     df4[1, :Mass] = missing
     @test df2 ≅ df4
 
-    df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"],
-                   Key = ["Mass", "Color", "Mass", "Color"],
-                   Value = ["12 g", "Red", "18 g", "Grey"])
+    df = DataFrame(Fish=["Bob", "Bob", "Batman", "Batman"],
+                   Key=["Mass", "Color", "Mass", "Color"],
+                   Value=["12 g", "Red", "18 g", "Grey"])
     df2 = unstack(df, :Fish, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
     df3 = unstack(df, :Key, :Value, renamecols=x->string("_", uppercase(x), "_"))
-    df4 = DataFrame(Fish = ["Bob", "Batman"],
-                    _MASS_ = ["12 g", "18 g"],
-                    _COLOR_ = ["Red", "Grey"])
+    df4 = DataFrame(Fish=["Bob", "Batman"],
+                    _MASS_=["12 g", "18 g"],
+                    _COLOR_=["Red", "Grey"])
     @test df2 == df4
     @test df3 == df4
 
@@ -95,11 +95,11 @@ const ≅ = isequal
     @test unstack(stack(mdf, Not(1)), :id, :variable, :value) ≅ mdf
 
     # test more than one grouping column
-    wide = DataFrame(id = 1:12,
-                     a  = repeat([1:3;], inner = [4]),
-                     b  = repeat([1:4;], inner = [3]),
-                     c  = randn(12),
-                     d  = randn(12))
+    wide = DataFrame(id=1:12,
+                     a=repeat([1:3;], inner=[4]),
+                     b=repeat([1:4;], inner=[3]),
+                     c=randn(12),
+                     d=randn(12))
     w2 = wide[:, [1, 2, 4, 5]]
     rename!(w2, [:id, :a, :_C_, :_D_])
     long = stack(wide)
@@ -146,13 +146,13 @@ end
     @test_throws ArgumentError unstack(df, :variable, :value)
     a = unstack(df, :id, :variable, :value, allowduplicates=true)
     b = unstack(df, :variable, :value, allowduplicates=true)
-    @test a ≅ DataFrame(id = [1, 2], a = [5, missing], b = [missing, 6])
-    @test b ≅ DataFrame(id = [1, 2], id2 = [1, 2], a = [5, missing], b = [missing, 6])
+    @test a ≅ DataFrame(id=[1, 2], a=[5, missing], b=[missing, 6])
+    @test b ≅ DataFrame(id=[1, 2], id2=[1, 2], a=[5, missing], b=[missing, 6])
 
     df = DataFrame(id=1:2, variable=["a", "b"], value=3:4)
     a = unstack(df, :id, :variable, :value)
     b = unstack(df, :variable, :value)
-    @test a ≅ b ≅ DataFrame(id = [1, 2], a = [3, missing], b = [missing, 4])
+    @test a ≅ b ≅ DataFrame(id=[1, 2], a=[3, missing], b=[missing, 4])
 
     df = DataFrame(variable=["x", "x"], value=[missing, missing], id=[1, 1])
     @test_throws ArgumentError unstack(df, :variable, :value)
@@ -203,11 +203,11 @@ end
 end
 
 @testset "reshape" begin
-    d1 = DataFrame(a = Array{Union{Int, Missing}}(repeat([1:3;], inner = [4])),
-                b = Array{Union{Int, Missing}}(repeat([1:4;], inner = [3])),
-                c = Array{Union{Float64, Missing}}(randn(12)),
-                d = Array{Union{Float64, Missing}}(randn(12)),
-                e = Array{Union{String, Missing}}(map(string, 'a':'l')))
+    d1 = DataFrame(a=Array{Union{Int, Missing}}(repeat([1:3;], inner=[4])),
+                   b=Array{Union{Int, Missing}}(repeat([1:4;], inner=[3])),
+                   c=Array{Union{Float64, Missing}}(randn(12)),
+                   d=Array{Union{Float64, Missing}}(randn(12)),
+                   e=Array{Union{String, Missing}}(map(string, 'a':'l')))
 
     @test propertynames(stack(d1, :a)) == [:b, :c, :d, :e, :variable, :value]
     d1s = stack(d1, [:a, :b])
@@ -339,11 +339,11 @@ end
 end
 
 @testset "column names duplicates" begin
-    wide = DataFrame(id = 1:12,
-                     a  = repeat([1:3;], inner = [4]),
-                     b  = repeat([1:4;], inner = [3]),
-                     c  = randn(12),
-                     d  = randn(12))
+    wide = DataFrame(id=1:12,
+                     a=repeat([1:3;], inner=[4]),
+                     b=repeat([1:4;], inner=[3]),
+                     c=randn(12),
+                     d=randn(12))
     w1 = wide[:, [1, 2, 4, 5]]
     rename!(w1, [:id, :a, :D, :d])
     w2 = wide[:, [1, 2, 4, 5]]
@@ -365,44 +365,44 @@ end
 end
 
 @testset "flatten single column" begin
-    df_vec = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]])
-    df_tup = DataFrame(a = [1, 2], b = [(1, 2), (3, 4)])
-    ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4])
+    df_vec = DataFrame(a=[1, 2], b=[[1, 2], [3, 4]])
+    df_tup = DataFrame(a=[1, 2], b=[(1, 2), (3, 4)])
+    ref = DataFrame(a=[1, 1, 2, 2], b=[1, 2, 3, 4])
     @test flatten(df_vec, :b) == flatten(df_tup, :b) == ref
     @test flatten(df_vec, "b") == flatten(df_tup, "b") == ref
-    df_mixed_types = DataFrame(a = [1, 2], b = [[1, 2], ["x", "y"]])
-    ref_mixed_types = DataFrame(a = [1, 1, 2, 2], b = [1, 2, "x", "y"])
+    df_mixed_types = DataFrame(a=[1, 2], b=[[1, 2], ["x", "y"]])
+    ref_mixed_types = DataFrame(a=[1, 1, 2, 2], b=[1, 2, "x", "y"])
     @test flatten(df_mixed_types, :b) == ref_mixed_types
-    df_three = DataFrame(a = [1, 2, 3], b = [[1, 2], [10, 20], [100, 200, 300]])
-    ref_three = DataFrame(a = [1, 1, 2, 2, 3, 3, 3], b = [1, 2, 10, 20, 100, 200, 300])
+    df_three = DataFrame(a=[1, 2, 3], b=[[1, 2], [10, 20], [100, 200, 300]])
+    ref_three = DataFrame(a=[1, 1, 2, 2, 3, 3, 3], b=[1, 2, 10, 20, 100, 200, 300])
     @test flatten(df_three, :b) == ref_three
     @test flatten(df_three, "b") == ref_three
-    df_gen = DataFrame(a = [1, 2], b = [(i for i in 1:5), (i for i in 6:10)])
-    ref_gen = DataFrame(a = [fill(1, 5); fill(2, 5)], b = collect(1:10))
+    df_gen = DataFrame(a=[1, 2], b=[(i for i in 1:5), (i for i in 6:10)])
+    ref_gen = DataFrame(a=[fill(1, 5); fill(2, 5)], b=collect(1:10))
     @test flatten(df_gen, :b) == ref_gen
     @test flatten(df_gen, "b") == ref_gen
-    df_miss = DataFrame(a = [1, 2], b = [Union{Missing, Int}[1, 2], Union{Missing, Int}[3, 4]])
-    ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4])
+    df_miss = DataFrame(a=[1, 2], b=[Union{Missing, Int}[1, 2], Union{Missing, Int}[3, 4]])
+    ref = DataFrame(a=[1, 1, 2, 2], b=[1, 2, 3, 4])
     @test flatten(df_miss, :b) == ref
     @test flatten(df_miss, "b") == ref
     v1 = [[1, 2], [3, 4]]
     v2 = [[5, 6], [7, 8]]
     v = [v1, v2]
-    df_vec_vec = DataFrame(a = [1, 2], b = v)
-    ref_vec_vec = DataFrame(a = [1, 1, 2, 2], b = [v1 ; v2])
+    df_vec_vec = DataFrame(a=[1, 2], b=v)
+    ref_vec_vec = DataFrame(a=[1, 1, 2, 2], b=[v1 ; v2])
     @test flatten(df_vec_vec, :b) == ref_vec_vec
     @test flatten(df_vec_vec, "b") == ref_vec_vec
-    df_cat = DataFrame(a = [1, 2], b = [CategoricalArray([1, 2]), CategoricalArray([1, 2])])
+    df_cat = DataFrame(a=[1, 2], b=[CategoricalArray([1, 2]), CategoricalArray([1, 2])])
     df_flat_cat = flatten(df_cat, :b)
-    ref_cat = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 1, 2])
+    ref_cat = DataFrame(a=[1, 1, 2, 2], b=[1, 2, 1, 2])
     @test df_flat_cat == ref_cat
     @test df_flat_cat.b isa CategoricalArray
 end
 
 @testset "flatten multiple columns" begin
-    df = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7, 8]])
+    df = DataFrame(a=[1, 2], b=[[1, 2], [3, 4]], c=[[5, 6], [7, 8]])
     @test flatten(df, []) == df
-    ref = DataFrame(a = [1, 1, 2, 2], b = [1, 2, 3, 4], c = [5, 6, 7, 8])
+    ref = DataFrame(a=[1, 1, 2, 2], b=[1, 2, 3, 4], c=[5, 6, 7, 8])
     @test flatten(df, [:b, :c]) == ref
     @test flatten(df, [:c, :b]) == ref
     @test flatten(df, ["b", "c"]) == ref
@@ -411,22 +411,22 @@ end
     @test flatten(df, r"[bc]") == ref
     @test flatten(df, Not(:a)) == ref
     @test flatten(df, Between(:b, :c)) == ref
-    df_allcols = DataFrame(b = [[1, 2], [3, 4]], c = [[5, 6], [7, 8]])
-    ref_allcols = DataFrame(b = [1, 2, 3, 4], c = [5, 6, 7, 8])
+    df_allcols = DataFrame(b=[[1, 2], [3, 4]], c=[[5, 6], [7, 8]])
+    ref_allcols = DataFrame(b=[1, 2, 3, 4], c=[5, 6, 7, 8])
     @test flatten(df_allcols, All()) == ref_allcols
     @test flatten(df_allcols, Cols(:)) == ref_allcols
     @test flatten(df_allcols, :) == ref_allcols
-    df_bad = DataFrame(a = [1, 2], b = [[1, 2], [3, 4]], c = [[5, 6], [7]])
+    df_bad = DataFrame(a=[1, 2], b=[[1, 2], [3, 4]], c=[[5, 6], [7]])
     @test_throws ArgumentError flatten(df_bad, [:b, :c])
 end
 
 @testset "stack categorical test" begin
     Random.seed!(1234)
-    d1 = DataFrame(a = repeat([1:3;], inner = [4]),
-                   b = repeat([1:4;], inner = [3]),
-                   c = randn(12),
-                   d = randn(12),
-                   e = map(string, 'a':'l'))
+    d1 = DataFrame(a=repeat([1:3;], inner=[4]),
+                   b=repeat([1:4;], inner=[3]),
+                   c=randn(12),
+                   d=randn(12),
+                   e=map(string, 'a':'l'))
     d1s = stack(d1, [:d, :c])
     @test d1s.variable isa PooledVector{String}
     @test levels(d1s.variable) == ["c", "d"]
@@ -723,7 +723,7 @@ end
 end
 
 @testset "empty unstack" begin
-    df = DataFrame(a = [], b = [], c = [])
+    df = DataFrame(a=[], b=[], c=[])
     dfu = unstack(df, :b, :c)
     @test isempty(dfu)
     @test names(dfu) == ["a"]

@@ -742,10 +742,10 @@ end
         @test_throws ArgumentError select(df, :x => x -> retval, copycols=false)
         @test_throws ArgumentError select!(df, :x => x -> retval)
 
-        @test select(df, :x => ByRow(x -> retval)) == DataFrame(x_function = [retval])
+        @test select(df, :x => ByRow(x -> retval)) == DataFrame(x_function=[retval])
         cdf = copy(df)
         select!(cdf, :x => ByRow(x -> retval))
-        @test cdf == DataFrame(x_function = [retval])
+        @test cdf == DataFrame(x_function=[retval])
 
         if retval isa Union{NamedTuple, DataFrameRow}
             @test select(df, :x => ByRow(x -> retval) => AsTable) == DataFrame(;retval...)
@@ -758,8 +758,8 @@ end
     end
 
     for retval in [(1, 2), ones(2, 2, 2)]
-        @test select(df, :x => x -> retval) == DataFrame(x_function = [retval])
-        @test select(df, :x => ByRow(x -> retval)) == DataFrame(x_function = [retval])
+        @test select(df, :x => x -> retval) == DataFrame(x_function=[retval])
+        @test select(df, :x => ByRow(x -> retval)) == DataFrame(x_function=[retval])
         if retval isa Tuple
             @test select(df, :x => ByRow(x -> retval) => AsTable) == DataFrame(x1=1, x2=2)
         else
@@ -767,10 +767,10 @@ end
         end
         cdf = copy(df)
         select!(cdf, :x => x -> retval)
-        @test cdf == DataFrame(x_function = [retval])
+        @test cdf == DataFrame(x_function=[retval])
         cdf = copy(df)
         select!(cdf, :x => ByRow(x -> retval))
-        @test cdf == DataFrame(x_function = [retval])
+        @test cdf == DataFrame(x_function=[retval])
     end
 end
 
@@ -823,7 +823,7 @@ end
     @test_throws ArgumentError select(df, :x1, :x2 => identity => :x1)
     @test_throws ArgumentError select(df, :x1 => :x1, :x2 => identity => :x1)
     @test_throws ArgumentError select(df, :x3 => identity => :x1, :x2 => identity => :x1)
-    @test select(df, [:x1], :x2 => :x1) == DataFrame(x1 = df.x2)
+    @test select(df, [:x1], :x2 => :x1) == DataFrame(x1=df.x2)
 
     @test_throws ArgumentError select!(df, :x1, :x1)
     @test_throws ArgumentError select!(df, :x1, :x5)
@@ -1146,15 +1146,15 @@ end
           DataFrame(a=1:3, b=4:6, c=7:9, a_b_c_sum_sum=45)
 
     @test select(df, AsTable(:) => ByRow(x -> [x])) ==
-          DataFrame(a_b_c_function=[[(a = 1, b = 4, c = 7)],
-                                    [(a = 2, b = 5, c = 8)],
-                                    [(a = 3, b = 6, c = 9)]])
+          DataFrame(a_b_c_function=[[(a=1, b=4, c=7)],
+                                    [(a=2, b=5, c=8)],
+                                    [(a=3, b=6, c=9)]])
     @test transform(df, AsTable(:) => ByRow(x -> [x])) ==
-          hcat(df, DataFrame(a_b_c_function=[[(a = 1, b = 4, c = 7)],
-                                             [(a = 2, b = 5, c = 8)],
-                                             [(a = 3, b = 6, c = 9)]]))
+          hcat(df, DataFrame(a_b_c_function=[[(a=1, b=4, c=7)],
+                                             [(a=2, b=5, c=8)],
+                                             [(a=3, b=6, c=9)]]))
     @test select(df, AsTable(:) => ByRow(identity)) ==
-          DataFrame(a_b_c_identity=[(a = 1, b = 4, c = 7), (a = 2, b = 5, c = 8), (a = 3, b = 6, c = 9)])
+          DataFrame(a_b_c_identity=[(a=1, b=4, c=7), (a=2, b=5, c=8), (a=3, b=6, c=9)])
     @test select(df, AsTable(:) => ByRow(identity) => AsTable) == df
     @test select(df, AsTable(:) => ByRow(x -> df[1, :])) ==
           DataFrame(a_b_c_function=fill(df[1, :], 3))
@@ -1163,8 +1163,8 @@ end
     @test transform(df, AsTable(Not(:)) =>
           ByRow(identity)) == [df DataFrame(:identity => fill(NamedTuple(), nrow(df)))]
 
-    @test select(df, AsTable(Not(:)) => Ref) == repeat(DataFrame(Ref = NamedTuple()), nrow(df))
-    @test combine(df, AsTable(Not(:)) => Ref) == DataFrame(Ref = NamedTuple())
+    @test select(df, AsTable(Not(:)) => Ref) == repeat(DataFrame(Ref=NamedTuple()), nrow(df))
+    @test combine(df, AsTable(Not(:)) => Ref) == DataFrame(Ref=NamedTuple())
     @test transform(df, AsTable(Not(:)) => Ref) ==
           DataFrame(a=1:3, b=4:6, c=7:9, Ref=NamedTuple())
 
@@ -1205,7 +1205,7 @@ end
 
     @test_throws ArgumentError combine(df, AsTable(:) => identity)
     @test combine(df, AsTable(:) => identity => AsTable) == df
-    @test combine(df, (:) => cor) == DataFrame(x_y_cor = 1.0)
+    @test combine(df, (:) => cor) == DataFrame(x_y_cor=1.0)
     @test combine(df, :x => x -> Ref(1:3)) == DataFrame(x_function=[1:3])
     @test_throws ArgumentError combine(df, :x => x -> ones(1, 1))
     @test combine(df, :x => (x -> ones(1, 1)) => AsTable) == DataFrame(x1=1.0)
@@ -1215,13 +1215,13 @@ end
     @test df2[:, 1] !== df.x
 
     @test combine(df, :x => sum, :y => collect ∘ extrema) ==
-          DataFrame(x_sum=[6, 6], y_collect_extrema = [4, 6])
+          DataFrame(x_sum=[6, 6], y_collect_extrema=[4, 6])
     @test combine(df, :y => collect ∘ extrema, :x => sum) ==
-          DataFrame(y_collect_extrema = [4, 6], x_sum=[6, 6])
+          DataFrame(y_collect_extrema=[4, 6], x_sum=[6, 6])
     @test combine(df, :x => sum, :y => x -> []) ==
-          DataFrame(x_sum=[], y_function = [])
+          DataFrame(x_sum=[], y_function=[])
     @test combine(df, :y => x -> [], :x => sum) ==
-          DataFrame(y_function = [], x_sum=[])
+          DataFrame(y_function=[], x_sum=[])
 
     dfv = view(df, [2, 1], [2, 1])
 
@@ -1229,16 +1229,16 @@ end
 
     @test_throws ArgumentError combine(dfv, AsTable(:) => identity)
     @test combine(dfv, AsTable(:) => identity => AsTable) == dfv
-    @test combine(dfv, (:) => cor) == DataFrame(y_x_cor = 1.0)
+    @test combine(dfv, (:) => cor) == DataFrame(y_x_cor=1.0)
 
     df2 = combine(dfv, :x => identity)
     @test df2[:, 1] == dfv.x
     @test df2[:, 1] !== dfv.x
 
     @test combine(dfv, :x => sum, :y => collect ∘ extrema) ==
-          DataFrame(x_sum=[3, 3], y_collect_extrema = [4, 5])
+          DataFrame(x_sum=[3, 3], y_collect_extrema=[4, 5])
     @test combine(dfv, :y => collect ∘ extrema, :x => sum) ==
-          DataFrame(y_collect_extrema = [4, 5], x_sum=[3, 3])
+          DataFrame(y_collect_extrema=[4, 5], x_sum=[3, 3])
 end
 
 @testset "select and transform AbstractDataFrame" begin
@@ -1292,7 +1292,7 @@ end
 @testset "select! and transform! AbstractDataFrame" begin
     df = DataFrame(x=1:3, y=4:6)
     select!(df, :x => first)
-    @test df == DataFrame(x_first = fill(1, 3))
+    @test df == DataFrame(x_first=fill(1, 3))
 
     # if we select! we do copycols=false, so we can get aliases
     df = DataFrame(x=1:3, y=4:6)
@@ -2022,10 +2022,10 @@ end
 
 @testset "pathological cases that get custom eltype promotion" begin
     # in this tests we make sure that result columns with concrete eltype are created
-    df = DataFrame(a = Any[1, 1.0], b=Any[1, 1.0])
+    df = DataFrame(a=Any[1, 1.0], b=Any[1, 1.0])
     @test combine(df, AsTable(:) => ByRow(sum) => :res).res ≃  [2.0, 2.0]
     @test combine(df, AsTable(:) => ByRow(sum∘skipmissing) => :res).res ≃ [2.0, 2.0]
-    df = DataFrame(a = Any[big(1), 1//1], b=Any[big(1), 1//1])
+    df = DataFrame(a=Any[big(1), 1//1], b=Any[big(1), 1//1])
     @test combine(df, AsTable(:) => ByRow(mean) => :res).res ≃ BigFloat[1, 1]
     @test combine(df, AsTable(:) => ByRow(mean∘skipmissing) => :res).res ≃ BigFloat[1, 1]
 end

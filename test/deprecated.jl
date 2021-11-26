@@ -19,8 +19,8 @@ end
 end
 
 @testset "indicator in joins" begin
-    name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
-    job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+    name = DataFrame(ID=[1, 2, 3], Name=["John Doe", "Jane Doe", "Joe Blogs"])
+    job = DataFrame(ID=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 
     @test outerjoin(name, job, on = :ID, indicator=:source) ≅
           outerjoin(name, job, on = :ID, source=:source)
@@ -138,6 +138,15 @@ end
     @test delete!(copy(df), Not(1)) == deleteat!(copy(df), Not(1))
     delete!(df, 2)
     @test df == DataFrame(a=[1, 3, 4], b=1, c=2)
+end
+
+@testset "deprecated sort" begin
+    df = DataFrame(x=1, y=4:-1:1)
+    @test sort(df, []) == DataFrame(x=1, y=1:4)
+    @test !issorted(df, [])
+    @test sortperm(df, []) == 4:-1:1
+    sort!(df, [])
+    @test df == DataFrame(x=1, y=1:4)
 end
 
 end # module

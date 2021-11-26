@@ -405,7 +405,7 @@ Grouping a data frame using the `groupby` function can be seen as adding a looku
 to it. Such lookups can be performed efficiently by indexing the resulting
 `GroupedDataFrame` with a `Tuple` or `NamedTuple`:
 ```jldoctest sac
-julia> df = DataFrame(g = repeat(1:1000, inner=5), x = 1:5000)
+julia> df = DataFrame(g=repeat(1:1000, inner=5), x=1:5000)
 5000×2 DataFrame
   Row │ g      x
       │ Int64  Int64

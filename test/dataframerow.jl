@@ -17,11 +17,11 @@ ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
     @test DataFrameRow(df, 1) == DataFrameRow(df, 1, :)
     @test DataFrameRow(df, 1) == DataFrameRow(df, 1, r"")
     @test names(DataFrameRow(df, 3, [3, 2])) == ["c", "b"]
-    @test copy(DataFrameRow(df, 3, [3, 2])) == (c = "C", b = 1.2)
-    @test copy(DataFrameRow(df, 3, r"[bc]")) == (b = 1.2, c = "C")
-    @test copy(DataFrameRow(sdf, 2, [3, 2])) == (b = 1.2, a = 3)
-    @test copy(DataFrameRow(sdf, 2, r"[bc]")) == (c = "C", b = 1.2)
-    @test copy(DataFrameRow(sdf, 2, :)) == (c = "C", a = 3, b = 1.2)
+    @test copy(DataFrameRow(df, 3, [3, 2])) == (c="C", b=1.2)
+    @test copy(DataFrameRow(df, 3, r"[bc]")) == (b=1.2, c="C")
+    @test copy(DataFrameRow(sdf, 2, [3, 2])) == (b=1.2, a=3)
+    @test copy(DataFrameRow(sdf, 2, r"[bc]")) == (c="C", b=1.2)
+    @test copy(DataFrameRow(sdf, 2, :)) == (c="C", a=3, b=1.2)
     @test DataFrameRow(sdf, 2) == DataFrameRow(sdf, 2, :)
     @test DataFrameRow(df, 3, [3, 2]) == df[3, [3, 2]] == view(df, 3, [3, 2])
     @test DataFrameRow(df, 3, r"[bc]") == df[3, [2, 3]] == df[3, r"[bc]"]
@@ -121,7 +121,7 @@ end
 
 @testset "equality" begin
     df = deepcopy(ref_df)
-    df2 = DataFrame(a = [1, 2, 3])
+    df2 = DataFrame(a=[1, 2, 3])
 
     @test !isequal(DataFrameRow(df, 1, :), DataFrameRow(df2, 1, :))
     @test isequal(DataFrame(a=missing)[1, :], DataFrame(a=missing)[1, :])
@@ -270,8 +270,8 @@ end
     @test Array{Int}(dfr)::Vector{Int} == [1, 2]
 
     df = ref_df[:, 1:3]
-    @test copy(DataFrameRow(df, 1, :)) == (a = 1, b = 2.0, c = "A")
-    @test copy(DataFrameRow(df, 2, :)) ≅ (a = 2, b = missing, c = "B")
+    @test copy(DataFrameRow(df, 1, :)) == (a=1, b=2.0, c="A")
+    @test copy(DataFrameRow(df, 2, :)) ≅ (a=2, b=missing, c="B")
 
     dfr = DataFrame(a=1, b=2)[1, :]
     dfr2 = DataFrame(c=3, d=4)[1, :]
@@ -497,7 +497,7 @@ end
 end
 
 @testset "DataFrameRow" begin
-    df = DataFrame(A = Vector{Union{Int, Missing}}(1:2), B = Vector{Union{Int, Missing}}(2:3))
+    df = DataFrame(A=Vector{Union{Int, Missing}}(1:2), B=Vector{Union{Int, Missing}}(2:3))
     row = DataFrameRow(df, 1, :)
 
     row[:A] = 100

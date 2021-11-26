@@ -5,7 +5,7 @@ We often need to combine two or more data sets together to provide a complete pi
 ```jldoctest joins
 julia> using DataFrames
 
-julia> people = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
+julia> people = DataFrame(ID=[20, 40], Name=["John Doe", "Jane Doe"])
 2×2 DataFrame
  Row │ ID     Name
      │ Int64  String
@@ -13,7 +13,7 @@ julia> people = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
    1 │    20  John Doe
    2 │    40  Jane Doe
 
-julia> jobs = DataFrame(ID = [20, 40], Job = ["Lawyer", "Doctor"])
+julia> jobs = DataFrame(ID=[20, 40], Job=["Lawyer", "Doctor"])
 2×2 DataFrame
  Row │ ID     Job
      │ Int64  String
@@ -55,7 +55,7 @@ See [the Wikipedia page on SQL joins](https://en.wikipedia.org/wiki/Join_(SQL)) 
 Here are examples of different kinds of join:
 
 ```jldoctest joins
-julia> jobs = DataFrame(ID = [20, 60], Job = ["Lawyer", "Astronaut"])
+julia> jobs = DataFrame(ID=[20, 60], Job=["Lawyer", "Astronaut"])
 2×2 DataFrame
  Row │ ID     Job
      │ Int64  String
@@ -128,7 +128,7 @@ In order to join data frames on keys which have different names in the left and 
 you may pass `(left, right)` tuples or `left => right` pairs as `on` argument:
 
 ```jldoctest joins
-julia> a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
+julia> a = DataFrame(ID=[20, 40], Name=["John Doe", "Jane Doe"])
 2×2 DataFrame
  Row │ ID     Name
      │ Int64  String
@@ -136,7 +136,7 @@ julia> a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
    1 │    20  John Doe
    2 │    40  Jane Doe
 
-julia> b = DataFrame(IDNew = [20, 40], Job = ["Lawyer", "Doctor"])
+julia> b = DataFrame(IDNew=[20, 40], Job=["Lawyer", "Doctor"])
 2×2 DataFrame
  Row │ IDNew  Job
      │ Int64  String
@@ -156,9 +156,9 @@ julia> innerjoin(a, b, on = :ID => :IDNew)
 Here is another example with multiple columns:
 
 ```jldoctest joins
-julia> a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New York"],
-                     Job = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
-                     Category = [1, 2, 3, 4, 5])
+julia> a = DataFrame(City=["Amsterdam", "London", "London", "New York", "New York"],
+                     Job=["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
+                     Category=[1, 2, 3, 4, 5])
 5×3 DataFrame
  Row │ City       Job     Category
      │ String     String  Int64
@@ -169,9 +169,9 @@ julia> a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New Y
    4 │ New York   Doctor         4
    5 │ New York   Doctor         5
 
-julia> b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "New York"],
-                     Work = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
-                     Name = ["a", "b", "c", "d", "e"])
+julia> b = DataFrame(Location=["Amsterdam", "London", "London", "New York", "New York"],
+                     Work=["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
+                     Name=["a", "b", "c", "d", "e"])
 5×3 DataFrame
  Row │ Location   Work    Name
      │ String     String  String
@@ -220,7 +220,7 @@ resulting data frame indicating whether the given row appeared only in the left,
 the right or both data frames. Here is an example:
 
 ```jldoctest joins
-julia> a = DataFrame(ID = [20, 40], Name = ["John", "Jane"])
+julia> a = DataFrame(ID=[20, 40], Name=["John", "Jane"])
 2×2 DataFrame
  Row │ ID     Name
      │ Int64  String
@@ -228,7 +228,7 @@ julia> a = DataFrame(ID = [20, 40], Name = ["John", "Jane"])
    1 │    20  John
    2 │    40  Jane
 
-julia> b = DataFrame(ID = [20, 60], Job = ["Lawyer", "Doctor"])
+julia> b = DataFrame(ID=[20, 60], Job=["Lawyer", "Doctor"])
 2×2 DataFrame
  Row │ ID     Job
      │ Int64  String

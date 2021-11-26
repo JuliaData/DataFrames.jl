@@ -9,7 +9,7 @@ const ≅ = isequal
     df3 = DataFrame([[1, 2, missing, 4]], :auto)
     df6 = DataFrame([[1, 2, missing, 4], [1, 2, missing, 4], ["one", "two", missing, "four"]],
                     [:A, :B, :C])
-    df7 = DataFrame(x = [1, 2, missing, 4], y = ["one", "two", missing, "four"])
+    df7 = DataFrame(x=[1, 2, missing, 4], y=["one", "two", missing, "four"])
     @test size(df7) == (4, 2)
     @test df7[!, :x] ≅ [1, 2, missing, 4]
 
@@ -114,8 +114,8 @@ end
                     :auto)
     df2 = DataFrame([Union{Int, Missing}[1, 2, 3, 4], ["one", "two", missing, "four"]],
                     :auto)
-    df3 = DataFrame(x = Int[1, 2, 3, 4], y = Union{Int, Missing}[1, missing, 2, 3],
-                    z = Missing[missing, missing, missing, missing])
+    df3 = DataFrame(x=Int[1, 2, 3, 4], y=Union{Int, Missing}[1, missing, 2, 3],
+                    z=Missing[missing, missing, missing, missing])
 
     @test completecases(df2) == .!ismissing.(df2.x2)
     @test @inferred(completecases(df3, :x)) == trues(nrow(df3))
@@ -220,9 +220,9 @@ end
 end
 
 @testset "nonunique, nonunique, unique! with extra argument" begin
-    df1 = DataFrame(a = Union{String, Missing}["a", "b", "a", "b", "a", "b"],
-                    b = Vector{Union{Int, Missing}}(1:6),
-                    c = Union{Int, Missing}[1:3;1:3])
+    df1 = DataFrame(a=Union{String, Missing}["a", "b", "a", "b", "a", "b"],
+                    b=Vector{Union{Int, Missing}}(1:6),
+                    c=Union{Int, Missing}[1:3;1:3])
     df = vcat(df1, df1)
     @test findall(nonunique(df)) == collect(7:12)
     @test findall(nonunique(df, :)) == collect(7:12)
@@ -274,55 +274,55 @@ end
 end
 
 @testset "filter() and filter!()" begin
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
-    @test filter(r -> r[:x] > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
-    @test filter!(r -> r[:x] > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
+    @test filter(r -> r[:x] > 1, df) == DataFrame(x=[3, 2], y=["b", "a"])
+    @test filter!(r -> r[:x] > 1, df) === df == DataFrame(x=[3, 2], y=["b", "a"])
 
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
-    @test filter(:x => x -> x > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
-    @test filter!(:x => x -> x > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
+    @test filter(:x => x -> x > 1, df) == DataFrame(x=[3, 2], y=["b", "a"])
+    @test filter!(:x => x -> x > 1, df) === df == DataFrame(x=[3, 2], y=["b", "a"])
 
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
-    @test filter("x" => x -> x > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
-    @test filter!("x" => x -> x > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
+    @test filter("x" => x -> x > 1, df) == DataFrame(x=[3, 2], y=["b", "a"])
+    @test filter!("x" => x -> x > 1, df) === df == DataFrame(x=[3, 2], y=["b", "a"])
 
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
-    @test filter(1 => x -> x > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
-    @test filter!(1 => x -> x > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
+    @test filter(1 => x -> x > 1, df) == DataFrame(x=[3, 2], y=["b", "a"])
+    @test filter!(1 => x -> x > 1, df) === df == DataFrame(x=[3, 2], y=["b", "a"])
 
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
-    @test filter([:x] => x -> x > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
-    @test filter!([:x] => x -> x > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
+    @test filter([:x] => x -> x > 1, df) == DataFrame(x=[3, 2], y=["b", "a"])
+    @test filter!([:x] => x -> x > 1, df) === df == DataFrame(x=[3, 2], y=["b", "a"])
 
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
-    @test filter(["x"] => x -> x > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
-    @test filter!(["x"] => x -> x > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
+    @test filter(["x"] => x -> x > 1, df) == DataFrame(x=[3, 2], y=["b", "a"])
+    @test filter!(["x"] => x -> x > 1, df) === df == DataFrame(x=[3, 2], y=["b", "a"])
 
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
-    @test filter((:) => (r...) -> r[1] > 1, df) == DataFrame(x = [3, 2], y = ["b", "a"])
-    @test filter!((:) => (r...) -> r[1] > 1, df) === df == DataFrame(x = [3, 2], y = ["b", "a"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
+    @test filter((:) => (r...) -> r[1] > 1, df) == DataFrame(x=[3, 2], y=["b", "a"])
+    @test filter!((:) => (r...) -> r[1] > 1, df) === df == DataFrame(x=[3, 2], y=["b", "a"])
 
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
     @test filter([:x, :x] => ==, df) == df
-    @test filter!([:x, :x] => ==, df) === df == DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test filter!([:x, :x] => ==, df) === df == DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
 
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
     @test filter(["x", "x"] => ==, df) == df
-    @test filter!(["x", "x"] => ==, df) === df == DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test filter!(["x", "x"] => ==, df) === df == DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
 
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
     @test filter([2, 2] => !=, df) == DataFrame(x=Int[], y=String[])
     @test filter!([2, 2] => !=, df) === df == DataFrame(x=Int[], y=String[])
 
     for sel in [r"x", [1, 2], [:x1, :x2], ["x1", "x2"], :, Not(r"y")]
-        df = DataFrame(x1 = [3, 1, 2, 1], x2 = ["b", "c", "aa", "bbb"])
+        df = DataFrame(x1=[3, 1, 2, 1], x2=["b", "c", "aa", "bbb"])
         @test filter(sel => (a, b) -> a == length(b), df) ==
               DataFrame(x1=[1, 2], x2=["c", "aa"])
         @test filter!(sel => (a, b) -> a == length(b), df) === df ==
               DataFrame(x1=[1, 2], x2=["c", "aa"])
     end
 
-    df = DataFrame(x = [3, 1, 2, 1, missing], y = ["b", "c", "a", "b", "c"])
+    df = DataFrame(x=[3, 1, 2, 1, missing], y=["b", "c", "a", "b", "c"])
     @test_throws TypeError filter(r -> r[:x] > 1, df)
     @test_throws TypeError filter!(r -> r[:x] > 1, df)
     @test_throws TypeError filter(:x => x -> x > 1, df)
@@ -357,17 +357,17 @@ end
 end
 
 @testset "filter and filter! with SubDataFrame" begin
-    dfv = view(DataFrame(x = [0, 0, 3, 1, 3, 1], y = 1:6), 3:6, 1:1)
+    dfv = view(DataFrame(x=[0, 0, 3, 1, 3, 1], y=1:6), 3:6, 1:1)
 
-    @test filter(:x => x -> x > 2, dfv) == DataFrame(x = [3, 3])
-    @test filter(:x => x -> x > 2, dfv, view=true) == DataFrame(x = [3, 3])
+    @test filter(:x => x -> x > 2, dfv) == DataFrame(x=[3, 3])
+    @test filter(:x => x -> x > 2, dfv, view=true) == DataFrame(x=[3, 3])
     @test parent(filter(:x => x -> x > 2, dfv, view=true)) === parent(dfv)
 
     @test_throws ArgumentError filter!(:x => x -> x > 2, dfv)
 end
 
 @testset "filter and filter! with AsTable" begin
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
 
     function testfun(x)
         @assert x isa NamedTuple
@@ -379,7 +379,7 @@ end
     filter!(AsTable(:x) => testfun, df)
     @test df == DataFrame(x=[3, 2], y=["b", "a"])
 
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
 
     @test filter(AsTable("x") => testfun, df) == DataFrame(x=[3, 2], y=["b", "a"])
     filter!(AsTable("x") => testfun, df)
@@ -387,7 +387,7 @@ end
 end
 
 @testset "empty arg to filter and filter!" begin
-    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
 
     @test filter([] => () -> true, df) == df
     @test filter(AsTable(r"z") => x -> true, df) == df
@@ -428,7 +428,7 @@ end
 end
 
 @testset "names with cols" begin
-    df = DataFrame(a = 1, x1 = 2, x2 = 3, x3 = 4, x4 = 5)
+    df = DataFrame(a=1, x1=2, x2=3, x3=4, x4=5)
 
     for v in [df, groupby(df, :a)]
         @test names(v, All()) == names(v, :) == names(v) == ["a", "x1", "x2", "x3", "x4"]
@@ -464,13 +464,13 @@ end
 
 @testset "isapprox" begin
     df = DataFrame([:x1 => zeros(3), :x2 => ones(3)])
-    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
-    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.000000010000, 1.0, 1.0]))
+    @test isapprox(df, DataFrame(x1=[0.0, 0.0, 0.0], x2=[1.0, 1.0, 1.0]))
+    @test isapprox(df, DataFrame(x1=[0.0, 0.0, 0.0], x2=[1.000000010000, 1.0, 1.0]))
     @test_throws DimensionMismatch isapprox(DataFrame(a=1), DataFrame(a=[1,2]))
     @test_throws ArgumentError isapprox(DataFrame(a=1), DataFrame(b=1))
-    @test !isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.1, 1.0, 1.0]))
-    @test !isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.1, 1.0, 1.0]), atol=0.09)
-    @test isapprox(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.1, 1.0, 1.0]), atol=0.11)
+    @test !isapprox(df, DataFrame(x1=[0.0, 0.0, 0.0], x2=[1.1, 1.0, 1.0]))
+    @test !isapprox(df, DataFrame(x1=[0.0, 0.0, 0.0], x2=[1.1, 1.0, 1.0]), atol=0.09)
+    @test isapprox(df, DataFrame(x1=[0.0, 0.0, 0.0], x2=[1.1, 1.0, 1.0]), atol=0.11)
 end
 
 end # module

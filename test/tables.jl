@@ -138,7 +138,7 @@ Tables.columns(x::CopiedCols) = Tables.CopiedColumns(COPIEDCOLS)
         @test_throws ArgumentError (dn |> DataFrame)
 
         # non-Tables.jl constructor fallbacks
-        @test DataFrame([(a = 0,), (a = 1,)]) == DataFrame(a = 0:1)
+        @test DataFrame([(a=0,), (a=1,)]) == DataFrame(a=0:1)
 
         nt = (a=1, b=:a, c=missing)
         nti = NamedTupleIterator([nt, nt, nt])

@@ -44,7 +44,7 @@ See also: [`leftjoin`](@ref).
 
 # Examples
 ```jldoctest
-julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+julia> name = DataFrame(ID=[1, 2, 3], Name=["John Doe", "Jane Doe", "Joe Blogs"])
 3×2 DataFrame
  Row │ ID     Name
      │ Int64  String
@@ -53,7 +53,7 @@ julia> name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blo
    2 │     2  Jane Doe
    3 │     3  Joe Blogs
 
-julia> job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+julia> job = DataFrame(ID=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
  Row │ ID     Job
      │ Int64  String
@@ -71,7 +71,7 @@ julia> leftjoin!(name, job, on = :ID)
    2 │     2  Jane Doe   Doctor
    3 │     3  Joe Blogs  missing
 
-julia> job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+julia> job2 = DataFrame(identifier=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])
 3×2 DataFrame
  Row │ identifier  Job
      │ Int64       String

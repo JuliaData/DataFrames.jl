@@ -106,7 +106,7 @@ Additionally selected MIME types support passing the following keyword arguments
 
 # Examples
 ```jldoctest
-julia> show(stdout, MIME("text/latex"), DataFrame(A = 1:3, B = ["x", "y", "z"]))
+julia> show(stdout, MIME("text/latex"), DataFrame(A=1:3, B=["x", "y", "z"]))
 \\begin{tabular}{r|cc}
 \t& A & B\\\\
 \t\\hline
@@ -118,7 +118,7 @@ julia> show(stdout, MIME("text/latex"), DataFrame(A = 1:3, B = ["x", "y", "z"]))
 \\end{tabular}
 14
 
-julia> show(stdout, MIME("text/csv"), DataFrame(A = 1:3, B = ["x", "y", "z"]))
+julia> show(stdout, MIME("text/csv"), DataFrame(A=1:3, B=["x", "y", "z"]))
 "A","B"
 1,"x"
 2,"y"

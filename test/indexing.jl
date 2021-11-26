@@ -1742,9 +1742,9 @@ end
     df = DataFrame()
     @test_throws ArgumentError df[:, 1] = 1:3
 
-    df = DataFrame(a = 1:3)
+    df = DataFrame(a=1:3)
     @test_throws DimensionMismatch df[1:2, 1] = 1:3
-    @test_throws ArgumentError df[1:2, 1:1] = DataFrame(b = 1:2)
+    @test_throws ArgumentError df[1:2, 1:1] = DataFrame(b=1:2)
 end
 
 if VERSION >= v"1.4"

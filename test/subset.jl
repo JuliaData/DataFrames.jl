@@ -5,10 +5,10 @@ using Test, DataFrames, Statistics, Random
 const ≅ = isequal
 
 @testset "subset and subset!" begin
-    refdf = DataFrame(x = repeat(Any[true, false], 4),
-                      y = repeat([true, false, missing, missing], 2),
-                      z = repeat([1, 2, 3, 3], 2),
-                      id = 1:8)
+    refdf = DataFrame(x=repeat(Any[true, false], 4),
+                      y=repeat([true, false, missing, missing], 2),
+                      z=repeat([1, 2, 3, 3], 2),
+                      id=1:8)
 
     for df in (copy(refdf), @view copy(refdf)[1:end-1, :])
         df2 = copy(df)
@@ -206,8 +206,8 @@ const ≅ = isequal
     @test_throws ArgumentError subset!(view(refdf, :, :), :x)
     @test_throws ArgumentError subset!(groupby(view(refdf, :, :), :z), :x)
 
-    df = DataFrame(g=[2, 2, 1, 1, 1, 1, 3, 3, 3], x = 1:9)
-    @test subset(df, :x => x -> x .< mean(x)) == DataFrame(g=[2, 2, 1, 1], x = 1:4)
+    df = DataFrame(g=[2, 2, 1, 1, 1, 1, 3, 3, 3], x=1:9)
+    @test subset(df, :x => x -> x .< mean(x)) == DataFrame(g=[2, 2, 1, 1], x=1:4)
     @test subset(groupby(df, :g), :x => x -> x .< mean(x)) ==
           DataFrame(g=[2, 1, 1, 3], x=[1, 3, 4, 7])
 
@@ -244,10 +244,10 @@ end
     @test_throws AssertionError subset(DataFrame(x=[]), :x => ByRow(x -> 1))
     @test_throws ArgumentError subset(DataFrame(x=1:3), [] => () -> true)
     @test subset(DataFrame(x=1:3), [] => ByRow(() -> true)) == DataFrame(x=1:3)
-    @test_throws ArgumentError subset(DataFrame(x = [0, 1]), :x => ==(0))
-    @test_throws ArgumentError subset(DataFrame(x = [0, missing]), :x => ismissing)
-    @test_throws ArgumentError subset(groupby(DataFrame(id = [0, 0, 1, 1],
-                                                        x = [-1, 1, 3, 4]), :id),
+    @test_throws ArgumentError subset(DataFrame(x=[0, 1]), :x => ==(0))
+    @test_throws ArgumentError subset(DataFrame(x=[0, missing]), :x => ismissing)
+    @test_throws ArgumentError subset(groupby(DataFrame(id=[0, 0, 1, 1],
+                                                        x=[-1, 1, 3, 4]), :id),
                                       :x => (x -> sum(x) > 0))
     @test_throws ArgumentError subset(DataFrame(x=1:3), :x => x -> fill(missing, length(x)))
     @test isempty(subset(DataFrame(x=1:3), :x => x -> fill(missing, length(x)),
