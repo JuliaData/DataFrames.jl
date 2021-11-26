@@ -29,33 +29,33 @@ using DataFrames, Random, Test, CategoricalArrays
 
     ds = sort(df, [order(:rank, rev=true), :chrom, :pos])
     @test issorted(ds, [order(:rank, rev=true), :chrom, :pos])
-    @test issorted(ds, rev=(true, false, false))
+    @test issorted(ds, rev=[true, false, false])
 
     ds = sort(df, [order("rank", rev=true), "chrom", "pos"])
     @test issorted(ds, [order("rank", rev=true), "chrom", "pos"])
-    @test issorted(ds, rev=(true, false, false))
+    @test issorted(ds, rev=[true, false, false])
 
-    ds2 = sort(df, [:rank, :chrom, :pos], rev=(true, false, false))
+    ds2 = sort(df, [:rank, :chrom, :pos], rev=[true, false, false])
     @test issorted(ds2, [order(:rank, rev=true), :chrom, :pos])
-    @test issorted(ds2, rev=(true, false, false))
+    @test issorted(ds2, rev=[true, false, false])
 
     @test ds2 == ds
 
-    ds2 = sort(df, ["rank", "chrom", "pos"], rev=(true, false, false))
+    ds2 = sort(df, ["rank", "chrom", "pos"], rev=[true, false, false])
     @test issorted(ds2, [order("rank", rev=true), "chrom", "pos"])
-    @test issorted(ds2, rev=(true, false, false))
+    @test issorted(ds2, rev=[true, false, false])
 
     @test ds2 == ds
 
-    sort!(df, [:rank, :chrom, :pos], rev=(true, false, false))
+    sort!(df, [:rank, :chrom, :pos], rev=[true, false, false])
     @test issorted(df, [order(:rank, rev=true), :chrom, :pos])
-    @test issorted(df, rev=(true, false, false))
+    @test issorted(df, rev=[true, false, false])
 
     @test df == ds
 
-    sort!(df, ["rank", "chrom", "pos"], rev=(true, false, false))
+    sort!(df, ["rank", "chrom", "pos"], rev=[true, false, false])
     @test issorted(df, [order("rank", rev=true), "chrom", "pos"])
-    @test issorted(df, rev=(true, false, false))
+    @test issorted(df, rev=[true, false, false])
 
     @test df == ds
 
@@ -94,7 +94,7 @@ using DataFrames, Random, Test, CategoricalArrays
     @test x.y == [1, 2, 3, 4]
     @test x.x == [1, 3, 2, 4]
 
-    @test_throws ArgumentError sort(x, by=:x)
+    @test_throws TypeError sort(x, by=:x)
 
     Random.seed!(1)
     # here there will be probably no ties
@@ -205,6 +205,121 @@ end
         @test sortperm(df) == sortperm(df[!, 1])
         @test sortperm(df, [order(1, rev=true); 2:i-1; order(i, rev=true)]) ==
               sortperm(df[!, 1], rev=true)
+    end
+end
+
+@testset "sort! tests" begin
+    # safe aliasing test
+    df = DataFrame()
+    x = [10:-1:1;]
+    df.x1 = view(x, 2:5)
+    df.x2 = view(x, 2:5)
+    sort!(df)
+    @test issorted(df)
+    @test x == [10, 6, 7, 8, 9, 5, 4, 3, 2, 1]
+    @test df == DataFrame(x1=6:9, x2=6:9)
+
+    df = DataFrame()
+    x = [10:-1:1;]
+    df.x1 = view(x, 2:5)
+    df.x2 = view(x, 2:5)
+    dfv = view(df, 2:4, :)
+    sort!(dfv)
+    @test issorted(dfv)
+    @test x == [10, 9, 6, 7, 8, 5, 4, 3, 2, 1]
+    @test df == DataFrame(x1=[9; 6:8], x2=[9; 6:8])
+
+    # unsafe aliasing test
+    df = DataFrame()
+    x = [10:-1:1;]
+    df.x1 = view(x, 2:5)
+    df.x2 = view(x, 3:6)
+    @test_throws ArgumentError sort!(df)
+    @test x == 10:-1:1
+    @test df == DataFrame(x1=9:-1:6, x2=8:-1:5)
+
+    df = DataFrame()
+    x = [10:-1:1;]
+    df.x1 = view(x, 2:5)
+    df.x2 = view(x, 3:6)
+    dfv = view(df, 2:4, :)
+    @test_throws ArgumentError sort!(dfv)
+    @test x == 10:-1:1
+    @test df == DataFrame(x1=9:-1:6, x2=8:-1:5)
+
+    # complex view sort test
+    Random.seed!(1234)
+    df = DataFrame(rand(100, 10), :auto)
+    insertcols!(df, 1, :id => axes(df, 1))
+    df2 = copy(df)
+    dfv = view(df, 100:-2:1, [5, 3, 1])
+    sort!(dfv, :id)
+    @test issorted(dfv, :id)
+    @test select(df, Not([1, 3, 5])) == select(df2, Not([1, 3, 5]))
+    @test sort(select(df, [1, 3, 5]), :id) == select(df2, [1, 3, 5])
+    @test select(df, [1, 3, 5]) ==
+          select(df2, [1, 3, 5])[[isodd(i) ? i : (102 - i) for i in 1:100], :]
+end
+
+@testset "check sorting kwarg argument correctness" begin
+    for df in (DataFrame(x=1:3), DataFrame(x=1:3, y=1:3)), fun in (issorted, sort, sortperm, sort!)
+        @test_throws TypeError fun(df, by=Int)
+        @test_throws TypeError fun(df, lt=Int)
+        @test_throws TypeError fun(df, rev=Int)
+        @test_throws TypeError fun(df, order=Int)
+        @test_throws TypeError fun(df, by=1)
+        @test_throws TypeError fun(df, lt=1)
+        @test_throws TypeError fun(df, rev=1)
+        @test_throws TypeError fun(df, order=1)
+        @test_throws TypeError fun(df, by=(identity,))
+        @test_throws TypeError fun(df, lt=(isless,))
+        @test_throws TypeError fun(df, rev=(true,))
+        @test_throws TypeError fun(df, order=(Base.Forward,))
+        @test_throws TypeError fun(df, by=(identity, identity))
+        @test_throws TypeError fun(df, lt=(isless, isless))
+        @test_throws TypeError fun(df, rev=(true, true))
+        @test_throws TypeError fun(df, order=(Base.Forward, Base.Forward))
+    end
+
+    for df in (DataFrame(x=1:3), DataFrame(x=1:3, y=1:3)), fun in (sort, sort!)
+        dfc = copy(df)
+        @test fun(df, by=identity) == dfc
+        @test fun(df, by=fill(identity, ncol(df))) == dfc
+        @test fun(df, lt=isless) == dfc
+        @test fun(df, lt=fill(isless, ncol(df))) == dfc
+        @test fun(df, rev=false) == dfc
+        @test fun(df, rev=fill(false, ncol(df))) == dfc
+        @test fun(df, order=Base.Forward) == dfc
+        @test fun(df, order=fill(Base.Forward, ncol(df))) == dfc
+    end
+
+    for df in (DataFrame(x=1:3), DataFrame(x=1:3, y=1:3))
+        @test issorted(df, by=identity)
+        @test issorted(df, by=fill(identity, ncol(df)))
+        @test issorted(df, lt=isless)
+        @test issorted(df, lt=fill(isless, ncol(df)))
+        @test issorted(df, rev=false)
+        @test issorted(df, rev=fill(false, ncol(df)))
+        @test issorted(df, order=Base.Forward)
+        @test issorted(df, order=fill(Base.Forward, ncol(df)))
+
+        @test issorted(df, :x, by=identity)
+        @test issorted(df, :x, by=[identity])
+        @test issorted(df, :x, lt=isless)
+        @test issorted(df, :x, lt=[isless])
+        @test issorted(df, :x, rev=false)
+        @test issorted(df, :x, rev=[false])
+        @test issorted(df, :x, order=Base.Forward)
+        @test issorted(df, :x, order=[Base.Forward])
+
+        @test sortperm(df, by=identity) == 1:3
+        @test sortperm(df, by=fill(identity, ncol(df))) == 1:3
+        @test sortperm(df, lt=isless) == 1:3
+        @test sortperm(df, lt=fill(isless, ncol(df))) == 1:3
+        @test sortperm(df, rev=false) == 1:3
+        @test sortperm(df, rev=fill(false, ncol(df))) == 1:3
+        @test sortperm(df, order=Base.Forward) == 1:3
+        @test sortperm(df, order=fill(Base.Forward, ncol(df))) == 1:3
     end
 end
 

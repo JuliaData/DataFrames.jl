@@ -1,6 +1,7 @@
 # Sorting
 
-Sorting is a fundamental component of data analysis. Basic sorting is trivial: just calling `sort!` will sort all columns, in place:
+Sorting is a fundamental component of data analysis. Basic sorting is trivial:
+just calling `sort!` will sort all columns, in place:
 
 ```jldoctest sort
 julia> using DataFrames, CSV
@@ -145,7 +146,7 @@ same result: `:Species` will be ordered in reverse order, and within groups,
 rows will be sorted by increasing `:PetalLength`:
 
 ```jldoctest sort
-julia> sort!(iris, [:Species, :PetalLength], rev=(true, false))
+julia> sort!(iris, [:Species, :PetalLength], rev=[true, false])
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
      │ Float64      Float64     Float64      Float64     String15
