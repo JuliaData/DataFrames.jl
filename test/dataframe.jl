@@ -1104,6 +1104,8 @@ end
     @test first(df, 1) == DataFrame(A=1)
     @test last(df, 6) == DataFrame(A=5:10)
     @test last(df, 1) == DataFrame(A=10)
+    @test first(df, 6, true) == DataFrame(A=1:6)
+    @test last(df, 6, true) == DataFrame(A=5:10)
 
     @test first(df, 6, true) isa SubDataFrame
     @test first(df, 6, false) isa DataFrame
