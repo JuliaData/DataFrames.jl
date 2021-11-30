@@ -1104,13 +1104,13 @@ end
     @test first(df, 1) == DataFrame(A=1)
     @test last(df, 6) == DataFrame(A=5:10)
     @test last(df, 1) == DataFrame(A=10)
-    @test first(df, 6, true) == DataFrame(A=1:6)
-    @test last(df, 6, true) == DataFrame(A=5:10)
+    @test first(df, 6, view=true) == DataFrame(A=1:6)
+    @test last(df, 6, view=true) == DataFrame(A=5:10)
 
-    @test first(df, 6, true) isa SubDataFrame
-    @test first(df, 6, false) isa DataFrame
-    @test last(df, 6, true) isa SubDataFrame
-    @test last(df, 6, false) isa DataFrame
+    @test first(df, 6, view=true) isa SubDataFrame
+    @test first(df, 6, view=false) isa DataFrame
+    @test last(df, 6, view=true) isa SubDataFrame
+    @test last(df, 6, view=false) isa DataFrame
 
     @test_throws ArgumentError only(df)
     @test_throws ArgumentError only(DataFrame())
