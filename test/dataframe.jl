@@ -1108,7 +1108,7 @@ end
     @inferred first(df, 6)
     @inferred last(df, 6)
     @inferred first(df)
-    @inferred first(df)
+    @inferred last(df)
 
     @test first(df, 6, view=true) == DataFrame(A=1:6)
     @test last(df, 6, view=true) == DataFrame(A=5:10)
