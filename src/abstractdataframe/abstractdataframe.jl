@@ -486,14 +486,15 @@ Get the first row of `df` as a `DataFrameRow`.
 Base.first(df::AbstractDataFrame) = df[1, :]
 
 """
-    first(df::AbstractDataFrame, n::Integer, view::Bool=false)
+    first(df::AbstractDataFrame, n::Integer; view::Bool=false)
 
 Get a data frame with the `n` first rows of `df`.
 
 If `view=false` a freshly allocated `DataFrame` is returned.
 If `view=true` then a `SubDataFrame` view into `df` is returned.
 """
-Base.first(df::AbstractDataFrame, n::Integer, view::Bool=false) = view ? Base.view(df, 1:min(n ,nrow(df)), :) : df[1:min(n, nrow(df)), :]
+Base.first(df::AbstractDataFrame, n::Integer; view::Bool=false) = 
+    view ? Base.view(df, 1:min(n ,nrow(df)), :) : df[1:min(n, nrow(df)), :]
 
 """
     last(df::AbstractDataFrame)
@@ -503,14 +504,15 @@ Get the last row of `df` as a `DataFrameRow`.
 Base.last(df::AbstractDataFrame) = df[nrow(df), :]
 
 """
-    last(df::AbstractDataFrame, n::Integer, view::Bool=false)
+    last(df::AbstractDataFrame, n::Integer; view::Bool=false)
 
 Get a data frame with the `n` last rows of `df`.
 
 If `view=false` a freshly allocated `DataFrame` is returned.
 If `view=true` then a `SubDataFrame` view into `df` is returned.
 """
-Base.last(df::AbstractDataFrame, n::Integer, view::Bool=false) = view ? Base.view(df, max(1, nrow(df)-n+1):nrow(df), :) : df[max(1, nrow(df)-n+1):nrow(df), :]
+Base.last(df::AbstractDataFrame, n::Integer; view::Bool=false) = 
+    view ? Base.view(df, max(1, nrow(df)-n+1):nrow(df), :) : df[max(1, nrow(df)-n+1):nrow(df), :]
 
 
 """
