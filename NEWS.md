@@ -94,6 +94,8 @@
   ([#2459](https://github.com/JuliaData/DataFrames.jl/pull/2459))
 * `sort!` now supports general `AbstractDataFrame`
   ([#2946](https://github.com/JuliaData/DataFrames.jl/pull/2946))
+* `filter` now supports `view` keyword argument
+  ([#2951](https://github.com/JuliaData/DataFrames.jl/pull/2951))
 
 ## Bug fixes
 

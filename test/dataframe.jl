@@ -1105,6 +1105,19 @@ end
     @test last(df, 6) == DataFrame(A=5:10)
     @test last(df, 1) == DataFrame(A=10)
 
+    @inferred first(df, 6)
+    @inferred last(df, 6)
+    @inferred first(df)
+    @inferred last(df)
+
+    @test first(df, 6, view=true) == DataFrame(A=1:6)
+    @test last(df, 6, view=true) == DataFrame(A=5:10)
+
+    @test first(df, 6, view=true) isa SubDataFrame
+    @test first(df, 6, view=false) isa DataFrame
+    @test last(df, 6, view=true) isa SubDataFrame
+    @test last(df, 6, view=false) isa DataFrame
+
     @test_throws ArgumentError only(df)
     @test_throws ArgumentError only(DataFrame())
     df = DataFrame(a=1, b=2)
