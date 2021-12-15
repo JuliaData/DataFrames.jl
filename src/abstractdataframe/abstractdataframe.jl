@@ -684,7 +684,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
 end
 
 # Compute summary statistics
-# use a dict because we dont know which measures the user wants
+# use a dict because we don't know which measures the user wants
 # Outside of the `describe` function due to something with 0.7
 function get_stats(@nospecialize(col::Union{AbstractVector, Base.SkipMissing}),
                    stats::AbstractVector{Symbol})
