@@ -153,7 +153,7 @@ julia> eachcol(df)
    4 │     4     14
 
 julia> collect(eachcol(df))
-2-element Vector{AbstractVector{T} where T}:
+2-element Vector{AbstractVector}:
  [1, 2, 3, 4]
  [11, 12, 13, 14]
 

@@ -105,7 +105,7 @@ you can also easily create a `DataFrame` from it:
 ```jldoctest dataframe
 julia> dict = Dict("customer age" => [15, 20, 25],
                    "first name" => ["Rohit", "Rahul", "Akshat"])
-Dict{String, Vector{T} where T} with 2 entries:
+Dict{String, Vector} with 2 entries:
   "first name"   => ["Rohit", "Rahul", "Akshat"]
   "customer age" => [15, 20, 25]
 
@@ -120,7 +120,7 @@ julia> DataFrame(dict)
 
 julia> dict = Dict(:customer_age => [15, 20, 25],
                    :first_name => ["Rohit", "Rahul", "Akshat"])
-Dict{Symbol, Vector{T} where T} with 2 entries:
+Dict{Symbol, Vector} with 2 entries:
   :customer_age => [15, 20, 25]
   :first_name   => ["Rohit", "Rahul", "Akshat"]
 
@@ -1203,7 +1203,7 @@ julia> s = [25, 26, 35, 56]
  56
 
 julia> s[2:3] = 0
-ERROR: ArgumentError: indexed assignment with a single value to many locations is not supported; perhaps use broadcasting `.=` instead?
+ERROR: ArgumentError: indexed assignment with a single value to possibly many locations is not supported; perhaps use broadcasting `.=` instead?
 ```
 
 Instead we have to write:
