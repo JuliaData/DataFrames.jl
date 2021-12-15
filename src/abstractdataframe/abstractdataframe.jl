@@ -2061,11 +2061,14 @@ function Missings.disallowmissing(df::AbstractDataFrame,
         x = df[!, i]
         if i in idxcols
             if Missing <: eltype(x)
-                # any(ismissing, x) is cheap so we accept paying it
+                # finding missing is cheap so we accept paying it
                 # to get a better error message
-                if any(ismissing, x)
+                row = findfirst(ismissing, x)
+                if row !== nothing
                     if error
-                        throw(ArgumentError("Missing value found in column number $i"))
+                        col = _names(df)[i]
+                        throw(ArgumentError("Missing value found in column :$col " *
+                                            "in row $row"))
                     else
                         y = x
                     end

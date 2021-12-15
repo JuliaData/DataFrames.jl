@@ -1191,11 +1191,14 @@ function disallowmissing! end
 function disallowmissing!(df::DataFrame, col::ColumnIndex; error::Bool=true)
     x = df[!, col]
     if Missing <: eltype(x)
-        # any(ismissing, x) is cheap so we accept paying it
+        # finding missing is cheap so we accept paying it
         # to get a better error message
-        if any(ismissing, x)
+        row = findfirst(ismissing, x)
+        if row !== nothing
             if error
-                throw(ArgumentError("Missing value found in column number $col"))
+                col_name = only(names(df, col))
+                throw(ArgumentError("Missing value found in column :$col_name " *
+                                    "in row $row"))
             end
         else
             df[!, col] = disallowmissing(x)
