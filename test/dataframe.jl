@@ -1131,7 +1131,7 @@ end
     @test isa(df[!, 1], Vector{Union{Int, Missing}})
     @test !isa(df[!, 2], Vector{Union{Int, Missing}})
     df[1, 1] = missing
-    @test_throws MethodError disallowmissing!(df, 1)
+    @test_throws ArgumentError disallowmissing!(df, 1)
     tmpcol = df[!, 1]
     disallowmissing!(df, 1, error=false)
     @test df[!, 1] === tmpcol
@@ -1145,7 +1145,7 @@ end
     @test isa(df[!, 1], Vector{Union{Int, Missing}})
     @test !isa(df[!, 2], Vector{Union{Int, Missing}})
     df[1, 1] = missing
-    @test_throws MethodError disallowmissing!(df, Not(Not(1)))
+    @test_throws ArgumentError disallowmissing!(df, Not(Not(1)))
     tmpcol = df[!, 1]
     disallowmissing!(df, Not(Not(1)), error=false)
     @test df[!, 1] === tmpcol
@@ -1206,7 +1206,7 @@ end
     @test eltype(df[!, 1]) <: Union{CategoricalValue{Int}, Missing}
     @test eltype(df[!, 2]) <: Union{CategoricalValue{String}, Missing}
     df[1, 2] = missing
-    @test_throws MissingException disallowmissing!(df)
+    @test_throws ArgumentError disallowmissing!(df)
     tmpcol =df[!, 2]
     disallowmissing!(df, error=false)
     @test df[!, 2] === tmpcol
@@ -1331,9 +1331,9 @@ end
         end
     end
 
-    @test_throws MethodError disallowmissing(DataFrame(x=[missing]))
+    @test_throws ArgumentError disallowmissing(DataFrame(x=[missing]))
     @test disallowmissing(DataFrame(x=[missing]), error=false) ≅ DataFrame(x=[missing])
-    @test_throws MethodError disallowmissing(DataFrame(x=[1, missing]))
+    @test_throws ArgumentError disallowmissing(DataFrame(x=[1, missing]))
     @test disallowmissing(DataFrame(x=[1, missing]), error=false) ≅ DataFrame(x=[1, missing])
 
     df = DataFrame(x=[1], y=Union{Int, Missing}[1], z=[missing])

@@ -1190,8 +1190,16 @@ function disallowmissing! end
 
 function disallowmissing!(df::DataFrame, col::ColumnIndex; error::Bool=true)
     x = df[!, col]
-    if !(!error && Missing <: eltype(x) && any(ismissing, x))
-        df[!, col] = disallowmissing(x)
+    if Missing <: eltype(x)
+        # any(ismissing, x) is cheap so we accept paying it
+        # to get a better error message
+        if any(ismissing, x)
+            if error
+                throw(ArgumentError("Missing value found in column number $col"))
+            end
+        else
+            df[!, col] = disallowmissing(x)
+        end
     end
     return df
 end

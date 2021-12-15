@@ -493,7 +493,7 @@ Get a data frame with the `n` first rows of `df`.
 If `view=false` a freshly allocated `DataFrame` is returned.
 If `view=true` then a `SubDataFrame` view into `df` is returned.
 """
-@inline Base.first(df::AbstractDataFrame, n::Integer; view::Bool=false) = 
+@inline Base.first(df::AbstractDataFrame, n::Integer; view::Bool=false) =
     view ? Base.view(df, 1:min(n ,nrow(df)), :) : df[1:min(n, nrow(df)), :]
 
 """
@@ -511,7 +511,7 @@ Get a data frame with the `n` last rows of `df`.
 If `view=false` a freshly allocated `DataFrame` is returned.
 If `view=true` then a `SubDataFrame` view into `df` is returned.
 """
-@inline Base.last(df::AbstractDataFrame, n::Integer; view::Bool=false) = 
+@inline Base.last(df::AbstractDataFrame, n::Integer; view::Bool=false) =
     view ? Base.view(df, max(1, nrow(df)-n+1):nrow(df), :) : df[max(1, nrow(df)-n+1):nrow(df), :]
 
 
@@ -2060,10 +2060,20 @@ function Missings.disallowmissing(df::AbstractDataFrame,
     for i in axes(df, 2)
         x = df[!, i]
         if i in idxcols
-            if !error && Missing <: eltype(x) && any(ismissing, x)
-                y = x
+            if Missing <: eltype(x)
+                # any(ismissing, x) is cheap so we accept paying it
+                # to get a better error message
+                if any(ismissing, x)
+                    if error
+                        throw(ArgumentError("Missing value found in column number $i"))
+                    else
+                        y = x
+                    end
+                else
+                    y = disallowmissing(x)
+                end
             else
-                y = disallowmissing(x)
+                y = x
             end
             push!(newcols, y === x ? copy(y) : y)
         else
