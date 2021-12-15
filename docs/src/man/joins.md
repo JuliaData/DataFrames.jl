@@ -125,7 +125,7 @@ julia> crossjoin(people, jobs, makeunique = true)
 ```
 
 In order to join data frames on keys which have different names in the left and right tables,
-you may pass `(left, right)` tuples or `left => right` pairs as `on` argument:
+you may pass `left => right` pairs as `on` argument:
 
 ```jldoctest joins
 julia> a = DataFrame(ID=[20, 40], Name=["John Doe", "Jane Doe"])
