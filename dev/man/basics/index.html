@@ -27,7 +27,7 @@ julia&gt; Pkg.test(&quot;DataFrames&quot;) # Warning! This will take more than 3
    2 │           20  Rahul
    3 │           25  Akshat</code></pre><p>Notice that this time we have passed column names as strings.</p><p>Often you have your source data stored in a dictionary. Provided that the keys of the dictionary are strings or <code>Symbol</code>s you can also easily create a <code>DataFrame</code> from it:</p><pre><code class="language-julia-repl hljs">julia&gt; dict = Dict(&quot;customer age&quot; =&gt; [15, 20, 25],
                    &quot;first name&quot; =&gt; [&quot;Rohit&quot;, &quot;Rahul&quot;, &quot;Akshat&quot;])
-Dict{String, Vector{T} where T} with 2 entries:
+Dict{String, Vector} with 2 entries:
   &quot;first name&quot;   =&gt; [&quot;Rohit&quot;, &quot;Rahul&quot;, &quot;Akshat&quot;]
   &quot;customer age&quot; =&gt; [15, 20, 25]
 
@@ -42,7 +42,7 @@ julia&gt; DataFrame(dict)
 
 julia&gt; dict = Dict(:customer_age =&gt; [15, 20, 25],
                    :first_name =&gt; [&quot;Rohit&quot;, &quot;Rahul&quot;, &quot;Akshat&quot;])
-Dict{Symbol, Vector{T} where T} with 2 entries:
+Dict{Symbol, Vector} with 2 entries:
   :customer_age =&gt; [15, 20, 25]
   :first_name   =&gt; [&quot;Rohit&quot;, &quot;Rahul&quot;, &quot;Akshat&quot;]
 
@@ -686,7 +686,7 @@ julia&gt; sdf
  56
 
 julia&gt; s[2:3] = 0
-ERROR: ArgumentError: indexed assignment with a single value to many locations is not supported; perhaps use broadcasting `.=` instead?</code></pre><p>Instead we have to write:</p><pre><code class="language-julia-repl hljs">julia&gt; s[2:3] .= 0
+ERROR: ArgumentError: indexed assignment with a single value to possibly many locations is not supported; perhaps use broadcasting `.=` instead?</code></pre><p>Instead we have to write:</p><pre><code class="language-julia-repl hljs">julia&gt; s[2:3] .= 0
 2-element view(::Vector{Int64}, 2:3) with eltype Int64:
  0
  0
@@ -1279,4 +1279,4 @@ julia&gt; transform(df, :Age =&gt; maximum)
   998 │    38      2     40
   999 │    23      2     25
  1000 │    27      2     29
-            985 rows omitted</code></pre><p>In the examples given in this introductory tutorial we did not cover all options of the transformation mini-language. More advanced examples, in particular showing how to pass or produce multiple columns using the <code>AsTable</code> operation (which you might have seen in some DataFrames.jl demos) are given in the later sections of the manual.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../getting_started/">Getting Started »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.10 on <span class="colophon-date" title="Saturday 11 December 2021 19:17">Saturday 11 December 2021</span>. Using Julia version 1.6.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+            985 rows omitted</code></pre><p>In the examples given in this introductory tutorial we did not cover all options of the transformation mini-language. More advanced examples, in particular showing how to pass or produce multiple columns using the <code>AsTable</code> operation (which you might have seen in some DataFrames.jl demos) are given in the later sections of the manual.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../getting_started/">Getting Started »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.10 on <span class="colophon-date" title="Thursday 16 December 2021 08:46">Thursday 16 December 2021</span>. Using Julia version 1.7.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
