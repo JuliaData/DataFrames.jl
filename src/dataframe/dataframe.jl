@@ -592,11 +592,11 @@ end
 
 # df[:, MultiColumnIndex] => DataFrame
 Base.getindex(df::DataFrame, row_ind::Colon, col_inds::MultiColumnIndex) =
-    select(df, col_inds, copycols=true)
+    select(df, index(df)[col_inds], copycols=true)
 
 # df[!, MultiColumnIndex] => DataFrame
 Base.getindex(df::DataFrame, row_ind::typeof(!), col_inds::MultiColumnIndex) =
-    select(df, col_inds, copycols=false)
+    select(df, index(df)[col_inds], copycols=false)
 
 ##############################################################################
 ##

@@ -174,7 +174,7 @@ Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon,
     parent(sdf)[rows(sdf), parentcols(index(sdf), colinds)]
 Base.@propagate_inbounds Base.getindex(df::SubDataFrame, row_ind::typeof(!),
                                        col_inds::MultiColumnIndex) =
-    select(df, col_inds, copycols=false)
+    select(df, index(df)[col_inds], copycols=false)
 
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, idx::CartesianIndex{2})
     return setindex!(sdf, val, idx[1], idx[2])
