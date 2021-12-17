@@ -3,7 +3,7 @@
 ## Bug fixes
 
 * Fix `getindex` that incorrectly allowed vectors of `Pair`s
-  ([#2820](https://github.com/JuliaData/DataFrames.jl/issues/2970))
+  ([#2970](https://github.com/JuliaData/DataFrames.jl/issues/2970))
 
 # DataFrames.jl v1.3 Release Notes
 
