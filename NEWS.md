@@ -1,3 +1,10 @@
+# DataFrames.jl v1.3.1 Patch Release Notes
+
+## Bug fixes
+
+* Fix `getindex` that incorrectly allowed vectors of `Pair`s
+  ([#2970](https://github.com/JuliaData/DataFrames.jl/issues/2970))
+
 # DataFrames.jl v1.3 Release Notes
 
 ## New functionalities

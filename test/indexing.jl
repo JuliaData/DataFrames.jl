@@ -2141,4 +2141,20 @@ end
     end
 end
 
+@testset "fix #2969 (passing Pairs as selectors)" begin
+    df = DataFrame(a=1:3, b=4:6)
+    @test_throws ArgumentError  df[:, [:a => sum]]
+    @test_throws ArgumentError  df[!, [:a => sum]]
+    @test_throws ArgumentError  df[1:2, [:a => sum]]
+    @test_throws ArgumentError  df[1, [:a => sum]]
+
+    for rowsel in [:, 1:2, 1], colsel in [:, 1:2, 1:1]
+        dfv = @view df[:, :]
+        @test_throws ArgumentError  df[:, [:a => sum]]
+        @test_throws ArgumentError  df[!, [:a => sum]]
+        @test_throws ArgumentError  df[1:2, [:a => sum]]
+        @test_throws ArgumentError  df[1, [:a => sum]]
+    end
+end
+
 end # module
