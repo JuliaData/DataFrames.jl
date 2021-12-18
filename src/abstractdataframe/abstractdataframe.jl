@@ -2060,30 +2060,22 @@ function Missings.disallowmissing(df::AbstractDataFrame,
     for i in axes(df, 2)
         x = df[!, i]
         if i in idxcols
-            local y
+            y = x
             if Missing <: eltype(x)
-                if error
-                    try
-                        y = disallowmissing(x)
-                    catch e
-                        row = findfirst(ismissing, x)
-                        if row !== nothing
+                try
+                    y = disallowmissing(x)
+                catch e
+                    row = findfirst(ismissing, x)
+                    if row !== nothing
+                        if error
                             col = _names(df)[i]
                             throw(ArgumentError("Missing value found in column " *
                                                 ":$col in row $row"))
-                        else
-                            rethrow(e)
                         end
-                    end
-                else
-                    if any(ismissing, x)
-                        y = x
                     else
-                        y = disallowmissing(x)
+                        rethrow(e)
                     end
                 end
-            else
-                y = x
             end
             push!(newcols, y === x ? copy(y) : y)
         else
