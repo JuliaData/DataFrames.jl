@@ -70,7 +70,9 @@ In the descriptions below `df` represents a `DataFrame`, `sdf` is a
 
 `df.col` works like `df[!, col]` and `sdf.col` works like `sdf[!, col]` in all
 cases except that `df.col .= v` and `sdf.col .= v` perform in-place broadcasting
-if `col` is present in `df`/`sdf` and is a valid identifier.
+if `col` is present in `df`/`sdf` and is a valid identifier (this inconsistency
+is deprecated and in DataFrames.jl 1.4 release under Julia 1.7 and later both
+syntaxes will be always consistent).
 
 ## `getindex` and `view`
 
