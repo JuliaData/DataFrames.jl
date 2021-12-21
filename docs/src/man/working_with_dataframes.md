@@ -494,7 +494,7 @@ Additionally DataFrames.jl extends the [`filter`](@ref) and [`filter!`](@ref)
 functions provided in Julia Base, which also allow subsetting a data frame.
 These methods are defined so that DataFrames.jl implements the Julia API
 for collections, but it is generally recommended to use the [`subset`](@ref)
-and [`subset!`](@ref) functions instead, as they consistent with other
+and [`subset!`](@ref) functions instead, as they are consistent with other
 DataFrames.jl functions (as opposed to [`filter`](@ref) and [`filter!`](@ref)).
 
 ### Selecting and transforming columns
@@ -619,7 +619,7 @@ julia> df
 ```
 
 `transform` and `transform!` functions work identically to `select` and
-`select!` with the only difference that they retain all columns that are present
+`select!`, with the only difference that they retain all columns that are present
 in the source data frame. Here are some more advanced examples.
 
 First we show how to generate a column that is a sum of all other columns in the
@@ -684,7 +684,7 @@ julia> transform(df, AsTable(:) => ByRow(argmax) => :prediction)
   10 │ 0.986666    0.859512   0.553206   a
 ```
 
-In the following, most complex, example below we compute row-wise sum, number of
+In the most complex example below we compute row-wise sum, number of
 elements, and mean, while ignoring missing values.
 
 ```
@@ -750,7 +750,7 @@ julia> describe(df)
    2 │ B                 F            M           0  String
 ```
 
-If you are interested in describing only a subset of columns then the easiest
+If you are interested in describing only a subset of columns, then the easiest
 way to do it is to pass a subset of an original data frame to `describe` like
 this:
 
@@ -803,7 +803,7 @@ julia> combine(df, names(df) .=> sum, names(df) .=> prod)
 ```
 
 If you would prefer the result to have the same number of rows as the source
-data frame use `select` instead of `combine`.
+data frame, use `select` instead of `combine`.
 
 ## Handling of Columns Stored in a `DataFrame`
 
@@ -828,7 +828,7 @@ false
 ```
 
 On the other hand, in-place functions, whose names end with `!`, may mutate the
-column vectors of the `DataFrame` they take as an argument, for example:
+column vectors of the `DataFrame` they take as an argument. For example:
 
 ```jldoctest dataframe
 julia> x = [3, 1, 2];
@@ -875,8 +875,8 @@ julia> x
  1
  2
 ```
-Note, that in the above example the original `x` vector is not mutated in the
-process as the `DataFrame(x=x)` constructor makes a copy by default.
+Note that in the above example the original `x` vector is not mutated in the
+process, as the `DataFrame(x=x)` constructor makes a copy by default.
 
 In-place functions are safe to call, except when a view of the `DataFrame`
 (created via a `view`, `@view` or [`groupby`](@ref))
