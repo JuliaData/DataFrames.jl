@@ -425,7 +425,7 @@ function _innerjoin_dup_int(left::AbstractVector{<:Union{Integer, Missing}},
                                       offset, minv, maxv)
 end
 
-function compute_join_indices!(groups::Vector{Int}, ngroups::Int,
+function compute_join_indices!(groups::Vector{Int},
                                starts::Vector, rperm::Vector)
     @inbounds for gix in groups
         starts[gix] += 1
@@ -454,7 +454,7 @@ function _innerjoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
     sizehint!(left_ixs, right_len)
     sizehint!(right_ixs, right_len)
 
-    compute_join_indices!(groups, ngroups, starts, rperm)
+    compute_join_indices!(groups, starts, rperm)
 
     n = 0
     @inbounds for (idx_l, val_l) in enumerate(left)
@@ -491,7 +491,7 @@ function _innerjoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missin
     sizehint!(left_ixs, right_len)
     sizehint!(right_ixs, right_len)
 
-    compute_join_indices!(groups, ngroups, starts, rperm)
+    compute_join_indices!(groups, starts, rperm)
 
     n = 0
     @inbounds for (idx_l, val_l) in enumerate(left)
@@ -762,7 +762,7 @@ function _semijoin_postprocess(left::AbstractArray, dict::Dict{T, Int},
     starts = zeros(Int, ngroups)
     rperm = Vector{Int}(undef, right_len)
 
-    compute_join_indices!(groups, ngroups, starts, rperm)
+    compute_join_indices!(groups, starts, rperm)
 
     @inbounds for (idx_l, val_l) in enumerate(left)
         group_id = get(dict, val_l, -1)
@@ -786,7 +786,7 @@ function _semijoin_postprocess_int(left::AbstractVector{<:Union{Integer, Missing
     starts = zeros(Int, ngroups)
     rperm = Vector{Int}(undef, right_len)
 
-    compute_join_indices!(groups, ngroups, starts, rperm)
+    compute_join_indices!(groups, starts, rperm)
 
     @inbounds for (idx_l, val_l) in enumerate(left)
         if val_l === missing
