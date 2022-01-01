@@ -22,9 +22,10 @@ other packages you can check-out the following resources
 
 DataFrames.jl provides a set of tools for working with tabular data in Julia.
 Its design and functionality are similar to those of
-[pandas](https://pandas.pydata.org/) (in Python) and `data.frame`, `data.table`
-and dplyr (in R), making it  a great general purpose data science tool,
-especially for those  coming to Julia from R or Python.
+[pandas](https://pandas.pydata.org/) (in Python) and `data.frame`,
+[`data.table`](https://rdatatable.gitlab.io/data.table/)
+and [dplyr](https://dplyr.tidyverse.org/) (in R),
+making it  a great general purpose data science tool.
 
 DataFrames.jl plays a central role in the Julia Data ecosystem, and has tight
 integrations with a range of different libraries. DataFrames.jl isn't the only
