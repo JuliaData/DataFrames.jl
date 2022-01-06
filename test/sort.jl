@@ -355,6 +355,11 @@ end
         df.x2 = view(x, 2:101)
         @test_throws ArgumentError sort!(sdf)
     end
+
+    x = [1:6;]
+    df = DataFrame(a=view(x, 1:5), b=view(x, 6:-1:2), copycols=false)
+    dfv = view(df, 1:3, [2])
+    @test_throws ArgumentError sort!(dfv)
 end
 
 end # module
