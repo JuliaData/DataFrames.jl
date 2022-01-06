@@ -626,8 +626,7 @@ function _add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
                              newname::Symbol, v::AbstractVector,
                              source_col_used::BitVector)
     # special path for handling of identity transformation of a single column
-    if col_idx isa Int && fun === identity
-        @assert v === df[!, col_idx]
+    if col_idx isa Int && v === df[!, col_idx]
         newdf[!, newname] = copycols || source_col_used[col_idx] ? copy(v) : v
         copycols || (source_col_used[col_idx] = true)
         return
@@ -647,12 +646,13 @@ function _add_multicol_res(res::AbstractDataFrame, newdf::DataFrame, df::Abstrac
                            colnames::AbstractVector{Symbol},
                            allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
-                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
+                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}},
+                           source_col_used::BitVector)
     lr = nrow(res)
     _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, wfun)
     @assert length(colnames) == ncol(res)
     for (newname, v) in zip(colnames, eachcol(res))
-        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, v)
+        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, v, source_col_used)
     end
 end
 
@@ -660,7 +660,8 @@ function _add_multicol_res(res::AbstractMatrix, newdf::DataFrame, df::AbstractDa
                            colnames::AbstractVector{Symbol},
                            allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
-                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
+                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}},
+                           source_col_used::BitVector)
     lr = size(res, 1)
     _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, wfun)
     @assert length(colnames) == size(res, 2)
@@ -674,12 +675,13 @@ function _add_multicol_res(@nospecialize(res::NamedTuple{<:Any, <:Tuple{Vararg{A
                            colnames::AbstractVector{Symbol},
                            allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
-                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
+                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}},
+                           source_col_used::BitVector)
     lr = length(res[1])
     _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, wfun)
     @assert length(colnames) == length(res)
     for (newname, v) in zip(colnames, res)
-        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, v)
+        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, v, source_col_used)
     end
 end
 
@@ -687,7 +689,8 @@ function _add_multicol_res(@nospecialize(res::NamedTuple), newdf::DataFrame, df:
                            colnames::AbstractVector{Symbol},
                            allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
-                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
+                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}},
+                           source_col_used::BitVector)
     if any(v -> v isa AbstractVector, res)
         throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
     else
@@ -699,7 +702,8 @@ function _add_multicol_res(res::DataFrameRow, newdf::DataFrame, df::AbstractData
                            colnames::AbstractVector{Symbol},
                            allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
-                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
+                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}},
+                           source_col_used::BitVector)
     _insert_row_multicolumn(newdf, df, allow_resizing_newdf, colnames, res)
 end
 
@@ -762,7 +766,7 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
             @assert startlen + length(colnames) == length(transformed_cols)
         end
         _add_multicol_res(res, newdf, df, colnames, allow_resizing_newdf, wfun,
-                          col_idx, copycols, newname)
+                          col_idx, copycols, newname, source_col_used)
     elseif res isa AbstractVector
         if newname === nothing
             newname = :x1

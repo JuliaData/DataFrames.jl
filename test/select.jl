@@ -2474,6 +2474,50 @@ end
         @test df2.x2 !== df2.x3
         @test (df2.a === x) ⊻ cc
     end
+
+    # super rare cases of multicolumn output
+    # we do a proper detection only if source was a single column
+    df = DataFrame(a=1:3)
+    df2 = select(df, :a => (x -> (b=x, c=x)) => AsTable, copycols=false)
+    @test df.a === df2.b
+    @test df.a !== df2.c
+    df = DataFrame(a=1:3)
+    df2 = select(df, :a => (x -> DataFrame(b=x, c=x, copycols=false)) => AsTable, copycols=false)
+    @test df.a === df2.b
+    @test df.a !== df2.c
+    df = DataFrame(a=1:3)
+    df2 = transform(df, :a => (x -> (b=x, c=x)) => AsTable, copycols=false)
+    @test df.a === df2.a
+    @test df.a !== df2.b
+    @test df.a !== df2.c
+    df = DataFrame(a=1:3)
+    df2 = transform(df, :a => (x -> DataFrame(b=x, c=x, copycols=false)) => AsTable, copycols=false)
+    @test df.a === df2.a
+    @test df.a !== df2.b
+    @test df.a !== df2.c
+
+    df = DataFrame(a=1:3)
+    a = df.a
+    select!(df, :a => (x -> (b=x, c=x)) => AsTable)
+    @test a === df.b
+    @test a !== df.c
+    df = DataFrame(a=1:3)
+    a = df.a
+    select!(df, :a => (x -> DataFrame(b=x, c=x, copycols=false)) => AsTable)
+    @test a === df.b
+    @test a !== df.c
+    df = DataFrame(a=1:3)
+    a = df.a
+    transform!(df, :a => (x -> (b=x, c=x)) => AsTable)
+    @test a === df.a
+    @test a !== df.b
+    @test a !== df.c
+    df = DataFrame(a=1:3)
+    a = df.a
+    transform!(df, :a => (x -> DataFrame(b=x, c=x, copycols=false)) => AsTable)
+    @test a === df.a
+    @test a !== df.b
+    @test a !== df.c
 end
 
 struct Identity
