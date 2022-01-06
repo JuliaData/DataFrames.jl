@@ -1,3 +1,10 @@
+# DataFrames.jl v1.3.2 Patch Release Notes
+
+## Bug fixes
+
+* Fix aliasing detection in `sort!`
+  ([#2981](https://github.com/JuliaData/DataFrames.jl/issues/2981))
+
 # DataFrames.jl v1.3.1 Patch Release Notes
 
 ## Bug fixes

@@ -323,4 +323,38 @@ end
     end
 end
 
+@testset "correct aliasing detection" begin
+    for sel in ([1, 2, 3], 1:3)
+        df = DataFrame(a=1:5, b=11:15, c=21:25)
+        dfc = copy(df)
+        sdf = view(df, sel, :)
+        sort!(sdf)
+        @test df[:, 1:3] == dfc
+        df.d = df.a
+        sort!(sdf)
+        @test df[:, 1:3] == dfc
+        x = [1:6;]
+        df.x1 = view(x, 1:5)
+        df.x2 = view(x, 2:6)
+        @test_throws ArgumentError sort!(sdf)
+    end
+
+    Random.seed!(1234)
+    for sel in ([1:100;], 1:100)
+        df = DataFrame(a=rand(100), b=rand(100), c=rand(100), id=1:100)
+        dfc = sort(df)
+        sdf = view(df, sel, :)
+        sort!(sdf)
+        @test df[:, 1:4] == dfc
+        sort!(df, :id)
+        df.d = df.a
+        sort!(sdf)
+        @test df[:, 1:4] == dfc
+        x = [1:101;]
+        df.x1 = view(x, 1:100)
+        df.x2 = view(x, 2:101)
+        @test_throws ArgumentError sort!(sdf)
+    end
+end
+
 end # module

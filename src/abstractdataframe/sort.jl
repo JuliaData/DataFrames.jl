@@ -677,9 +677,13 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
     return sort!(df, _alg, ord)
 end
 
-function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering)
-    c = collect(eachcol(df))
+strip_subdataframe(df::AbstractDataFrame) = df
+strip_subdataframe(df::SubDataFrame) = strip_subdataframe(parent(df))
 
+function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering)
+
+    # aliasing detection should be made on source data frame level
+    c = eachcol(strip_subdataframe(df))
     toskip = Set{Int}()
     for (i, col) in enumerate(c)
         # Check if this column has been sorted already
@@ -693,7 +697,7 @@ function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.
     p = _sortperm(df, a, o)
     pp = similar(p)
 
-    for (i, col) in enumerate(c)
+    for (i, col) in enumerate(eachcol(df))
         if !(i in toskip)
             copyto!(pp, p)
             Base.permute!!(col, pp)
