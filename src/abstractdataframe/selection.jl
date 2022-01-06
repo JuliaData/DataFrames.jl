@@ -299,7 +299,11 @@ struct ByRow{T} <: Function
     fun::T
 end
 
-(f::ByRow)(cols::AbstractVector...) = map(f.fun, cols...)
+# make sure we invoke a generic map function
+(f::ByRow)(cols::AbstractVector...) =
+    invoke(map,
+           Tuple{typeof(f.fun), ntuple(i -> AbstractVector, length(cols))...},
+           f.fun, cols...)
 (f::ByRow)(table::NamedTuple) = [f.fun(nt) for nt in Tables.namedtupleiterator(table)]
 
 # add a method to funname defined in other/utils.jl
