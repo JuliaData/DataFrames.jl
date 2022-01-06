@@ -620,10 +620,19 @@ function _fix_existing_columns_for_vector(newdf::DataFrame, df::AbstractDataFram
     allow_resizing_newdf[] = false
 end
 
-function _add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
+function DataFrames._add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
                              col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
                              copycols::Bool, (fun,)::Ref{Any},
-                             newname::Symbol, v::AbstractVector)
+                             newname::Symbol, v::AbstractVector,
+                             source_col_used::BitVector)
+    # special path for handling of identity transformation of a single column
+    if col_idx isa Int && fun === identity
+        @assert v === df[!, col_idx]
+        newdf[!, newname] = copycols || source_col_used[col_idx] ? copy(v) : v
+        copycols || (source_col_used[col_idx] = true)
+        return
+    end
+
     cdf = eachcol(df)
     vpar = parent(v)
     parent_cols = col_idx isa AsTable ? col_idx.cols : something(col_idx, 1:ncol(df))
@@ -696,7 +705,8 @@ end
 
 function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Set{Symbol}, copycols::Bool,
-                           allow_resizing_newdf::Ref{Bool})
+                           allow_resizing_newdf::Ref{Bool},
+                           source_col_used::BitVector)
     @assert nc isa Union{Base.Callable,
                          Pair{<:Union{Int, AbstractVector{Int}, AsTable},
                               <:Pair{<:Base.Callable, <:Union{Symbol, AbstractVector{Symbol}, DataType}}}}
@@ -764,7 +774,7 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
         end
         lr = length(res)
         _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, wfun)
-        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, res)
+        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, res, source_col_used)
     else
         if newname === nothing
             newname = :x1
@@ -856,17 +866,8 @@ $TRANSFORMATION_COMMON_RULES
 
 See [`select`](@ref) for examples.
 """
-function transform!(df::AbstractDataFrame, @nospecialize(args...); renamecols::Bool=true)
-    idx = index(df)
-    newargs = Any[if sel isa Pair{<:ColumnIndex, Symbol}
-                      idx[first(sel)] => copy => last(sel)
-                  elseif sel isa Pair{<:ColumnIndex, <:AbstractString}
-                      idx[first(sel)] => copy => Symbol(last(sel))
-                  else
-                      sel
-                  end for sel in args]
-    return select!(df, :, newargs..., renamecols=renamecols)
-end
+transform!(df::AbstractDataFrame, @nospecialize(args...); renamecols::Bool=true) =
+    select!(df, :, args..., renamecols=renamecols)
 
 function transform!(@nospecialize(arg::Base.Callable), df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
@@ -1196,20 +1197,8 @@ ERROR: ArgumentError: column :x in returned data frame is not equal to grouping 
 
 See [`select`](@ref) for more examples.
 """
-function transform(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true)
-    idx = index(df)
-    # when using the copy function the copy of source data frame
-    # is made exactly once even if copycols=true
-    # (copycols=true makes a copy only if the column was not copied previously)
-    newargs = Any[if sel isa Pair{<:ColumnIndex, Symbol}
-                      idx[first(sel)] => copy => last(sel)
-                  elseif sel isa Pair{<:ColumnIndex, <:AbstractString}
-                      idx[first(sel)] => copy => Symbol(last(sel))
-                  else
-                      sel
-                  end for sel in args]
-    return select(df, :, newargs..., copycols=copycols, renamecols=renamecols)
-end
+transform(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true) =
+    select(df, :, args..., copycols=copycols, renamecols=renamecols)
 
 function transform(@nospecialize(arg::Base.Callable), df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
@@ -1559,6 +1548,9 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
     # Also if keeprows is true then we make sure to produce nrow(df) rows so resizing
     # is not allowed
     allow_resizing_newdf = Ref(!keeprows)
+    # keep track of columns from source used without copying
+    source_col_used = falses(ncol(df))
+
     for nc in normalized_cs
         if nc isa AbstractVector{Int} # only this case is NOT considered to be a transformation
             allunique(nc) || throw(ArgumentError("duplicate column names selected"))
@@ -1578,13 +1570,14 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
                         end
                     end
                     # here even if keeprows is true all is OK
-                    newdf[!, newname] = copycols ? df[:, i] : df[!, i]
+                    newdf[!, newname] = copycols || source_col_used[i] ? df[:, i] : df[!, i]
+                    copycols || (source_col_used[i] = true)
                     allow_resizing_newdf[] = false
                 end
             end
         else
             select_transform!(Ref{Any}(nc), df, newdf, transformed_cols, copycols,
-                              allow_resizing_newdf)
+                              allow_resizing_newdf, source_col_used)
         end
     end
     return newdf

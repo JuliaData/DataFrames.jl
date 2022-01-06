@@ -2346,6 +2346,136 @@ end
     @test_throws ArgumentError DataFrames.broadcast_pair(df, 1:3 .=> sum .=> Between(:x1, :x2))
 end
 
+@testset "correct handling of copying" begin
+    df = DataFrame(a=1:3)
+    x = df.a
+    select!(df, :a => :b, :a => :c)
+    @test df.b !== df.c
+    @test df.b === x
+
+    df = DataFrame(a=1:3)
+    x = df.a
+    select!(df, :a, :a => :c)
+    @test df.a !== df.c
+    @test df.a === x
+
+    df = DataFrame(a=1:3)
+    x = df.a
+    select!(df, :a => :c, :a)
+    @test df.a !== df.c
+    @test df.c === x
+
+    df = DataFrame(a=1:3)
+    x = df.a
+    select!(df, :a => :c, :)
+    @test df.a !== df.c
+    @test df.c === x
+
+    df = DataFrame(a=1:3)
+    x = df.a
+    select!(df, :a .=> [:c], :)
+    @test df.a !== df.c
+    @test df.c === x
+
+    df = DataFrame(a=1:3)
+    x = df.a
+    select!(df, :a .=> [:c], :, :a => :b)
+    @test df.a !== df.c
+    @test df.b !== df.c
+    @test df.a !== df.b
+    @test df.c === x
+
+    df = DataFrame(a=1:3)
+    x = df.a
+    select!(df, :a .=> [:x1, :x2, :x3])
+    @test df.x1 !== df.x2
+    @test df.x1 !== df.x3
+    @test df.x2 !== df.x3
+    @test df.x1 === x
+
+    df = DataFrame(a=1:3)
+    x = df.a
+    transform!(df, :a .=> [:b])
+    @test df.a !== df.b
+    @test df.a === x
+
+    df = DataFrame(a=1:3)
+    x = df.a
+    transform!(df, :a .=> [:x1, :x2, :x3])
+    @test df.a !== df.x1
+    @test df.a !== df.x2
+    @test df.a !== df.x3
+    @test df.x1 !== df.x2
+    @test df.x1 !== df.x3
+    @test df.x2 !== df.x3
+    @test df.a === x
+
+    for cc in (true, false)
+        df = DataFrame(a=1:3)
+        x = df.a
+        df2 = select(df, :a => :b, :a => :c, copycols=cc)
+        @test df2.b !== df2.c
+        @test (df2.b === x) ⊻ cc
+
+        df = DataFrame(a=1:3)
+        x = df.a
+        df2 = select(df, :a, :a => :c, copycols=cc)
+        @test df2.a !== df2.c
+        @test (df2.a === x) ⊻ cc
+
+        df = DataFrame(a=1:3)
+        x = df.a
+        df2 = select(df, :a => :c, :a, copycols=cc)
+        @test df2.a !== df2.c
+        @test (df2.c === x) ⊻ cc
+
+        df = DataFrame(a=1:3)
+        x = df.a
+        df2 = select(df, :a => :c, :, copycols=cc)
+        @test df2.a !== df2.c
+        @test (df2.c === x) ⊻ cc
+
+        df = DataFrame(a=1:3)
+        x = df.a
+        df2 = select(df, :a .=> [:c], :, copycols=cc)
+        @test df2.a !== df2.c
+        @test (df2.c === x) ⊻ cc
+
+        df = DataFrame(a=1:3)
+        x = df.a
+        df2 = select(df, :a .=> [:c], :, :a => :b, copycols=cc)
+        @test df2.a !== df2.c
+        @test df2.b !== df2.c
+        @test df2.a !== df2.b
+        @test (df2.c === x) ⊻ cc
+
+        df = DataFrame(a=1:3)
+        x = df.a
+        df2 = select(df, :a .=> [:x1, :x2, :x3], copycols=cc)
+        @test df2.x1 !== df2.x2
+        @test df2.x1 !== df2.x3
+        @test df2.x2 !== df2.x3
+        @test (df2.x1 === x) ⊻ cc
+
+        df = DataFrame(a=1:3)
+        x = df.a
+        df2 = transform(df, :a .=> [:b], copycols=cc)
+        @test df2.a !== df2.b
+        @test (df2.a === x) ⊻ cc
+
+        df = DataFrame(a=1:3)
+        x = df.a
+        df2 = transform(df, :a .=> [:x1, :x2, :x3], copycols=cc)
+        @test df2.a !== df2.x1
+        @test df2.a !== df2.x2
+        @test df2.a !== df2.x3
+        @test df2.x1 !== df2.x2
+        @test df2.x1 !== df2.x3
+        @test df2.x2 !== df2.x3
+        @test (df2.a === x) ⊻ cc
+    end
+end
+
 struct Identity
 end
 
