@@ -620,7 +620,7 @@ function _fix_existing_columns_for_vector(newdf::DataFrame, df::AbstractDataFram
     allow_resizing_newdf[] = false
 end
 
-function DataFrames._add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
+function _add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
                              col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
                              copycols::Bool, (fun,)::Ref{Any},
                              newname::Symbol, v::AbstractVector,
