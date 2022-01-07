@@ -595,18 +595,23 @@ _sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) =
           rev::Union{Bool, AbstractVector{Bool}}=false,
           order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
 
-Sort data frame `df` by column(s) `cols`.
-Sorting on multiple columns is done lexicographicallly.
+Sort data frame `df` by column(s) `cols`. Sorting on multiple columns is done
+lexicographicallly.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR). If
-`cols` selects no columns, sort `df` on all columns (this
-behaviour is deprecated and will change in future versions).
+`cols` selects no columns, sort `df` on all columns (this behaviour is
+deprecated and will change in future versions).
 
 $SORT_ARGUMENTS
 
-If `alg` is `nothing` (the default), the most appropriate algorithm is
-chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
-on the type of the sorting columns and on the number of rows in `df`.
+If `alg` is `nothing` (the default), the most appropriate algorithm is chosen
+automatically among `TimSort`, `MergeSort` and `RadixSort` depending on the type
+of the sorting columns and on the number of rows in `df`.
+
+`sort!` will produce a correct result even if some columns of passed data frame
+are identical (checked with `===`). Otherwise, if two columns share some part of
+memory but are not identical (e.g. are different views of the same parent
+vector) then `sort!` result might be incorrect.
 
 # Examples
 ```jldoctest
@@ -677,27 +682,33 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
     return sort!(df, _alg, ord)
 end
 
-strip_subdataframe(df::AbstractDataFrame) = df
-strip_subdataframe(df::SubDataFrame) = strip_subdataframe(parent(df))
-
 function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering)
-
-    # aliasing detection should be made on source data frame level
-    c = eachcol(strip_subdataframe(df))
+    c = eachcol(df)
     toskip = Set{Int}()
+    # in theory two different vectors might have the same objectid
+    # for SubDataFrame we take advantage of the fact that objectid
+    # for multiple views of the same vector with the same indices
+    # are the same as SubArray is immutable and the rule is
+    # objectid(x) == objectid(y) if x === y
+    seen_cols = Dict()
     for (i, col) in enumerate(c)
-        # Check if this column has been sorted already
-        if any(j -> c[j] === col, 1:i-1)
-            push!(toskip, i)
-        elseif any(j -> Base.mightalias(c[j], col), 1:i-1)
-            throw(ArgumentError("data frame contains non identical columns that share the same memory"))
+        col_id = objectid(col)
+        if haskey(seen_cols, col_id)
+            for old_col in seen_cols[col_id]
+                if col === old_col
+                    push!(toskip, i)
+                    break
+                end
+            end
+        else
+            seen_cols[col_id] = Any[col]
         end
     end
 
     p = _sortperm(df, a, o)
     pp = similar(p)
 
-    for (i, col) in enumerate(eachcol(df))
+    for (i, col) in enumerate(c)
         if !(i in toskip)
             copyto!(pp, p)
             Base.permute!!(col, pp)

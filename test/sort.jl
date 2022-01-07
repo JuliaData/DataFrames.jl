@@ -324,19 +324,13 @@ end
 end
 
 @testset "correct aliasing detection" begin
+    # make sure sorting a view does not produce an error
     for sel in ([1, 2, 3], 1:3)
         df = DataFrame(a=1:5, b=11:15, c=21:25)
         dfc = copy(df)
         sdf = view(df, sel, :)
         sort!(sdf)
         @test df[:, 1:3] == dfc
-        df.d = df.a
-        sort!(sdf)
-        @test df[:, 1:3] == dfc
-        x = [1:6;]
-        df.x1 = view(x, 1:5)
-        df.x2 = view(x, 2:6)
-        @test_throws ArgumentError sort!(sdf)
     end
 
     Random.seed!(1234)
@@ -345,21 +339,54 @@ end
         dfc = sort(df)
         sdf = view(df, sel, :)
         sort!(sdf)
-        @test df[:, 1:4] == dfc
+        @test df == dfc
         sort!(df, :id)
         df.d = df.a
         sort!(sdf)
         @test df[:, 1:4] == dfc
-        x = [1:101;]
-        df.x1 = view(x, 1:100)
-        df.x2 = view(x, 2:101)
-        @test_throws ArgumentError sort!(sdf)
     end
 
+    # this is a test that different views are incorrectly handled
     x = [1:6;]
     df = DataFrame(a=view(x, 1:5), b=view(x, 6:-1:2), copycols=false)
-    dfv = view(df, 1:3, [2])
-    @test_throws ArgumentError sort!(dfv)
+    dfv = view(df, 1:3, :)
+    sort!(dfv, :b)
+    @test df == DataFrame(a=[3, 2, 1, 6, 5], b=[4, 5, 6, 1, 2])
+    # this is a result if we had no aliasing
+    x = [1:6;]
+    df = DataFrame(a=view(x, 1:5), b=view(x, 6:-1:2))
+    dfv = view(df, 1:3, :)
+    sort!(dfv, :b)
+    @test df == DataFrame(a=[3, 2, 1, 4, 5], b=[4, 5, 6, 3, 2])
+
+    df = DataFrame(x1=rand(10))
+    df.x2 = df.x1
+    df.x3 = df.x1
+    df.x4 = df.x1
+    df.x5 = df.x1
+    sort!(df, :x4)
+    @test issorted(df)
+
+    df = DataFrame(x1=rand(10))
+    df.x2 = df.x1
+    df.x3 = df.x1
+    df.x4 = df.x1
+    df.x5 = df.x1
+    dfv = @view df[1:5, 1:4]
+    sort!(dfv, :x4)
+    @test issorted(dfv)
+    @test issorted(df[1:5, :])
+
+    # performance test
+    df = DataFrame(x1=1)
+    for i in 2:10_000
+        df[!, "x$i"] = df.x1
+    end
+    sort!(df, :x1)
+    @test @elapsed(sort!(df, :x1)) < 0.1
+    df = copy(df)
+    sort!(df, :x1)
+    @test @elapsed(sort!(df, :x1)) < 0.1
 end
 
 end # module
