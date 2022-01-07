@@ -625,14 +625,6 @@ function _add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
                              copycols::Bool, (fun,)::Ref{Any},
                              newname::Symbol, v::AbstractVector,
                              source_col_used::BitVector)
-    # special path for handling of identity transformation of a single column
-    # (e.g. when renaming a column);
-    if col_idx isa Int && v === df[!, col_idx]
-        newdf[!, newname] = source_col_used[col_idx] ? copy(v) : v
-        source_col_used[col_idx] = true
-        return
-    end
-
     cdf = eachcol(df)
     vpar = parent(v)
     parent_cols = col_idx isa AsTable ? col_idx.cols : something(col_idx, 1:ncol(df))
