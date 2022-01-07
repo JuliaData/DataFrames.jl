@@ -625,7 +625,8 @@ end
     @test df2.x1 !== df2.x2
 
     df2 = select(df, :x1, :x1 => :x2, copycols=false)
-    @test df2.x1 === df2.x2
+    @test df2.x1 == df2.x2
+    @test df2.x1 !== df2.x2
 
     x1 = df.x1
     x2 = df.x2
@@ -636,7 +637,8 @@ end
 
     df = DataFrame(rand(10, 4), :auto)
     select!(df, :x1, :x1 => :x2)
-    @test df2.x1 === df2.x2
+    @test df2.x1 !== df2.x2
+    @test df2.x1 == df2.x2
 
     df = DataFrame(rand(10, 4), :auto)
     df2 = select(df, :, :x1 => :x3)
@@ -644,7 +646,8 @@ end
     @test df2.x1 !== df2.x3
     df2 = select(df, :, :x1 => :x3, copycols=false)
     @test df2 == DataFrame(collect(eachcol(df))[[1, 2, 1, 4]], :auto)
-    @test df2.x1 === df2.x3
+    @test df2.x1 == df2.x3
+    @test df2.x1 !== df2.x3
     @test select(df, :x1 => :x3, :) == DataFrame(collect(eachcol(df))[[1, 1, 2, 4]],
                                                  [:x3, :x1, :x2, :x4])
     select!(df, :, :x1 => :x3)
