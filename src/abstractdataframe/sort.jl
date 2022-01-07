@@ -696,7 +696,7 @@ function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.
     p = _sortperm(df, a, o)
     pp = similar(p)
 
-    for (i, col) in enumerate(c)
+    for (i, col) in enumerate(eachcol(df))
         if !(i in toskip)
             copyto!(pp, p)
             Base.permute!!(col, pp)
