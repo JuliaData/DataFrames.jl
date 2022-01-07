@@ -2635,6 +2635,13 @@ end
     @test df2.a_lag isa ShiftedVector
     transform!(df, :a => lag)
     @test df.a_lag isa ShiftedVector
+
+    df = DataFrame(x=1:3)
+    x = df.x
+    select!(df, :x => copy => :y, :x => :z)
+    @test df.y == df.z == x
+    @test df.y !== x
+    @test df.z === x
 end
 
 struct Identity
