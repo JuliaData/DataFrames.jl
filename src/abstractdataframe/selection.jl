@@ -291,7 +291,10 @@ end
     ByRow
 
 A type used for selection operations to signal that the wrapped function should
-be applied to each element (row) of the selection.
+be applied to each element (row) of the selection (as opposed to e.g. `map`
+that for some types of source vectors, like e.g. `SparseVector`, assumes that
+the wrapped function is pure and might perform a lower number of function calls
+than there are elements in a vector).
 
 Note that `ByRow` always collects values returned by `fun` in a vector.
 """
