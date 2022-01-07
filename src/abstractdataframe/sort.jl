@@ -683,10 +683,9 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
 end
 
 function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering)
-    c = eachcol(df)
     toskip = Set{Int}()
     seen_cols = IdDict{Any, Nothing}()
-    for (i, col) in enumerate(c)
+    for (i, col) in enumerate(eachcol(df))
         if haskey(seen_cols, col)
             push!(toskip, i)
         else

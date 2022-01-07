@@ -352,7 +352,7 @@ end
     dfv = view(df, 1:3, :)
     sort!(dfv, :b)
     @test df == DataFrame(a=[3, 2, 1, 6, 5], b=[4, 5, 6, 1, 2])
-    # this is a result if we had no aliasing
+    # this is the "correct" result if we had no aliasing
     x = [1:6;]
     df = DataFrame(a=view(x, 1:5), b=view(x, 6:-1:2))
     dfv = view(df, 1:3, :)
