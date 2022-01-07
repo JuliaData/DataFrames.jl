@@ -685,23 +685,12 @@ end
 function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering)
     c = eachcol(df)
     toskip = Set{Int}()
-    # in theory two different vectors might have the same objectid
-    # for SubDataFrame we take advantage of the fact that objectid
-    # for multiple views of the same vector with the same indices
-    # are the same as SubArray is immutable and the rule is
-    # objectid(x) == objectid(y) if x === y
-    seen_cols = Dict()
+    seen_cols = IdDict{Any, Nothing}()
     for (i, col) in enumerate(c)
-        col_id = objectid(col)
-        if haskey(seen_cols, col_id)
-            for old_col in seen_cols[col_id]
-                if col === old_col
-                    push!(toskip, i)
-                    break
-                end
-            end
+        if haskey(seen_cols, col)
+            push!(toskip, i)
         else
-            seen_cols[col_id] = Any[col]
+            seen_cols[col] = nothing
         end
     end
 

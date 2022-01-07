@@ -376,17 +376,6 @@ end
     sort!(dfv, :x4)
     @test issorted(dfv)
     @test issorted(df[1:5, :])
-
-    # performance test
-    df = DataFrame(x1=1)
-    for i in 2:10_000
-        df[!, "x$i"] = df.x1
-    end
-    sort!(df, :x1)
-    @test @elapsed(sort!(df, :x1)) < 0.1
-    df = copy(df)
-    sort!(df, :x1)
-    @test @elapsed(sort!(df, :x1)) < 0.1
 end
 
 end # module
