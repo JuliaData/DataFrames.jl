@@ -1,6 +1,7 @@
 module TestSelect
 
-using DataFrames, Test, Random, Statistics, CategoricalArrays, PooledArrays
+using DataFrames, Test, Random, Statistics
+using CategoricalArrays, PooledArrays, ShiftedArrays
 
 const ≅ = isequal
 
@@ -2480,47 +2481,160 @@ end
 
     # super rare cases of multicolumn output
     # we do a proper detection only if source was a single column
-    df = DataFrame(a=1:3)
-    df2 = select(df, :a => (x -> (b=x, c=x)) => AsTable, copycols=false)
-    @test df.a === df2.b
-    @test df.a !== df2.c
-    df = DataFrame(a=1:3)
-    df2 = select(df, :a => (x -> DataFrame(b=x, c=x, copycols=false)) => AsTable, copycols=false)
-    @test df.a === df2.b
-    @test df.a !== df2.c
-    df = DataFrame(a=1:3)
-    df2 = transform(df, :a => (x -> (b=x, c=x)) => AsTable, copycols=false)
-    @test df.a === df2.a
-    @test df.a !== df2.b
-    @test df.a !== df2.c
-    df = DataFrame(a=1:3)
-    df2 = transform(df, :a => (x -> DataFrame(b=x, c=x, copycols=false)) => AsTable, copycols=false)
-    @test df.a === df2.a
-    @test df.a !== df2.b
-    @test df.a !== df2.c
+    for sel in (:a, [:a], r"a")
+        df = DataFrame(a=1:3)
+        x = df.a
+        select!(df, sel => identity => :b, sel => identity => :c)
+        @test df.b !== df.c
+        @test df.b === x
+
+        df = DataFrame(a=1:3)
+        x = df.a
+        select!(df, :a, sel => identity => :c)
+        @test df.a !== df.c
+        @test df.a === x
+
+        df = DataFrame(a=1:3)
+        x = df.a
+        select!(df, sel => identity => :c, :a)
+        @test df.a !== df.c
+        @test df.c === x
+
+        df = DataFrame(a=1:3)
+        x = df.a
+        select!(df, sel => identity => :c, :)
+        @test df.a !== df.c
+        @test df.c === x
+
+        for cc in (true, false)
+            df = DataFrame(a=1:3)
+            x = df.a
+            df2 = select(df, sel => identity => :b, sel => identity => :c, copycols=cc)
+            @test df2.b !== df2.c
+            @test (df2.b === x) ⊻ cc
+
+            df = DataFrame(a=1:3)
+            x = df.a
+            df2 = select(df, :a, sel => identity => :c, copycols=cc)
+            @test df2.a !== df2.c
+            @test (df2.a === x) ⊻ cc
+
+            df = DataFrame(a=1:3)
+            x = df.a
+            df2 = select(df, sel => identity => :c, :a, copycols=cc)
+            @test df2.a !== df2.c
+            @test (df2.c === x) ⊻ cc
+
+            df = DataFrame(a=1:3)
+            x = df.a
+            df2 = select(df, sel => identity => :c, :, copycols=cc)
+            @test df2.a !== df2.c
+            @test (df2.c === x) ⊻ cc
+        end
+
+        df = DataFrame(a=1:3)
+        df2 = select(df, sel => (x -> (b=x, c=x)) => AsTable, copycols=false)
+        @test df.a === df2.b
+        @test df.a !== df2.c
+        df = DataFrame(a=1:3)
+        df2 = select(df, sel => (x -> DataFrame(b=x, c=x, copycols=false)) => AsTable, copycols=false)
+        @test df.a === df2.b
+        @test df.a !== df2.c
+        df = DataFrame(a=1:3)
+        df2 = transform(df, sel => (x -> (b=x, c=x)) => AsTable, copycols=false)
+        @test df.a === df2.a
+        @test df.a !== df2.b
+        @test df.a !== df2.c
+        @test df2.b !== df2.c
+        df = DataFrame(a=1:3)
+        df2 = transform(df, sel => (x -> DataFrame(b=x, c=x, copycols=false)) => AsTable, copycols=false)
+        @test df.a === df2.a
+        @test df.a !== df2.b
+        @test df.a !== df2.c
+        @test df2.b !== df2.c
+
+        df = DataFrame(a=1:3)
+        a = df.a
+        select!(df, sel => (x -> (b=x, c=x)) => AsTable)
+        @test a === df.b
+        @test a !== df.c
+        df = DataFrame(a=1:3)
+        a = df.a
+        select!(df, sel => (x -> DataFrame(b=x, c=x, copycols=false)) => AsTable)
+        @test a === df.b
+        @test a !== df.c
+        df = DataFrame(a=1:3)
+        a = df.a
+        transform!(df, sel => (x -> (b=x, c=x)) => AsTable)
+        @test a === df.a
+        @test a !== df.b
+        @test a !== df.c
+        @test df.b !== df.c
+        df = DataFrame(a=1:3)
+        a = df.a
+        transform!(df, sel => (x -> DataFrame(b=x, c=x, copycols=false)) => AsTable)
+        @test a === df.a
+        @test a !== df.b
+        @test a !== df.c
+        @test df.b !== df.c
+    end
 
     df = DataFrame(a=1:3)
-    a = df.a
-    select!(df, :a => (x -> (b=x, c=x)) => AsTable)
-    @test a === df.b
-    @test a !== df.c
+    df2 = select(df, :a, [:a, :a] => ((x, y) -> x) => :b, copycols=false)
+    @test df.a === df2.a
+    @test df.a == df2.b
+    @test df.a !== df2.b
+    df2 = transform(df, [:a, :a] => ((x, y) -> x) => :b, copycols=false)
+    @test df.a === df2.a
+    @test df.a == df2.b
+    @test df.a !== df2.b
+
     df = DataFrame(a=1:3)
-    a = df.a
-    select!(df, :a => (x -> DataFrame(b=x, c=x, copycols=false)) => AsTable)
-    @test a === df.b
-    @test a !== df.c
+    df2 = select(df, :a, [:a, :a] => ((x, y) -> (b=x, c=y)) => AsTable, copycols=false)
+    @test df.a === df2.a
+    @test df.a == df2.b
+    @test df.a !== df2.b
+    @test df.a == df2.c
+    @test df.a !== df2.c
+    df2 = transform(df, [:a, :a] => ((x, y) -> (b=x, c=y)) => AsTable, copycols=false)
+    @test df.a === df2.a
+    @test df.a == df2.b
+    @test df.a !== df2.b
+    @test df.a == df2.c
+    @test df.a !== df2.c
+    df2 = transform(df, [:a, :a] => ((x, y) -> (b=x, c=y)) => AsTable, :a => :d, copycols=false)
+    @test df.a === df2.a
+    @test df.a == df2.b
+    @test df.a !== df2.b
+    @test df.a == df2.c
+    @test df.a !== df2.c
+    @test df.a == df2.d
+    @test df.a !== df2.d
+
+    df = DataFrame(a=1:3, b=11:13, c=21:23)
+    df2 = select(df, [:a, :b, :c] => ((x, y, z) -> (c=x, d=y)) => AsTable, :, :c => :e, copycols=false)
+    @test df2.c === df.a
+    @test df2.d === df.b
+    @test df2.a !== df.a
+    @test df2.b !== df.b
+    @test df2.e === df.c
+
+    # mutlialias detection
     df = DataFrame(a=1:3)
-    a = df.a
-    transform!(df, :a => (x -> (b=x, c=x)) => AsTable)
-    @test a === df.a
-    @test a !== df.b
-    @test a !== df.c
+    df.b = df.a
+    df2 = select(df, [:a, :b] => ((x, y) -> x) => :c, :a, :b, copycols=false)
+    @test df2.c === df.a === df.b
+    @test df2.a == df2.b == df.a
+    @test df2.a !== df.a
+    @test df2.b !== df.b
+
     df = DataFrame(a=1:3)
-    a = df.a
-    transform!(df, :a => (x -> DataFrame(b=x, c=x, copycols=false)) => AsTable)
-    @test a === df.a
-    @test a !== df.b
-    @test a !== df.c
+    df2 = transform(df, :a => lag)
+    @test df2.a_lag isa Vector
+    df2 = transform(df, :a => lag, copycols=false)
+    @test df2.a_lag isa ShiftedVector
+    transform!(df, :a => lag)
+    @test df.a_lag isa ShiftedVector
 end
 
 struct Identity

@@ -626,19 +626,39 @@ function _add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
                              newname::Symbol, v::AbstractVector,
                              source_col_used::BitVector)
     # special path for handling of identity transformation of a single column
+    # (e.g. when renaming a column);
     if col_idx isa Int && v === df[!, col_idx]
-        newdf[!, newname] = copycols || source_col_used[col_idx] ? copy(v) : v
-        copycols || (source_col_used[col_idx] = true)
+        newdf[!, newname] = source_col_used[col_idx] ? copy(v) : v
+        source_col_used[col_idx] = true
         return
     end
 
     cdf = eachcol(df)
     vpar = parent(v)
     parent_cols = col_idx isa AsTable ? col_idx.cols : something(col_idx, 1:ncol(df))
-    if copycols && !(fun isa ByRow) && (v isa SubArray || any(i -> vpar === parent(cdf[i]), parent_cols))
-        newdf[!, newname] = copy(v)
+    if copycols
+        if !(fun isa ByRow) && (v isa SubArray || any(i -> vpar === parent(cdf[i]), parent_cols))
+            newdf[!, newname] = copy(v)
+        else
+            newdf[!, newname] = v
+        end
     else
-        newdf[!, newname] = v
+        if fun isa ByRow
+            newdf[!, newname] = v
+        else
+            must_copy = false
+            for i in parent_cols
+                # there might be multiple aliases of the same column
+                if v === cdf[i]
+                    if source_col_used[i]
+                        must_copy = true
+                    else
+                        source_col_used[i] = true
+                    end
+                end
+            end
+            newdf[!, newname] = must_copy ? copy(v) : v
+        end
     end
 end
 
@@ -1552,8 +1572,15 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
     # Also if keeprows is true then we make sure to produce nrow(df) rows so resizing
     # is not allowed
     allow_resizing_newdf = Ref(!keeprows)
-    # keep track of columns from source used without copying
-    source_col_used = falses(ncol(df))
+    # keep track of the fact if single column transformation like
+    # :x or :x => :y or :x => identity
+    # should make a copy
+    # this ensures that we store a column from a source data frame in a
+    # destination data frame without copying at most once
+    # this rule is checked for a single column transformations
+    # in other transformations, taking multiple intput columns, detecting
+    # aliasing is not done as it is unlikely;
+    source_col_used = copycols ? trues(ncol(df)) : falses(ncol(df))
 
     for nc in normalized_cs
         if nc isa AbstractVector{Int} # only this case is NOT considered to be a transformation
@@ -1574,8 +1601,8 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
                         end
                     end
                     # here even if keeprows is true all is OK
-                    newdf[!, newname] = copycols || source_col_used[i] ? df[:, i] : df[!, i]
-                    copycols || (source_col_used[i] = true)
+                    newdf[!, newname] = source_col_used[i] ? df[:, i] : df[!, i]
+                    source_col_used[i] = true
                     allow_resizing_newdf[] = false
                 end
             end
