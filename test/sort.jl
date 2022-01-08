@@ -210,6 +210,7 @@ end
 
 @testset "sort! tests" begin
     # safe aliasing test
+    # this works because 2:5 is immutable
     df = DataFrame()
     x = [10:-1:1;]
     df.x1 = view(x, 2:5)
@@ -222,6 +223,15 @@ end
     df = DataFrame()
     x = [10:-1:1;]
     df.x1 = view(x, 2:5)
+    df.x2 = view(x, [2:5;])
+    sort!(df)
+    @test_broken issorted(df)
+    @test_broken x == [10, 6, 7, 8, 9, 5, 4, 3, 2, 1]
+    @test_broken df == DataFrame(x1=6:9, x2=6:9)
+
+    df = DataFrame()
+    x = [10:-1:1;]
+    df.x1 = view(x, 2:5)
     df.x2 = view(x, 2:5)
     dfv = view(df, 2:4, :)
     sort!(dfv)
@@ -229,23 +239,33 @@ end
     @test x == [10, 9, 6, 7, 8, 5, 4, 3, 2, 1]
     @test df == DataFrame(x1=[9; 6:8], x2=[9; 6:8])
 
+    df = DataFrame()
+    x = [10:-1:1;]
+    df.x1 = view(x, [2:5;])
+    df.x2 = view(x, 2:5)
+    dfv = view(df, 2:4, :)
+    sort!(dfv)
+    @test_broken issorted(dfv)
+    @test_broken x == [10, 9, 6, 7, 8, 5, 4, 3, 2, 1]
+    @test_broken df == DataFrame(x1=[9; 6:8], x2=[9; 6:8])
+
     # unsafe aliasing test
     df = DataFrame()
     x = [10:-1:1;]
     df.x1 = view(x, 2:5)
     df.x2 = view(x, 3:6)
-    @test_throws ArgumentError sort!(df)
-    @test x == 10:-1:1
-    @test df == DataFrame(x1=9:-1:6, x2=8:-1:5)
+    sort!(df)
+    @test_broken x == 10:-1:1
+    @test_broken df == DataFrame(x1=9:-1:6, x2=8:-1:5)
 
     df = DataFrame()
     x = [10:-1:1;]
     df.x1 = view(x, 2:5)
     df.x2 = view(x, 3:6)
     dfv = view(df, 2:4, :)
-    @test_throws ArgumentError sort!(dfv)
-    @test x == 10:-1:1
-    @test df == DataFrame(x1=9:-1:6, x2=8:-1:5)
+    sort!(dfv)
+    @test_broken x == 10:-1:1
+    @test_broken df == DataFrame(x1=9:-1:6, x2=8:-1:5)
 
     # complex view sort test
     Random.seed!(1234)
