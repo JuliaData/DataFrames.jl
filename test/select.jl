@@ -706,7 +706,10 @@ end
                  [:x1, :x2] => (+) => :x1, 1:2 => ByRow(/) => :x3, :x1 => :x4, copycols=false)
     @test propertynames(df2) == [:x2, :x1, :x3, :x4, :r1, :r2]
     @test df.x2 === df2.x2
-    @test df.x1 === df2.x4
+    @test df.x1 == df2.x4
+    @test df.x1 == df2.x4
+    # a copy is made as we earlier used ":" selector, although later :x1 gets overwritten
+    @test df.x1 !== df2.x4
     @test df2.r1 == df.x1 .^ 2
     @test df2.r1 == df2.r2
     @test df2.x1 == df.x1 + df.x2
@@ -717,7 +720,8 @@ end
             [:x1, :x2] => (+) => :x1, 1:2 => ByRow(/) => :x3, :x1 => :x4)
     @test propertynames(df2) == [:x2, :x1, :x3, :x4, :r1, :r2]
     @test x2 === df.x2
-    @test x1 === df.x4
+    # a copy is made as we earlier used ":" selector, although later :x1 gets overwritten
+    @test x1 !== df.x4
     @test df.r1 == x1 .^ 2
     @test df.r1 == df.r2
     @test df.x1 == x1 + x2
