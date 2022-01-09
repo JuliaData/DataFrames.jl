@@ -210,6 +210,7 @@ end
 
 @testset "sort! tests" begin
     # safe aliasing test
+    # this works because 2:5 is immutable
     df = DataFrame()
     x = [10:-1:1;]
     df.x1 = view(x, 2:5)
@@ -222,6 +223,15 @@ end
     df = DataFrame()
     x = [10:-1:1;]
     df.x1 = view(x, 2:5)
+    df.x2 = view(x, [2:5;])
+    sort!(df)
+    @test_broken issorted(df)
+    @test_broken x == [10, 6, 7, 8, 9, 5, 4, 3, 2, 1]
+    @test_broken df == DataFrame(x1=6:9, x2=6:9)
+
+    df = DataFrame()
+    x = [10:-1:1;]
+    df.x1 = view(x, 2:5)
     df.x2 = view(x, 2:5)
     dfv = view(df, 2:4, :)
     sort!(dfv)
@@ -229,23 +239,33 @@ end
     @test x == [10, 9, 6, 7, 8, 5, 4, 3, 2, 1]
     @test df == DataFrame(x1=[9; 6:8], x2=[9; 6:8])
 
+    df = DataFrame()
+    x = [10:-1:1;]
+    df.x1 = view(x, [2:5;])
+    df.x2 = view(x, 2:5)
+    dfv = view(df, 2:4, :)
+    sort!(dfv)
+    @test_broken issorted(dfv)
+    @test_broken x == [10, 9, 6, 7, 8, 5, 4, 3, 2, 1]
+    @test_broken df == DataFrame(x1=[9; 6:8], x2=[9; 6:8])
+
     # unsafe aliasing test
     df = DataFrame()
     x = [10:-1:1;]
     df.x1 = view(x, 2:5)
     df.x2 = view(x, 3:6)
-    @test_throws ArgumentError sort!(df)
-    @test x == 10:-1:1
-    @test df == DataFrame(x1=9:-1:6, x2=8:-1:5)
+    sort!(df)
+    @test_broken x == 10:-1:1
+    @test_broken df == DataFrame(x1=9:-1:6, x2=8:-1:5)
 
     df = DataFrame()
     x = [10:-1:1;]
     df.x1 = view(x, 2:5)
     df.x2 = view(x, 3:6)
     dfv = view(df, 2:4, :)
-    @test_throws ArgumentError sort!(dfv)
-    @test x == 10:-1:1
-    @test df == DataFrame(x1=9:-1:6, x2=8:-1:5)
+    sort!(dfv)
+    @test_broken x == 10:-1:1
+    @test_broken df == DataFrame(x1=9:-1:6, x2=8:-1:5)
 
     # complex view sort test
     Random.seed!(1234)
@@ -321,6 +341,61 @@ end
         @test sortperm(df, order=Base.Forward) == 1:3
         @test sortperm(df, order=fill(Base.Forward, ncol(df))) == 1:3
     end
+end
+
+@testset "correct aliasing detection" begin
+    # make sure sorting a view does not produce an error
+    for sel in ([1, 2, 3], 1:3)
+        df = DataFrame(a=1:5, b=11:15, c=21:25)
+        dfc = copy(df)
+        sdf = view(df, sel, :)
+        sort!(sdf)
+        @test df[:, 1:3] == dfc
+    end
+
+    Random.seed!(1234)
+    for sel in ([1:100;], 1:100)
+        df = DataFrame(a=rand(100), b=rand(100), c=rand(100), id=1:100)
+        dfc = sort(df)
+        sdf = view(df, sel, :)
+        sort!(sdf)
+        @test df == dfc
+        sort!(df, :id)
+        df.d = df.a
+        sort!(sdf)
+        @test df[:, 1:4] == dfc
+    end
+
+    # this is a test that different views are incorrectly handled
+    x = [1:6;]
+    df = DataFrame(a=view(x, 1:5), b=view(x, 6:-1:2), copycols=false)
+    dfv = view(df, 1:3, :)
+    sort!(dfv, :b)
+    @test df == DataFrame(a=[3, 2, 1, 6, 5], b=[4, 5, 6, 1, 2])
+    # this is the "correct" result if we had no aliasing
+    x = [1:6;]
+    df = DataFrame(a=view(x, 1:5), b=view(x, 6:-1:2))
+    dfv = view(df, 1:3, :)
+    sort!(dfv, :b)
+    @test df == DataFrame(a=[3, 2, 1, 4, 5], b=[4, 5, 6, 3, 2])
+
+    df = DataFrame(x1=rand(10))
+    df.x2 = df.x1
+    df.x3 = df.x1
+    df.x4 = df.x1
+    df.x5 = df.x1
+    sort!(df, :x4)
+    @test issorted(df)
+
+    df = DataFrame(x1=rand(10))
+    df.x2 = df.x1
+    df.x3 = df.x1
+    df.x4 = df.x1
+    df.x5 = df.x1
+    dfv = @view df[1:5, 1:4]
+    sort!(dfv, :x4)
+    @test issorted(dfv)
+    @test issorted(df[1:5, :])
 end
 
 end # module
