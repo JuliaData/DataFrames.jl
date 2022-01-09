@@ -1062,10 +1062,18 @@ end
     df2 = combine(view(df, 1:2, :), :a => (x -> view(x, 1:1)) => :c1)
     @test df2.c1 isa Vector
     df2 = select(df, :a, :a => :b, :a => identity => :c, copycols=false)
-    @test df2.b === df2.c === df.a
+    @test df2.b == df2.c == df.a
+    @test df2.b !== df2.c
+    @test df2.b !== df2.a
+    @test df2.c !== df2.a
+    @test df.a === df2.a
     a = df.a
     select!(df, :a, :a => :b, :a => identity => :c)
-    @test df.b === df.c === a
+    @test df2.b == df2.c == df.a
+    @test df2.b !== df2.c
+    @test df2.b !== df2.a
+    @test df2.c !== df2.a
+    @test a === df2.a
 end
 
 @testset "empty select" begin
