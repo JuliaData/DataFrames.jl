@@ -1310,11 +1310,14 @@ end
     select!(df, :x => first)
     @test df == DataFrame(x_first=fill(1, 3))
 
-    # if we select! we do copycols=false, so we can get aliases
+
+    # if we select! we do copycols=false, so we do not get aliases
     df = DataFrame(x=1:3, y=4:6)
     x = df.x
     select!(df, :x => (x->x), :x)
-    @test x === df.x_function === df.x
+    @test x === df.x_function
+    @test x == df.x
+    @test x !== df.x
 
     df = DataFrame(x=1:3, y=4:6)
     @test_throws ArgumentError select!(df, :x => x -> [1])
