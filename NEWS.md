@@ -5,6 +5,9 @@
 * Fix aliasing detection in `sort!` (now only identical columns passing `===`
   test are considered aliases)
   ([#2981](https://github.com/JuliaData/DataFrames.jl/issues/2981))
+* Make sure `ByRow` calls wrapped function exactly once for each element
+  in all cases
+  ([#2982](https://github.com/JuliaData/DataFrames.jl/issues/2982))
 
 # DataFrames.jl v1.3.1 Patch Release Notes
 
