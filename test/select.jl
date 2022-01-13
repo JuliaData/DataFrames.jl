@@ -2494,8 +2494,6 @@ end
         @test (df2.a === x) ⊻ cc
     end
 
-    # super rare cases of multicolumn output
-    # we do a proper detection only if source was a single column
     for sel in (:a, [:a], r"a")
         df = DataFrame(a=1:3)
         x = df.a
@@ -2599,32 +2597,41 @@ end
     @test df.a === df2.a
     @test df.a == df2.b
     @test df.a !== df2.b
+    @test df2.a !== df2.b
     df2 = transform(df, [:a, :a] => ((x, y) -> x) => :b, copycols=false)
     @test df.a === df2.a
     @test df.a == df2.b
     @test df.a !== df2.b
+    @test df2.a !== df2.b
 
     df = DataFrame(a=1:3)
     df2 = select(df, :a, [:a, :a] => ((x, y) -> (b=x, c=y)) => AsTable, copycols=false)
     @test df.a === df2.a
     @test df.a == df2.b
     @test df.a !== df2.b
+    @test df2.a !== df2.b
     @test df.a == df2.c
     @test df.a !== df2.c
+    @test df2.a !== df2.c
     df2 = transform(df, [:a, :a] => ((x, y) -> (b=x, c=y)) => AsTable, copycols=false)
     @test df.a === df2.a
     @test df.a == df2.b
     @test df.a !== df2.b
+    @test df2.a !== df2.b
     @test df.a == df2.c
     @test df.a !== df2.c
+    @test df2.a !== df2.c
     df2 = transform(df, [:a, :a] => ((x, y) -> (b=x, c=y)) => AsTable, :a => :d, copycols=false)
     @test df.a === df2.a
     @test df.a == df2.b
     @test df.a !== df2.b
+    @test df2.a !== df2.b
     @test df.a == df2.c
     @test df.a !== df2.c
+    @test df2.a !== df2.c
     @test df.a == df2.d
     @test df.a !== df2.d
+    @test df2.a !== df2.d
 
     df = DataFrame(a=1:3, b=11:13, c=21:23)
     df2 = select(df, [:a, :b, :c] => ((x, y, z) -> (c=x, d=y)) => AsTable, :, :c => :e, copycols=false)
@@ -2632,6 +2639,10 @@ end
     @test df2.d === df.b
     @test df2.a !== df.a
     @test df2.b !== df.b
+    @test df2.a !== df2.c
+    @test df2.b !== df2.d
+    @test df2.a == df2.c
+    @test df2.b == df2.d
     @test df2.e === df.c
 
     # multialias detection
@@ -2642,9 +2653,14 @@ end
     @test df2.a == df2.b == df.a
     @test df2.a !== df.a
     @test df2.b !== df.b
+    @test df2.a !== df2.c
+    @test df2.b !== df2.c
 
     df = DataFrame(a=1:3)
     df2 = transform(df, :a => lag)
+    # note that here a copy of `lag(df.a)` was performed as the result of This
+    # transformation is a view of `df.a` and `copycols=true` so we make sure
+    # that `df2.a_lag` column does not share data with `df.a` column.
     @test df2.a_lag isa Vector
     df2 = transform(df, :a => lag, copycols=false)
     @test df2.a_lag isa ShiftedVector
