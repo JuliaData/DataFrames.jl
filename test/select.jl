@@ -2634,7 +2634,7 @@ end
     @test df2.b !== df.b
     @test df2.e === df.c
 
-    # mutlialias detection
+    # multialias detection
     df = DataFrame(a=1:3)
     df.b = df.a
     df2 = select(df, [:a, :b] => ((x, y) -> x) => :c, :a, :b, copycols=false)
