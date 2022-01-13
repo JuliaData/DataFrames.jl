@@ -107,6 +107,13 @@ described for [`select`](@ref) with the restriction that:
   `AbstractDataFrame`, `NamedTuple`, `DataFrameRow` or `AbstractMatrix`
   is not supported).
 
+The `subset` function is optimized for speed when low number of of conditions passed
+(up to several dozens). If you need to subset rows based on a larger number
+of columns prefer passing one condition using the syntax
+`AsTable(column_selector) => condition_function∘collect` when the condition function
+or for row-wise condition `AsTable(column_selector) => ByRow(condition_function∘collect)`,
+see [`DataFrames.table_transformation`](@ref) documentation for a detailed explanation.
+
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
 allowed and it is treated as `false` (i.e. rows for which one of the conditions
