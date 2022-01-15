@@ -152,19 +152,19 @@ const TRANSFORMATION_COMMON_RULES =
 
     In general columns returned by transformations are stored in the target data
     frame without copying. An exception to this rule is when columns from
-    the source data frame are reused in the target data frame (via expressions
-    like: `:x1`, `[:x1, :x2]`, `:x1 => :x2`, `:x1 => identity => :x2`, or
-    `:x1 => (x -> @view x[repeat(1, length(x))])`; note that in the last case
-    the source column is reused as its view is returned). In such cases the
-    behavior depends on the value of `copycols` keyword argument:
+    the source data frame are reused in the target data frame.
+    This can happen via expressions like: `:x1`, `[:x1, :x2]`, `:x1 => :x2`,
+    `:x1 => identity => :x2`, or `:x1 => (x -> @view x[inds])`
+    (note that in the last case the source column is reused
+    indirectly via a view). In such cases the
+    behavior depends on the value of the `copycols` keyword argument:
     * if `copycols=true` then results of such transformations always perform a
       copy of the source column or its view;
-    * if `copycols=false` then the result of the first transformation that reuses
-      the passed column directly (i.e. the result of the transformation returns
-      `true` when compared by `===` with the source column) gets stored in target
-      data frame without copying but every consecutive use of such a column performs
-      its copy (in other words the same column is not stored twice or more times
-      in the target data frame);
+    * if `copycols=false` then copies are only performed to avoid storing the
+      same column several times in the target data frame; more precisely, no
+      copy is made the first time a column is used, but each subsequent
+      reuse of a source column (when compared using `===`,
+      which excludes views of source columns) performs a copy;
 
     Note that performing `transform!` or `select!` assumes that `copycols=false`.
 

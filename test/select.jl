@@ -2658,7 +2658,7 @@ end
 
     df = DataFrame(a=1:3)
     df2 = transform(df, :a => lag)
-    # note that here a copy of `lag(df.a)` was performed as the result of This
+    # note that here a copy of `lag(df.a)` was performed as the result of this
     # transformation is a view of `df.a` and `copycols=true` so we make sure
     # that `df2.a_lag` column does not share data with `df.a` column.
     @test df2.a_lag isa Vector
