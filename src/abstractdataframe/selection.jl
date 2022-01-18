@@ -150,19 +150,29 @@ const TRANSFORMATION_COMMON_RULES =
     transformation and single column selection operations must be unique, so e.g.
     `select!(df, :a, :a => :a)` or `select!(df, :a, :a => ByRow(sin) => :a)` are not allowed.
 
-    As a general rule if `copycols=true` columns are copied and when
-    `copycols=false` columns are reused if possible. Note, however, that
-    including the same column several times in the data frame via renaming or
-    transformations that return the same object without copying may create
-    column aliases even if `copycols=true`. An example of such a situation is
-    `select!(df, :a, :a => :b, :a => identity => :c)`.
-    As a special case in `transform` and `transform!` column renaming always
-    copies columns to avoid storing aliased columns in the target data frame.
+    In general columns returned by transformations are stored in the target data
+    frame without copying. An exception to this rule is when columns from
+    the source data frame are reused in the target data frame.
+    This can happen via expressions like: `:x1`, `[:x1, :x2]`, `:x1 => :x2`,
+    `:x1 => identity => :x2`, or `:x1 => (x -> @view x[inds])`
+    (note that in the last case the source column is reused
+    indirectly via a view). In such cases the
+    behavior depends on the value of the `copycols` keyword argument:
+    * if `copycols=true` then results of such transformations always perform a
+      copy of the source column or its view;
+    * if `copycols=false` then copies are only performed to avoid storing the
+      same column several times in the target data frame; more precisely, no
+      copy is made the first time a column is used, but each subsequent
+      reuse of a source column (when compared using `===`,
+      which excludes views of source columns) performs a copy;
+
+    Note that performing `transform!` or `select!` assumes that `copycols=false`.
 
     If `df` is a `SubDataFrame` and `copycols=true` then a `DataFrame` is
     returned and the same copying rules apply as for a `DataFrame` input: this
     means in particular that selected columns will be copied. If
-    `copycols=false`, a `SubDataFrame` is returned without copying columns.
+    `copycols=false`, a `SubDataFrame` is returned without copying columns and
+    in this case transforming or renaming columns is not allowed.
 
     If a `GroupedDataFrame` is passed, a separate task is spawned for each
     specified transformation; each transformation then spawns as many tasks
@@ -623,14 +633,34 @@ end
 function _add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
                              col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
                              copycols::Bool, (fun,)::Ref{Any},
-                             newname::Symbol, v::AbstractVector)
+                             newname::Symbol, v::AbstractVector,
+                             column_to_copy::BitVector)
     cdf = eachcol(df)
     vpar = parent(v)
     parent_cols = col_idx isa AsTable ? col_idx.cols : something(col_idx, 1:ncol(df))
-    if copycols && !(fun isa ByRow) && (v isa SubArray || any(i -> vpar === parent(cdf[i]), parent_cols))
-        newdf[!, newname] = copy(v)
+    if copycols
+        if !(fun isa ByRow) && (v isa SubArray || any(i -> vpar === parent(cdf[i]), parent_cols))
+            newdf[!, newname] = copy(v)
+        else
+            newdf[!, newname] = v
+        end
     else
-        newdf[!, newname] = v
+        if fun isa ByRow
+            newdf[!, newname] = v
+        else
+            must_copy = false
+            for i in parent_cols
+                # there might be multiple aliases of the same column
+                if v === cdf[i]
+                    if column_to_copy[i]
+                        must_copy = true
+                    else
+                        column_to_copy[i] = true
+                    end
+                end
+            end
+            newdf[!, newname] = must_copy ? copy(v) : v
+        end
     end
 end
 
@@ -638,12 +668,13 @@ function _add_multicol_res(res::AbstractDataFrame, newdf::DataFrame, df::Abstrac
                            colnames::AbstractVector{Symbol},
                            allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
-                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
+                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}},
+                           column_to_copy::BitVector)
     lr = nrow(res)
     _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, wfun)
     @assert length(colnames) == ncol(res)
     for (newname, v) in zip(colnames, eachcol(res))
-        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, v)
+        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, v, column_to_copy)
     end
 end
 
@@ -651,7 +682,8 @@ function _add_multicol_res(res::AbstractMatrix, newdf::DataFrame, df::AbstractDa
                            colnames::AbstractVector{Symbol},
                            allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
-                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
+                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}},
+                           column_to_copy::BitVector)
     lr = size(res, 1)
     _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, wfun)
     @assert length(colnames) == size(res, 2)
@@ -665,12 +697,13 @@ function _add_multicol_res(@nospecialize(res::NamedTuple{<:Any, <:Tuple{Vararg{A
                            colnames::AbstractVector{Symbol},
                            allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
-                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
+                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}},
+                           column_to_copy::BitVector)
     lr = length(res[1])
     _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, wfun)
     @assert length(colnames) == length(res)
     for (newname, v) in zip(colnames, res)
-        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, v)
+        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, v, column_to_copy)
     end
 end
 
@@ -678,7 +711,8 @@ function _add_multicol_res(@nospecialize(res::NamedTuple), newdf::DataFrame, df:
                            colnames::AbstractVector{Symbol},
                            allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
-                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
+                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}},
+                           column_to_copy::BitVector)
     if any(v -> v isa AbstractVector, res)
         throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
     else
@@ -690,13 +724,15 @@ function _add_multicol_res(res::DataFrameRow, newdf::DataFrame, df::AbstractData
                            colnames::AbstractVector{Symbol},
                            allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
                            col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
-                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}})
+                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}},
+                           column_to_copy::BitVector)
     _insert_row_multicolumn(newdf, df, allow_resizing_newdf, colnames, res)
 end
 
 function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Set{Symbol}, copycols::Bool,
-                           allow_resizing_newdf::Ref{Bool})
+                           allow_resizing_newdf::Ref{Bool},
+                           column_to_copy::BitVector)
     @assert nc isa Union{Base.Callable,
                          Pair{<:Union{Int, AbstractVector{Int}, AsTable},
                               <:Pair{<:Base.Callable, <:Union{Symbol, AbstractVector{Symbol}, DataType}}}}
@@ -752,7 +788,7 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
             @assert startlen + length(colnames) == length(transformed_cols)
         end
         _add_multicol_res(res, newdf, df, colnames, allow_resizing_newdf, wfun,
-                          col_idx, copycols, newname)
+                          col_idx, copycols, newname, column_to_copy)
     elseif res isa AbstractVector
         if newname === nothing
             newname = :x1
@@ -764,7 +800,7 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
         end
         lr = length(res)
         _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, wfun)
-        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, res)
+        _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, res, column_to_copy)
     else
         if newname === nothing
             newname = :x1
@@ -856,17 +892,8 @@ $TRANSFORMATION_COMMON_RULES
 
 See [`select`](@ref) for examples.
 """
-function transform!(df::AbstractDataFrame, @nospecialize(args...); renamecols::Bool=true)
-    idx = index(df)
-    newargs = Any[if sel isa Pair{<:ColumnIndex, Symbol}
-                      idx[first(sel)] => copy => last(sel)
-                  elseif sel isa Pair{<:ColumnIndex, <:AbstractString}
-                      idx[first(sel)] => copy => Symbol(last(sel))
-                  else
-                      sel
-                  end for sel in args]
-    return select!(df, :, newargs..., renamecols=renamecols)
-end
+transform!(df::AbstractDataFrame, @nospecialize(args...); renamecols::Bool=true) =
+    select!(df, :, args..., renamecols=renamecols)
 
 function transform!(@nospecialize(arg::Base.Callable), df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
@@ -1196,20 +1223,8 @@ ERROR: ArgumentError: column :x in returned data frame is not equal to grouping 
 
 See [`select`](@ref) for more examples.
 """
-function transform(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true)
-    idx = index(df)
-    # when using the copy function the copy of source data frame
-    # is made exactly once even if copycols=true
-    # (copycols=true makes a copy only if the column was not copied previously)
-    newargs = Any[if sel isa Pair{<:ColumnIndex, Symbol}
-                      idx[first(sel)] => copy => last(sel)
-                  elseif sel isa Pair{<:ColumnIndex, <:AbstractString}
-                      idx[first(sel)] => copy => Symbol(last(sel))
-                  else
-                      sel
-                  end for sel in args]
-    return select(df, :, newargs..., copycols=copycols, renamecols=renamecols)
-end
+transform(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true) =
+    select(df, :, args..., copycols=copycols, renamecols=renamecols)
 
 function transform(@nospecialize(arg::Base.Callable), df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
@@ -1559,6 +1574,13 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
     # Also if keeprows is true then we make sure to produce nrow(df) rows so resizing
     # is not allowed
     allow_resizing_newdf = Ref(!keeprows)
+    # keep track of the fact if single column transformation like
+    # :x or :x => :y or :x => identity
+    # should make a copy
+    # this ensures that we store a column from a source data frame in a
+    # destination data frame without copying at most once
+    column_to_copy = copycols ? trues(ncol(df)) : falses(ncol(df))
+
     for nc in normalized_cs
         if nc isa AbstractVector{Int} # only this case is NOT considered to be a transformation
             allunique(nc) || throw(ArgumentError("duplicate column names selected"))
@@ -1578,13 +1600,14 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
                         end
                     end
                     # here even if keeprows is true all is OK
-                    newdf[!, newname] = copycols ? df[:, i] : df[!, i]
+                    newdf[!, newname] = column_to_copy[i] ? df[:, i] : df[!, i]
+                    column_to_copy[i] = true
                     allow_resizing_newdf[] = false
                 end
             end
         else
             select_transform!(Ref{Any}(nc), df, newdf, transformed_cols, copycols,
-                              allow_resizing_newdf)
+                              allow_resizing_newdf, column_to_copy)
         end
     end
     return newdf
