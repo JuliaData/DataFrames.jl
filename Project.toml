@@ -32,6 +32,7 @@ Missings = "0.4.2, 1"
 PooledArrays = "1.3.0"
 PrettyTables = "0.12, 1"
 Reexport = "0.1, 0.2, 1"
+ShiftedArrays = "1"
 SortingAlgorithms = "0.1, 0.2, 0.3, 1"
 TableTraits = "0.4, 1"
 Tables = "1.2"
@@ -50,8 +51,9 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+ShiftedArrays = "1277b4bf-5013-50f5-be3d-901d8477a67a"
 
 [targets]
 test = ["CategoricalArrays", "Combinatorics", "DataStructures", "DataValues",
         "Dates", "Logging", "OffsetArrays", "Random", "Test", "Unitful",
-        "SparseArrays"]
+        "ShiftedArrays", "SparseArrays"]

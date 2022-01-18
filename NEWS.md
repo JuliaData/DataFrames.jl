@@ -2,6 +2,11 @@
 
 ## Bug fixes
 
+* Make sure that `select!`/`transform!` and `select`/`transform`
+  (with `copycols=false`) do not produce aliases of the same source column
+  consistently (currently only `transform[!]` ensured it for an unwrapped
+  column renaming operation)
+  ([#2983](https://github.com/JuliaData/DataFrames.jl/issues/2983))
 * Fix aliasing detection in `sort!` (now only identical columns passing `===`
   test are considered aliases)
   ([#2981](https://github.com/JuliaData/DataFrames.jl/issues/2981))
