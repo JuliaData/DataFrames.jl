@@ -1,6 +1,6 @@
 module TestSelect
 
-using DataFrames, Test, Random, Statistics
+using DataFrames, Test, Random, SparseArrays, Statistics
 using CategoricalArrays, PooledArrays, ShiftedArrays
 
 const ≅ = isequal
@@ -2687,6 +2687,13 @@ end
     df = DataFrame(x=1:3)
     @test_throws ArgumentError combine(df, :x => i) # i is not Callable
     @test combine(df, :x => identity∘i) == DataFrame(x_identity_function=1:3)
+end
+
+@testset "map on sparse array" begin
+    Random.seed!(1234)
+    df = DataFrame(x=spzeros(10))
+    df2 = select(df, :x => ByRow(i -> rand()) => :y)
+    @test allunique(df2.y)
 end
 
 end # module

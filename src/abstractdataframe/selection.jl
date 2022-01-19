@@ -303,13 +303,25 @@ end
 A type used for selection operations to signal that the wrapped function should
 be applied to each element (row) of the selection.
 
+The wrapped function is called exactly once for each element.
+This differs from `map` and `broadcast`, which assume for some types of
+source vectors (e.g. `SparseVector`) that the wrapped function is pure,
+allowing them to call the function only once for multiple equal values.
+When using such types, for maximal performance with pure functions
+which are relatively costly, use `x -> map(f, x)` instead of `ByRow(f)`.
+
 Note that `ByRow` always collects values returned by `fun` in a vector.
 """
 struct ByRow{T} <: Function
     fun::T
 end
 
-(f::ByRow)(cols::AbstractVector...) = map(f.fun, cols...)
+# invoke the generic AbstractVector function to ensure function is called
+# exactly once for each element
+(f::ByRow)(cols::AbstractVector...) =
+    invoke(map,
+           Tuple{typeof(f.fun), ntuple(i -> AbstractVector, length(cols))...},
+           f.fun, cols...)
 (f::ByRow)(table::NamedTuple) = [f.fun(nt) for nt in Tables.namedtupleiterator(table)]
 
 # add a method to funname defined in other/utils.jl
