@@ -12,8 +12,23 @@ function _and(x::Any...)
                             "but only true or false are allowed; pass " *
                             "skipmissing=true to skip missing values"))
     else
-        throw(ArgumentError("value $xv was returned in condition number $loc " *
-                            "but only true or false are allowed"))
+        throw(ArgumentError("value $xv was returned in condition number $loc" *
+                            " but only true or false are allowed"))
+    end
+end
+
+_and_long(x::Bool, y::Bool) = x && y
+
+function _and_long(x, y)
+    v = x isa Bool ? y : x
+    @assert !(v isa Bool)
+    if ismissing(v)
+        throw(ArgumentError("missing was returned " *
+                            "but only true or false are allowed; pass " *
+                            "skipmissing=true to skip missing values"))
+    else
+        throw(ArgumentError("value $v was returned" *
+                            " but only true or false are allowed"))
     end
 end
 
@@ -27,7 +42,18 @@ function _and_missing(x::Any...)
     # we know x has positive length and must contain non-boolean
     @assert !isnothing(loc)
     xv = x[loc]
-    throw(ArgumentError("value $xv was returned in condition number $loc" *
+    throw(ArgumentError("value $xv was returned in condition number $loc " *
+                        "but only true, false, or missing are allowed"))
+end
+
+_and_long_missing(x::Bool, y::Bool) = x && y
+_and_long_missing(x::Bool, y::Missing) = false
+_and_long_missing(x::Missing, y::Union{Bool, Missing}) = false
+
+function _and_long_missing(x, y)
+    v = x isa Union{Missing, Bool} ? y : x
+    @assert !(v isa Union{Missing, Bool})
+    throw(ArgumentError("value $v was returned " *
                         "but only true, false, or missing are allowed"))
 end
 
@@ -45,8 +71,6 @@ function assert_bool_vec(@nospecialize(fun))
     end
 end
 
-# Note that _get_subset_conditions will have a large compilation time
-# if more than 32 conditions are passed as `args`.
 function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
                                 (args,)::Ref{Any}, skipmissing::Bool)
     cs_vec = []
@@ -79,10 +103,25 @@ function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
 
     @assert ncol(df_conditions) == length(conditions)
 
-    if skipmissing
-        cond = _and_missing.(eachcol(df_conditions)...)
+    cols = eachcol(df_conditions)
+    if length(conditions) > 16
+        if skipmissing
+            cond = _and_long_missing.(cols[1], cols[2])
+            for i in 3:length(conditions)
+                cond .= _and_long_missing.(cond, cols[i])
+            end
+        else
+            cond = _and_long.(cols[1], cols[2])
+            for i in 3:length(conditions)
+                cond .= _and_long.(cond, cols[i])
+            end
+        end
     else
-        cond = _and.(eachcol(df_conditions)...)
+        if skipmissing
+            cond = _and_missing.(cols...)
+        else
+            cond = _and.(cols...)
+        end
     end
 
     @assert eltype(cond) === Bool
@@ -106,13 +145,6 @@ described for [`select`](@ref) with the restriction that:
 * every passed transformation must return a scalar or a vector (returning
   `AbstractDataFrame`, `NamedTuple`, `DataFrameRow` or `AbstractMatrix`
   is not supported).
-
-The `subset` function is optimized for speed when low number of of conditions passed
-(up to several dozens). If you need to subset rows based on a larger number
-of columns prefer passing one condition using the syntax
-`AsTable(column_selector) => condition_function∘collect` when the condition function
-or for row-wise condition `AsTable(column_selector) => ByRow(condition_function∘collect)`,
-see [`DataFrames.table_transformation`](@ref) documentation for a detailed explanation.
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
