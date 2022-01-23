@@ -104,6 +104,7 @@ function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
     @assert ncol(df_conditions) == length(conditions)
 
     cols = eachcol(df_conditions)
+    # with many columns, process each column sequentially to avoid large compilation time
     if length(conditions) > 16
         if skipmissing
             cond = _and_long_missing.(cols[1], cols[2])
