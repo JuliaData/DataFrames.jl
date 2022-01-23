@@ -1557,6 +1557,7 @@ then you can wrap your element-wise function in `ByRow` like
 `ByRow(my_elementwise_function)`.
 This will apply `my_elementwise_function` to every element in the column
 and then collect the results back into a vector.
+
 When multiple columns are selected by `source_column_selector`,
 the `function` will receive the columns as multiple positional arguments in the
 order they are selected like `f(column1, column2, column3)`.
@@ -1573,13 +1574,14 @@ or a vector of symbols.
 In the `source_column_selector => function => new_column_names` transformation form,
 `new_column_names` may additionally be a renaming function which operates on a string
 or a vector of strings to create the destination column names programmatically.
+
 In the `source_column_selector => function` transformation form,
-`new_column_names` will be generated automatically as the function name appended
-to the source column name with an underscore.
+`new_column_names` will be generated automatically as the function name
+appended to the source column name with an underscore.
 However, if keyword argument `renamecols=false` is passed
-to the transformation function, then the new columns will
-retain their original source names instead of using automatically
-generated names.
+to the transformation function,
+then the new columns will retain their original source names
+instead of using automatically generated names.
 
 #### More Information
 This transformation pair syntax is sometimes referred to as a mini-language.
@@ -2132,6 +2134,137 @@ sections of the manual.
 
 ## Broadcasting with Transformation Functions
 
-**TODO: Add broadcasting examples.**
+[Broadcasting](https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting)
+is a convenient way to apply multiple transformations
+within one call to a transformation function.
+Broadcasting within the `Pair` of a `transformation` is no different than
+broadcasting in base Julia.
+The broadcasting `.=>` will be expanded into a vector of pairs,
+and this expansion will occur before the tranformation function is invoked.
 
-**TODO: Add - as this is crucial - that broadcasting is applied before the DataFrames.jl function is invoked so one can change exactly what happens.**
+To illustrate these concepts, let us first examine the `Type` of a basic `Pair`.
+In DataFrames, a `Symbol`, `String`, or `Integer`
+may be used to select a single column.
+Some examples of `Pair`s of these types are below.
+
+```julia
+julia> typeof(:x => :a)
+Pair{Symbol, Symbol}
+
+julia> typeof("x" => "a")
+Pair{String, String}
+
+julia> typeof(1 => "a")
+Pair{Int64, String}
+```
+
+Any of the `Pair`s above could be used to rename the first column
+of the data frame below to `a`.
+
+```julia
+julia> df = DataFrame(x = 1:3, y = 4:6)
+3×2 DataFrame
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> select(df, :x => :a)
+3×1 DataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+
+```
+
+What should we do if we want to keep and rename both the `x` and `y` column?
+One option is to supply a `Vector` of transformation `Pair`s to `select`.
+`select` will process all of these transformations in order.
+
+```julia
+julia> ["x" => "a", "y" => "b"]
+2-element Vector{Pair{String, String}}:
+ "x" => "a"
+ "y" => "b"
+
+julia> select(df, ["x" => "a", "y" => "b"])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+```
+
+We can use broadcasting to simplify the syntax above.
+
+```julia
+julia> ["x", "y"] .=> ["a", "b"]
+2-element Vector{Pair{String, String}}:
+ "x" => "a"
+ "y" => "b"
+
+julia> select(df, ["x", "y"] .=> ["a", "b"])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+```
+
+Note that `select` sees the same `Vector{Pair{String, String}}` argument
+whether the individual pairs are written out explicitly or
+constructed with broadcasting.
+The broadcasting is applied before the call to `select`.
+
+If a function is used as part of a transformation `Pair`,
+like in the `source_column_selector => function => new_column_names` form,
+then the function is repeated in each pair of the resultant vector. This is an easy way to apply a function to multiple columns at the same time.
+
+```julia
+julia> f(x) = 2 * x
+f (generic function with 1 method)
+
+julia> ["x", "y"] .=> f .=> ["a", "b"]
+2-element Vector{Pair{String, Pair{typeof(f), String}}}:
+ "x" => (f => "a")
+ "y" => (f => "b")
+
+julia> select(df, ["x", "y"] .=> f .=> ["a", "b"])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      8
+   2 │     4     10
+   3 │     6     12
+ ```
+
+A renaming function can be applied to multiple columns in the same way.
+
+```julia
+julia> newname(s::String) = s * "_new"
+newname (generic function with 1 method)
+
+julia> ["x", "y"] .=> f .=> newname
+2-element Vector{Pair{String, Pair{typeof(f), typeof(newname)}}}:
+ "x" => (f => newname)
+ "y" => (f => newname)
+
+julia> select(df, ["x", "y"] .=> f .=> newname)
+3×2 DataFrame
+ Row │ x_new  y_new
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      8
+   2 │     4     10
+   3 │     6     12
+```
