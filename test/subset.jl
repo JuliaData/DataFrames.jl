@@ -307,4 +307,56 @@ end
     end
 end
 
+@testset "wide subsetting" begin
+    # current threshold is at 16
+    for i in 1:20
+        df = DataFrame(a=1:10)
+        @test subset(df, [:a => ByRow(x -> true) for _ in 1:i]) == df
+        @test subset(df, [:a => ByRow(x -> true) for _ in 1:i], :a => ByRow(x -> false)) ==
+              DataFrame(a=Int[])
+        @test_throws ArgumentError subset(df, [:a => ByRow(x -> true) for _ in 1:i],
+                                          :a => ByRow(x -> "a"))
+        @test subset(df, [:a => ByRow(x -> true) for _ in 1:i], skipmissing=true) == df
+        @test subset(df, [:a => ByRow(x -> true) for _ in 1:i],
+                     :a => ByRow(x -> false), skipmissing=true) ==
+              DataFrame(a=Int[])
+        @test subset(df, [:a => ByRow(x -> true) for _ in 1:i],
+                     :a => ByRow(x -> missing), skipmissing=true) ==
+              DataFrame(a=Int[])
+        @test subset(df, :a => ByRow(x -> missing), [:a => ByRow(x -> true) for _ in 1:i],
+                     skipmissing=true) ==
+              DataFrame(a=Int[])
+        @test_throws ArgumentError subset(df, :a => ByRow(x -> missing),
+                                          [:a => ByRow(x -> true) for _ in 1:i],
+                                          :a => ByRow(x -> "a"), skipmissing=true)
+        @test_throws ArgumentError subset(df, [:a => ByRow(x -> true) for _ in 1:i],
+                                          :a => ByRow(x -> missing), :a => ByRow(x -> "a"),
+                                          skipmissing=true)
+
+        # randomized correctness tests across two selection options
+        Random.seed!(1234)
+        mat1 = rand(Bool, 10_000, 5)
+        df = DataFrame(mat1, string.("y", 1:5))
+        df.id = 1:nrow(df)
+        df2 = [DataFrame(trues(10_000, i), :auto) df]
+        @test subset(df, Not(:id)).id ==
+              subset(df2, Not(:id)).id ==
+              df.id[all.(eachrow(mat1))]
+
+        mat2 = rand([true, false, missing], 10_000, 5)
+        df = DataFrame(mat2, string.("y", 1:5))
+        df.id = 1:nrow(df)
+        df2 = [DataFrame(trues(10_000, i), :auto) df]
+        @test subset(df, Not(:id), skipmissing=true).id ==
+              subset(df2, Not(:id), skipmissing=true).id ==
+              df.id[all.(isequal(true), eachrow(mat2))]
+        # with so many rows we must see missing somewhere
+        # so this condition is true in practice
+        if any(ismissing, mat2)
+            @test_throws ArgumentError subset(df, Not(:id))
+            @test_throws ArgumentError subset(df2, Not(:id))
+        end
+    end
+end
+
 end
