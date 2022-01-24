@@ -2268,3 +2268,69 @@ julia> select(df, ["x", "y"] .=> f .=> newname)
    2 │     4     10
    3 │     6     12
 ```
+
+This broadcasting approach is even more useful if we use column selectors which
+generate a vector of column names for us rather than writing them all out manually.
+Consider a data frame with temperature data at three different locations taken over time.
+
+```julia
+julia> df = DataFrame(Time = 1:4, Temperature1 = [20, 23, 25, 28], Temperature2 = [33, 37, 41, 44], Temperature3 = [15, 10, 4, 0])
+4×4 DataFrame
+ Row │ Time   Temperature1  Temperature2  Temperature3
+     │ Int64  Int64         Int64         Int64
+─────┼─────────────────────────────────────────────────
+   1 │     1            20            33            15
+   2 │     2            23            37            10
+   3 │     3            25            41             4
+   4 │     4            28            44             0
+```
+
+To convert all of the temperature data in one transformation,
+we just need to define a conversion function and broadcast
+all of the rows except for `Time` to it.
+
+```julia
+julia> celsius_to_kelvin(x) = x + 273
+celsius_to_kelvin (generic function with 1 method)
+
+julia> transform(df, Not("Time") .=> ByRow(celsius_to_kelvin), renamecols = false)
+4×4 DataFrame
+ Row │ Time   Temperature1  Temperature2  Temperature3
+     │ Int64  Int64         Int64         Int64
+─────┼─────────────────────────────────────────────────
+   1 │     1           293           306           288
+   2 │     2           296           310           283
+   3 │     3           298           314           277
+   4 │     4           301           317           273
+```
+
+The function `celsius_to_kelvin` above was defined to operate on scalar values.
+Recall that functions inside DataFrame transformations
+must be defined to operate on vectors.
+The `ByRow` function can be wrapped around a scalar function as a convient way
+to allow a function to operate on data frame columns.
+Without the `ByRow` wrapper, we would get an error.
+
+```julia
+julia> transform(df, Not("Time") .=> celsius_to_kelvin, renamecols = false)
+ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)
+```
+
+Alternatively, we would define the function to accept vectors or scalars
+using a broadcasting dot.
+Then the `ByRow` wrapper would not be needed.
+
+```julia
+julia> celsius_to_kelvin(x) = x .+ 273
+celsius_to_kelvin (generic function with 1 method)
+
+julia> transform(df, Not("Time") .=> celsius_to_kelvin, renamecols = false)
+4×4 DataFrame
+ Row │ Time   Temperature1  Temperature2  Temperature3
+     │ Int64  Int64         Int64         Int64
+─────┼─────────────────────────────────────────────────
+   1 │     1           293           306           288
+   2 │     2           296           310           283
+   3 │     3           298           314           277
+   4 │     4           301           317           273
+```
