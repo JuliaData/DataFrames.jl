@@ -730,4 +730,13 @@ end
     @test dfu.a isa Vector{Any}
 end
 
+@testset "no rowkey unstack" begin
+    df = DataFrame(x=[:one, :two], y = [1, 2])
+    @test unstack(df, :x, :y) == DataFrame(one=1, two=2)
+
+    df = DataFrame(x=[:one, :two, :one], y = [1, 2, 3])
+    @test_throws ArgumentError unstack(df, :x, :y)
+    @test unstack(df, :x, :y, allowduplicates=true) == DataFrame(one=3, two=2)
+end
+
 end # module

@@ -213,6 +213,7 @@ Row and column keys will be ordered in the order of their first appearance.
 - `rowkeys` : the columns with a unique key for each row, if not given,
   find a key by grouping on anything not a `colkey` or `value`.
   Can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+  If `rowkeys` contains no columns data is assumed to have the same row key.
 - `colkey` : the column ($COLUMNINDEX_STR) holding the column names in wide format,
   defaults to `:variable`
 - `value` : the value column ($COLUMNINDEX_STR), defaults to `:value`
@@ -362,7 +363,6 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
                  allowmissing::Bool=false, allowduplicates::Bool=false, fill=missing)
     rowkey_ints = vcat(index(df)[rowkeys])
     @assert rowkey_ints isa AbstractVector{Int}
-    length(rowkey_ints) == 0 && throw(ArgumentError("No key column found"))
     g_rowkey = groupby(df, rowkey_ints)
     g_colkey = groupby(df, colkey)
     valuecol = df[!, value]
