@@ -2228,7 +2228,8 @@ The broadcasting is applied before the call to `select`.
 
 If a function is used as part of a transformation `Pair`,
 like in the `source_column_selector => function => new_column_names` form,
-then the function is repeated in each pair of the resultant vector. This is an easy way to apply a function to multiple columns at the same time.
+then the function is repeated in each pair of the resultant vector.
+This is an easy way to apply a function to multiple columns at the same time.
 
 ```julia
 julia> f(x) = 2 * x
