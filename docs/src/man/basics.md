@@ -1535,14 +1535,15 @@ and it can take any of the forms listed below:
 - `source_column_selector => function => new_column_names`
   - passes source column(s) to function
   - names the resulting column(s) `new_column_names`
-  - *cannot be used with `subset` or `subset!`*
+    - *cannot be used with `subset` or `subset!`*
 - `source_column_selector => new_column_names`
   - renames source column
-  - *may only select one column unless broadcasting*
-  - *cannot be used with `subset` or `subset!`*
+    - *may only select one column unless broadcasting*
+    - *may be used to split a column containing collections into multiple columns*
+    - *cannot be used with `subset` or `subset!`*
 - `source_column_selector`
   - selects source column(s) without transforming them
-  - *often used with `select` or `select!` for isolating or moving columns*
+    - *often used with `select` or `select!` for isolating or moving columns*
 
 #### `source_column_selector`
 The most basic `source_column_selector` is a column name,
@@ -2309,22 +2310,24 @@ Recall that functions inside DataFrame transformations
 must be defined to operate on vectors.
 The `ByRow` function can be wrapped around a scalar function as a convient way
 to allow a function to operate on data frame columns.
-Without the `ByRow` wrapper, we would get an error.
+Without the `ByRow` wrapper, we would get an error
+because addition of a vector (`x`) and a scalar (`273`) is not defined.
 
 ```julia
 julia> transform(df, Not("Time") .=> celsius_to_kelvin, renamecols = false)
 ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)
 ```
 
-Alternatively, we would define the function to accept vectors or scalars
-using a broadcasting dot.
+Alternatively, we could use a broadcasting dot `.` in the definition of our function
+so that it can accept vector or scalar inputs.
+`.+` indicates that the addition should be performed element-by-element.
 Then the `ByRow` wrapper would not be needed.
 
 ```julia
-julia> celsius_to_kelvin(x) = x .+ 273
-celsius_to_kelvin (generic function with 1 method)
+julia> celsius_to_kelvin2(x) = x .+ 273
+celsius_to_kelvin2 (generic function with 1 method)
 
-julia> transform(df, Not("Time") .=> celsius_to_kelvin, renamecols = false)
+julia> transform(df, Not("Time") .=> celsius_to_kelvin2, renamecols = false)
 4×4 DataFrame
  Row │ Time   Temperature1  Temperature2  Temperature3
      │ Int64  Int64         Int64         Int64
@@ -2334,3 +2337,6 @@ julia> transform(df, Not("Time") .=> celsius_to_kelvin, renamecols = false)
    3 │     3           298           314           277
    4 │     4           301           317           273
 ```
+
+Broadcasting is a simple but powerful tool
+that can be used in any of the transformation functions.
