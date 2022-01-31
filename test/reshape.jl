@@ -737,6 +737,44 @@ end
     df = DataFrame(x=[:one, :two, :one], y=[1, 2, 3])
     @test_throws ArgumentError unstack(df, :x, :y)
     @test unstack(df, :x, :y, allowduplicates=true) == DataFrame(one=3, two=2)
+    @test unstack(df, :x, :y, allowduplicates=identity) ==
+          DataFrame(one=[[1, 3]], two=[[2]])
+    @test unstack(df, :x, :y, allowduplicates=last) ==
+          DataFrame(one=3, two=2)
+    @test unstack(df, :x, :y, allowduplicates=first) ==
+          DataFrame(one=1, two=2)
+    @test unstack(df, :x, :y, allowduplicates=length) ==
+          DataFrame(one=2, two=1)
+end
+
+@testset "allowduplicates as function" begin
+    df = DataFrame(rowid=[1, 1, 1, 1, 2, 2], colid=[1, 1, 2, 2, 3, 3], values=1:6)
+    @test_throws ArgumentError unstack(df, :rowid, :colid, :values)
+    @test unstack(df, :rowid, :colid, :values, allowduplicates=true) ≅
+          DataFrame("rowid" => 1:2, "1" => [2, missing],
+                    "2" => [4, missing], "3" => [missing, 6])
+    @test unstack(df, :rowid, :colid, :values, allowduplicates=true, fill=0) ==
+          DataFrame("rowid" => 1:2, "1" => [2, 0],
+                    "2" => [4, 0], "3" => [0, 6])
+    @test unstack(df, :rowid, :colid, :values, allowduplicates=identity) ==
+          DataFrame("rowid" => 1:2, "1" => [1:2, []],
+                    "2" => [3:4, []], "3" => [[], 5:6])
+    @test_throws ArgumentError unstack(df, :rowid, :colid, :values,
+                                       allowduplicates=identity, fill=0)
+    @test unstack(df, :rowid, :colid, :values, allowduplicates=sum) ==
+          DataFrame("rowid" => 1:2, "1" => [3, 0],
+                    "2" => [7, 0], "3" => [0, 11])
+    @test unstack(df, :rowid, :colid, :values, allowduplicates=length) ==
+          DataFrame("rowid" => 1:2, "1" => [2, 0],
+                    "2" => [2, 0], "3" => [0, 2])
+    @test unstack(df, :rowid, :colid, :values,
+                  allowduplicates=x -> isempty(x) ? missing : length(x)) ≅
+          DataFrame("rowid" => 1:2, "1" => [2, missing],
+                    "2" => [2, missing], "3" => [missing, 2])
+    @test unstack(df, :rowid, :colid, :values,
+                  allowduplicates=x -> isempty(x) ? missing : x) ≅
+          DataFrame("rowid" => 1:2, "1" => [1:2, missing],
+                    "2" => [3:4, missing], "3" => [missing, 5:6])
 end
 
 end # module
