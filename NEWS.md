@@ -1,3 +1,11 @@
+# DataFrames.jl v1.3 Release Notes
+
+## New functionalities
+
+* `unstack` now allows passing a function in `allowduplicates` keyword argument;
+  this allows for a convenient creation of two dimensional pivot tables
+  ([#2998](https://github.com/JuliaData/DataFrames.jl/issues/2998))
+
 # DataFrames.jl v1.3.2 Patch Release Notes
 
 ## Bug fixes
