@@ -213,7 +213,7 @@ Row and column keys will be ordered in the order of their first appearance.
 - `rowkeys` : the columns with a unique key for each row, if not given,
   find a key by grouping on anything not a `colkey` or `value`.
   Can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-  If `rowkeys` contains no columns data is assumed to have the same row key.
+  If `rowkeys` contains no columns all rows are assumed to have the same key.
 - `colkey` : the column ($COLUMNINDEX_STR) holding the column names in wide format,
   defaults to `:variable`
 - `value` : the value column ($COLUMNINDEX_STR), defaults to `:value`
