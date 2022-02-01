@@ -232,9 +232,9 @@ Row and column keys will be ordered in the order of their first appearance.
   will be created.
 - `allowduplicates`: if `false` (the default) then an error an error will be thrown
   if combination of `rowkeys` and `colkey` contains duplicate entries; if `true`
-  then  then the last encountered `value` will be retained; if it is a `Function`
-  then a vector containing all elements for each combination of `rowkeys` and `colkey`
-  will be passed to `allowduplicates` function.
+  then the last encountered `value` will be retained; if it is a `Function`
+  then it will be called on a vector containing all elements for each
+  combination of `rowkeys` and `colkey`.
 
 - `fill`: missing row/column combinations are filled with this value.
   Only allowed if `allowduplicates` is `true` or `false`. The default
