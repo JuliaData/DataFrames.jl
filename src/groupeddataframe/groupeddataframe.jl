@@ -60,7 +60,7 @@ into row groups.
 - `cols` : data frame columns to group by. Can be any column selector
   ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 - `sort` : if `sort=true` sort groups according to the values of the grouping columns
-  `cols`; if `sort=false` groups are created in order of their appereance in `df`
+  `cols`; if `sort=false` groups are created in their order of appearance in `df`
   if `sort=nothing` (the default) then the fastest available grouping algorithm
   is picked and in consequence the order of groups in the result is undefined
   and may change in future releases; below a description of the current
