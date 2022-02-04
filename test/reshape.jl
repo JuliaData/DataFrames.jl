@@ -756,15 +756,23 @@ end
     @test unstack(df, :rowid, :colid, :values, allowduplicates=true, fill=0) ==
           DataFrame("rowid" => 1:2, "1" => [2, 0],
                     "2" => [4, 0], "3" => [0, 6])
-    @test unstack(df, :rowid, :colid, :values, allowduplicates=identity) ==
+    @test unstack(df, :rowid, :colid, :values, allowduplicates=identity) ≅
+          DataFrame("rowid" => 1:2, "1" => [1:2, missing],
+                    "2" => [3:4, missing], "3" => [missing, 5:6])
+    @test unstack(df, :rowid, :colid, :values,
+                  allowduplicates=identity, fill=Int[]) ==
           DataFrame("rowid" => 1:2, "1" => [1:2, []],
                     "2" => [3:4, []], "3" => [[], 5:6])
-    @test_throws ArgumentError unstack(df, :rowid, :colid, :values,
-                                       allowduplicates=identity, fill=0)
-    @test unstack(df, :rowid, :colid, :values, allowduplicates=sum) ==
+    @test unstack(df, :rowid, :colid, :values, allowduplicates=sum) ≅
+          DataFrame("rowid" => 1:2, "1" => [3, missing],
+                    "2" => [7, missing], "3" => [missing, 11])
+    @test unstack(df, :rowid, :colid, :values, allowduplicates=sum, fill=0) ==
           DataFrame("rowid" => 1:2, "1" => [3, 0],
                     "2" => [7, 0], "3" => [0, 11])
-    @test unstack(df, :rowid, :colid, :values, allowduplicates=length) ==
+    @test unstack(df, :rowid, :colid, :values, allowduplicates=length) ≅
+          DataFrame("rowid" => 1:2, "1" => [2, missing],
+                    "2" => [2, missing], "3" => [missing, 2])
+    @test unstack(df, :rowid, :colid, :values, allowduplicates=length, fill=0) ==
           DataFrame("rowid" => 1:2, "1" => [2, 0],
                     "2" => [2, 0], "3" => [0, 2])
     @test unstack(df, :rowid, :colid, :values,
@@ -775,6 +783,37 @@ end
                   allowduplicates=x -> isempty(x) ? missing : x) ≅
           DataFrame("rowid" => 1:2, "1" => [1:2, missing],
                     "2" => [3:4, missing], "3" => [missing, 5:6])
+
+    df = DataFrame(rowid=[2, 2, 2, 2, 1, 1], colid=[2, 2, 1, 1, 3, 3], values=1:6)
+    @test unstack(df, :rowid, :colid, :values, allowduplicates=identity) ≅
+          DataFrame("rowid" => [2,1], "2" => [1:2, missing],
+                    "1" => [3:4, missing], "3" => [missing, 5:6])
+
+    Random.seed!(1234)
+    # check correctness of row and column ordering
+    for _ in 1:10
+        df = DataFrame(rowid=rand(1:10, 50), colid=rand(1:10, 50), values=1:50)
+        res = unstack(df, :rowid, :colid, :values, allowduplicates=last)
+        @test res ≅ unstack(df, :rowid, :colid, :values, allowduplicates=true)
+        @test res.rowid == unique(df.rowid)
+        @test names(res, Not(1)) == string.(unique(df.colid))
+        res = unstack(df, :rowid, :colid, :values, allowduplicates=last, fill=0)
+        @test res ≅ unstack(df, :rowid, :colid, :values, allowduplicates=true, fill=0)
+        @test res.rowid == unique(df.rowid)
+        @test names(res, Not(1)) == string.(unique(df.colid))
+
+        df.rowid=categorical(df.rowid, levels=shuffle(unique(df.rowid)))
+        df.colid=categorical(df.colid, levels=shuffle(unique(df.colid)))
+        res = unstack(df, :rowid, :colid, :values, allowduplicates=last)
+        @test res ≅ unstack(df, :rowid, :colid, :values, allowduplicates=true)
+        @test unwrap.(res.rowid) == unique(df.rowid)
+        @test names(res, Not(1)) == string.(unique(df.colid))
+        res = unstack(df, :rowid, :colid, :values, allowduplicates=last, fill=0)
+        @test res ≅
+            unstack(df, :rowid, :colid, :values, allowduplicates=true, fill=0)
+        @test unwrap.(res.rowid) == unique(df.rowid)
+        @test names(res, Not(1)) == string.(unique(df.colid))
+    end
 end
 
 end # module

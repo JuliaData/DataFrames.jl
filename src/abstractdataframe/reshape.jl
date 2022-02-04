@@ -213,33 +213,32 @@ Row and column keys will be ordered in the order of their first appearance.
 
 # Positional arguments
 - `df` : the AbstractDataFrame to be unstacked
-- `rowkeys` : the columns with a unique key for each row, if not given,
-  find a key by grouping on anything not a `colkey` or `value`.
-  Can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-  If `rowkeys` contains no columns all rows are assumed to have the same key.
-- `colkey` : the column ($COLUMNINDEX_STR) holding the column names in wide format,
-  defaults to `:variable`
+- `rowkeys` : the columns with a unique key for each row, if not given, find a
+  key by grouping on anything not a `colkey` or `value`. Can be any column
+  selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR). If `rowkeys` contains no
+  columns all rows are assumed to have the same key.
+- `colkey` : the column ($COLUMNINDEX_STR) holding the column names in wide
+  format, defaults to `:variable`
 - `value` : the value column ($COLUMNINDEX_STR), defaults to `:value`
 
 # Keyword arguments
 
-- `renamecols`: a function called on each unique value in `colkey`; it must return
-  the name of the column to be created (typically as a string or a `Symbol`).
-  Duplicates in resulting names when converted to `Symbol` are not allowed.
-  By default no transformation is performed.
-- `allowmissing`: if `false` (the default) then an error will be thrown if `colkey`
-  contains `missing` values; if `true` then a column referring to `missing` value
-  will be created.
-- `allowduplicates`: if `false` (the default) then an error an error will be thrown
-  if combination of `rowkeys` and `colkey` contains duplicate entries; if `true`
-  then  then the last encountered `value` will be retained; if it is a `Function`
-  then a vector containing all elements for each combination of `rowkeys` and `colkey`
-  will be passed to `allowduplicates` function.
+- `renamecols`: a function called on each unique value in `colkey`; it must
+  return the name of the column to be created (typically as a string or a
+  `Symbol`). Duplicates in resulting names when converted to `Symbol` are not
+  allowed. By default no transformation is performed.
+- `allowmissing`: if `false` (the default) then an error will be thrown if
+  `colkey` contains `missing` values; if `true` then a column referring to
+  `missing` value will be created.
+- `allowduplicates`: if `false` (the default) then an error an error will be
+  thrown if combination of `rowkeys` and `colkey` contains duplicate entries; if
+  `true` then  then the last encountered `value` will be retained; if it is a
+  `Function` then a vector containing all elements for each combination of
+  `rowkeys` and `colkey` will be passed to `allowduplicates` function.
 
-- `fill`: missing row/column combinations are filled with this value.
-  Only allowed if `allowduplicates` is `true` or `false`. The default
-  is `missing`. If the `value` column is a `CategoricalVector` and `fill`
-  is not `missing` then in order to keep unstacked value columns also
+- `fill`: missing row/column combinations are filled with this value. The
+  default is `missing`. If the `value` column is a `CategoricalVector` and
+  `fill` is not `missing` then in order to keep unstacked value columns also
   `CategoricalVector` the `fill` must be passed as `CategoricalValue`
 
 # Examples
@@ -394,9 +393,22 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
                  value::ColumnIndex; renamecols::Function=identity,
                  allowmissing::Bool=false,
                  allowduplicates::Union{Bool, Function}=false, fill=missing)
-    if fill !== missing && allowduplicates isa Function
-        throw(ArgumentError("passing fill argument is not supported when " *
-                            "allowduplicates is a function"))
+    if allowduplicates isa Function
+        groupcols = vcat(index(df)[rowkeys], index(df)[colkey])
+        @assert groupcols isa AbstractVector{Int}
+        gdf = groupby(df, groupcols)
+        if check_aggregate(allowduplicates, df[!, value]) isa AbstractAggregate
+            agg_fun = allowduplicates
+        else
+            agg_fun = Ref∘allowduplicates
+        end
+        df_agg = combine(gdf, value => agg_fun, renamecols=false)
+        group_rows = find_group_row(gdf)
+        if !issorted(group_rows)
+            df_agg = df_agg[sortperm(group_rows), :]
+        end
+        return unstack(df_agg, rowkeys, colkey, value, renamecols=renamecols,
+                    allowmissing=allowmissing, allowduplicates=false, fill=fill)
     end
     rowkey_ints = vcat(index(df)[rowkeys])
     @assert rowkey_ints isa AbstractVector{Int}
@@ -450,7 +462,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
                   colkey::Int, g_colkey::GroupedDataFrame,
                   valuecol::AbstractVector, g_rowkey::GroupedDataFrame,
                   renamecols::Function, allowmissing::Bool,
-                  allowduplicates::Union{Bool, Function}, fill)
+                  allowduplicates::Bool, fill)
     rowref = g_rowkey.groups
     row_group_row_idxs = find_group_row(g_rowkey)
     Nrow = length(g_rowkey)
@@ -466,31 +478,23 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
     end
     @assert length(rowref) == length(colref) == length(valuecol)
 
-    if allowduplicates isa Bool
-        unstacked_bool = [fill!(similar(valuecol,
-                                    promote_type(eltype(valuecol), typeof(fill)),
-                                    Nrow),
-                            fill) for _ in 1:Ncol]
+    unstacked_val = [fill!(similar(valuecol,
+                           promote_type(eltype(valuecol), typeof(fill)),
+                           Nrow),
+                     fill) for _ in 1:Ncol]
 
-        mask_filled = falses(Nrow, Ncol)
+    mask_filled = falses(Nrow, Ncol)
 
-        for (k, (row_id, col_id, val)) in enumerate(zip(rowref, colref, valuecol))
-            if !allowduplicates && mask_filled[row_id, col_id]
-                throw(ArgumentError("Duplicate entries in unstack at row $k for key "*
-                                    "$(tuple((df[k, s] for s in rowkeys)...)) and variable $(colref_map[col_id]). " *
-                                    "Pass allowduplicates=true to allow them."))
-            end
-            unstacked_bool[col_id][row_id] = val
-            mask_filled[row_id, col_id] = true
+    for (k, (row_id, col_id, val)) in enumerate(zip(rowref, colref, valuecol))
+        if !allowduplicates && mask_filled[row_id, col_id]
+            bad_key = tuple((df[k, s] for s in rowkeys)...)
+            bad_var = colref_map[col_id]
+            throw(ArgumentError("Duplicate entries in unstack at row $k for key "*
+                                "$bad_key and variable $bad_var. " *
+                                "Pass allowduplicates=true to allow them."))
         end
-        unstacked_val = unstacked_bool
-    else
-        @assert allowduplicates isa Function
-        unstacked_function = [[Vector{eltype(valuecol)}() for _ in 1:Nrow] for _ in 1:Ncol]
-        for (k, (row_id, col_id, val)) in enumerate(zip(rowref, colref, valuecol))
-            push!(unstacked_function[col_id][row_id], val)
-        end
-        unstacked_val = [allowduplicates.(col) for col in unstacked_function]
+        unstacked_val[col_id][row_id] = val
+        mask_filled[row_id, col_id] = true
     end
 
     # note that Symbol(renamecols(x)) must produce unique column names
