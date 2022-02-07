@@ -408,7 +408,7 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
             df_agg = df_agg[sortperm(group_rows), :]
         end
         return unstack(df_agg, rowkeys, colkey, value, renamecols=renamecols,
-                    allowmissing=allowmissing, allowduplicates=false, fill=fill)
+                       allowmissing=allowmissing, allowduplicates=false, fill=fill)
     end
     rowkey_ints = vcat(index(df)[rowkeys])
     @assert rowkey_ints isa AbstractVector{Int}
