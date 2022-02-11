@@ -3951,4 +3951,91 @@ end
     @test Vector.(keys(gd)) ≅ [[300], [missing], [1], [2]]
 end
 
+@testset "eachindex, groupindices, and proprow tests" begin
+    # Basic tests
+    df = DataFrame(id=["a", "c", "b", "b", "a", "a"])
+    gdf = groupby(df, :id)
+    @test combine(gdf, eachindex, eachindex => :idx,
+                  groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=["a", "a", "a", "c", "b", "b"],
+                    eachindex=[1, 2, 3, 1, 1, 2],
+                    idx=[1, 2, 3, 1, 1, 2],
+                    groupindices=[1, 1, 1, 2, 3, 3],
+                    gidx=[1, 1, 1, 2, 3, 3],
+                    proprow=[1/2, 1/2, 1/2, 1/6, 1/3, 1/3],
+                    freq=[1/2, 1/2, 1/2, 1/6, 1/3, 1/3])
+    @test combine(gdf, groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=["a", "c", "b"],
+                    groupindices=[1, 2, 3],
+                    gidx=[1, 2, 3],
+                    proprow=[1/2, 1/6, 1/3],
+                    freq=[1/2, 1/6, 1/3])
+    @test select(gdf, eachindex, eachindex => :idx,
+                  groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=df.id,
+                    eachindex=[1, 1, 1, 2, 2, 3],
+                    idx=[1, 1, 1, 2, 2, 3],
+                    groupindices=[1, 2, 3, 3, 1, 1],
+                    gidx=[1, 2, 3, 3, 1, 1],
+                    proprow=[1/2, 1/6, 1/3, 1/3, 1/2, 1/2],
+                    freq=[1/2, 1/6, 1/3, 1/3, 1/2, 1/2])
+    @test select(gdf, groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=df.id,
+                    groupindices=[1, 2, 3, 3, 1, 1],
+                    gidx=[1, 2, 3, 3, 1, 1],
+                    proprow=[1/2, 1/6, 1/3, 1/3, 1/2, 1/2],
+                    freq=[1/2, 1/6, 1/3, 1/3, 1/2, 1/2])
+    gdf2 = gdf[[3, 1]]
+    @test combine(gdf2, eachindex, eachindex => :idx,
+                  groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=["b", "b", "a", "a", "a"],
+                    eachindex=[1, 2, 1, 2, 3],
+                    idx=[1, 2, 1, 2, 3],
+                    groupindices=[1, 1, 2, 2, 2],
+                    gidx=[1, 1, 2, 2, 2],
+                    proprow=[2/5, 2/5, 3/5, 3/5, 3/5],
+                    freq=[2/5, 2/5, 3/5, 3/5, 3/5])
+    @test combine(gdf2, groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=["b", "a"],
+                    groupindices=[1, 2],
+                    gidx=[1, 2],
+                    proprow=[2/5, 3/5],
+                    freq=[2/5, 3/5])
+    gdf3 = gdf2[[1]]
+    @test combine(gdf3, eachindex, eachindex => :idx,
+                  groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=["b", "b"],
+                    eachindex=[1, 2],
+                    idx=[1, 2],
+                    groupindices=[1, 1],
+                    gidx=[1, 1],
+                    proprow=[1.0, 1.0],
+                    freq=[1.0, 1.0])
+    @test combine(gdf3, groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=["b"],
+                    groupindices=[1],
+                    gidx=[1],
+                    proprow=[1.0],
+                    freq=[1.0])
+    gdf4 = gdf3[[false]]
+    @test isequal_coltyped(combine(gdf4, eachindex, eachindex => :idx,
+                                   groupindices, groupindices => :gidx,
+                                   proprow, proprow => :freq),
+                           DataFrame(id=String[], eachindex=Int[], idx=Int[],
+                                     groupindices=Int[], gidx=Int[],
+                                     proprow=Float64[], freq=Float64[]))
+    @test isequal_coltyped(combine(gdf4, groupindices, groupindices => :gidx,
+                                   proprow, proprow => :freq),
+                           DataFrame(id=String[], groupindices=Int[], gidx=Int[],
+                                     proprow=Float64[], freq=Float64[]))
+end
+
 end # module
