@@ -236,6 +236,86 @@ function _combine_process_agg((cs_i,)::Ref{Any},
     end
 end
 
+function _combine_process_groupindices((cs_i,)::Ref{Any},
+                                        optional_i::Bool,
+                                        parentdf::AbstractDataFrame,
+                                        gd::GroupedDataFrame,
+                                        seen_cols::Dict{Symbol, Tuple{Bool, Int}},
+                                        trans_res::Vector{TransformationResult},
+                                        idx_agg::Ref{Vector{Int}})
+    @assert cs_i isa Pair{Vector{Int}, Pair{typeof(groupindices), Symbol}}
+    @assert first(cs_i) == Int[]
+    @assert !optional_i
+    out_col_name = last(last(cs_i))
+    outcol = 1:length(gd)
+
+    lock(gd.lazy_lock) do
+        if idx_agg[] === NOTHING_IDX_AGG
+            idx_agg[] = Vector{Int}(undef, length(gd))
+            fillfirst!(nothing, idx_agg[], 1:length(gd.groups), gd)
+        end
+    end
+
+    return function()
+        if haskey(seen_cols, out_col_name)
+            optional, loc = seen_cols[out_col_name]
+            # we have seen this col but it is not allowed to replace it
+            optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+            @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
+            trans_res[loc] = TransformationResult(idx_agg[], outcol, out_col_name, optional_i)
+            seen_cols[out_col_name] = (optional_i, loc)
+        else
+            push!(trans_res, TransformationResult(idx_agg[], outcol, out_col_name, optional_i))
+            seen_cols[out_col_name] = (optional_i, length(trans_res))
+        end
+    end
+end
+
+function _combine_process_proprow((cs_i,)::Ref{Any},
+                                  optional_i::Bool,
+                                  parentdf::AbstractDataFrame,
+                                  gd::GroupedDataFrame,
+                                  seen_cols::Dict{Symbol, Tuple{Bool, Int}},
+                                  trans_res::Vector{TransformationResult},
+                                  idx_agg::Ref{Vector{Int}})
+    @assert cs_i isa Pair{Vector{Int}, Pair{typeof(proprow), Symbol}}
+    @assert first(cs_i) == Int[]
+    @assert !optional_i
+    out_col_name = last(last(cs_i))
+
+    if getfield(gd, :idx) === nothing
+        lens = zeros(Int, length(gd))
+        @inbounds for gix in gd.groups
+            gix > 0 && (lens[gix] += 1)
+        end
+        outcol = lens / sum(lens)
+    else
+        lens2 = gd.ends .- gd.starts .+ 1
+        outcol = lens2 / sum(lens2)
+    end
+
+    lock(gd.lazy_lock) do
+        if idx_agg[] === NOTHING_IDX_AGG
+            idx_agg[] = Vector{Int}(undef, length(gd))
+            fillfirst!(nothing, idx_agg[], 1:length(gd.groups), gd)
+        end
+    end
+
+    return function()
+        if haskey(seen_cols, out_col_name)
+            optional, loc = seen_cols[out_col_name]
+            # we have seen this col but it is not allowed to replace it
+            optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+            @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
+            trans_res[loc] = TransformationResult(idx_agg[], outcol, out_col_name, optional_i)
+            seen_cols[out_col_name] = (optional_i, loc)
+        else
+            push!(trans_res, TransformationResult(idx_agg[], outcol, out_col_name, optional_i))
+            seen_cols[out_col_name] = (optional_i, length(trans_res))
+        end
+    end
+end
+
 # move one column without transorming it
 function _combine_process_noop(cs_i::Pair{<:Union{Int, AbstractVector{Int}}, Pair{typeof(identity), Symbol}},
                                optional_i::Bool,
@@ -589,7 +669,13 @@ function _combine(gd::GroupedDataFrame,
             _combine_process_callable(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
         else
             @assert cs_i isa Pair
-            _combine_process_pair(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+            if first(cs_i) == Int[] && first(last(cs_i)) isa typeof(groupindices)
+                _combine_process_groupindices(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+            elseif first(cs_i) == Int[] && first(last(cs_i)) isa typeof(proprow)
+                _combine_process_proprow(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+            else
+                _combine_process_pair(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+            end
         end
     end
     # Workaround JuliaLang/julia#38931:

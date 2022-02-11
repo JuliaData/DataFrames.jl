@@ -354,6 +354,31 @@ normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), <:AbstractString
 normalize_selection(idx::AbstractIndex, sel::typeof(nrow), renamecols::Bool) =
     normalize_selection(idx, nrow => :nrow, renamecols)
 
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(eachindex), Symbol},
+                    renamecols::Bool) =
+    length(idx) == 0 ? (Int[] => (() -> Base.OneTo(0)) => last(sel)) : (1 => eachindex => last(sel))
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(eachindex), <:AbstractString},
+                    renamecols::Bool) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
+normalize_selection(idx::AbstractIndex, sel::typeof(eachindex), renamecols::Bool) =
+    normalize_selection(idx, eachindex => :eachindex, renamecols)
+
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(groupindices), Symbol},
+                    renamecols::Bool) = Int[] => groupindices => last(sel)
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(groupindices), <:AbstractString},
+                    renamecols::Bool) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
+normalize_selection(idx::AbstractIndex, sel::typeof(groupindices), renamecols::Bool) =
+    normalize_selection(idx, groupindices => :groupindices, renamecols)
+
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(proprow), Symbol},
+                    renamecols::Bool) = Int[] => proprow => last(sel)
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(proprow), <:AbstractString},
+                    renamecols::Bool) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
+normalize_selection(idx::AbstractIndex, sel::typeof(proprow), renamecols::Bool) =
+    normalize_selection(idx, proprow => :proprow, renamecols)
+
 function normalize_selection(idx::AbstractIndex, sel::ColumnIndex, renamecols::Bool)
     c = idx[sel]
     return c => identity => _names(idx)[c]
