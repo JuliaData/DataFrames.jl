@@ -1201,8 +1201,10 @@ julia> select(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
    6 │     1      1      6      7
    7 │     1      2      7      9
    8 │     2      1      8      9
+```
 
 # special convenience transformations
+```jldoctest
 julia> select(gd, nrow, proprow, groupindices, eachindex)
 8×5 DataFrame
  Row │ a      nrow   proprow  groupindices  eachindex
