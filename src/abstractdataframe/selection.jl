@@ -52,9 +52,19 @@ const TRANSFORMATION_COMMON_RULES =
        except `AsTable` are allowed).
     4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
        must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
-    5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
-       in a group; without `target_cols` the new column is called `:nrow`, otherwise
-       it must be single name (as a `Symbol` or a string).
+    5. special convenience forms:
+       * a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
+         in a group; without `target_cols` the new column is called `:nrow`, otherwise
+         it must be single name (as a `Symbol` or a string).
+       * a `proprow` or `proprow => target_cols` form which efficiently computes the fraction
+         of rows in a group; without `target_cols` the new column is called `:proprow`, otherwise
+         it must be single name (as a `Symbol` or a string).
+       * a `eachindex` or `eachindex => target_cols` form which returns a vector of row
+         numbers per group; without `target_cols` the new column is called `:eachindex`,
+         otherwise it must be single name (as a `Symbol` or a string).
+       * a `groupindices` or `groupindices => target_cols` form which returns a group number;
+         without `target_cols` the new column is called `:eachindex`,
+         otherwise it must be single name (as a `Symbol` or a string).
     6. vectors or matrices containing transformations specified by the `Pair` syntax
        described in points 2 to 5
     7. a function which will be called with a `SubDataFrame` corresponding to each group
@@ -1191,6 +1201,21 @@ julia> select(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
    6 │     1      1      6      7
    7 │     1      2      7      9
    8 │     2      1      8      9
+
+# special convenience transformations
+julia> select(gd, nrow, proprow, groupindices, eachindex)
+8×5 DataFrame
+ Row │ a      nrow   proprow  groupindices  eachindex
+     │ Int64  Int64  Float64  Int64         Int64
+─────┼────────────────────────────────────────────────
+   1 │     1      5    0.625             1          1
+   2 │     1      5    0.625             1          2
+   3 │     1      5    0.625             1          3
+   4 │     2      3    0.375             2          1
+   5 │     2      3    0.375             2          2
+   6 │     1      5    0.625             1          4
+   7 │     1      5    0.625             1          5
+   8 │     2      3    0.375             2          3
 ```
 """
 select(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true) =

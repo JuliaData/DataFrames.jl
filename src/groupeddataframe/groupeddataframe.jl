@@ -357,7 +357,7 @@ passed when creating `gd`, or if `gd` is a subset from
 a larger [`GroupedDataFrame`](@ref)).
 
 You can also pass `groupindices => [target_col_name]` formula when processing
-`GroupedDataFrame` with transformation functions (`combine``, `select``, ...) in
+`GroupedDataFrame` with transformation functions (`combine`, `select`, ...) in
 the transformation mini-language.
 
 # Examples
@@ -410,7 +410,7 @@ groupindices(args...) =
     proprow
 
 You can also pass `proprow => [target_col_name]` formula when processing
-`GroupedDataFrame` with transformation functions (`combine``, `select``, ...) in
+`GroupedDataFrame` with transformation functions (`combine`, `select`, ...) in
 the transformation mini-language. As a result the proportion of number of rows
 in each group is returned.
 

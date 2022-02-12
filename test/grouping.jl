@@ -4076,6 +4076,16 @@ end
     @test_throws ArgumentError proprow(df)
     @test_throws ArgumentError combine(df, groupindices)
     @test_throws ArgumentError combine(df, proprow)
+
+    # test column replacement
+    df = DataFrame(id=["a", "c", "b", "b", "a", "a"], x=-1, y=-2)
+    gdf = groupby(df, :id);
+    @test transform(gdf, groupindices => :x, proprow => :y) ==
+          DataFrame(id=df.id,
+                    x=[1, 2, 3, 3, 1, 1],
+                    y=[1/2, 1/6, 1/3, 1/3, 1/2, 1/2])
+    @test_throws ArgumentError combine(gdf, :x, groupindices => :x)
+    @test_throws ArgumentError combine(gdf, :x, proprow => :x)
 end
 
 @testset "fillfirst! correctness tests" begin
