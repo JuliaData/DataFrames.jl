@@ -4086,6 +4086,74 @@ end
                     y=[1/2, 1/6, 1/3, 1/3, 1/2, 1/2])
     @test_throws ArgumentError combine(gdf, :x, groupindices => :x)
     @test_throws ArgumentError combine(gdf, :x, proprow => :x)
+
+    df = DataFrame(x = [1, 1, 1, 2, 3, 3], id = 1:6)
+    gdf = groupby(df, :x)
+    @test combine(gdf, proprow) == combine(proprow, gdf) ==
+          rename(combine(gdf, proprow => :a), :a => :proprow) ==
+          DataFrame(x = [1, 2, 3], proprow = [1/2, 1/6, 1/3])
+    @test transform(gdf, proprow) == transform(proprow, gdf) ==
+          rename(transform(gdf, proprow => :a), :a => :proprow) ==
+          DataFrame(x = df.x, id = df.id, proprow = [1/2, 1/2, 1/2, 1/6, 1/3, 1/3])
+    gdf = gdf[[2, 1, 3]]
+    @test combine(gdf, proprow) == combine(proprow, gdf) ==
+          rename(combine(gdf, proprow => :a), :a => :proprow) ==
+          DataFrame(x = [2, 1, 3], proprow = [1/6, 1/2, 1/3])
+    # note that transform retains the original row order
+    @test transform(gdf, proprow) == transform(proprow, gdf) ==
+          rename(transform(gdf, proprow => :a), :a => :proprow) ==
+          DataFrame(x = df.x, id = df.id, proprow = [1/2, 1/2, 1/2, 1/6, 1/3, 1/3])
+    gdf = gdf[[3, 1]]
+    @test combine(gdf, proprow) == combine(proprow, gdf) ==
+          rename(combine(gdf, proprow => :a), :a => :proprow) ==
+          DataFrame(x = [3, 2], proprow = [2/3, 1/3])
+    @test combine(gdf, :id, proprow) ==
+          rename(combine(gdf, :id, proprow => :a), :a => :proprow) ==
+          DataFrame(x = [3, 3, 2], id = [5, 6, 4], proprow = [2/3, 2/3, 1/3])
+    @test_throws ArgumentError transform(gdf, proprow)
+    gdf = gdf[[]]
+    @test isequal_coltyped(combine(gdf, proprow), DataFrame(x=Int[], proprow=Float64[]))
+    @test_throws ArgumentError transform(gdf, proprow)
+
+    gdf = groupby(df, :x)
+    @test combine(gdf, eachindex) == combine(eachindex, gdf) ==
+          rename(combine(gdf, eachindex => :a), :a => :eachindex) ==
+          DataFrame(x = [1, 1, 1, 2, 3, 3], eachindex = [1, 2, 3, 1, 1, 2])
+    @test transform(gdf, eachindex) == transform(eachindex, gdf) ==
+          rename(transform(gdf, eachindex => :a), :a => :eachindex) ==
+          DataFrame(x = df.x, id = df.id, eachindex = [1, 2, 3, 1, 1, 2])
+    gdf = gdf[[2, 1, 3]]
+    @test combine(gdf, eachindex) == combine(eachindex, gdf) ==
+          rename(combine(gdf, eachindex => :a), :a => :eachindex) ==
+          DataFrame(x = [2, 1, 1, 1, 3, 3], eachindex = [1, 1, 2, 3, 1, 2])
+    # note that transform retains the original row order
+    @test transform(gdf, eachindex) == transform(eachindex, gdf) ==
+          rename(transform(gdf, eachindex => :a), :a => :eachindex) ==
+          DataFrame(x = df.x, id = df.id, eachindex = [1, 2, 3, 1, 1, 2])
+    gdf = gdf[[3, 1]]
+    @test combine(gdf, eachindex) == combine(eachindex, gdf) ==
+          rename(combine(gdf, eachindex => :a), :a => :eachindex) ==
+          DataFrame(x = [3, 3, 2], eachindex = [1, 2, 1])
+    @test_throws ArgumentError transform(gdf, eachindex)
+    gdf = gdf[[]]
+    @test isequal_coltyped(combine(gdf, eachindex), DataFrame(x=Int[], eachindex=Int[]))
+    @test_throws ArgumentError transform(gdf, eachindex)
+    @test combine(df, eachindex) == combine(eachindex, df) ==
+          rename(combine(df, eachindex => :a), :a => :eachindex) ==
+          DataFrame(eachindex = 1:6)
+    @test transform(df, eachindex) == transform(eachindex, df) ==
+          rename(transform(df, eachindex => :a), :a => :eachindex) ==
+          DataFrame(x = df.x, id = df.id, eachindex = 1:6)
+    df = view(df, [], :)
+    df2 = combine(df, eachindex)
+    @test isequal_coltyped(df2, DataFrame(eachindex = Int[]))
+    @test isequal_coltyped(df2, combine(eachindex, df))
+    @test isequal_coltyped(df2, rename(combine(df, eachindex => :a), :a => :eachindex))
+
+    df2 = transform(df, eachindex)
+    @test isequal_coltyped(df2, DataFrame(x = Int[], id = Int[], eachindex = Int[]))
+    @test isequal_coltyped(df2, transform(eachindex, df))
+    @test isequal_coltyped(df2, rename(transform(df, eachindex => :a), :a => :eachindex))
 end
 
 @testset "fillfirst! correctness tests" begin
