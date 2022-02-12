@@ -330,8 +330,11 @@ julia> combine(gdf, :PetalLength => (x -> [extrema(x)]) => [:min, :max])
    1 │ Iris-setosa          1.0      1.9
    2 │ Iris-versicolor      3.0      5.1
    3 │ Iris-virginica       4.5      6.9
+```
 
-julia> combine(gdf, eachindex) # row number per group
+To get row number for each observation per group use the `eachindex` function:
+```
+julia> combine(gdf, eachindex)
 150×2 DataFrame
  Row │ Species         eachindex
      │ String15        Int64
@@ -351,7 +354,7 @@ a data frame with the same number and order of rows as the source.
 In the example below
 the return values in columns `:SepalLength_SepalWidth_cor` and `:nrow` are
 broadcasted to match the number of elements in each group:
-```jldoctest sac
+```
 julia> select(gdf, 1:2 => cor)
 150×2 DataFrame
  Row │ Species         SepalLength_SepalWidth_cor
