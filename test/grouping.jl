@@ -3962,7 +3962,7 @@ end
                     gidx=[1, 2, 3],
                     proprow=[1/2, 1/6, 1/3],
                     freq=[1/2, 1/6, 1/3])
-    @test isnothing(getfield(gdf, :idx))
+    @test getfield(gdf, :idx) === nothing
     gdf = groupby(df, :id)
     @test combine(gdf, eachindex, eachindex => :idx,
                   groupindices, groupindices => :gidx,
