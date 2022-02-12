@@ -4083,12 +4083,12 @@ end
     for len in 0:100
         for df in [DataFrame(id=rand(1:5, len)), DataFrame(id=rand(string.(1:5), len))]
             global gdf = groupby(df, :id);
-            @assert isnothing(getfield(gdf, :idx))
+            @assert getfield(gdf, :idx) === nothing
             x1 = fill(-1, length(gdf))
             DataFrames.fillfirst!(nothing, x1, 1:length(gdf.groups), gdf)
-            @assert isnothing(getfield(gdf, :idx))
+            @assert getfield(gdf, :idx) === nothing
             @test length(gdf.idx) >= 0
-            @assert !isnothing(getfield(gdf, :idx))
+            @assert getfield(gdf, :idx) !== nothing
             x2 = fill(-1, length(gdf))
             DataFrames.fillfirst!(nothing, x2, 1:length(gdf.groups), gdf)
             @test x1 == x2
