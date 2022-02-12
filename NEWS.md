@@ -1,3 +1,11 @@
+# DataFrames.jl v1.4 Release Notes
+
+## New functionalities
+
+* Add special syntax for `eachindex`, `groupindices`, and `proprow`
+  to transformation mini-language
+  ([#3001](https://github.com/JuliaData/DataFrames.jl/pull/3001)).
+
 # DataFrames.jl v1.3.2 Patch Release Notes
 
 ## Bug fixes

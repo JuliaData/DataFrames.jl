@@ -4082,15 +4082,15 @@ end
     Random.seed!(1234)
     for len in 0:100
         for df in [DataFrame(id=rand(1:5, len)), DataFrame(id=rand(string.(1:5), len))]
-            gdf = groupby(df, :id);
+            global gdf = groupby(df, :id);
             @assert isnothing(getfield(gdf, :idx))
             x1 = fill(-1, length(gdf))
-            DataFrames.fillfirst!(nothing, x1, 1:length(gdf), gdf)
+            DataFrames.fillfirst!(nothing, x1, 1:length(gdf.groups), gdf)
             @assert isnothing(getfield(gdf, :idx))
             @test length(gdf.idx) >= 0
             @assert !isnothing(getfield(gdf, :idx))
             x2 = fill(-1, length(gdf))
-            DataFrames.fillfirst!(nothing, x2, 1:length(gdf), gdf)
+            DataFrames.fillfirst!(nothing, x2, 1:length(gdf.groups), gdf)
             @test x1 == x2
         end
     end
