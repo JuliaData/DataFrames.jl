@@ -3954,10 +3954,28 @@ end
 @testset "eachindex, groupindices, and proprow tests" begin
     # Basic tests
     df = DataFrame(id=["a", "c", "b", "b", "a", "a"])
+    gdf = groupby(df, :id);
+    @test combine(gdf, groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=["a", "c", "b"],
+                    groupindices=[1, 2, 3],
+                    gidx=[1, 2, 3],
+                    proprow=[1/2, 1/6, 1/3],
+                    freq=[1/2, 1/6, 1/3])
+    @test isnothing(getfield(gdf, :idx))
     gdf = groupby(df, :id)
     @test combine(gdf, eachindex, eachindex => :idx,
                   groupindices, groupindices => :gidx,
                   proprow, proprow => :freq) ==
+          combine(gdf, eachindex, eachindex => "idx",
+                  groupindices, groupindices => "gidx",
+                  proprow, proprow => "freq") ==
+          # note that this style is supported but we do not cover it in the docs
+          # the point is that groupindices and proprow do not require source column
+          # and work on whole grouped data frame
+          combine(gdf, 1 => eachindex => :eachindex, 1 => eachindex => "idx",
+                  [] => groupindices, [] => groupindices => "gidx",
+                  [] => proprow, [] => proprow => "freq") ==
           DataFrame(id=["a", "a", "a", "c", "b", "b"],
                     eachindex=[1, 2, 3, 1, 1, 2],
                     idx=[1, 2, 3, 1, 1, 2],
@@ -4036,6 +4054,46 @@ end
                                    proprow, proprow => :freq),
                            DataFrame(id=String[], groupindices=Int[], gidx=Int[],
                                      proprow=Float64[], freq=Float64[]))
+    gdf5 = groupby(DataFrame(), [])
+    @test isequal_coltyped(combine(gdf5, eachindex, eachindex => :idx,
+                                   groupindices, groupindices => :gidx,
+                                   proprow, proprow => :freq),
+                           DataFrame(eachindex=Int[], idx=Int[],
+                                     groupindices=Int[], gidx=Int[],
+                                     proprow=Float64[], freq=Float64[]))
+    @test isequal_coltyped(combine(gdf5, groupindices, groupindices => :gidx,
+                                   proprow, proprow => :freq),
+                           DataFrame(groupindices=Int[], gidx=Int[],
+                                     proprow=Float64[], freq=Float64[]))
+
+    # eachindex on DataFrame
+    @test combine(df, eachindex) == DataFrame(eachindex=1:6)
+    @test isequal_coltyped(combine(DataFrame(), eachindex),
+                           DataFrame(eachindex=Int[]))
+
+    # Disallowed operations
+    @test_throws ArgumentError groupindices(df)
+    @test_throws ArgumentError proprow(df)
+    @test_throws ArgumentError combine(df, groupindices)
+    @test_throws ArgumentError combine(df, proprow)
+end
+
+@testset "fillfirst! correctness tests" begin
+    Random.seed!(1234)
+    for len in 0:100
+        for df in [DataFrame(id=rand(1:5, len)), DataFrame(id=rand(string.(1:5), len))]
+            gdf = groupby(df, :id);
+            @assert isnothing(getfield(gdf, :idx))
+            x1 = fill(-1, length(gdf))
+            DataFrames.fillfirst!(nothing, x1, 1:length(gdf), gdf)
+            @assert isnothing(getfield(gdf, :idx))
+            @test length(gdf.idx) >= 0
+            @assert !isnothing(getfield(gdf, :idx))
+            x2 = fill(-1, length(gdf))
+            DataFrames.fillfirst!(nothing, x2, 1:length(gdf), gdf)
+            @test x1 == x2
+        end
+    end
 end
 
 end # module
