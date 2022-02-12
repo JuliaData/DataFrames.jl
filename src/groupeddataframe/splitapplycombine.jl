@@ -636,7 +636,7 @@ function _combine(gd::GroupedDataFrame,
         idx_agg[] = Vector{Int}(undef, length(gd))
         fillfirst!(nothing, idx_agg[], 1:length(gd.groups), gd)
     end
-    if !all(x -> isagg(x, gd) || isspecialtransform(Ref{Any}(x)), cs_norm)
+    if length(gd) == 0 || !all(x -> isagg(x, gd) || isspecialtransform(Ref{Any}(x)), cs_norm)
         # Trigger computation of indices
         # This can speed up some aggregates that would not trigger this on their own
         @assert length(gd.idx) >= 0
