@@ -238,12 +238,12 @@ function _combine_process_agg((cs_i,)::Ref{Any},
 end
 
 function _combine_process_groupindices((cs_i,)::Ref{Any},
-                                        optional_i::Bool,
-                                        parentdf::AbstractDataFrame,
-                                        gd::GroupedDataFrame,
-                                        seen_cols::Dict{Symbol, Tuple{Bool, Int}},
-                                        trans_res::Vector{TransformationResult},
-                                        idx_agg::Vector{Int})
+                                       optional_i::Bool,
+                                       parentdf::AbstractDataFrame,
+                                       gd::GroupedDataFrame,
+                                       seen_cols::Dict{Symbol, Tuple{Bool, Int}},
+                                       trans_res::Vector{TransformationResult},
+                                       idx_agg::Vector{Int})
     @assert cs_i isa Pair{Vector{Int}, Pair{typeof(groupindices), Symbol}}
     @assert first(cs_i) == Int[]
     @assert !optional_i
