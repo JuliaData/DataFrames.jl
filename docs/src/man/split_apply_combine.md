@@ -327,7 +327,7 @@ julia> combine(gdf, :PetalLength => (x -> [extrema(x)]) => [:min, :max])
    3 │ Iris-virginica       4.5      6.9
 ```
 
-To get row number for each observation per group use the `eachindex` function:
+To get row number for each observation within each group use the `eachindex` function:
 ```
 julia> combine(gdf, eachindex)
 150×2 DataFrame

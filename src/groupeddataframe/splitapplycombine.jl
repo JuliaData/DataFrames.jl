@@ -8,6 +8,8 @@ const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, Abstr
 # we do not use nothing to avoid excessive specialization
 const NOTHING_IDX_AGG = Int[]
 
+isemptyVectorInt(@nospecialize x) == x isa Vector{Int} && isempty(x)
+
 function gen_groups(idx::Vector{Int})
     groups = zeros(Int, length(idx))
     groups[1] = 1
@@ -245,7 +247,7 @@ function _combine_process_groupindices((cs_i,)::Ref{Any},
                                        trans_res::Vector{TransformationResult},
                                        idx_agg::Vector{Int})
     @assert cs_i isa Pair{Vector{Int}, Pair{typeof(groupindices), Symbol}}
-    @assert first(cs_i) == Int[]
+    @assert isemptyVectorInt(first(cs_i))
     @assert !optional_i
     @assert idx_agg !== NOTHING_IDX_AGG
     out_col_name = last(last(cs_i))
@@ -274,7 +276,7 @@ function _combine_process_proprow((cs_i,)::Ref{Any},
                                   trans_res::Vector{TransformationResult},
                                   idx_agg::Vector{Int})
     @assert cs_i isa Pair{Vector{Int}, Pair{typeof(proprow), Symbol}}
-    @assert first(cs_i) == Int[]
+    @assert isemptyVectorInt(first(cs_i))
     @assert !optional_i
     @assert idx_agg !== NOTHING_IDX_AGG
     out_col_name = last(last(cs_i))
@@ -539,7 +541,7 @@ end
 # helper function allowing us to identify groupindices and proprow transforms
 function isspecialtransform((cs_i,)::Ref{Any})
     cs_i isa Pair || return false
-    first(cs_i) == Int[] || return false
+    isemptyVectorInt(first(cs_i)) || return false
     fun = first(last(cs_i))
     fun === groupindices && return true
     fun === proprow && return true
@@ -670,9 +672,9 @@ function _combine(gd::GroupedDataFrame,
             _combine_process_callable(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
         else
             @assert cs_i isa Pair
-            if first(cs_i) == Int[] && first(last(cs_i)) isa typeof(groupindices)
+            if isemptyVectorInt(first(cs_i)) && first(last(cs_i)) === groupindices
                 _combine_process_groupindices(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg[])
-            elseif first(cs_i) == Int[] && first(last(cs_i)) isa typeof(proprow)
+            elseif isemptyVectorInt(first(cs_i)) && first(last(cs_i)) === proprow
                 _combine_process_proprow(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg[])
             else
                 _combine_process_pair(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
