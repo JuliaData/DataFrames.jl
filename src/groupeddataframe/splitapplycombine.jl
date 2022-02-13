@@ -8,7 +8,7 @@ const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, Abstr
 # we do not use nothing to avoid excessive specialization
 const NOTHING_IDX_AGG = Int[]
 
-isemptyVectorInt(@nospecialize x) == x isa Vector{Int} && isempty(x)
+isemptyVectorInt(@nospecialize x) = x isa Vector{Int} && isempty(x)
 
 function gen_groups(idx::Vector{Int})
     groups = zeros(Int, length(idx))
@@ -282,16 +282,18 @@ function _combine_process_proprow((cs_i,)::Ref{Any},
     out_col_name = last(last(cs_i))
 
     if getfield(gd, :idx) === nothing
-        outcol = zeros(Float64, length(gd)+1)
+        outcol1 = zeros(Float64, length(gd) + 1)
         @inbounds @simd for gix in gd.groups
-            outcol[gix+1] += 1
+            outcol1[gix + 1] += 1
         end
-        popfirst!(outcol)
-        outcol ./= sum(outcol)
+        popfirst!(outcol1)
+        outcol1 ./= sum(outcol1)
+        outcol = outcol1
     else
-        outcol = similar(gd.ends, Float64)
-        outcol .= gd.ends .- gd.starts .+ 1
-        outcol ./= sum(outcol)
+        outcol2 = Vector{Float64}(undef, length(gd))
+        outcol2 .= gd.ends .- gd.starts .+ 1
+        outcol2 ./= sum(outcol2)
+        outcol = outcol2
     end
 
     return function()

@@ -403,7 +403,7 @@ groupindices(args...) =
     throw(ArgumentError("groupindices only supports `GroupedDataFrame` as an argument. " *
                         "Additionally it can be used in transformation functions " *
                         "(combine, select, etc.) when processing a `GroupedDataFrame`, " *
-                        "using the syntax `groupindices => target_col_name` or just `groupindices`))
+                        "using the syntax `groupindices => target_col_name` or just `groupindices`"))
 
 """
     proprow
@@ -458,7 +458,7 @@ julia> select(gdf, proprow => :frac)
 proprow(args...) =
     throw(ArgumentError("proprow can only be used in transformation functions " *
                         "(combine, select, etc.) when processing a `GroupedDataFrame`, " *
-                        "using the syntax `proprow => target_col_name` or just `proprow`))
+                        "using the syntax `proprow => target_col_name` or just `proprow`"))
 
 """
     groupcols(gd::GroupedDataFrame)
