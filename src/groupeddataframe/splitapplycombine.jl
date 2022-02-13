@@ -282,14 +282,16 @@ function _combine_process_proprow((cs_i,)::Ref{Any},
     out_col_name = last(last(cs_i))
 
     if getfield(gd, :idx) === nothing
-        lens = zeros(Int, length(gd))
-        @inbounds for gix in gd.groups
-            gix > 0 && (lens[gix] += 1)
+        outcol = zeros(Float64, length(gd)+1)
+        @inbounds @simd for gix in gd.groups
+            outcol[gix+1] += 1
         end
-        outcol = lens / sum(lens)
+        popfirst!(outcol)
+        outcol ./= sum(outcol)
     else
-        lens2 = gd.ends .- gd.starts .+ 1
-        outcol = lens2 / sum(lens2)
+        outcol = similar(gd.ends, Float64)
+        outcol .= gd.ends .- gd.starts .+ 1
+        outcol ./= sum(outcol)
     end
 
     return function()
