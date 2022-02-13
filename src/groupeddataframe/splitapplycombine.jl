@@ -131,7 +131,7 @@ end
 # Find first value matching condition for each group
 # Optimized for situations where a matching value is typically encountered
 # among the first rows for each group
-# rev keyword argument should be only used to signal that we process the last function
+# rev keyword argument should be only used to signal that we process the `last` function
 function fillfirst!(condf, outcol::AbstractVector, incol::AbstractVector,
                     gd::GroupedDataFrame; rev::Bool=false)
     ngroups = gd.ngroups
@@ -541,8 +541,8 @@ function isspecialtransform((cs_i,)::Ref{Any})
     cs_i isa Pair || return false
     first(cs_i) == Int[] || return false
     fun = first(last(cs_i))
-    fun isa typeof(groupindices) && return true
-    fun isa typeof(proprow) && return true
+    fun === groupindices && return true
+    fun === proprow && return true
     return false
 end
 
@@ -630,7 +630,7 @@ function _combine(gd::GroupedDataFrame,
     end
 
     idx_agg = Ref(NOTHING_IDX_AGG)
-    if any(x -> isagg(x, gd)  || isspecialtransform(Ref{Any}(x)), cs_norm)
+    if any(x -> isagg(x, gd) || isspecialtransform(Ref{Any}(x)), cs_norm)
         # Compute indices of representative rows only once for all AbstractAggregates
         # or special transforms
         idx_agg[] = Vector{Int}(undef, length(gd))

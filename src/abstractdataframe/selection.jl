@@ -374,7 +374,8 @@ normalize_selection(idx::AbstractIndex, sel::typeof(eachindex), renamecols::Bool
     normalize_selection(idx, eachindex => :eachindex, renamecols)
 
 normalize_selection(idx::AbstractIndex, sel::Pair{typeof(groupindices), Symbol},
-                    renamecols::Bool) = Int[] => groupindices => last(sel)
+                    renamecols::Bool) =
+    Int[] => groupindices => last(sel)
 normalize_selection(idx::AbstractIndex, sel::Pair{typeof(groupindices), <:AbstractString},
                     renamecols::Bool) =
     normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
@@ -382,7 +383,8 @@ normalize_selection(idx::AbstractIndex, sel::typeof(groupindices), renamecols::B
     normalize_selection(idx, groupindices => :groupindices, renamecols)
 
 normalize_selection(idx::AbstractIndex, sel::Pair{typeof(proprow), Symbol},
-                    renamecols::Bool) = Int[] => proprow => last(sel)
+                    renamecols::Bool) =
+    Int[] => proprow => last(sel)
 normalize_selection(idx::AbstractIndex, sel::Pair{typeof(proprow), <:AbstractString},
                     renamecols::Bool) =
     normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)

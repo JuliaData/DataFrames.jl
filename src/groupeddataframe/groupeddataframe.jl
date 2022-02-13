@@ -356,9 +356,10 @@ any group are attributed `missing` (this can happen if `skipmissing=true` was
 passed when creating `gd`, or if `gd` is a subset from
 a larger [`GroupedDataFrame`](@ref)).
 
-You can also pass `groupindices => [target_col_name]` formula when processing
-`GroupedDataFrame` with transformation functions (`combine`, `select`, ...) in
-the transformation mini-language.
+The `groupindices => target_col_name` syntax (or just `groupindices` without
+specifying the target column name) is also supported in the transformation
+mini-language when passing a `GroupedDataFrame` to transformation functions
+([`combine`](@ref), [`select`](@ref), etc.).
 
 # Examples
 
@@ -401,18 +402,19 @@ groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
 groupindices(args...) =
     throw(ArgumentError("groupindices only supports `GroupedDataFrame` as an argument. " *
                         "Additionally it can be used in transformation functions " *
-                        "(combine, select, ...) mini-language when processing " *
-                        " `GroupedDataFrame` using the syntax " *
-                        "`groupindices => [target_col_name]` to produce group number " *
-                        "for each group"))
+                        "(combine, select, etc.) when processing a `GroupedDataFrame`, " *
+                        "using the syntax `groupindices => target_col_name` or just `groupindices`))
 
 """
     proprow
 
-You can also pass `proprow => [target_col_name]` formula when processing
-`GroupedDataFrame` with transformation functions (`combine`, `select`, ...) in
-the transformation mini-language. As a result the proportion of number of rows
-in each group is returned.
+Compute the proportion of rows which belong to each group, i.e. its number of rows
+divided by the total number of rows in a `GroupedDataFrame`.
+
+This function can only be used in the transformation mini-language
+via the `proprow => target_col_name` syntax (or just `proprow` without
+specifying the target column name), when passing a `GroupedDataFrame`
+to transformation functions ([`combine`](@ref), [`select`](@ref), etc.).
 
 # Examples
 
@@ -454,11 +456,9 @@ julia> select(gdf, proprow => :frac)
 ```
 """
 proprow(args...) =
-    throw(ArgumentError("proprows can only be used in transformation functions " *
-                        "(combine, select, ...) mini-language when processing " *
-                        " `GroupedDataFrame` using the syntax " *
-                        "`groupindices => [target_col_name]` to produce proportion of rows " *
-                        "for each group"))
+    throw(ArgumentError("proprow can only be used in transformation functions " *
+                        "(combine, select, etc.) when processing a `GroupedDataFrame`, " *
+                        "using the syntax `proprow => target_col_name` or just `proprow`))
 
 """
     groupcols(gd::GroupedDataFrame)

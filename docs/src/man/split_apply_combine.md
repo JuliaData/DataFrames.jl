@@ -58,19 +58,14 @@ each subset of the `DataFrame`. This specification can be of the following forms
    except `AsTable` are allowed).
 4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
    must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
-5. special convenience forms:
-   * a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
-     in a group; without `target_cols` the new column is called `:nrow`, otherwise
-     it must be single name (as a `Symbol` or a string).
-   * a `proprow` or `proprow => target_cols` form which efficiently computes the fraction
-     of rows in a group; without `target_cols` the new column is called `:proprow`, otherwise
-     it must be single name (as a `Symbol` or a string).
-   * a `eachindex` or `eachindex => target_cols` form which returns a vector of row
-     numbers per group; without `target_cols` the new column is called `:eachindex`,
-     otherwise it must be single name (as a `Symbol` or a string).
-   * a `groupindices` or `groupindices => target_cols` form which returns a group number;
-     without `target_cols` the new column is called `:eachindex`,
-     otherwise it must be single name (as a `Symbol` or a string).
+5. special convenience forms `function => target_cols` or just `function`
+   for specific `function`s where the input columns are omitted;
+   without `target_cols` the new column has the same name as `function`, otherwise
+   it must be single name (as a `Symbol` or a string). Supported `function`s are:
+   * `nrow` to efficiently compute the number of rows in each group.
+   * `proprow` to efficiently compute the proportion of rows in each group.
+   * `eachindex` to return a vector holding the number of each row within each group.
+   * `groupindices` to return the group number.
 6. vectors or matrices containing transformations specified by the `Pair` syntax
    described in points 2 to 5
 7. a function which will be called with a `SubDataFrame` corresponding to each group
