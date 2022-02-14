@@ -24,7 +24,7 @@ using Test, DataFrames, OffsetArrays
 
     # this is consequence of the fact that OffsetArrays wrap AbstractRange in this case
     # Base.CanonicalIndexError is not available in Julia 1.7 or earlier
-    if isdefined(Base, :CanonicalIndexError)
+    if VERSION >= 1.8-DEV
         @test_throws Base.CanonicalIndexError df[:, :a] = ov1
     else
         @test_throws ErrorException df[:, :a] = ov1
