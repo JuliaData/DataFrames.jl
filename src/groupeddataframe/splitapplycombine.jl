@@ -8,8 +8,6 @@ const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, Abstr
 # we do not use nothing to avoid excessive specialization
 const NOTHING_IDX_AGG = Int[]
 
-isemptyVectorInt(@nospecialize x) = x isa Vector{Int} && isempty(x)
-
 function gen_groups(idx::Vector{Int})
     groups = zeros(Int, length(idx))
     groups[1] = 1
@@ -247,7 +245,7 @@ function _combine_process_groupindices((cs_i,)::Ref{Any},
                                        trans_res::Vector{TransformationResult},
                                        idx_agg::Vector{Int})
     @assert cs_i isa Pair{Vector{Int}, Pair{typeof(groupindices), Symbol}}
-    @assert isemptyVectorInt(first(cs_i))
+    @assert first(cs_i) isa Vector{Int} && isempty(first(cs_i))
     @assert !optional_i
     @assert idx_agg !== NOTHING_IDX_AGG
     out_col_name = last(last(cs_i))
@@ -276,11 +274,13 @@ function _combine_process_proprow((cs_i,)::Ref{Any},
                                   trans_res::Vector{TransformationResult},
                                   idx_agg::Vector{Int})
     @assert cs_i isa Pair{Vector{Int}, Pair{typeof(proprow), Symbol}}
-    @assert isemptyVectorInt(first(cs_i))
+    @assert first(cs_i) isa Vector{Int} && isempty(first(cs_i))
     @assert !optional_i
     @assert idx_agg !== NOTHING_IDX_AGG
     out_col_name = last(last(cs_i))
 
+    # introduce outcol1 and outcol2 as without it outcol is boxed
+    # since it is later used inside the anonymous function we return
     if getfield(gd, :idx) === nothing
         outcol1 = zeros(Float64, length(gd) + 1)
         @inbounds @simd for gix in gd.groups
@@ -545,7 +545,7 @@ end
 # helper function allowing us to identify groupindices and proprow transforms
 function isspecialtransform((cs_i,)::Ref{Any})
     cs_i isa Pair || return false
-    isemptyVectorInt(first(cs_i)) || return false
+    (first(cs_i) isa Vector{Int} && isempty(first(cs_i))) || return false
     fun = first(last(cs_i))
     fun === groupindices && return true
     fun === proprow && return true
@@ -667,21 +667,30 @@ function _combine(gd::GroupedDataFrame,
         optional_i = optional_transform[i]
 
         tasks[i] = @spawn if length(gd) > 0 && isagg(cs_i, gd)
-            _combine_process_agg(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg[])
+            _combine_process_agg(Ref{Any}(cs_i), optional_i, parentdf, gd,
+                                 seen_cols, trans_res, idx_agg[])
         elseif keeprows && cs_i isa Pair && first(last(cs_i)) === identity &&
                !(first(cs_i) isa AsTable) && (last(last(cs_i)) isa Symbol)
-            # this is a fast path used when we pass a column or rename a column in select or transform
-            _combine_process_noop(cs_i, optional_i, parentdf, seen_cols, trans_res, idx_keeprows, copycols)
+            # this is a fast path used when
+            # we pass a column or rename a column in select or transform
+            _combine_process_noop(cs_i, optional_i, parentdf,
+                                  seen_cols, trans_res, idx_keeprows, copycols)
         elseif cs_i isa Base.Callable
-            _combine_process_callable(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+            _combine_process_callable(Ref{Any}(cs_i), optional_i, parentdf, gd,
+                                      seen_cols, trans_res, idx_agg)
         else
             @assert cs_i isa Pair
-            if isemptyVectorInt(first(cs_i)) && first(last(cs_i)) === groupindices
-                _combine_process_groupindices(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg[])
-            elseif isemptyVectorInt(first(cs_i)) && first(last(cs_i)) === proprow
-                _combine_process_proprow(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg[])
+            if first(cs_i) isa Vector{Int} && isempty(first(cs_i)) &&
+               first(last(cs_i)) === groupindices
+                _combine_process_groupindices(Ref{Any}(cs_i), optional_i, parentdf, gd,
+                                              seen_cols, trans_res, idx_agg[])
+            elseif first(cs_i) isa Vector{Int} && isempty(first(cs_i)) &&
+                   first(last(cs_i)) === proprow
+                _combine_process_proprow(Ref{Any}(cs_i), optional_i, parentdf, gd,
+                                         seen_cols, trans_res, idx_agg[])
             else
-                _combine_process_pair(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+                _combine_process_pair(Ref{Any}(cs_i), optional_i, parentdf, gd,
+                                      seen_cols, trans_res, idx_agg)
             end
         end
     end
