@@ -637,14 +637,37 @@ end
     @test permutedims(df4[!, [:e]], 1) == DataFrame(e=String[], x=[], y=[])
     # Can't index float Column
     @test_throws ArgumentError permutedims(df4[!, [:a, :b, :c]], 1)
-    @test_throws ArgumentError permutedims(DataFrame(a=Float64[], b=Float64[]), 1)
+    # but can if it is empty
+    @test permutedims(DataFrame(a=Float64[], b=Float64[]), 1) == DataFrame(a="b")
     # Can't index columns that allow for missing
     @test_throws ArgumentError permutedims(df4[!, [:g, :a, :b, :c]], 1)
-    @test_throws ArgumentError permutedims(df4[!, [:h, :a, :b]], 1)
+    # but can if they do not contain missing
+    @test permutedims(df4[!, [:h, :a, :b]], 1) == permutedims(df4[!, [:e, :a, :b]], 1, :h)
     # Can't permute empty `df` ...
     @test_throws BoundsError permutedims(DataFrame(), 1)
     # ... but can permute zero-row df
     @test permutedims(DataFrame(a=String[], b=Float64[]), 1) == DataFrame(a=["b"])
+
+    # tests of strict handling
+    df = DataFrame(a=["x", "y"], b=[1.0, 2.0], c=[3, 4], d=[true, false])
+    ref = permutedims(df, 1)
+    # allowed as contents is strings
+    df.a = collect(Any, df.a)
+    @test permutedims(df, 1) == ref
+    # this is allowed as conversion from categorical to string is allowed
+    df.a = categorical(df.a)
+    @test permutedims(df, 1) == ref
+    # allowed as contents is symbols
+    df.a = Any[:x, :y]
+    @test permutedims(df, 1) == ref
+    # not allowed mixing of strings and symbols
+    df.a = Any[:x, "y"]
+    @test_throws ArgumentError permutedims(df, 1)
+    # not allowed values that cannot be converted to string
+    df.a = Any['x', 'y']
+    @test_throws ArgumentError permutedims(df, 1)
+    # but allowed with strict=false
+    @test permutedims(df, 1, strict=false) == ref
 end
 
 @testset "stack view=true additional tests" begin
