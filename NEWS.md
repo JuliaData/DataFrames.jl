@@ -2,7 +2,7 @@
 
 ## New functionalities
 
-* `unstack` now allows passing a function in `allowduplicates` keyword argument;
+* `unstack` now allows passing a function in `valuestransform` keyword argument;
   this allows for a convenient creation of two dimensional pivot tables
   ([#2998](https://github.com/JuliaData/DataFrames.jl/issues/2998))
 

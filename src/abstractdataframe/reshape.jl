@@ -199,15 +199,15 @@ end
 """
     unstack(df::AbstractDataFrame, rowkeys, colkey, value;
             renamecols::Function=identity, allowmissing::Bool=false,
-            allowduplicates::Bool=false, operation=nothing,
+            allowduplicates::Bool=false, valuestransform=nothing,
             fill=missing)
     unstack(df::AbstractDataFrame, colkey, value;
             renamecols::Function=identity, allowmissing::Bool=false,
-            allowduplicates::Bool=false, operation=nothing,
+            allowduplicates::Bool=false, valuestransform=nothing,
             fill=missing)
     unstack(df::AbstractDataFrame;
             renamecols::Function=identity, allowmissing::Bool=false,
-            allowduplicates::Bool=false, operation=nothing,
+            allowduplicates::Bool=false, valuestransform=nothing,
             fill=missing)
 
 Unstack data frame `df`, i.e. convert it from long to wide format.
@@ -222,7 +222,7 @@ Row and column keys will be ordered in the order of their first appearance.
   columns all rows are assumed to have the same key.
 - `colkey` : the column ($COLUMNINDEX_STR) holding the column names in wide
   format, defaults to `:variable`
-- `value` : the value column ($COLUMNINDEX_STR), defaults to `:value`
+- `values` : the column storing values ($COLUMNINDEX_STR), defaults to `:value`
 
 # Keyword arguments
 
@@ -236,8 +236,8 @@ Row and column keys will be ordered in the order of their first appearance.
 - `allowduplicates`: if `false` (the default) then an error an error will be
   thrown if combination of `rowkeys` and `colkey` contains duplicate entries; if
   `true` then the last encountered `value` will be retained;
-  this keyword argument is ignored if `operation` keyword argument is passed.
-- `operation`: if passed then `allowduplicates` is ignored and instead
+  this keyword argument is ignored if `valuestransform` keyword argument is passed.
+- `valuestransform`: if passed then `allowduplicates` is ignored and instead
    the passed function will be called on a view vector containing all elements
    for each non-missing combination of `rowkeys` and `colkey`.
 - `fill`: missing row/column combinations are filled with this value. The
@@ -378,14 +378,14 @@ julia> df = DataFrame(cols=["a", "a", "b"], values=[1, 2, 4])
    2 │ a            2
    3 │ b            4
 
-julia> unstack(df, :cols, :values, operation=copy)
+julia> unstack(df, :cols, :values, valuestransform=copy)
 1×2 DataFrame
  Row │ a        b
      │ Array…?  Array…?
 ─────┼──────────────────
    1 │ [1, 2]   [4]
 
-julia> unstack(df, :cols, :values, operation=sum)
+julia> unstack(df, :cols, :values, valuestransform=sum)
 1×2 DataFrame
  Row │ a       b
      │ Int64?  Int64?
@@ -394,25 +394,25 @@ julia> unstack(df, :cols, :values, operation=sum)
 ```
 """
 function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
-                 value::ColumnIndex; renamecols::Function=identity,
+                 values::ColumnIndex; renamecols::Function=identity,
                  allowmissing::Bool=false, allowduplicates::Bool=false,
-                 operation=nothing, fill=missing)
-    if !isnothing(operation)
+                 valuestransform=nothing, fill=missing)
+    if !isnothing(valuestransform)
         groupcols = vcat(index(df)[rowkeys], index(df)[colkey])
         @assert groupcols isa AbstractVector{Int}
         gdf = groupby(df, groupcols)
-        if check_aggregate(operation, df[!, value]) isa AbstractAggregate
-            # if operation function is AbstractAggregate
+        if check_aggregate(valuestransform, df[!, values]) isa AbstractAggregate
+            # if valuestransform function is AbstractAggregate
             # then we are sure it will return a scalar number so we can
             # leave it as is and be sure we use fast path in combine
-            agg_fun = operation
+            agg_fun = valuestransform
         else
-            # in general operation function could return e.g. a vector,
+            # in general valuestransform function could return e.g. a vector,
             # which would get expanded to multiple rows so we protect it with
             # Ref that will get unwrapped by combine
-            agg_fun = Ref∘operation
+            agg_fun = Ref∘valuestransform
         end
-        df_op = combine(gdf, value => agg_fun, renamecols=false)
+        df_op = combine(gdf, values => agg_fun, renamecols=false)
         group_rows = find_group_row(gdf)
         if !issorted(group_rows)
             df_op = df_op[sortperm(group_rows), :]
@@ -428,27 +428,27 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
     @assert rowkey_ints isa AbstractVector{Int}
     g_rowkey = groupby(df_op, rowkey_ints)
     g_colkey = groupby(df_op, colkey)
-    valuecol = df_op[!, value]
+    valuecol = df_op[!, values]
     return _unstack(df_op, rowkey_ints, index(df_op)[colkey], g_colkey,
                     valuecol, g_rowkey, renamecols, allowmissing, allowduplicates, fill)
 end
 
-function unstack(df::AbstractDataFrame, colkey::ColumnIndex, value::ColumnIndex;
+function unstack(df::AbstractDataFrame, colkey::ColumnIndex, values::ColumnIndex;
                  renamecols::Function=identity,
                  allowmissing::Bool=false, allowduplicates::Bool=false,
-                 operation=nothing, fill=missing)
+                 valuestransform=nothing, fill=missing)
     colkey_int = index(df)[colkey]
-    value_int = index(df)[value]
+    value_int = index(df)[values]
     return unstack(df, Not(colkey_int, value_int), colkey_int, value_int,
             renamecols=renamecols, allowmissing=allowmissing,
-            allowduplicates=allowduplicates, operation=operation, fill=fill)
+            allowduplicates=allowduplicates, valuestransform=valuestransform, fill=fill)
 end
 
 unstack(df::AbstractDataFrame; renamecols::Function=identity,
         allowmissing::Bool=false, allowduplicates::Bool=false,
-        operation=nothing, fill=missing) =
+        valuestransform=nothing, fill=missing) =
     unstack(df, :variable, :value, renamecols=renamecols, allowmissing=allowmissing,
-            allowduplicates=allowduplicates, operation=operation, fill=fill)
+            allowduplicates=allowduplicates, valuestransform=valuestransform, fill=fill)
 
 # we take into account the fact that idx, starts and ends are computed lazily
 # so we rather directly reference the gdf.groups
