@@ -1,4 +1,4 @@
-# DataFrames.jl v1.3 Release Notes
+# DataFrames.jl v1.4 Release Notes
 
 ## New functionalities
 
