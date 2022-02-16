@@ -1,3 +1,12 @@
+# DataFrames.jl v1.4 Release Notes
+
+## New functionalities
+
+* `permutedims` now supports a `strict` keyword argument that allows
+  for a more flexible handling of values stored in a column that will
+  become a new header
+  ([#3004](https://github.com/JuliaData/DataFrames.jl/issues/3004))
+
 # DataFrames.jl v1.3.2 Patch Release Notes
 
 ## Bug fixes
