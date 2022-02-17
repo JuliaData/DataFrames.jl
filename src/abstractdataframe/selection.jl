@@ -592,8 +592,9 @@ function _gen_colnames(@nospecialize(res), newname::Union{AbstractVector{Symbol}
 
     if newname !== AsTable && newname !== nothing
         if length(colnames) != length(newname)
-            throw(ArgumentError("Number of returned columns does not match the " *
-                                "length of requested output"))
+            throw(ArgumentError("Number of returned columns is $(length(colnames)) " *
+                                "and it does not match the length of requested " *
+                                "output which is $(length(newname))"))
         end
         colnames = newname
     end
