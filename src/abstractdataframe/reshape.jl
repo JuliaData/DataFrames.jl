@@ -656,7 +656,7 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
         new_col_names = string.(src_col_names)
     else
         try
-            new_col_names = collect(AbstractString, src_col_names)
+            new_col_names = collect(String, src_col_names)
         catch e
             if e isa MethodError && e.f === convert
                 throw(ArgumentError("all elements of src_namescol must support " *
