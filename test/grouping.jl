@@ -1310,7 +1310,15 @@ end
 
     # first, last, lastindex
     @test first(gd) == gd[1]
+    @test first(gd, 1) == gd[1:1]
+    @test first(gd, 2) == gd[1:2]
+    @test first(gd, 0) == gd[1:0]
+    @test_throws ArgumentError first(gd, -1)
     @test last(gd) == gd[4]
+    @test last(gd, 1) == gd[4:4]
+    @test last(gd, 2) == gd[3:4]
+    @test last(gd, 0) == gd[1:0]
+    @test_throws ArgumentError last(gd, -1)
     @test lastindex(gd) == 4
     @test gd[end] == gd[4]
 
