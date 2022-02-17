@@ -58,9 +58,14 @@ each subset of the `DataFrame`. This specification can be of the following forms
    except `AsTable` are allowed).
 4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
    must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
-5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
-   in a group; without `target_cols` the new column is called `:nrow`, otherwise
-   it must be single name (as a `Symbol` or a string).
+5. special convenience forms `function => target_cols` or just `function`
+   for specific `function`s where the input columns are omitted;
+   without `target_cols` the new column has the same name as `function`, otherwise
+   it must be single name (as a `Symbol` or a string). Supported `function`s are:
+   * `nrow` to efficiently compute the number of rows in each group.
+   * `proprow` to efficiently compute the proportion of rows in each group.
+   * `eachindex` to return a vector holding the number of each row within each group.
+   * `groupindices` to return the group number.
 6. vectors or matrices containing transformations specified by the `Pair` syntax
    described in points 2 to 5
 7. a function which will be called with a `SubDataFrame` corresponding to each group
@@ -255,14 +260,14 @@ julia> combine(gdf, :PetalLength => mean)
    2 │ Iris-versicolor             4.26
    3 │ Iris-virginica              5.552
 
-julia> combine(gdf, nrow)
-3×2 DataFrame
- Row │ Species          nrow
-     │ String15         Int64
-─────┼────────────────────────
-   1 │ Iris-setosa         50
-   2 │ Iris-versicolor     50
-   3 │ Iris-virginica      50
+julia> combine(gdf, nrow, proprow, groupindices)
+3×4 DataFrame
+ Row │ Species          nrow   proprow   groupindices
+     │ String15         Int64  Float64   Int64
+─────┼────────────────────────────────────────────────
+   1 │ Iris-setosa         50  0.333333             1
+   2 │ Iris-versicolor     50  0.333333             2
+   3 │ Iris-virginica      50  0.333333             3
 
 julia> combine(gdf, nrow, :PetalLength => mean => :mean)
 3×3 DataFrame
@@ -320,6 +325,23 @@ julia> combine(gdf, :PetalLength => (x -> [extrema(x)]) => [:min, :max])
    1 │ Iris-setosa          1.0      1.9
    2 │ Iris-versicolor      3.0      5.1
    3 │ Iris-virginica       4.5      6.9
+```
+
+To get row number for each observation within each group use the `eachindex` function:
+```
+julia> combine(gdf, eachindex)
+150×2 DataFrame
+ Row │ Species         eachindex
+     │ String15        Int64
+─────┼───────────────────────────
+   1 │ Iris-setosa             1
+   2 │ Iris-setosa             2
+   3 │ Iris-setosa             3
+  ⋮  │       ⋮             ⋮
+ 148 │ Iris-virginica         48
+ 149 │ Iris-virginica         49
+ 150 │ Iris-virginica         50
+                 144 rows omitted
 ```
 
 Contrary to `combine`, the `select` and `transform` functions always return

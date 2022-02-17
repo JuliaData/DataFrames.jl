@@ -9,6 +9,9 @@
 * `unstack` now allows passing a function in `valuestransform` keyword argument;
   this allows for a convenient creation of two dimensional pivot tables
   ([#2998](https://github.com/JuliaData/DataFrames.jl/issues/2998))
+* Add special syntax for `eachindex`, `groupindices`, and `proprow`
+  to transformation mini-language
+  ([#3001](https://github.com/JuliaData/DataFrames.jl/pull/3001)).
 
 # DataFrames.jl v1.3.2 Patch Release Notes
 

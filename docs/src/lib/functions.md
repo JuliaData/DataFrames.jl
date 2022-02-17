@@ -124,6 +124,7 @@ groupcols
 groupindices
 keys
 parent
+proprow
 valuecols
 ```
 

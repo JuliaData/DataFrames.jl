@@ -355,8 +355,110 @@ Rows appearing in group `gd[i]` are attributed index `i`. Rows not present in
 any group are attributed `missing` (this can happen if `skipmissing=true` was
 passed when creating `gd`, or if `gd` is a subset from
 a larger [`GroupedDataFrame`](@ref)).
+
+The `groupindices => target_col_name` syntax (or just `groupindices` without
+specifying the target column name) is also supported in the transformation
+mini-language when passing a `GroupedDataFrame` to transformation functions
+([`combine`](@ref), [`select`](@ref), etc.).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(id=["a", "c", "b", "b", "a"])
+5×1 DataFrame
+ Row │ id
+     │ String
+─────┼────────
+   1 │ a
+   2 │ c
+   3 │ b
+   4 │ b
+   5 │ a
+
+julia> gdf = groupby(df, :id);
+
+julia> combine(gdf, groupindices)
+3×2 DataFrame
+ Row │ id      groupindices
+     │ String  Int64
+─────┼──────────────────────
+   1 │ a                  1
+   2 │ c                  2
+   3 │ b                  3
+
+julia> select(gdf, groupindices => :gid)
+5×2 DataFrame
+ Row │ id      gid
+     │ String  Int64
+─────┼───────────────
+   1 │ a           1
+   2 │ c           2
+   3 │ b           3
+   4 │ b           3
+   5 │ a           1
+```
 """
 groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
+groupindices(args...) =
+    throw(ArgumentError("groupindices only supports `GroupedDataFrame` as an argument. " *
+                        "Additionally it can be used in transformation functions " *
+                        "(combine, select, etc.) when processing a `GroupedDataFrame`, " *
+                        "using the syntax `groupindices => target_col_name` or just `groupindices`"))
+
+"""
+    proprow
+
+Compute the proportion of rows which belong to each group, i.e. its number of rows
+divided by the total number of rows in a `GroupedDataFrame`.
+
+This function can only be used in the transformation mini-language
+via the `proprow => target_col_name` syntax (or just `proprow` without
+specifying the target column name), when passing a `GroupedDataFrame`
+to transformation functions ([`combine`](@ref), [`select`](@ref), etc.).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(id=["a", "c", "b", "b", "a", "b"])
+6×1 DataFrame
+ Row │ id
+     │ String
+─────┼────────
+   1 │ a
+   2 │ c
+   3 │ b
+   4 │ b
+   5 │ a
+   6 │ b
+
+julia> gdf = groupby(df, :id);
+
+julia> combine(gdf, proprow)
+3×2 DataFrame
+ Row │ id      proprow
+     │ String  Float64
+─────┼──────────────────
+   1 │ a       0.333333
+   2 │ c       0.166667
+   3 │ b       0.5
+
+julia> select(gdf, proprow => :frac)
+6×2 DataFrame
+ Row │ id      frac
+     │ String  Float64
+─────┼──────────────────
+   1 │ a       0.333333
+   2 │ c       0.166667
+   3 │ b       0.5
+   4 │ b       0.5
+   5 │ a       0.333333
+   6 │ b       0.5
+```
+"""
+proprow(args...) =
+    throw(ArgumentError("proprow can only be used in transformation functions " *
+                        "(combine, select, etc.) when processing a `GroupedDataFrame`, " *
+                        "using the syntax `proprow => target_col_name` or just `proprow`"))
 
 """
     groupcols(gd::GroupedDataFrame)
