@@ -197,12 +197,18 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
 end
 
 """
-    unstack(df::AbstractDataFrame, rowkeys, colkey, value; renamecols::Function=identity,
-            allowmissing::Bool=false, allowduplicates::Bool=false, fill=missing)
-    unstack(df::AbstractDataFrame, colkey, value; renamecols::Function=identity,
-            allowmissing::Bool=false, allowduplicates::Bool=false, fill=missing)
-    unstack(df::AbstractDataFrame; renamecols::Function=identity,
-            allowmissing::Bool=false, allowduplicates::Bool=false, fill=missing)
+    unstack(df::AbstractDataFrame, rowkeys, colkey, value;
+            renamecols::Function=identity, allowmissing::Bool=false,
+            allowduplicates::Bool=false, valuestransform=nothing,
+            fill=missing)
+    unstack(df::AbstractDataFrame, colkey, value;
+            renamecols::Function=identity, allowmissing::Bool=false,
+            allowduplicates::Bool=false, valuestransform=nothing,
+            fill=missing)
+    unstack(df::AbstractDataFrame;
+            renamecols::Function=identity, allowmissing::Bool=false,
+            allowduplicates::Bool=false, valuestransform=nothing,
+            fill=missing)
 
 Unstack data frame `df`, i.e. convert it from long to wide format.
 
@@ -210,29 +216,33 @@ Row and column keys will be ordered in the order of their first appearance.
 
 # Positional arguments
 - `df` : the AbstractDataFrame to be unstacked
-- `rowkeys` : the columns with a unique key for each row, if not given,
-  find a key by grouping on anything not a `colkey` or `value`.
-  Can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-  If `rowkeys` contains no columns all rows are assumed to have the same key.
-- `colkey` : the column ($COLUMNINDEX_STR) holding the column names in wide format,
-  defaults to `:variable`
-- `value` : the value column ($COLUMNINDEX_STR), defaults to `:value`
+- `rowkeys` : the columns with a unique key for each row, if not given, find a
+  key by grouping on anything not a `colkey` or `value`. Can be any column
+  selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR). If `rowkeys` contains no
+  columns all rows are assumed to have the same key.
+- `colkey` : the column ($COLUMNINDEX_STR) holding the column names in wide
+  format, defaults to `:variable`
+- `values` : the column storing values ($COLUMNINDEX_STR), defaults to `:value`
 
 # Keyword arguments
 
-- `renamecols`: a function called on each unique value in `colkey`; it must return
-  the name of the column to be created (typically as a string or a `Symbol`).
-  Duplicates in resulting names when converted to `Symbol` are not allowed.
-  By default no transformation is performed.
-- `allowmissing`: if `false` (the default) then an error will be thrown if `colkey`
-  contains `missing` values; if `true` then a column referring to `missing` value
-  will be created.
-- `allowduplicates`: if `false` (the default) then an error an error will be thrown
-  if combination of `rowkeys` and `colkey` contains duplicate entries; if `true`
-  then  then the last encountered `value` will be retained.
-- `fill`: missing row/column combinations are filled with this value. The default
-  is `missing`. If the `value` column is a `CategoricalVector` and `fill`
-  is not `missing` then in order to keep unstacked value columns also
+- `renamecols`: a function called on each unique value in `colkey`; it must
+  return the name of the column to be created (typically as a string or a
+  `Symbol`). Duplicates in resulting names when converted to `Symbol` are not
+  allowed. By default no transformation is performed.
+- `allowmissing`: if `false` (the default) then an error will be thrown if
+  `colkey` contains `missing` values; if `true` then a column referring to
+  `missing` value will be created.
+- `allowduplicates`: if `false` (the default) then an error an error will be
+  thrown if combination of `rowkeys` and `colkey` contains duplicate entries; if
+  `true` then the last encountered `value` will be retained;
+  this keyword argument is ignored if `valuestransform` keyword argument is passed.
+- `valuestransform`: if passed then `allowduplicates` is ignored and instead
+   the passed function will be called on a vector view containing all elements
+   for each combination of `rowkeys` and `colkey` present in the data.
+- `fill`: missing row/column combinations are filled with this value. The
+  default is `missing`. If the `value` column is a `CategoricalVector` and
+  `fill` is not `missing` then in order to keep unstacked value columns also
   `CategoricalVector` the `fill` must be passed as `CategoricalValue`
 
 # Examples
@@ -336,7 +346,10 @@ julia> unstack(long, :id, :variable, :value, renamecols=x->Symbol(:_, x))
    4 │     4       2.0       1.0       2.0
    5 │     5       2.0       1.0       3.0
    6 │     6       2.0       1.0       3.0
+```
+Note that there are some differences between the widened results above.
 
+```jldoctest
 julia> df = DataFrame(id=["1", "1", "2"],
                       variable=["Var1", "Var2", "Var1"],
                       value=[1, 2, 3])
@@ -355,35 +368,87 @@ julia> unstack(df, :variable, :value, fill=0)
 ─────┼──────────────────────
    1 │ 1           1      2
    2 │ 2           3      0
+
+julia> df = DataFrame(cols=["a", "a", "b"], values=[1, 2, 4])
+3×2 DataFrame
+ Row │ cols    values
+     │ String  Int64
+─────┼────────────────
+   1 │ a            1
+   2 │ a            2
+   3 │ b            4
+
+julia> unstack(df, :cols, :values, valuestransform=copy)
+1×2 DataFrame
+ Row │ a        b
+     │ Array…?  Array…?
+─────┼──────────────────
+   1 │ [1, 2]   [4]
+
+julia> unstack(df, :cols, :values, valuestransform=sum)
+1×2 DataFrame
+ Row │ a       b
+     │ Int64?  Int64?
+─────┼────────────────
+   1 │      3       4
 ```
-Note that there are some differences between the widened results above.
 """
 function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
-                 value::ColumnIndex; renamecols::Function=identity,
-                 allowmissing::Bool=false, allowduplicates::Bool=false, fill=missing)
-    rowkey_ints = vcat(index(df)[rowkeys])
+                 values::ColumnIndex; renamecols::Function=identity,
+                 allowmissing::Bool=false, allowduplicates::Bool=false,
+                 valuestransform=nothing, fill=missing)
+    if !isnothing(valuestransform)
+        groupcols = vcat(index(df)[rowkeys], index(df)[colkey])
+        @assert groupcols isa AbstractVector{Int}
+        gdf = groupby(df, groupcols)
+        if check_aggregate(valuestransform, df[!, values]) isa AbstractAggregate
+            # if valuestransform function is AbstractAggregate
+            # then we are sure it will return a scalar number so we can
+            # leave it as is and be sure we use fast path in combine
+            agg_fun = valuestransform
+        else
+            # in general valuestransform function could return e.g. a vector,
+            # which would get expanded to multiple rows so we protect it with
+            # Ref that will get unwrapped by combine
+            agg_fun = Ref∘valuestransform
+        end
+        df_op = combine(gdf, values => agg_fun, renamecols=false)
+        group_rows = find_group_row(gdf)
+        if !issorted(group_rows)
+            df_op = df_op[sortperm(group_rows), :]
+        end
+        # set allowduplicates to true as we should not have any duplicates now
+        # and allowduplicates=true is a bit faster
+        allowduplicates = true
+    else
+        df_op = df
+    end
+    # use df_op below to make sure it is type stable
+    rowkey_ints = vcat(index(df_op)[rowkeys])
     @assert rowkey_ints isa AbstractVector{Int}
-    g_rowkey = groupby(df, rowkey_ints)
-    g_colkey = groupby(df, colkey)
-    valuecol = df[!, value]
-    return _unstack(df, rowkey_ints, index(df)[colkey], g_colkey,
+    g_rowkey = groupby(df_op, rowkey_ints)
+    g_colkey = groupby(df_op, colkey)
+    valuecol = df_op[!, values]
+    return _unstack(df_op, rowkey_ints, index(df_op)[colkey], g_colkey,
                     valuecol, g_rowkey, renamecols, allowmissing, allowduplicates, fill)
 end
 
-function unstack(df::AbstractDataFrame, colkey::ColumnIndex, value::ColumnIndex;
+function unstack(df::AbstractDataFrame, colkey::ColumnIndex, values::ColumnIndex;
                  renamecols::Function=identity,
-                 allowmissing::Bool=false, allowduplicates::Bool=false, fill=missing)
+                 allowmissing::Bool=false, allowduplicates::Bool=false,
+                 valuestransform=nothing, fill=missing)
     colkey_int = index(df)[colkey]
-    value_int = index(df)[value]
+    value_int = index(df)[values]
     return unstack(df, Not(colkey_int, value_int), colkey_int, value_int,
             renamecols=renamecols, allowmissing=allowmissing,
-            allowduplicates=allowduplicates, fill=fill)
+            allowduplicates=allowduplicates, valuestransform=valuestransform, fill=fill)
 end
 
 unstack(df::AbstractDataFrame; renamecols::Function=identity,
-        allowmissing::Bool=false, allowduplicates::Bool=false, fill=missing) =
+        allowmissing::Bool=false, allowduplicates::Bool=false,
+        valuestransform=nothing, fill=missing) =
     unstack(df, :variable, :value, renamecols=renamecols, allowmissing=allowmissing,
-            allowduplicates=allowduplicates, fill=fill)
+            allowduplicates=allowduplicates, valuestransform=valuestransform, fill=fill)
 
 # we take into account the fact that idx, starts and ends are computed lazily
 # so we rather directly reference the gdf.groups
@@ -410,8 +475,8 @@ end
 function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
                   colkey::Int, g_colkey::GroupedDataFrame,
                   valuecol::AbstractVector, g_rowkey::GroupedDataFrame,
-                  renamecols::Function,
-                  allowmissing::Bool, allowduplicates::Bool, fill)
+                  renamecols::Function, allowmissing::Bool,
+                  allowduplicates::Bool, fill)
     rowref = g_rowkey.groups
     row_group_row_idxs = find_group_row(g_rowkey)
     Nrow = length(g_rowkey)
@@ -425,22 +490,31 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
         throw(ArgumentError("Missing value in variable :$(_names(df)[colkey]). " *
                             "Pass `allowmissing=true` to skip missings."))
     end
-    unstacked_val = [fill!(similar(valuecol,
-                                   promote_type(eltype(valuecol), typeof(fill)),
-                                   Nrow),
-                           fill) for _ in 1:Ncol]
-
-    mask_filled = falses(Nrow, Ncol)
-
     @assert length(rowref) == length(colref) == length(valuecol)
-    for (k, (row_id, col_id, val)) in enumerate(zip(rowref, colref, valuecol))
-        if !allowduplicates && mask_filled[row_id, col_id]
-            throw(ArgumentError("Duplicate entries in unstack at row $k for key "*
-                                "$(tuple((df[k, s] for s in rowkeys)...)) and variable $(colref_map[col_id]). " *
-                                "Pass allowduplicates=true to allow them."))
+
+    unstacked_val = [fill!(similar(valuecol,
+                           promote_type(eltype(valuecol), typeof(fill)),
+                           Nrow),
+                     fill) for _ in 1:Ncol]
+
+    # use a separate path for allowduplicates to reduce memory use and increase speed
+    if allowduplicates
+        for (k, (row_id, col_id, val)) in enumerate(zip(rowref, colref, valuecol))
+            unstacked_val[col_id][row_id] = val
         end
-        unstacked_val[col_id][row_id] = val
-        mask_filled[row_id, col_id] = true
+    else
+        mask_filled = falses(Nrow, Ncol)
+        for (k, (row_id, col_id, val)) in enumerate(zip(rowref, colref, valuecol))
+            if mask_filled[row_id, col_id]
+                bad_key = tuple((df[k, s] for s in rowkeys)...)
+                bad_var = colref_map[col_id]
+                throw(ArgumentError("Duplicate entries in unstack at row $k for key "*
+                                    "$bad_key and variable $bad_var. " *
+                                    "Pass allowduplicates=true to allow them."))
+            end
+            unstacked_val[col_id][row_id] = val
+            mask_filled[row_id, col_id] = true
+        end
     end
 
     # note that Symbol(renamecols(x)) must produce unique column names
@@ -458,7 +532,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
     res_df = hcat(df1, df2, copycols=false)
 
     @assert length(row_group_row_idxs) == nrow(res_df)
-    # avoid reordering when col_group_row_idxs was already ordered
+    # avoid reordering when row_group_row_idxs was already ordered
     if !issorted(row_group_row_idxs)
         res_df = res_df[sortperm(row_group_row_idxs), :]
     end
