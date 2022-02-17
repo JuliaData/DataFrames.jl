@@ -646,7 +646,7 @@ Base.transpose(::AbstractDataFrame, args...; kwargs...) =
 """
     permutedims(df::AbstractDataFrame, src_namescol::Union{Int, Symbol, AbstractString},
                 [dest_namescol::Union{Symbol, AbstractString}];
-                makeunique::Bool=false)
+                makeunique::Bool=false, strict::Bool=true)
 
 Turn `df` on its side such that rows become columns
 and values in the column indexed by `src_namescol` become the names of new columns.
@@ -656,12 +656,16 @@ with name specified by `dest_namescol`.
 # Arguments
 - `df` : the `AbstractDataFrame`
 - `src_namescol` : the column that will become the new header.
-  This column's element type must be `AbstractString` or `Symbol`.
 - `dest_namescol` : the name of the first column in the returned `DataFrame`.
   Defaults to the same name as `src_namescol`.
 - `makeunique` : if `false` (the default), an error will be raised
   if duplicate names are found; if `true`, duplicate names will be suffixed
   with `_i` (`i` starting at 1 for the first duplicate).
+- `strict` : if `true` (the default), an error will be raised if the values
+  contained in the `src_namescol` are not all `Symbol` or all `AbstractString`,
+  or can all be converted to `String` using `convert`. If `false`
+  then any values are accepted and the will be changed to strings using
+  the `string` function.
 
 Note: The element types of columns in resulting `DataFrame`
 (other than the first column, which always has element type `String`)
@@ -711,34 +715,53 @@ julia> permutedims(df2, 1, "different_name")
 """
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
                           dest_namescol::Union{Symbol, AbstractString};
-                          makeunique::Bool=false)
+                          makeunique::Bool=false, strict::Bool=true)
 
     if src_namescol isa Integer
         1 <= src_namescol <= ncol(df) || throw(BoundsError(index(df), src_namescol))
     end
-    eltype(df[!, src_namescol]) <: SymbolOrString ||
-        throw(ArgumentError("src_namescol must have eltype `Symbol` or `<:AbstractString`"))
+    src_col_names = df[!, src_namescol]
+    local new_col_names
+    if eltype(src_col_names) <: SymbolOrString
+        new_col_names = src_col_names
+    elseif all(x -> x isa Symbol, src_col_names)
+        new_col_names = collect(Symbol, src_col_names)
+    elseif !strict
+        new_col_names = string.(src_col_names)
+    else
+        try
+            new_col_names = collect(String, src_col_names)
+        catch e
+            if e isa MethodError && e.f === convert
+                throw(ArgumentError("all elements of src_namescol must support " *
+                                    "conversion to String"))
+            else
+                rethrow(e)
+            end
+        end
+    end
 
     df_notsrc = df[!, Not(src_namescol)]
     df_permuted = DataFrame(dest_namescol => names(df_notsrc))
 
     if ncol(df_notsrc) == 0
-        df_tmp = DataFrame(AbstractVector[[] for _ in 1:nrow(df)], df[!, src_namescol],
+        df_tmp = DataFrame(AbstractVector[[] for _ in 1:nrow(df)], new_col_names,
                            makeunique=makeunique, copycols=false)
     else
         m = permutedims(Matrix(df_notsrc))
-        df_tmp = rename!(DataFrame(Tables.table(m)), df[!, src_namescol], makeunique=makeunique)
+        df_tmp = rename!(DataFrame(Tables.table(m)), new_col_names, makeunique=makeunique)
     end
     return hcat!(df_permuted, df_tmp, makeunique=makeunique, copycols=false)
 end
 
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
-                          makeunique::Bool=false)
+                          makeunique::Bool=false, strict::Bool=true)
     if src_namescol isa Integer
         1 <= src_namescol <= ncol(df) || throw(BoundsError(index(df), src_namescol))
         dest_namescol = _names(df)[src_namescol]
     else
         dest_namescol = src_namescol
     end
-    return permutedims(df, src_namescol, dest_namescol; makeunique=makeunique)
+    return permutedims(df, src_namescol, dest_namescol;
+                       makeunique=makeunique, strict=strict)
 end

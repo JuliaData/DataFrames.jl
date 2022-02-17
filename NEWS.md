@@ -2,6 +2,10 @@
 
 ## New functionalities
 
+* `permutedims` now supports a `strict` keyword argument that allows
+  for a more flexible handling of values stored in a column that will
+  become a new header
+  ([#3004](https://github.com/JuliaData/DataFrames.jl/issues/3004))
 * `unstack` now allows passing a function in `valuestransform` keyword argument;
   this allows for a convenient creation of two dimensional pivot tables
   ([#2998](https://github.com/JuliaData/DataFrames.jl/issues/2998))
