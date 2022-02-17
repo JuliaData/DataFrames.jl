@@ -660,7 +660,7 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
         catch e
             if e isa MethodError && e.f === convert
                 throw(ArgumentError("all elements of src_namescol must support " *
-                                    "conversion to AbstractString"))
+                                    "conversion to String"))
             else
                 rethrow(e)
             end
