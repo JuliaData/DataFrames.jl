@@ -769,6 +769,9 @@ end
     @test unstack(df, :rowid, :colid, :values, valuestransform=sum, fill=0) ==
           DataFrame("rowid" => 1:2, "1" => [3, 0],
                     "2" => [7, 0], "3" => [0, 11])
+    @test unstack(df, :rowid, :colid, :values, valuestransform=sum, fill="X") ==
+          DataFrame("rowid" => 1:2, "1" => [3, "X"],
+                    "2" => [7, "X"], "3" => ["X", 11])
     @test unstack(df, :rowid, :colid, :values, valuestransform=length) ≅
           DataFrame("rowid" => 1:2, "1" => [2, missing],
                     "2" => [2, missing], "3" => [missing, 2])
@@ -788,6 +791,9 @@ end
     @test unstack(df, :rowid, :colid, :values, valuestransform=identity) ≅
           DataFrame("rowid" => [2,1], "2" => [1:2, missing],
                     "1" => [3:4, missing], "3" => [missing, 5:6])
+    @test unstack(df, :rowid, :colid, :values, valuestransform=identity, fill="X") ==
+          DataFrame("rowid" => [2,1], "2" => [1:2, "X"],
+                    "1" => [3:4, "X"], "3" => ["X", 5:6])
 
     Random.seed!(1234)
     # check correctness of row and column ordering
