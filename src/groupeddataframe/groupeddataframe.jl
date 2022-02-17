@@ -431,13 +431,13 @@ Base.axes(gd::GroupedDataFrame, i::Integer) = Base.OneTo(size(gd, i))
 Base.first(gd::GroupedDataFrame) = gd[1]
 function Base.first(gd::GroupedDataFrame, n::Integer)
     n < 0 && throw(ArgumentError("Number of elements must be nonnegative"))
-    return @inbounds gd[1:min(n, end)]
+    return gd[1:min(n, end)]
 end
 
 Base.last(gd::GroupedDataFrame) = gd[end]
 function Base.last(gd::GroupedDataFrame, n::Integer)
     n < 0 && throw(ArgumentError("Number of elements must be nonnegative"))
-    return @inbounds gd[max(1, end - n + 1):end]
+    return gd[max(1, end - n + 1):end]
 end
 # These have to be defined for some to_indices() logic to work, as long
 # as GroupedDataFrame is not <: AbstractArray
