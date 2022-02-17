@@ -589,9 +589,9 @@ with name specified by `dest_namescol`.
   with `_i` (`i` starting at 1 for the first duplicate).
 - `strict` : if `true` (the default), an error will be raised if the values
   contained in the `src_namescol` are not all `Symbol` or all `AbstractString`,
-  or can all be converted to `AbstractString` using `convert`. If `false`
+  or can all be converted to `String` using `convert`. If `false`
   then any values are accepted and the will be changed to strings using
-  the `string` function.
+  the [`string`](@ref) function.
 
 Note: The element types of columns in resulting `DataFrame`
 (other than the first column, which always has element type `String`)
