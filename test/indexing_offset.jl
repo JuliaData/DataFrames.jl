@@ -23,7 +23,12 @@ using Test, DataFrames, OffsetArrays
     @test_throws DimensionMismatch df[!, :b] .= ov1
 
     # this is consequence of the fact that OffsetArrays wrap AbstractRange in this case
-    @test_throws ErrorException df[:, :a] = ov1
+    # Base.CanonicalIndexError is not available in Julia 1.7 or earlier
+    if VERSION >= v"1.8-DEV"
+        @test_throws Base.CanonicalIndexError df[:, :a] = ov1
+    else
+        @test_throws ErrorException df[:, :a] = ov1
+    end
 
     # this inconsistency is the consequence how setindex! for vector is defined in Base
     df = DataFrame(a=5:-1:1)

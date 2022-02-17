@@ -454,7 +454,7 @@ julia> eltype.(eachcol(german))
     to manipulate them.
 
 Before we wrap up let us discuss the `empty` and `empty!` functions that
-To remove all rows from a `DataFrame`. Understanding the difference between the
+remove all rows from a `DataFrame`. Understanding the difference between the
 behavior of these two functions will help you to understand the function naming
 scheme in DataFrames.jl in general.
 
