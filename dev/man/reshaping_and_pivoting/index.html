@@ -220,7 +220,7 @@ julia&gt; unstack(longdf, :id, :variable, :value)
  598 │ Iris-virginica    148  PetalWidth       2.0
  599 │ Iris-virginica    149  PetalWidth       2.3
  600 │ Iris-virginica    150  PetalWidth       1.8
-                                   585 rows omitted</code></pre><p>This saves memory. To create the view, several <code>AbstractVector</code>s are defined:</p><p><code>:variable</code> column – <code>EachRepeatedVector</code> This repeats the variables N times where N is the number of rows of the original AbstractDataFrame.</p><p><code>:value</code> column – <code>StackedVector</code> This is provides a view of the original columns stacked together.</p><p>Id columns – <code>RepeatedVector</code> This repeats the original columns N times where N is the number of columns stacked.</p><p>None of these reshaping functions perform any aggregation. To do aggregation, use the split-apply-combine functions in combination with reshaping. Here is an example:</p><pre><code class="language-julia-repl hljs">julia&gt; using Statistics
+                                   585 rows omitted</code></pre><p>This saves memory. To create the view, several <code>AbstractVector</code>s are defined:</p><p><code>:variable</code> column – <code>EachRepeatedVector</code> This repeats the variables N times where N is the number of rows of the original AbstractDataFrame.</p><p><code>:value</code> column – <code>StackedVector</code> This is provides a view of the original columns stacked together.</p><p>Id columns – <code>RepeatedVector</code> This repeats the original columns N times where N is the number of columns stacked.</p><p>To do aggregation, use the split-apply-combine functions in combination with <code>unstack</code> or use the <code>valuestransform</code> keyword argument in <code>unstack</code>. Here is an example:</p><pre><code class="language-julia-repl hljs">julia&gt; using Statistics
 
 julia&gt; d = stack(iris, Not(:Species))
 750×3 DataFrame
@@ -245,9 +245,9 @@ julia&gt; d = stack(iris, Not(:Species))
  750 │ Iris-virginica  id             150.0
                             735 rows omitted
 
-julia&gt; x = combine(groupby(d, [:variable, :Species]), :value =&gt; mean =&gt; :vsum)
+julia&gt; agg = combine(groupby(d, [:variable, :Species]), :value =&gt; mean =&gt; :vmean)
 15×3 DataFrame
- Row │ variable     Species          vsum
+ Row │ variable     Species          vmean
      │ String       String15         Float64
 ─────┼───────────────────────────────────────
    1 │ SepalLength  Iris-setosa        5.006
@@ -266,7 +266,18 @@ julia&gt; x = combine(groupby(d, [:variable, :Species]), :value =&gt; mean =&gt;
   14 │ id           Iris-versicolor   75.5
   15 │ id           Iris-virginica   125.5
 
-julia&gt; first(unstack(x, :Species, :vsum), 6)
+julia&gt; unstack(agg, :variable, :Species, :vmean)
+5×4 DataFrame
+ Row │ variable     Iris-setosa  Iris-versicolor  Iris-virginica
+     │ String       Float64?     Float64?         Float64?
+─────┼───────────────────────────────────────────────────────────
+   1 │ SepalLength        5.006            5.936           6.588
+   2 │ SepalWidth         3.418            2.77            2.974
+   3 │ PetalLength        1.464            4.26            5.552
+   4 │ PetalWidth         0.244            1.326           2.026
+   5 │ id                25.5             75.5           125.5
+
+julia&gt; unstack(d, :variable, :Species, :value, valuestransform=mean)
 5×4 DataFrame
  Row │ variable     Iris-setosa  Iris-versicolor  Iris-virginica
      │ String       Float64?     Float64?         Float64?
@@ -305,4 +316,4 @@ julia&gt; permutedims(df2, 1, &quot;different_name&quot;)
 ─────┼─────────────────────────────
    1 │ b               1     two
    2 │ c               3     4
-   3 │ d               true  false</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../split_apply_combine/">« Split-apply-combine</a><a class="docs-footer-nextpage" href="../sorting/">Sorting »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.12 on <span class="colophon-date" title="Thursday 17 February 2022 08:09">Thursday 17 February 2022</span>. Using Julia version 1.7.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+   3 │ d               true  false</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../split_apply_combine/">« Split-apply-combine</a><a class="docs-footer-nextpage" href="../sorting/">Sorting »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.12 on <span class="colophon-date" title="Thursday 17 February 2022 11:17">Thursday 17 February 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
