@@ -747,7 +747,7 @@ end
           DataFrame(one=2, two=1)
 end
 
-@testset "allowduplicates as function" begin
+@testset "valuestransform" begin
     df = DataFrame(rowid=[1, 1, 1, 1, 2, 2], colid=[1, 1, 2, 2, 3, 3], values=1:6)
     @test_throws ArgumentError unstack(df, :rowid, :colid, :values)
     @test unstack(df, :rowid, :colid, :values, allowduplicates=true) ≅

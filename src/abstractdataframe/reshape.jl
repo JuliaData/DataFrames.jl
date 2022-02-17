@@ -238,8 +238,8 @@ Row and column keys will be ordered in the order of their first appearance.
   `true` then the last encountered `value` will be retained;
   this keyword argument is ignored if `valuestransform` keyword argument is passed.
 - `valuestransform`: if passed then `allowduplicates` is ignored and instead
-   the passed function will be called on a view vector containing all elements
-   for each non-missing combination of `rowkeys` and `colkey`.
+   the passed function will be called on a vector view containing all elements
+   for each combination of `rowkeys` and `colkey` present in the data.
 - `fill`: missing row/column combinations are filled with this value. The
   default is `missing`. If the `value` column is a `CategoricalVector` and
   `fill` is not `missing` then in order to keep unstacked value columns also
