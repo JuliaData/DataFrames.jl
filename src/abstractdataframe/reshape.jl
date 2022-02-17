@@ -591,7 +591,7 @@ with name specified by `dest_namescol`.
   contained in the `src_namescol` are not all `Symbol` or all `AbstractString`,
   or can all be converted to `String` using `convert`. If `false`
   then any values are accepted and the will be changed to strings using
-  the [`string`](@ref) function.
+  the `string` function.
 
 Note: The element types of columns in resulting `DataFrame`
 (other than the first column, which always has element type `String`)
