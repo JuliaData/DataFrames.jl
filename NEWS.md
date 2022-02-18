@@ -12,6 +12,9 @@
 * Add special syntax for `eachindex`, `groupindices`, and `proprow`
   to transformation mini-language
   ([#3001](https://github.com/JuliaData/DataFrames.jl/pull/3001)).
+* Add support for `reverse!`, `permute!`, `invpermute!`, `shuffle`,
+  and `shuffle!` functions. Improve functionality of `reverse`.
+  ([#3010](https://github.com/JuliaData/DataFrames.jl/pull/3010)).
 
 # DataFrames.jl v1.3.2 Patch Release Notes
 

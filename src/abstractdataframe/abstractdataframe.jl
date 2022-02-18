@@ -2261,7 +2261,7 @@ Base.setindex!(::AbstractDataFrame, ::Any, ::Union{Symbol, Integer, AbstractStri
     throw(ArgumentError("syntax df[column] is not supported use df[!, column] instead"))
 
 """
-    reverse(df::AbstractDataFrame)
+    reverse(df::AbstractDataFrame [, start=1 [, stop=nrow(df) ]])
 
 Return a data frame containing the rows in `df` in reversed order.
 
@@ -2289,6 +2289,277 @@ julia> reverse(df)
    3 │     3      8     13
    4 │     2      7     12
    5 │     1      6     11
+
+julia> reverse(df, 2, 3)
+5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      6     11
+   2 │     3      8     13
+   3 │     2      7     12
+   4 │     4      9     14
+   5 │     5     10     15
 ```
 """
-Base.reverse(df::AbstractDataFrame) = df[nrow(df):-1:1, :]
+Base.reverse(df::AbstractDataFrame, start::Integer=1, stop::Integer=nrow(df)) =
+    mapcols(x -> reverse(x, start, stop), df)
+
+"""
+    reverse!(df::AbstractDataFrame)
+
+Mutate data frame in-place to reverse its row order.
+
+`reverse!` will produce a correct result even if some columns of passed data frame
+are identical (checked with `===`). Otherwise, if two columns share some part of
+memory but are not identical (e.g. are different views of the same parent
+vector) then `reverse!` result might be incorrect.
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(a=1:5, b=6:10, c=11:15)
+5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      6     11
+   2 │     2      7     12
+   3 │     3      8     13
+   4 │     4      9     14
+   5 │     5     10     15
+
+julia> reverse!(df)
+5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     5     10     15
+   2 │     4      9     14
+   3 │     3      8     13
+   4 │     2      7     12
+   5 │     1      6     11
+
+julia> reverse!(df, 2, 3)
+5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     5     10     15
+   2 │     3      8     13
+   3 │     4      9     14
+   4 │     2      7     12
+   5 │     1      6     11
+```
+"""
+function Base.reverse!(df::AbstractDataFrame, start::Integer=1, stop::Integer=nrow(df))
+    toskip = Set{Int}()
+    seen_cols = IdDict{Any, Nothing}()
+    for (i, col) in enumerate(eachcol(df))
+        if haskey(seen_cols, col)
+            push!(toskip, i)
+        else
+            seen_cols[col] = nothing
+        end
+    end
+
+    for (i, col) in enumerate(eachcol(df))
+        if !(i in toskip)
+            reverse!(col, start, stop)
+        end
+    end
+    return df
+end
+
+"""
+    permute!(df::AbstractDataFrame, p)
+
+Permute data frame `df` in-place, according to permutation `p`.
+No checking is done to verify that `p`` is a permutation.
+
+To return a new permutation, use `df[p]`.
+Note that this is generally faster than `permute!(df, p)` for large data frames.
+
+`permute!` will produce a correct result even if some columns of passed data frame
+or permutation `p` are identical (checked with `===`). Otherwise, if two columns share
+some part of memory but are not identical (e.g. are different views of the same parent
+vector) then `permute!` result might be incorrect.
+
+# Examples
+julia> df = DataFrame(a=1:5, b=6:10, c=11:15)
+5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      6     11
+   2 │     2      7     12
+   3 │     3      8     13
+   4 │     4      9     14
+   5 │     5     10     15
+
+julia> permute!(df, [5, 3, 1, 2, 4])
+5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     5     10     15
+   2 │     3      8     13
+   3 │     1      6     11
+   4 │     2      7     12
+   5 │     4      9     14
+"""
+function Base.permute!(df::AbstractDataFrame, p::AbstractVector{<:Integer})
+    toskip = Set{Int}()
+    seen_cols = IdDict{Any, Nothing}()
+    for (i, col) in enumerate(eachcol(df))
+        if haskey(seen_cols, col)
+            push!(toskip, i)
+        else
+            seen_cols[col] = nothing
+        end
+        # p might be a column of df so we make sure we unalias
+        # we do not
+        if col === p
+            p = copy(p)
+        end
+    end
+
+    pp = similar(p)
+
+    for (i, col) in enumerate(eachcol(df))
+        if !(i in toskip)
+            copyto!(pp, p)
+            Base.permute!!(col, pp)
+        end
+    end
+    return df
+end
+
+"""
+    invpermute!(df::AbstractDataFrame, p)
+
+Like [`permute!`](@ref), but the inverse of the given permutation is applied.
+
+`invpermute!` will produce a correct result even if some columns of passed data
+frame or permutation `p` are identical (checked with `===`). Otherwise, if two
+columns share some part of memory but are not identical (e.g. are different views
+of the same parent vector) then `permute!` result might be incorrect.
+
+# Examples
+
+julia> df = DataFrame(a=1:5, b=6:10, c=11:15)
+5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      6     11
+   2 │     2      7     12
+   3 │     3      8     13
+   4 │     4      9     14
+   5 │     5     10     15
+
+julia> permute!(df, [5, 3, 1, 2, 4])
+5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     5     10     15
+   2 │     3      8     13
+   3 │     1      6     11
+   4 │     2      7     12
+   5 │     4      9     14
+
+julia> invpermute!(df, [5, 3, 1, 2, 4])
+5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      6     11
+   2 │     2      7     12
+   3 │     3      8     13
+   4 │     4      9     14
+   5 │     5     10     15
+"""
+function Base.invpermute!(df::AbstractDataFrame, p::AbstractVector{<:Integer})
+    toskip = Set{Int}()
+    seen_cols = IdDict{Any, Nothing}()
+    for (i, col) in enumerate(eachcol(df))
+        if haskey(seen_cols, col)
+            push!(toskip, i)
+        else
+            seen_cols[col] = nothing
+        end
+        # p might be a column of df so we make sure we unalias
+        # we do not
+        if col === p
+            p = copy(p)
+        end
+    end
+
+    pp = similar(p)
+
+    for (i, col) in enumerate(eachcol(df))
+        if !(i in toskip)
+            copyto!(pp, p)
+            Base.invpermute!!(col, pp)
+        end
+    end
+    return df
+end
+
+"""
+      shuffle([rng=GLOBAL_RNG,] v::AbstractDataFrame)
+
+Return a copy of `df` with randomly permuted rows.
+The optional `rng`` argument specifies a random number generator.
+
+# Examples
+
+julia> rng = MersenneTwister(1234);
+
+julia> shuffle(rng, DataFrame(a=1:5, b=1:5))
+5×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      2
+   2 │     1      1
+   3 │     4      4
+   4 │     3      3
+   5 │     5      5
+"""
+Random.shuffle(df::AbstractDataFrame) =
+    shuffle(Random.default_rng(), df)
+Random.shuffle(r::AbstractRNG, df::AbstractDataFrame) =
+    df[randperm(r, nrow(df)), :]
+
+"""
+      shuffle!([rng=GLOBAL_RNG,] v::AbstractDataFrame)
+
+In-place version of [shuffle](@ref): randomly permute `df` in-place,
+optionally supplying the random-number generator `rng`.
+
+`shuffle!` will produce a correct result even if some columns of passed data frame
+are identical (checked with `===`). Otherwise, if two columns share some part of
+memory but are not identical (e.g. are different views of the same parent
+vector) then `shuffle!` result might be incorrect.
+
+# Examples
+
+julia> rng = MersenneTwister(1234);
+
+julia> shuffle!(rng, DataFrame(a=1:5, b=1:5))
+5×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      2
+   2 │     1      1
+   3 │     4      4
+   4 │     3      3
+   5 │     5      5
+"""
+Random.shuffle!(df::AbstractDataFrame) =
+    shuffle!(Random.default_rng(), df)
+Random.shuffle!(r::AbstractRNG, df::AbstractDataFrame) =
+    permute!(df, randperm(r, nrow(df)))
