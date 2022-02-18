@@ -3959,4 +3959,227 @@ end
     @test Vector.(keys(gd)) ≅ [[300], [missing], [1], [2]]
 end
 
+@testset "eachindex, groupindices, and proprow tests" begin
+    # Basic tests
+    df = DataFrame(id=["a", "c", "b", "b", "a", "a"])
+    gdf = groupby(df, :id);
+    @test combine(gdf, groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=["a", "c", "b"],
+                    groupindices=[1, 2, 3],
+                    gidx=[1, 2, 3],
+                    proprow=[1/2, 1/6, 1/3],
+                    freq=[1/2, 1/6, 1/3])
+    @test getfield(gdf, :idx) === nothing
+    gdf = groupby(df, :id)
+    @test combine(gdf, eachindex, eachindex => :idx,
+                  groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          combine(gdf, eachindex, eachindex => "idx",
+                  groupindices, groupindices => "gidx",
+                  proprow, proprow => "freq") ==
+          # note that this style is supported but we do not cover it in the docs
+          # the point is that groupindices and proprow do not require source column
+          # and work on whole grouped data frame
+          combine(gdf, 1 => eachindex => :eachindex, 1 => eachindex => "idx",
+                  [] => groupindices, [] => groupindices => "gidx",
+                  [] => proprow, [] => proprow => "freq") ==
+          DataFrame(id=["a", "a", "a", "c", "b", "b"],
+                    eachindex=[1, 2, 3, 1, 1, 2],
+                    idx=[1, 2, 3, 1, 1, 2],
+                    groupindices=[1, 1, 1, 2, 3, 3],
+                    gidx=[1, 1, 1, 2, 3, 3],
+                    proprow=[1/2, 1/2, 1/2, 1/6, 1/3, 1/3],
+                    freq=[1/2, 1/2, 1/2, 1/6, 1/3, 1/3])
+    @test combine(gdf, groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=["a", "c", "b"],
+                    groupindices=[1, 2, 3],
+                    gidx=[1, 2, 3],
+                    proprow=[1/2, 1/6, 1/3],
+                    freq=[1/2, 1/6, 1/3])
+    @test select(gdf, eachindex, eachindex => :idx,
+                  groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=df.id,
+                    eachindex=[1, 1, 1, 2, 2, 3],
+                    idx=[1, 1, 1, 2, 2, 3],
+                    groupindices=[1, 2, 3, 3, 1, 1],
+                    gidx=[1, 2, 3, 3, 1, 1],
+                    proprow=[1/2, 1/6, 1/3, 1/3, 1/2, 1/2],
+                    freq=[1/2, 1/6, 1/3, 1/3, 1/2, 1/2])
+    @test select(gdf, groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=df.id,
+                    groupindices=[1, 2, 3, 3, 1, 1],
+                    gidx=[1, 2, 3, 3, 1, 1],
+                    proprow=[1/2, 1/6, 1/3, 1/3, 1/2, 1/2],
+                    freq=[1/2, 1/6, 1/3, 1/3, 1/2, 1/2])
+    gdf2 = gdf[[3, 1]]
+    @test combine(gdf2, eachindex, eachindex => :idx,
+                  groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=["b", "b", "a", "a", "a"],
+                    eachindex=[1, 2, 1, 2, 3],
+                    idx=[1, 2, 1, 2, 3],
+                    groupindices=[1, 1, 2, 2, 2],
+                    gidx=[1, 1, 2, 2, 2],
+                    proprow=[2/5, 2/5, 3/5, 3/5, 3/5],
+                    freq=[2/5, 2/5, 3/5, 3/5, 3/5])
+    @test combine(gdf2, groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=["b", "a"],
+                    groupindices=[1, 2],
+                    gidx=[1, 2],
+                    proprow=[2/5, 3/5],
+                    freq=[2/5, 3/5])
+    gdf3 = gdf2[[1]]
+    @test combine(gdf3, eachindex, eachindex => :idx,
+                  groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=["b", "b"],
+                    eachindex=[1, 2],
+                    idx=[1, 2],
+                    groupindices=[1, 1],
+                    gidx=[1, 1],
+                    proprow=[1.0, 1.0],
+                    freq=[1.0, 1.0])
+    @test combine(gdf3, groupindices, groupindices => :gidx,
+                  proprow, proprow => :freq) ==
+          DataFrame(id=["b"],
+                    groupindices=[1],
+                    gidx=[1],
+                    proprow=[1.0],
+                    freq=[1.0])
+    gdf4 = gdf3[[false]]
+    @test isequal_coltyped(combine(gdf4, eachindex, eachindex => :idx,
+                                   groupindices, groupindices => :gidx,
+                                   proprow, proprow => :freq),
+                           DataFrame(id=String[], eachindex=Int[], idx=Int[],
+                                     groupindices=Int[], gidx=Int[],
+                                     proprow=Float64[], freq=Float64[]))
+    @test isequal_coltyped(combine(gdf4, groupindices, groupindices => :gidx,
+                                   proprow, proprow => :freq),
+                           DataFrame(id=String[], groupindices=Int[], gidx=Int[],
+                                     proprow=Float64[], freq=Float64[]))
+    gdf5 = groupby(DataFrame(), [])
+    @test isequal_coltyped(combine(gdf5, eachindex, eachindex => :idx,
+                                   groupindices, groupindices => :gidx,
+                                   proprow, proprow => :freq),
+                           DataFrame(eachindex=Int[], idx=Int[],
+                                     groupindices=Int[], gidx=Int[],
+                                     proprow=Float64[], freq=Float64[]))
+    @test isequal_coltyped(combine(gdf5, groupindices, groupindices => :gidx,
+                                   proprow, proprow => :freq),
+                           DataFrame(groupindices=Int[], gidx=Int[],
+                                     proprow=Float64[], freq=Float64[]))
+
+    # eachindex on DataFrame
+    @test combine(df, eachindex) == DataFrame(eachindex=1:6)
+    @test isequal_coltyped(combine(DataFrame(), eachindex),
+                           DataFrame(eachindex=Int[]))
+
+    # Disallowed operations
+    @test_throws ArgumentError groupindices(df)
+    @test_throws ArgumentError proprow(df)
+    @test_throws ArgumentError combine(df, groupindices)
+    @test_throws ArgumentError combine(df, proprow)
+
+    # test column replacement
+    df = DataFrame(id=["a", "c", "b", "b", "a", "a"], x=-1, y=-2)
+    gdf = groupby(df, :id);
+    @test transform(gdf, groupindices => :x, proprow => :y) ==
+          DataFrame(id=df.id,
+                    x=[1, 2, 3, 3, 1, 1],
+                    y=[1/2, 1/6, 1/3, 1/3, 1/2, 1/2])
+    @test_throws ArgumentError combine(gdf, :x, groupindices => :x)
+    @test_throws ArgumentError combine(gdf, :x, proprow => :x)
+
+    df = DataFrame(x = [1, 1, 1, 2, 3, 3], id = 1:6)
+    gdf = groupby(df, :x)
+    @test combine(gdf, proprow) == combine(proprow, gdf) ==
+          rename(combine(gdf, proprow => :a), :a => :proprow) ==
+          DataFrame(x = [1, 2, 3], proprow = [1/2, 1/6, 1/3])
+    @test transform(gdf, proprow) == transform(proprow, gdf) ==
+          rename(transform(gdf, proprow => :a), :a => :proprow) ==
+          DataFrame(x = df.x, id = df.id, proprow = [1/2, 1/2, 1/2, 1/6, 1/3, 1/3])
+    gdf = gdf[[2, 1, 3]]
+    @test combine(gdf, proprow) == combine(proprow, gdf) ==
+          rename(combine(gdf, proprow => :a), :a => :proprow) ==
+          DataFrame(x = [2, 1, 3], proprow = [1/6, 1/2, 1/3])
+    # note that transform retains the original row order
+    @test transform(gdf, proprow) == transform(proprow, gdf) ==
+          rename(transform(gdf, proprow => :a), :a => :proprow) ==
+          DataFrame(x = df.x, id = df.id, proprow = [1/2, 1/2, 1/2, 1/6, 1/3, 1/3])
+    gdf = gdf[[3, 1]]
+    @test combine(gdf, proprow) == combine(proprow, gdf) ==
+          rename(combine(gdf, proprow => :a), :a => :proprow) ==
+          DataFrame(x = [3, 2], proprow = [2/3, 1/3])
+    @test combine(gdf, :id, proprow) ==
+          rename(combine(gdf, :id, proprow => :a), :a => :proprow) ==
+          DataFrame(x = [3, 3, 2], id = [5, 6, 4], proprow = [2/3, 2/3, 1/3])
+    @test_throws ArgumentError transform(gdf, proprow)
+    gdf = gdf[[]]
+    @test isequal_coltyped(combine(gdf, proprow), DataFrame(x=Int[], proprow=Float64[]))
+    @test_throws ArgumentError transform(gdf, proprow)
+
+    gdf = groupby(df, :x)
+    @test combine(gdf, eachindex) == combine(eachindex, gdf) ==
+          rename(combine(gdf, eachindex => :a), :a => :eachindex) ==
+          DataFrame(x = [1, 1, 1, 2, 3, 3], eachindex = [1, 2, 3, 1, 1, 2])
+    @test transform(gdf, eachindex) == transform(eachindex, gdf) ==
+          rename(transform(gdf, eachindex => :a), :a => :eachindex) ==
+          DataFrame(x = df.x, id = df.id, eachindex = [1, 2, 3, 1, 1, 2])
+    gdf = gdf[[2, 1, 3]]
+    @test combine(gdf, eachindex) == combine(eachindex, gdf) ==
+          rename(combine(gdf, eachindex => :a), :a => :eachindex) ==
+          DataFrame(x = [2, 1, 1, 1, 3, 3], eachindex = [1, 1, 2, 3, 1, 2])
+    # note that transform retains the original row order
+    @test transform(gdf, eachindex) == transform(eachindex, gdf) ==
+          rename(transform(gdf, eachindex => :a), :a => :eachindex) ==
+          DataFrame(x = df.x, id = df.id, eachindex = [1, 2, 3, 1, 1, 2])
+    gdf = gdf[[3, 1]]
+    @test combine(gdf, eachindex) == combine(eachindex, gdf) ==
+          rename(combine(gdf, eachindex => :a), :a => :eachindex) ==
+          DataFrame(x = [3, 3, 2], eachindex = [1, 2, 1])
+    @test_throws ArgumentError transform(gdf, eachindex)
+    gdf = gdf[[]]
+    @test isequal_coltyped(combine(gdf, eachindex), DataFrame(x=Int[], eachindex=Int[]))
+    @test_throws ArgumentError transform(gdf, eachindex)
+    @test combine(df, eachindex) == combine(eachindex, df) ==
+          rename(combine(df, eachindex => :a), :a => :eachindex) ==
+          DataFrame(eachindex = 1:6)
+    @test transform(df, eachindex) == transform(eachindex, df) ==
+          rename(transform(df, eachindex => :a), :a => :eachindex) ==
+          DataFrame(x = df.x, id = df.id, eachindex = 1:6)
+    df = view(df, [], :)
+    df2 = combine(df, eachindex)
+    @test isequal_coltyped(df2, DataFrame(eachindex = Int[]))
+    @test isequal_coltyped(df2, combine(eachindex, df))
+    @test isequal_coltyped(df2, rename(combine(df, eachindex => :a), :a => :eachindex))
+
+    df2 = transform(df, eachindex)
+    @test isequal_coltyped(df2, DataFrame(x = Int[], id = Int[], eachindex = Int[]))
+    @test isequal_coltyped(df2, transform(eachindex, df))
+    @test isequal_coltyped(df2, rename(transform(df, eachindex => :a), :a => :eachindex))
+end
+
+@testset "fillfirst! correctness tests" begin
+    Random.seed!(1234)
+    for len in 0:100
+        for df in [DataFrame(id=rand(1:5, len)), DataFrame(id=rand(string.(1:5), len))]
+            global gdf = groupby(df, :id);
+            @assert getfield(gdf, :idx) === nothing
+            x1 = fill(-1, length(gdf))
+            DataFrames.fillfirst!(nothing, x1, 1:length(gdf.groups), gdf)
+            @assert getfield(gdf, :idx) === nothing
+            @test length(gdf.idx) >= 0
+            @assert getfield(gdf, :idx) !== nothing
+            x2 = fill(-1, length(gdf))
+            DataFrames.fillfirst!(nothing, x2, 1:length(gdf.groups), gdf)
+            @test x1 == x2
+        end
+    end
+end
+
 end # module

@@ -296,9 +296,8 @@ This is provides a view of the original columns stacked together.
 Id columns -- `RepeatedVector`
 This repeats the original columns N times where N is the number of columns stacked.
 
-None of these reshaping functions perform any aggregation. To do aggregation,
-use the split-apply-combine functions in combination with reshaping. Here is an
-example:
+To do aggregation, use the split-apply-combine functions in combination with
+`unstack` or use the `valuestransform` keyword argument in `unstack`. Here is an example:
 
 ```jldoctest reshape
 julia> using Statistics
@@ -326,9 +325,9 @@ julia> d = stack(iris, Not(:Species))
  750 │ Iris-virginica  id             150.0
                             735 rows omitted
 
-julia> x = combine(groupby(d, [:variable, :Species]), :value => mean => :vsum)
+julia> agg = combine(groupby(d, [:variable, :Species]), :value => mean => :vmean)
 15×3 DataFrame
- Row │ variable     Species          vsum
+ Row │ variable     Species          vmean
      │ String       String15         Float64
 ─────┼───────────────────────────────────────
    1 │ SepalLength  Iris-setosa        5.006
@@ -347,7 +346,18 @@ julia> x = combine(groupby(d, [:variable, :Species]), :value => mean => :vsum)
   14 │ id           Iris-versicolor   75.5
   15 │ id           Iris-virginica   125.5
 
-julia> first(unstack(x, :Species, :vsum), 6)
+julia> unstack(agg, :variable, :Species, :vmean)
+5×4 DataFrame
+ Row │ variable     Iris-setosa  Iris-versicolor  Iris-virginica
+     │ String       Float64?     Float64?         Float64?
+─────┼───────────────────────────────────────────────────────────
+   1 │ SepalLength        5.006            5.936           6.588
+   2 │ SepalWidth         3.418            2.77            2.974
+   3 │ PetalLength        1.464            4.26            5.552
+   4 │ PetalWidth         0.244            1.326           2.026
+   5 │ id                25.5             75.5           125.5
+
+julia> unstack(d, :variable, :Species, :value, valuestransform=mean)
 5×4 DataFrame
  Row │ variable     Iris-setosa  Iris-versicolor  Iris-virginica
      │ String       Float64?     Float64?         Float64?

@@ -131,6 +131,7 @@ end
 # Find first value matching condition for each group
 # Optimized for situations where a matching value is typically encountered
 # among the first rows for each group
+# rev keyword argument should be only used to signal that we process the `last` function
 function fillfirst!(condf, outcol::AbstractVector, incol::AbstractVector,
                     gd::GroupedDataFrame; rev::Bool=false)
     ngroups = gd.ngroups
@@ -182,7 +183,7 @@ function fillfirst!(condf, outcol::AbstractVector, incol::AbstractVector,
             throw(ArgumentError("some groups contain only missing values"))
         end
     end
-    outcol
+    return outcol
 end
 
 function _agg2idx_map_helper(idx::Vector{Int}, idx_agg::Vector{Int})
@@ -220,6 +221,80 @@ function _combine_process_agg((cs_i,)::Ref{Any},
     incol = parentdf[!, first(cs_i)]
     agg = check_aggregate(first(last(cs_i)), incol)
     outcol = agg(incol, gd)
+
+    return function()
+        if haskey(seen_cols, out_col_name)
+            optional, loc = seen_cols[out_col_name]
+            # we have seen this col but it is not allowed to replace it
+            optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+            @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
+            trans_res[loc] = TransformationResult(idx_agg, outcol, out_col_name, optional_i)
+            seen_cols[out_col_name] = (optional_i, loc)
+        else
+            push!(trans_res, TransformationResult(idx_agg, outcol, out_col_name, optional_i))
+            seen_cols[out_col_name] = (optional_i, length(trans_res))
+        end
+    end
+end
+
+function _combine_process_groupindices((cs_i,)::Ref{Any},
+                                       optional_i::Bool,
+                                       parentdf::AbstractDataFrame,
+                                       gd::GroupedDataFrame,
+                                       seen_cols::Dict{Symbol, Tuple{Bool, Int}},
+                                       trans_res::Vector{TransformationResult},
+                                       idx_agg::Vector{Int})
+    @assert cs_i isa Pair{Vector{Int}, Pair{typeof(groupindices), Symbol}}
+    @assert first(cs_i) isa Vector{Int} && isempty(first(cs_i))
+    @assert !optional_i
+    @assert idx_agg !== NOTHING_IDX_AGG
+    out_col_name = last(last(cs_i))
+    outcol = 1:length(gd)
+
+    return function()
+        if haskey(seen_cols, out_col_name)
+            optional, loc = seen_cols[out_col_name]
+            # we have seen this col but it is not allowed to replace it
+            optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
+            @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
+            trans_res[loc] = TransformationResult(idx_agg, outcol, out_col_name, optional_i)
+            seen_cols[out_col_name] = (optional_i, loc)
+        else
+            push!(trans_res, TransformationResult(idx_agg, outcol, out_col_name, optional_i))
+            seen_cols[out_col_name] = (optional_i, length(trans_res))
+        end
+    end
+end
+
+function _combine_process_proprow((cs_i,)::Ref{Any},
+                                  optional_i::Bool,
+                                  parentdf::AbstractDataFrame,
+                                  gd::GroupedDataFrame,
+                                  seen_cols::Dict{Symbol, Tuple{Bool, Int}},
+                                  trans_res::Vector{TransformationResult},
+                                  idx_agg::Vector{Int})
+    @assert cs_i isa Pair{Vector{Int}, Pair{typeof(proprow), Symbol}}
+    @assert first(cs_i) isa Vector{Int} && isempty(first(cs_i))
+    @assert !optional_i
+    @assert idx_agg !== NOTHING_IDX_AGG
+    out_col_name = last(last(cs_i))
+
+    # introduce outcol1 and outcol2 as without it outcol is boxed
+    # since it is later used inside the anonymous function we return
+    if getfield(gd, :idx) === nothing
+        outcol1 = zeros(Float64, length(gd) + 1)
+        @inbounds @simd for gix in gd.groups
+            outcol1[gix + 1] += 1
+        end
+        popfirst!(outcol1)
+        outcol1 ./= sum(outcol1)
+        outcol = outcol1
+    else
+        outcol2 = Vector{Float64}(undef, length(gd))
+        outcol2 .= gd.ends .- gd.starts .+ 1
+        outcol2 ./= sum(outcol2)
+        outcol = outcol2
+    end
 
     return function()
         if haskey(seen_cols, out_col_name)
@@ -467,6 +542,16 @@ function _combine_process_pair_astable(optional_i::Bool,
     end
 end
 
+# helper function allowing us to identify groupindices and proprow transforms
+function isspecialtransform((cs_i,)::Ref{Any})
+    cs_i isa Pair || return false
+    (first(cs_i) isa Vector{Int} && isempty(first(cs_i))) || return false
+    fun = first(last(cs_i))
+    fun === groupindices && return true
+    fun === proprow && return true
+    return false
+end
+
 # perform a transformation specified using the Pair notation
 # cs_i is a Pair that has many possible forms so this function is used to dispatch
 # to an appropriate more specialized function
@@ -551,14 +636,16 @@ function _combine(gd::GroupedDataFrame,
     end
 
     idx_agg = Ref(NOTHING_IDX_AGG)
-    if length(gd) > 0 && any(x -> isagg(x, gd), cs_norm)
+    if any(x -> isagg(x, gd) || isspecialtransform(Ref{Any}(x)), cs_norm)
         # Compute indices of representative rows only once for all AbstractAggregates
+        # or special transforms
         idx_agg[] = Vector{Int}(undef, length(gd))
         fillfirst!(nothing, idx_agg[], 1:length(gd.groups), gd)
-    elseif length(gd) == 0 || !all(x -> isagg(x, gd), cs_norm)
+    end
+    if length(gd) == 0 || !all(x -> isagg(x, gd) || isspecialtransform(Ref{Any}(x)), cs_norm)
         # Trigger computation of indices
         # This can speed up some aggregates that would not trigger this on their own
-        @assert gd.idx !== nothing
+        @assert length(gd.idx) >= 0
     end
 
     trans_res = Vector{TransformationResult}()
@@ -580,16 +667,31 @@ function _combine(gd::GroupedDataFrame,
         optional_i = optional_transform[i]
 
         tasks[i] = @spawn if length(gd) > 0 && isagg(cs_i, gd)
-            _combine_process_agg(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg[])
+            _combine_process_agg(Ref{Any}(cs_i), optional_i, parentdf, gd,
+                                 seen_cols, trans_res, idx_agg[])
         elseif keeprows && cs_i isa Pair && first(last(cs_i)) === identity &&
                !(first(cs_i) isa AsTable) && (last(last(cs_i)) isa Symbol)
-            # this is a fast path used when we pass a column or rename a column in select or transform
-            _combine_process_noop(cs_i, optional_i, parentdf, seen_cols, trans_res, idx_keeprows, copycols)
+            # this is a fast path used when
+            # we pass a column or rename a column in select or transform
+            _combine_process_noop(cs_i, optional_i, parentdf,
+                                  seen_cols, trans_res, idx_keeprows, copycols)
         elseif cs_i isa Base.Callable
-            _combine_process_callable(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+            _combine_process_callable(Ref{Any}(cs_i), optional_i, parentdf, gd,
+                                      seen_cols, trans_res, idx_agg)
         else
             @assert cs_i isa Pair
-            _combine_process_pair(Ref{Any}(cs_i), optional_i, parentdf, gd, seen_cols, trans_res, idx_agg)
+            if first(cs_i) isa Vector{Int} && isempty(first(cs_i)) &&
+               first(last(cs_i)) === groupindices
+                _combine_process_groupindices(Ref{Any}(cs_i), optional_i, parentdf, gd,
+                                              seen_cols, trans_res, idx_agg[])
+            elseif first(cs_i) isa Vector{Int} && isempty(first(cs_i)) &&
+                   first(last(cs_i)) === proprow
+                _combine_process_proprow(Ref{Any}(cs_i), optional_i, parentdf, gd,
+                                         seen_cols, trans_res, idx_agg[])
+            else
+                _combine_process_pair(Ref{Any}(cs_i), optional_i, parentdf, gd,
+                                      seen_cols, trans_res, idx_agg)
+            end
         end
     end
     # Workaround JuliaLang/julia#38931:

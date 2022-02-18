@@ -52,9 +52,14 @@ const TRANSFORMATION_COMMON_RULES =
        except `AsTable` are allowed).
     4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
        must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
-    5. a `nrow` or `nrow => target_cols` form which efficiently computes the number of rows
-       in a group; without `target_cols` the new column is called `:nrow`, otherwise
-       it must be single name (as a `Symbol` or a string).
+    5. special convenience forms `function => target_cols` or just `function`
+       for specific `function`s where the input columns are omitted;
+       without `target_cols` the new column has the same name as `function`, otherwise
+       it must be single name (as a `Symbol` or a string). Supported `function`s are:
+       * `nrow` to efficiently compute the number of rows in each group.
+       * `proprow` to efficiently compute the proportion of rows in each group.
+       * `eachindex` to return a vector holding the number of each row within each group.
+       * `groupindices` to return the group number.
     6. vectors or matrices containing transformations specified by the `Pair` syntax
        described in points 2 to 5
     7. a function which will be called with a `SubDataFrame` corresponding to each group
@@ -353,6 +358,33 @@ normalize_selection(idx::AbstractIndex, sel::Pair{typeof(nrow), <:AbstractString
     normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
 normalize_selection(idx::AbstractIndex, sel::typeof(nrow), renamecols::Bool) =
     normalize_selection(idx, nrow => :nrow, renamecols)
+
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(eachindex), Symbol},
+                    renamecols::Bool) =
+    length(idx) == 0 ? (Int[] => (() -> Base.OneTo(0)) => last(sel)) : (1 => eachindex => last(sel))
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(eachindex), <:AbstractString},
+                    renamecols::Bool) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
+normalize_selection(idx::AbstractIndex, sel::typeof(eachindex), renamecols::Bool) =
+    normalize_selection(idx, eachindex => :eachindex, renamecols)
+
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(groupindices), Symbol},
+                    renamecols::Bool) =
+    Int[] => groupindices => last(sel)
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(groupindices), <:AbstractString},
+                    renamecols::Bool) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
+normalize_selection(idx::AbstractIndex, sel::typeof(groupindices), renamecols::Bool) =
+    normalize_selection(idx, groupindices => :groupindices, renamecols)
+
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(proprow), Symbol},
+                    renamecols::Bool) =
+    Int[] => proprow => last(sel)
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(proprow), <:AbstractString},
+                    renamecols::Bool) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
+normalize_selection(idx::AbstractIndex, sel::typeof(proprow), renamecols::Bool) =
+    normalize_selection(idx, proprow => :proprow, renamecols)
 
 function normalize_selection(idx::AbstractIndex, sel::ColumnIndex, renamecols::Bool)
     c = idx[sel]
@@ -1166,6 +1198,29 @@ julia> select(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
    6 │     1      1      6      7
    7 │     1      2      7      9
    8 │     2      1      8      9
+```
+
+# special convenience transformations
+```jldoctest
+julia> df = DataFrame(a=[1, 1, 1, 2, 2, 1, 1, 2],
+                      b=repeat([2, 1], outer=[4]),
+                      c=1:8);
+
+julia> gd = groupby(df, :a);
+
+julia> select(gd, nrow, proprow, groupindices, eachindex)
+8×5 DataFrame
+ Row │ a      nrow   proprow  groupindices  eachindex
+     │ Int64  Int64  Float64  Int64         Int64
+─────┼────────────────────────────────────────────────
+   1 │     1      5    0.625             1          1
+   2 │     1      5    0.625             1          2
+   3 │     1      5    0.625             1          3
+   4 │     2      3    0.375             2          1
+   5 │     2      3    0.375             2          2
+   6 │     1      5    0.625             1          4
+   7 │     1      5    0.625             1          5
+   8 │     2      3    0.375             2          3
 ```
 """
 select(df::AbstractDataFrame, @nospecialize(args...); copycols::Bool=true, renamecols::Bool=true) =

@@ -637,14 +637,37 @@ end
     @test permutedims(df4[!, [:e]], 1) == DataFrame(e=String[], x=[], y=[])
     # Can't index float Column
     @test_throws ArgumentError permutedims(df4[!, [:a, :b, :c]], 1)
-    @test_throws ArgumentError permutedims(DataFrame(a=Float64[], b=Float64[]), 1)
+    # but can if it is empty
+    @test permutedims(DataFrame(a=Float64[], b=Float64[]), 1) == DataFrame(a="b")
     # Can't index columns that allow for missing
     @test_throws ArgumentError permutedims(df4[!, [:g, :a, :b, :c]], 1)
-    @test_throws ArgumentError permutedims(df4[!, [:h, :a, :b]], 1)
+    # but can if they do not contain missing
+    @test permutedims(df4[!, [:h, :a, :b]], 1) == permutedims(df4[!, [:e, :a, :b]], 1, :h)
     # Can't permute empty `df` ...
     @test_throws BoundsError permutedims(DataFrame(), 1)
     # ... but can permute zero-row df
     @test permutedims(DataFrame(a=String[], b=Float64[]), 1) == DataFrame(a=["b"])
+
+    # tests of strict handling
+    df = DataFrame(a=["x", "y"], b=[1.0, 2.0], c=[3, 4], d=[true, false])
+    ref = permutedims(df, 1)
+    # allowed as contents is strings
+    df.a = collect(Any, df.a)
+    @test permutedims(df, 1) == ref
+    # this is allowed as conversion from categorical to string is allowed
+    df.a = categorical(df.a)
+    @test permutedims(df, 1) == ref
+    # allowed as contents is symbols
+    df.a = Any[:x, :y]
+    @test permutedims(df, 1) == ref
+    # not allowed mixing of strings and symbols
+    df.a = Any[:x, "y"]
+    @test_throws ArgumentError permutedims(df, 1)
+    # not allowed values that cannot be converted to string
+    df.a = Any['x', 'y']
+    @test_throws ArgumentError permutedims(df, 1)
+    # but allowed with strict=false
+    @test permutedims(df, 1, strict=false) == ref
 end
 
 @testset "stack view=true additional tests" begin
@@ -737,6 +760,89 @@ end
     df = DataFrame(x=[:one, :two, :one], y=[1, 2, 3])
     @test_throws ArgumentError unstack(df, :x, :y)
     @test unstack(df, :x, :y, allowduplicates=true) == DataFrame(one=3, two=2)
+    @test unstack(df, :x, :y, valuestransform=identity) ==
+          DataFrame(one=[[1, 3]], two=[[2]])
+    @test unstack(df, :x, :y, valuestransform=last) ==
+          DataFrame(one=3, two=2)
+    @test unstack(df, :x, :y, valuestransform=first) ==
+          DataFrame(one=1, two=2)
+    @test unstack(df, :x, :y, valuestransform=length) ==
+          DataFrame(one=2, two=1)
+end
+
+@testset "valuestransform" begin
+    df = DataFrame(rowid=[1, 1, 1, 1, 2, 2], colid=[1, 1, 2, 2, 3, 3], values=1:6)
+    @test_throws ArgumentError unstack(df, :rowid, :colid, :values)
+    @test unstack(df, :rowid, :colid, :values, allowduplicates=true) ≅
+          DataFrame("rowid" => 1:2, "1" => [2, missing],
+                    "2" => [4, missing], "3" => [missing, 6])
+    @test unstack(df, :rowid, :colid, :values, allowduplicates=true, fill=0) ==
+          DataFrame("rowid" => 1:2, "1" => [2, 0],
+                    "2" => [4, 0], "3" => [0, 6])
+    @test unstack(df, :rowid, :colid, :values, valuestransform=identity) ≅
+          DataFrame("rowid" => 1:2, "1" => [1:2, missing],
+                    "2" => [3:4, missing], "3" => [missing, 5:6])
+    @test unstack(df, :rowid, :colid, :values,
+                  valuestransform=identity, fill=Int[]) ==
+          DataFrame("rowid" => 1:2, "1" => [1:2, []],
+                    "2" => [3:4, []], "3" => [[], 5:6])
+    @test unstack(df, :rowid, :colid, :values, valuestransform=sum) ≅
+          DataFrame("rowid" => 1:2, "1" => [3, missing],
+                    "2" => [7, missing], "3" => [missing, 11])
+    @test unstack(df, :rowid, :colid, :values, valuestransform=sum, fill=0) ==
+          DataFrame("rowid" => 1:2, "1" => [3, 0],
+                    "2" => [7, 0], "3" => [0, 11])
+    @test unstack(df, :rowid, :colid, :values, valuestransform=sum, fill="X") ==
+          DataFrame("rowid" => 1:2, "1" => [3, "X"],
+                    "2" => [7, "X"], "3" => ["X", 11])
+    @test unstack(df, :rowid, :colid, :values, valuestransform=length) ≅
+          DataFrame("rowid" => 1:2, "1" => [2, missing],
+                    "2" => [2, missing], "3" => [missing, 2])
+    @test unstack(df, :rowid, :colid, :values, valuestransform=length, fill=0) ==
+          DataFrame("rowid" => 1:2, "1" => [2, 0],
+                    "2" => [2, 0], "3" => [0, 2])
+    @test unstack(df, :rowid, :colid, :values,
+                  valuestransform=x -> isempty(x) ? missing : length(x)) ≅
+          DataFrame("rowid" => 1:2, "1" => [2, missing],
+                    "2" => [2, missing], "3" => [missing, 2])
+    @test unstack(df, :rowid, :colid, :values,
+                  valuestransform=x -> isempty(x) ? missing : x) ≅
+          DataFrame("rowid" => 1:2, "1" => [1:2, missing],
+                    "2" => [3:4, missing], "3" => [missing, 5:6])
+
+    df = DataFrame(rowid=[2, 2, 2, 2, 1, 1], colid=[2, 2, 1, 1, 3, 3], values=1:6)
+    @test unstack(df, :rowid, :colid, :values, valuestransform=identity) ≅
+          DataFrame("rowid" => [2,1], "2" => [1:2, missing],
+                    "1" => [3:4, missing], "3" => [missing, 5:6])
+    @test unstack(df, :rowid, :colid, :values, valuestransform=identity, fill="X") ==
+          DataFrame("rowid" => [2,1], "2" => [1:2, "X"],
+                    "1" => [3:4, "X"], "3" => ["X", 5:6])
+
+    Random.seed!(1234)
+    # check correctness of row and column ordering
+    for _ in 1:10
+        df = DataFrame(rowid=rand(1:10, 50), colid=rand(1:10, 50), values=1:50)
+        res = unstack(df, :rowid, :colid, :values, valuestransform=last)
+        @test res ≅ unstack(df, :rowid, :colid, :values, allowduplicates=true)
+        @test res.rowid == unique(df.rowid)
+        @test names(res, Not(1)) == string.(unique(df.colid))
+        res = unstack(df, :rowid, :colid, :values, valuestransform=last, fill=0)
+        @test res ≅ unstack(df, :rowid, :colid, :values, allowduplicates=true, fill=0)
+        @test res.rowid == unique(df.rowid)
+        @test names(res, Not(1)) == string.(unique(df.colid))
+
+        df.rowid=categorical(df.rowid, levels=shuffle(unique(df.rowid)))
+        df.colid=categorical(df.colid, levels=shuffle(unique(df.colid)))
+        res = unstack(df, :rowid, :colid, :values, valuestransform=last)
+        @test res ≅ unstack(df, :rowid, :colid, :values, allowduplicates=true)
+        @test unwrap.(res.rowid) == unique(df.rowid)
+        @test names(res, Not(1)) == string.(unique(df.colid))
+        res = unstack(df, :rowid, :colid, :values, valuestransform=last, fill=0)
+        @test res ≅
+            unstack(df, :rowid, :colid, :values, allowduplicates=true, fill=0)
+        @test unwrap.(res.rowid) == unique(df.rowid)
+        @test names(res, Not(1)) == string.(unique(df.colid))
+    end
 end
 
 end # module
