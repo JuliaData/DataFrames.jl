@@ -55,5 +55,5 @@ ShiftedArrays = "1277b4bf-5013-50f5-be3d-901d8477a67a"
 
 [targets]
 test = ["CategoricalArrays", "Combinatorics", "DataStructures", "DataValues",
-        "Dates", "Logging", "OffsetArrays", "Random", "Test", "Unitful",
+        "Dates", "Logging", "OffsetArrays", "Test", "Unitful",
         "ShiftedArrays", "SparseArrays"]
