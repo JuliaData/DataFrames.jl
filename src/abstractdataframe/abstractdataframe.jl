@@ -2261,7 +2261,7 @@ Base.setindex!(::AbstractDataFrame, ::Any, ::Union{Symbol, Integer, AbstractStri
     throw(ArgumentError("syntax df[column] is not supported use df[!, column] instead"))
 
 """
-    reverse(df::AbstractDataFrame [, start=1 [, stop=nrow(df) ]])
+    reverse(df::AbstractDataFrame, start=1, stop=nrow(df))
 
 Return a data frame containing the rows in `df` in reversed order.
 
@@ -2306,9 +2306,10 @@ Base.reverse(df::AbstractDataFrame, start::Integer=1, stop::Integer=nrow(df)) =
     mapcols(x -> reverse(x, start, stop), df)
 
 """
-    reverse!(df::AbstractDataFrame)
+    reverse!(df::AbstractDataFrame, start=1, stop=nrow(df))
 
 Mutate data frame in-place to reverse its row order.
+If `start` and `stop` are provided, only rows in the `start:stop` range are affected.
 
 `reverse!` will produce a correct result even if some columns of passed data frame
 are identical (checked with `===`). Otherwise, if two columns share some part of
@@ -2375,9 +2376,9 @@ end
     permute!(df::AbstractDataFrame, p)
 
 Permute data frame `df` in-place, according to permutation `p`.
-No checking is done to verify that `p`` is a permutation.
+No checking is done to verify that `p` is a permutation.
 
-To return a new permutation, use `df[p]`.
+To return a new data frame instead of permuting `df` in-place, use `df[p]`.
 Note that this is generally faster than `permute!(df, p)` for large data frames.
 
 `permute!` will produce a correct result even if some columns of passed data frame
@@ -2418,7 +2419,6 @@ function Base.permute!(df::AbstractDataFrame, p::AbstractVector{<:Integer})
             seen_cols[col] = nothing
         end
         # p might be a column of df so we make sure we unalias
-        # we do not
         if col === p
             p = copy(p)
         end
@@ -2490,7 +2490,6 @@ function Base.invpermute!(df::AbstractDataFrame, p::AbstractVector{<:Integer})
             seen_cols[col] = nothing
         end
         # p might be a column of df so we make sure we unalias
-        # we do not
         if col === p
             p = copy(p)
         end
@@ -2508,10 +2507,10 @@ function Base.invpermute!(df::AbstractDataFrame, p::AbstractVector{<:Integer})
 end
 
 """
-    shuffle([rng=GLOBAL_RNG,] v::AbstractDataFrame)
+    shuffle([rng=GLOBAL_RNG,] df::AbstractDataFrame)
 
 Return a copy of `df` with randomly permuted rows.
-The optional `rng`` argument specifies a random number generator.
+The optional `rng` argument specifies a random number generator.
 
 # Examples
 
@@ -2534,10 +2533,10 @@ Random.shuffle(r::AbstractRNG, df::AbstractDataFrame) =
     df[randperm(r, nrow(df)), :]
 
 """
-    shuffle!([rng=GLOBAL_RNG,] v::AbstractDataFrame)
+    shuffle!([rng=GLOBAL_RNG,] df::AbstractDataFrame)
 
-In-place version of [shuffle](@ref): randomly permute `df` in-place,
-optionally supplying the random-number generator `rng`.
+Randomly permute rows of `df` in-place.
+The optional `rng` argument specifies a random number generator.
 
 `shuffle!` will produce a correct result even if some columns of passed data frame
 are identical (checked with `===`). Otherwise, if two columns share some part of
