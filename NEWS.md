@@ -12,6 +12,8 @@
 * Add special syntax for `eachindex`, `groupindices`, and `proprow`
   to transformation mini-language
   ([#3001](https://github.com/JuliaData/DataFrames.jl/pull/3001)).
+* `first` and `last` for `GroupedDataFrame` now support passing number of elements to get
+  ([#3006](https://github.com/JuliaData/DataFrames.jl/issues/3006))
 
 # DataFrames.jl v1.3.2 Patch Release Notes
 
