@@ -2508,7 +2508,7 @@ function Base.invpermute!(df::AbstractDataFrame, p::AbstractVector{<:Integer})
 end
 
 """
-      shuffle([rng=GLOBAL_RNG,] v::AbstractDataFrame)
+    shuffle([rng=GLOBAL_RNG,] v::AbstractDataFrame)
 
 Return a copy of `df` with randomly permuted rows.
 The optional `rng`` argument specifies a random number generator.
@@ -2529,12 +2529,12 @@ julia> shuffle(rng, DataFrame(a=1:5, b=1:5))
    5 │     5      5
 """
 Random.shuffle(df::AbstractDataFrame) =
-    shuffle(Random.default_rng(), df)
+    df[randperm(nrow(df)), :]
 Random.shuffle(r::AbstractRNG, df::AbstractDataFrame) =
     df[randperm(r, nrow(df)), :]
 
 """
-      shuffle!([rng=GLOBAL_RNG,] v::AbstractDataFrame)
+    shuffle!([rng=GLOBAL_RNG,] v::AbstractDataFrame)
 
 In-place version of [shuffle](@ref): randomly permute `df` in-place,
 optionally supplying the random-number generator `rng`.
@@ -2560,6 +2560,6 @@ julia> shuffle!(rng, DataFrame(a=1:5, b=1:5))
    5 │     5      5
 """
 Random.shuffle!(df::AbstractDataFrame) =
-    shuffle!(Random.default_rng(), df)
+    permute!(df, randperm(nrow(df)))
 Random.shuffle!(r::AbstractRNG, df::AbstractDataFrame) =
     permute!(df, randperm(r, nrow(df)))
