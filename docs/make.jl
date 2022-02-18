@@ -2,7 +2,7 @@ using Documenter
 using DataFrames
 using CategoricalArrays
 
-DocMeta.setdocmeta!(DataFrames, :DocTestSetup, :(using DataFrames); recursive=true)
+DocMeta.setdocmeta!(DataFrames, :DocTestSetup, :(using DataFrames, Random); recursive=true)
 
 # Build documentation.
 # ====================
