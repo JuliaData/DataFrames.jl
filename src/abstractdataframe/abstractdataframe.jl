@@ -2373,6 +2373,33 @@ function Base.reverse!(df::AbstractDataFrame, start::Integer=1, stop::Integer=nr
     return df
 end
 
+function _permutation_helper(fun::Union{typeof(Base.permute!), typeof(Base.invpermute!)},
+                             df::AbstractDataFrame, p::AbstractVector{<:Integer})
+    toskip = Set{Int}()
+    seen_cols = IdDict{Any, Nothing}()
+    for (i, col) in enumerate(eachcol(df))
+        if haskey(seen_cols, col)
+            push!(toskip, i)
+        else
+            seen_cols[col] = nothing
+        end
+        # p might be a column of df so we make sure we unalias
+        if col === p
+            p = copy(p)
+        end
+    end
+
+    pp = similar(p)
+
+    for (i, col) in enumerate(eachcol(df))
+        if !(i in toskip)
+            copyto!(pp, p)
+            fun(col, pp)
+        end
+    end
+    return df
+end
+
 """
     permute!(df::AbstractDataFrame, p)
 
@@ -2410,31 +2437,8 @@ julia> permute!(df, [5, 3, 1, 2, 4])
    4 │     2      7     12
    5 │     4      9     14
 """
-function Base.permute!(df::AbstractDataFrame, p::AbstractVector{<:Integer})
-    toskip = Set{Int}()
-    seen_cols = IdDict{Any, Nothing}()
-    for (i, col) in enumerate(eachcol(df))
-        if haskey(seen_cols, col)
-            push!(toskip, i)
-        else
-            seen_cols[col] = nothing
-        end
-        # p might be a column of df so we make sure we unalias
-        if col === p
-            p = copy(p)
-        end
-    end
-
-    pp = similar(p)
-
-    for (i, col) in enumerate(eachcol(df))
-        if !(i in toskip)
-            copyto!(pp, p)
-            Base.permute!!(col, pp)
-        end
-    end
-    return df
-end
+Base.permute!(df::AbstractDataFrame, p::AbstractVector{<:Integer}) =
+    _permutation_helper(permute!!, df, p)
 
 """
     invpermute!(df::AbstractDataFrame, p)
@@ -2481,31 +2485,8 @@ julia> invpermute!(df, [5, 3, 1, 2, 4])
    4 │     4      9     14
    5 │     5     10     15
 """
-function Base.invpermute!(df::AbstractDataFrame, p::AbstractVector{<:Integer})
-    toskip = Set{Int}()
-    seen_cols = IdDict{Any, Nothing}()
-    for (i, col) in enumerate(eachcol(df))
-        if haskey(seen_cols, col)
-            push!(toskip, i)
-        else
-            seen_cols[col] = nothing
-        end
-        # p might be a column of df so we make sure we unalias
-        if col === p
-            p = copy(p)
-        end
-    end
-
-    pp = similar(p)
-
-    for (i, col) in enumerate(eachcol(df))
-        if !(i in toskip)
-            copyto!(pp, p)
-            Base.invpermute!!(col, pp)
-        end
-    end
-    return df
-end
+Base.invpermute!(df::AbstractDataFrame, p::AbstractVector{<:Integer}) =
+    _permutation_helper(invpermute!!, df, p)
 
 """
     shuffle([rng=GLOBAL_RNG,] df::AbstractDataFrame)
