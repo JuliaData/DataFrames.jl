@@ -2264,6 +2264,7 @@ Base.setindex!(::AbstractDataFrame, ::Any, ::Union{Symbol, Integer, AbstractStri
     reverse(df::AbstractDataFrame, start=1, stop=nrow(df))
 
 Return a data frame containing the rows in `df` in reversed order.
+If `start` and `stop` are provided, only rows in the `start:stop` range are affected.
 
 # Examples
 
