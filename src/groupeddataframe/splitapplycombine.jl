@@ -439,8 +439,8 @@ function _combine_process_pair_astable(optional_i::Bool,
     if out_col_name isa AbstractVector{Symbol}
         if length(out_col_name) != length(nms)
             throw(ArgumentError("Number of returned columns is $(length(nms)) " *
-                    "and it does not match the length of requested " *
-                    "output which is $(length(out_col_name))"))
+                                "and it does not match the number of provided output " *
+                                "names which is $(length(out_col_name))"))
         else
             nms = out_col_name
         end
