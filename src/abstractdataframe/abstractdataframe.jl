@@ -2373,7 +2373,7 @@ function Base.reverse!(df::AbstractDataFrame, start::Integer=1, stop::Integer=nr
     return df
 end
 
-function _permutation_helper!(fun::Union{typeof(Base.permute!), typeof(Base.invpermute!)},
+function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.invpermute!!)},
                              df::AbstractDataFrame, p::AbstractVector{<:Integer})
     toskip = Set{Int}()
     seen_cols = IdDict{Any, Nothing}()
@@ -2438,7 +2438,7 @@ julia> permute!(df, [5, 3, 1, 2, 4])
    5 │     4      9     14
 """
 Base.permute!(df::AbstractDataFrame, p::AbstractVector{<:Integer}) =
-    _permutation_helper!(permute!!, df, p)
+    _permutation_helper!(Base.permute!!, df, p)
 
 """
     invpermute!(df::AbstractDataFrame, p)
@@ -2486,7 +2486,7 @@ julia> invpermute!(df, [5, 3, 1, 2, 4])
    5 │     5     10     15
 """
 Base.invpermute!(df::AbstractDataFrame, p::AbstractVector{<:Integer}) =
-    _permutation_helper!(invpermute!!, df, p)
+    _permutation_helper!(Base.invpermute!!, df, p)
 
 """
     shuffle([rng=GLOBAL_RNG,] df::AbstractDataFrame)
