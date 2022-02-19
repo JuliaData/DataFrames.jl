@@ -1451,6 +1451,76 @@ julia> unique!(df)  # modifies df
 (unique, unique!)
 
 """
+    expand(df::AbstractDataFrame, indexcols; complete::Bool=false,
+           allowduplicates::Bool=false, fill=missing)
+"""
+function expand(df::AbstractDataFrame, indexcols; complete::Bool=false,
+                allowduplicates::Bool=false, fill=missing)
+    colind = index(df)[indexcols]
+
+    if row_group_slots(ntuple(i -> df[!, colind[i]], length(colind)),
+                       Val(false), nothing, false, nothing)[1] != nrow(df)
+        allowduplicates || throw(ArgumentError("duplicate rows in input"))
+    end
+
+    # Create a vector of vectors of unique values in each column
+    uniqueVals = []
+    for col in colind
+        # levels drops missing, handle the case where missing values are present
+        # All levels are retained, missing is added only if present
+        if any(ismissing, df[!, col])
+            tempcol = vcat(levels(df[!, col]), missing)
+        else
+            tempcol = levels(df[!, col])
+        end
+        push!(uniqueVals, tempcol)
+    end
+
+    # make sure we do not overflow in the target data frame size
+    target_rows = Int(foldl((x, y) -> x * length(y), uniqueVals, init=big(1)))
+    if iszero(target_rows)
+        @assert iszero(nrow(df))
+        return complete ? copy(df) : select(df, colind)
+    end
+
+    # construct expanded columns
+    out_df = DataFrame()
+    inner = 1
+    @assert length(uniqueVals) == length(colind)
+    for (val, cind) in zip(uniqueVals, colind)
+        len = length(val)
+        target_col = Tables.allocatecolumn(eltype(df[!, cind]), len)
+        target_col .= val
+        last_inner = inner
+        inner *= len
+        outer, remv = divrem(target_rows, inner)
+        @assert iszero(remv)
+        out_df[!, _names(df)[cind]] = repeat(target_col, inner=last_inner, outer=outer)
+    end
+    @assert inner == target_rows
+
+    # optionally join the remaining columns
+    if complete
+        idx_ind = 0
+        while columnindex(df, string("source", idx_ind)) != 0
+            idx_ind += 1
+        end
+        out_df = leftjoin(out_df, df; on=_names(df)[colind],
+                          indicator=string("source", idx_ind),
+                          matchmissing=:equal)
+        # Replace missing values with the fill
+        if !ismissing(fill)
+            mask = out_df[!, end] .== "left_only"
+            for n in length(colind)+1:ncol(out_df)-1
+                out_df[!, n] .= ifelse.(mask, Ref(fill), out_df[!, n])
+            end
+        end
+        select!(out_df, 1:ncol(out_df)-1)
+    end
+    return out_df
+end
+
+"""
     hcat(df::AbstractDataFrame...;
          makeunique::Bool=false, copycols::Bool=true)
 
