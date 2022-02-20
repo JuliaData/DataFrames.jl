@@ -12,6 +12,9 @@
 * Add special syntax for `eachindex`, `groupindices`, and `proprow`
   to transformation mini-language
   ([#3001](https://github.com/JuliaData/DataFrames.jl/pull/3001)).
+* Add support for `reverse!`, `permute!`, `invpermute!`, `shuffle`,
+  and `shuffle!` functions. Improve functionality of `reverse`.
+  ([#3010](https://github.com/JuliaData/DataFrames.jl/pull/3010)).
 * `first` and `last` for `GroupedDataFrame` now support passing number of elements to get
   ([#3006](https://github.com/JuliaData/DataFrames.jl/issues/3006))
 

@@ -682,25 +682,5 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
     return sort!(df, _alg, ord)
 end
 
-function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering)
-    toskip = Set{Int}()
-    seen_cols = IdDict{Any, Nothing}()
-    for (i, col) in enumerate(eachcol(df))
-        if haskey(seen_cols, col)
-            push!(toskip, i)
-        else
-            seen_cols[col] = nothing
-        end
-    end
-
-    p = _sortperm(df, a, o)
-    pp = similar(p)
-
-    for (i, col) in enumerate(eachcol(df))
-        if !(i in toskip)
-            copyto!(pp, p)
-            Base.permute!!(col, pp)
-        end
-    end
-    return df
-end
+Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering) =
+    permute!(df, _sortperm(df, a, o))

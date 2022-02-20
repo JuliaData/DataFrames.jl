@@ -2050,14 +2050,137 @@ end
     @test reverse(df) == DataFrame(a=5:-1:1, b=1:5)
     @test reverse(DataFrame(a=1, b=1)) == DataFrame(a=1, b=1)
     @test typeof(reverse(df)) == DataFrame
+    @test reverse(df, 2, 3) == df[[1; 3; 2; 4:end], :]
+    @test reverse(df, 3) == df[[1; 2; end:-1:3], :]
+
+    df = DataFrame(a=1:5)
+    df.b = df.a
+    @test reverse(df) == DataFrame(a=5:-1:1, b=5:-1:1)
 end
 
-@testset "reverse SubDataFrame" begin
+@testset "reverse! DataFrame" begin
+    df = DataFrame(a=1:5, b=5:-1:1)
+    cdf = copy(df)
+    @test reverse!(df) === df
+    @test df == DataFrame(a=5:-1:1, b=1:5)
+    @test reverse!(DataFrame(a=1, b=1)) == DataFrame(a=1, b=1)
+    df = DataFrame(a=1:5, b=5:-1:1)
+    @test reverse!(df, 2, 3) == cdf[[1; 3; 2; 4:end], :]
+    df = DataFrame(a=1:5, b=5:-1:1)
+    @test reverse!(df, 3) == cdf[[1; 2; end:-1:3], :]
+
+    df = DataFrame(a=1:5)
+    df.b = df.a
+    df.c = 11:15
+    @test reverse!(df) == DataFrame(a=5:-1:1, b=5:-1:1, c=15:-1:11)
+
+    x = collect(1:6)
+    df = DataFrame()
+    df.a = view(x, 1:5)
+    df.b = view(x, 2:6)
+    @test reverse(df) == DataFrame(a=5:-1:1, b=6:-1:2)
+    # incorrect result due to aliasing
+    @test reverse!(df) != DataFrame(a=5:-1:1, b=6:-1:2)
+end
+
+@testset "reverse! SubDataFrame" begin
     df = DataFrame(a=1:10, b=10:-1:1, c=11:20)
-    @test reverse(view(df, 1:3, 1:2)) == DataFrame(a=[3, 2, 1], b=[8, 9, 10])
-    @test reverse(view(df, 1:5, 1:3)) == DataFrame(a=5:-1:1, b=6:10, c=15:-1:11)
-    @test reverse(view(df, :, 1:2)) == DataFrame(a=10:-1:1, b=1:10)
-    @test typeof(reverse(view(df, :, 1:2))) == DataFrame
+    cdf = copy(df)
+    dfv = view(df, 1:3, 1:2)
+    @test reverse!(dfv) === dfv
+    @test dfv == DataFrame(a=[3, 2, 1], b=[8, 9, 10])
+    @test df == insertcols!(reverse(cdf[:, 1:2], 1, 3), :c => 11:20)
+
+    df = DataFrame(a=1:10, b=10:-1:1, c=11:20)
+    @test reverse!(view(df, 1:5, 1:3)) == DataFrame(a=5:-1:1, b=6:10, c=15:-1:11)
+    df = DataFrame(a=1:10, b=10:-1:1, c=11:20)
+    @test reverse!(view(df, :, 1:2)) == DataFrame(a=10:-1:1, b=1:10)
+    @test reverse!(view(df, :, 1:2)) isa SubDataFrame
+    df = DataFrame(a=1:10, b=10:-1:1, c=11:20)
+    @test reverse(view(df, 2:5, 2:3), 2) == DataFrame(b=[9; 6:8], c=[12; 15:-1:13])
+    df = DataFrame(a=1:10, b=10:-1:1, c=11:20)
+    @test reverse(view(df, 2:5, 2:3), 2, 3) == DataFrame(b=[9, 7, 8, 6], c=[12, 14, 13, 15])
+
+    df = DataFrame(a=1:5)
+    df.b = df.a
+    @test reverse!(view(df, 2:4, 1:2)) == DataFrame(a=4:-1:2, b=4:-1:2)
+
+    x = collect(1:6)
+    df = DataFrame()
+    df.a = view(x, 1:5)
+    df.b = view(x, 2:6)
+    dfv = view(df, 2:4, :)
+    @test reverse(dfv) == DataFrame(a=4:-1:2, b=5:-1:3)
+    # incorrect result due to aliasing
+    @test reverse!(dfv) != DataFrame(a=4:-1:2, b=5:-1:3)
+
+end
+
+@testset "permute!, invpermute!" begin
+    df = DataFrame(a=1:5, b=6:10, c=11:15)
+    df.d = df.a
+    dfc = copy(df)
+    @test permute!(df, [5, 3, 1, 2, 4]) === df
+    @test df == dfc[[5, 3, 1, 2, 4], :]
+    @test invpermute!(df, [5, 3, 1, 2, 4]) === df
+    @test df == dfc
+
+    df = DataFrame(a=1:5, b=6:10, c=11:15)
+    df.d = df.a
+    dfc = copy(df)
+    @test permute!(df, [5, 3, 1, 2, 4]) === df
+    @test df == dfc[[5, 3, 1, 2, 4], :]
+    @test invpermute!(df, df.d) === df
+    @test df == dfc
+
+    df2 = copy(dfc)
+    dfv = view(df2, 1:4, :)
+    @test permute!(dfv, [3, 1, 2, 4]) === dfv
+    @test dfv == dfc[[3, 1, 2, 4], :]
+    @test invpermute!(dfv, [3, 1, 2, 4]) === dfv
+    @test df2 == dfc
+
+    df2 = copy(dfc)
+    dfv = view(df2, 1:4, :)
+    @test permute!(dfv, [3, 1, 2, 4]) === dfv
+    @test dfv == dfc[[3, 1, 2, 4], :]
+    @test invpermute!(dfv, dfv.d) === dfv
+    @test df2 == dfc
+end
+
+@testset "shuffle, shuffle!" begin
+    refdf = DataFrame(a=1:5, b=11:15)
+    refdf.c = refdf.a
+    for df in (refdf, view(refdf, 2:5, [2, 1]))
+        x = randperm(MersenneTwister(1234), nrow(df))
+        mt = MersenneTwister(1234)
+        @test shuffle(mt, df) == df[x, :]
+        Random.seed!(1234)
+        x = randperm(nrow(df))
+        Random.seed!(1234)
+        @test shuffle(df) == df[x, :]
+    end
+    df = copy(refdf)
+    x = randperm(MersenneTwister(1234), nrow(df))
+    mt = MersenneTwister(1234)
+    @test shuffle!(mt, df) === df
+    @test df == refdf[x, :]
+    df = copy(refdf)
+    Random.seed!(1234)
+    x = randperm(nrow(df))
+    Random.seed!(1234)
+    @test shuffle!(df) === df
+    @test df == refdf[x, :]
+
+    df = copy(refdf)
+    dfv = view(df, 2:4, [3, 1])
+    x = randperm(MersenneTwister(1234), nrow(dfv))
+    mt = MersenneTwister(1234)
+    @test shuffle!(mt, dfv) === dfv
+    @test dfv == view(refdf, 2:4, [3, 1])[x, :]
+    @test df[1, :] == refdf[1, :]
+    @test df[5, :] == refdf[5, :]
+    @test df.b == refdf.b
 end
 
 end # module
