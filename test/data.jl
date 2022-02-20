@@ -473,4 +473,19 @@ end
     @test isapprox(df, DataFrame(x1=[0.0, 0.0, 0.0], x2=[1.1, 1.0, 1.0]), atol=0.11)
 end
 
+@testset "completecombinations"  begin
+    df1 = DataFrame(a=[1, 2, missing], b=[1, 1, 2],
+                    c=categorical([11, 12, missing]), d=111:113)
+    df2 = DataFrame(a=[1, 1, missing], b=[1, 1, 2],
+                    c=categorical([11, 12, missing]), d=111:113)
+
+    # allcols=true, allowduplicates=true
+
+    # allcols=true, allowduplicates=false
+    # allcols=false, allowduplicates=true
+    # allcols=false, allowduplicates=false
+    # fill not missing
+    # empty indexcols
+end
+
 end # module

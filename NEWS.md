@@ -17,6 +17,9 @@
   ([#3010](https://github.com/JuliaData/DataFrames.jl/pull/3010)).
 * `first` and `last` for `GroupedDataFrame` now support passing number of elements to get
   ([#3006](https://github.com/JuliaData/DataFrames.jl/issues/3006))
+* Add `completecombinations` function that generates all combinations of
+  levels of selected columns of a data frame
+  ([#3012](https://github.com/JuliaData/DataFrames.jl/issues/3012))
 
 # DataFrames.jl v1.3.2 Patch Release Notes
 

@@ -1451,10 +1451,58 @@ julia> unique!(df)  # modifies df
 (unique, unique!)
 
 """
-    expand(df::AbstractDataFrame, indexcols; complete::Bool=false,
-           allowduplicates::Bool=false, fill=missing)
+    completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=false,
+                         allowduplicates::Bool=false, fill=missing)
+
+    Generate all combinations of `levels` (including `missing` value where
+    present) of `indexcols` in `df` data frame.
+
+    If `allcols` is `false` (the default) in the resulting data frame only the
+    unique combinations of `indexcols` are included.
+
+    If `allcols` is `true` all columns from `df` are added to the resulting data
+    frame (the `indexcols` are the first columns stored in the result). For the
+    combinations of `indexcols` these columns take `fill` value (`missing`) by
+    default.
+
+    If `allowduplicates` is `false` (the default) `indexcols` may only contain
+    unique combinations of `indexcols` values. If `allowduplicates` is `true`
+    duplicates are allowed. They are not repeated if `allcols` is `false`
+    (only) unique combinations are produced then, but if `allcols` is `true`
+    the duplicates are included.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(x=1:2, y='a':'b', z=["x", "y"])
+2×3 DataFrame
+ Row │ x      y     z
+     │ Int64  Char  String
+─────┼─────────────────────
+   1 │     1  a     x
+   2 │     2  b     y
+
+julia> completecombinations(df, [:x, :y])
+4×2 DataFrame
+ Row │ x      y
+     │ Int64  Char
+─────┼─────────────
+   1 │     1  a
+   2 │     2  a
+   3 │     1  b
+   4 │     2  b
+
+julia> completecombinations(df, [:y, :z], allcols=true)
+4×3 DataFrame
+ Row │ y     z       x
+     │ Char  String  Int64?
+─────┼───────────────────────
+   1 │ a     x             1
+   2 │ b     x       missing
+   3 │ a     y       missing
+   4 │ b     y             2
+```
 """
-function expand(df::AbstractDataFrame, indexcols; complete::Bool=false,
+function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=false,
                 allowduplicates::Bool=false, fill=missing)
     colind = index(df)[indexcols]
 
@@ -1480,7 +1528,7 @@ function expand(df::AbstractDataFrame, indexcols; complete::Bool=false,
     target_rows = Int(foldl((x, y) -> x * length(y), uniqueVals, init=big(1)))
     if iszero(target_rows)
         @assert iszero(nrow(df))
-        return complete ? copy(df) : select(df, colind)
+        return allcols ? copy(df) : select(df, colind)
     end
 
     # construct expanded columns
@@ -1500,14 +1548,28 @@ function expand(df::AbstractDataFrame, indexcols; complete::Bool=false,
     @assert inner == target_rows
 
     # optionally join the remaining columns
-    if complete
+    if allcols
         idx_ind = 0
         while columnindex(df, string("source", idx_ind)) != 0
             idx_ind += 1
         end
-        out_df = leftjoin(out_df, df; on=_names(df)[colind],
-                          indicator=string("source", idx_ind),
-                          matchmissing=:equal)
+
+        if allowduplicates
+            order_ind = 0
+            while columnindex(df, string("order", order_ind)) != 0
+                order_ind += 1
+            end
+            insertcols!(out_df, 1, string("order", order_ind) => 1:nrow(out_df))
+            out_df = leftjoin(out_df, df; on=_names(df)[colind],
+                            source=string("source", idx_ind),
+                            matchmissing=:equal)
+            sort!(out_df, 1)
+            select!(out_df, 2:ncol(out_df))
+        else
+            leftjoin!(out_df, df; on=_names(df)[colind],
+                      source=string("source", idx_ind),
+                      matchmissing=:equal)
+        end
         # Replace missing values with the fill
         if !ismissing(fill)
             mask = out_df[!, end] .== "left_only"
