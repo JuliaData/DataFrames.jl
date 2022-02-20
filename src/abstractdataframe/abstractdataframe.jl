@@ -1454,11 +1454,11 @@ julia> unique!(df)  # modifies df
     completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=false,
                          allowduplicates::Bool=false, fill=missing)
 
-    Generate all combinations of `levels` (including `missing` value where
-    present) of `indexcols` in `df` data frame.
+    Generate all combinations of `levels` (including `missing` value if
+    present) of `indexcols` in `df` data frame in the order of `levels`.
 
     If `allcols` is `false` (the default) in the resulting data frame only the
-    unique combinations of `indexcols` are included.
+    unique combinations of `indexcols` are included (without duplicates).
 
     If `allcols` is `true` all columns from `df` are added to the resulting data
     frame (the `indexcols` are the first columns stored in the result). For the
@@ -1468,7 +1468,7 @@ julia> unique!(df)  # modifies df
     If `allowduplicates` is `false` (the default) `indexcols` may only contain
     unique combinations of `indexcols` values. If `allowduplicates` is `true`
     duplicates are allowed. They are not repeated if `allcols` is `false`
-    (only) unique combinations are produced then, but if `allcols` is `true`
+    only unique combinations are produced then, but if `allcols` is `true`
     the duplicates are included.
 
 # Examples
@@ -1506,6 +1506,10 @@ function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=fa
                 allowduplicates::Bool=false, fill=missing)
     colind = index(df)[indexcols]
 
+    if length(colind) == 0
+        throw(ArgumentError("At least one column to complete combinations required"))
+    end
+
     has_duplicates = row_group_slots(ntuple(i -> df[!, colind[i]], length(colind)),
                                      Val(false), nothing, false, nothing)[1] != nrow(df)
     if has_duplicates && !allowduplicates
@@ -1529,7 +1533,7 @@ function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=fa
     target_rows = Int(foldl((x, y) -> x * length(y), uniqueVals, init=big(1)))
     if iszero(target_rows)
         @assert iszero(nrow(df))
-        return allcols ? copy(df) : select(df, colind)
+        return allcols ? select(df, colind, :) : select(df, colind)
     end
 
     # construct expanded columns
@@ -1574,8 +1578,15 @@ function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=fa
         # Replace missing values with the fill
         if !ismissing(fill)
             mask = out_df[!, end] .== "left_only"
-            for n in length(colind)+1:ncol(out_df)-1
-                out_df[!, n] .= ifelse.(mask, Ref(fill), out_df[!, n])
+            if count(mask) > 0
+                for n in length(colind)+1:ncol(out_df)-1
+                    tmp_col = out_df[!, n]
+                    out_col = similar(tmp_col,
+                                      promote_type(eltype(tmp_col), typeof(fill)),
+                                      length(tmp_col))
+                    out_col .= ifelse.(mask, Ref(fill), out_df[!, n])
+                    out_df[!, n] = out_col
+                end
             end
         end
         select!(out_df, 1:ncol(out_df)-1)
