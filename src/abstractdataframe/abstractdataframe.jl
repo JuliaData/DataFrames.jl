@@ -1506,9 +1506,10 @@ function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=fa
                 allowduplicates::Bool=false, fill=missing)
     colind = index(df)[indexcols]
 
-    if row_group_slots(ntuple(i -> df[!, colind[i]], length(colind)),
-                       Val(false), nothing, false, nothing)[1] != nrow(df)
-        allowduplicates || throw(ArgumentError("duplicate rows in input"))
+    has_duplicates = row_group_slots(ntuple(i -> df[!, colind[i]], length(colind)),
+                                     Val(false), nothing, false, nothing)[1] != nrow(df)
+    if has_duplicates && !allowduplicates
+        throw(ArgumentError("duplicate rows in input"))
     end
 
     # Create a vector of vectors of unique values in each column
@@ -1554,7 +1555,7 @@ function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=fa
             idx_ind += 1
         end
 
-        if allowduplicates
+        if has_duplicates
             order_ind = 0
             while columnindex(df, string("order", order_ind)) != 0
                 order_ind += 1
