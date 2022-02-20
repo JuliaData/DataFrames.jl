@@ -1504,6 +1504,8 @@ julia> completecombinations(df, [:y, :z], allcols=true)
 """
 function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=false,
                 allowduplicates::Bool=false, fill=missing)
+    _check_consistency(df)
+
     colind = index(df)[indexcols]
 
     if length(colind) == 0
