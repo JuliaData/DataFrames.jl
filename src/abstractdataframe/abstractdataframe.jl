@@ -2374,7 +2374,7 @@ function Base.reverse!(df::AbstractDataFrame, start::Integer=1, stop::Integer=nr
 end
 
 function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.invpermute!!)},
-                             df::AbstractDataFrame, p::AbstractVector{<:Integer})
+                              df::AbstractDataFrame, p::AbstractVector{<:Integer})
     toskip = Set{Int}()
     seen_cols = IdDict{Any, Nothing}()
     for (i, col) in enumerate(eachcol(df))
