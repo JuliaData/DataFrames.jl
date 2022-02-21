@@ -577,6 +577,9 @@ end
     @test isequal_coltyped(completecombinations(df, :c), DataFrame(c=String[]))
     @test isequal_coltyped(completecombinations(df, :c, allcols=true), df[:, [3, 1, 2]])
     @test isequal_coltyped(completecombinations(df, [:c, :b], allcols=true), df[:, [3, 2, 1]])
+
+    df = DataFrame(order94270=[1,1], source72490=1:2)
+    @test completecombinations(df, 1, allcols=true, allowduplicates=true) == df
 end
 
 end # module

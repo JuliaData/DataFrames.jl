@@ -1557,24 +1557,24 @@ function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=fa
     # optionally join the remaining columns
     if allcols
         idx_ind = 0
-        while columnindex(df, string("source", idx_ind)) != 0
+        while columnindex(df, string("source7249", idx_ind)) != 0
             idx_ind += 1
         end
 
         if has_duplicates
             order_ind = 0
-            while columnindex(df, string("order", order_ind)) != 0
+            while columnindex(df, string("order9427", order_ind)) != 0
                 order_ind += 1
             end
-            insertcols!(out_df, 1, string("order", order_ind) => 1:nrow(out_df))
+            insertcols!(out_df, 1, string("order9427", order_ind) => 1:nrow(out_df))
             out_df = leftjoin(out_df, df; on=_names(df)[colind],
-                            source=string("source", idx_ind),
+                            source=string("source7249", idx_ind),
                             matchmissing=:equal)
             sort!(out_df, 1)
             select!(out_df, 2:ncol(out_df))
         else
             leftjoin!(out_df, df; on=_names(df)[colind],
-                      source=string("source", idx_ind),
+                      source=string("source7249", idx_ind),
                       matchmissing=:equal)
         end
         # Replace missing values with the fill
