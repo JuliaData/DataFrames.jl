@@ -89,7 +89,9 @@ const TRANSFORMATION_COMMON_RULES =
     As a special rule, with the `cols => function` and `cols => function =>
     target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
     object then a `NamedTuple` containing columns selected by `cols` is passed to
-    `function`.
+    `function`. The documentation of [`DataFrames.table_transformation`][@ref] provides
+    more information about this functionality, in particular covering performance
+    considerations.
 
     What is allowed for `function` to return is determined by the `target_cols` value:
     1. If both `cols` and `target_cols` are omitted (so only a `function` is passed),
