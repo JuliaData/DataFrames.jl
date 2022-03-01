@@ -2137,7 +2137,7 @@ a.box:active {
 .content pre {
   -webkit-overflow-scrolling: touch;
   overflow-x: auto;
-  padding: 0.7rem 0.5rem;
+  padding: 0;
   white-space: pre;
   word-wrap: normal; }
 
@@ -7115,7 +7115,12 @@ h1:hover .docs-heading-anchor-permalink, h2:hover .docs-heading-anchor-permalink
   display: none !important; }
 
 pre {
-  position: relative; }
+  position: relative;
+  overflow: hidden; }
+  pre code {
+    padding: 0.7rem 0.5rem;
+    overflow: auto;
+    display: block; }
   pre .copy-button {
     opacity: 0.2;
     transition: opacity 0.2s;
@@ -7331,8 +7336,7 @@ pre, code {
     color: #222222; }
 
 .hljs {
-  background: initial !important;
-  padding: initial !important; }
+  background: initial !important; }
 
 .katex .katex-mathml {
   top: 0;
