@@ -528,7 +528,7 @@ end
     @test_throws ArgumentError completecombinations(df2, [:a, :c])
     @test isequal_coltyped(completecombinations(df2, [:a, :c], allowduplicates=true),
                            DataFrame(a=repeat([1, 2, missing], outer=4),
-                                     c=categorical(repeat([12,11,10, missing], inner=3))))
+                                     c=categorical(repeat([12, 11, 10, missing], inner=3))))
     @test isequal_coltyped(completecombinations(df2, [:a, :c], allowduplicates=true, allcols=true),
                            DataFrame(a=[1, 2, missing, 1, 1, 2, missing, 1, 2, missing, 1, 2, missing],
                                      c=categorical([12, 12, 12, 11, 11, 11, 11, 10, 10, 10, missing, missing, missing]),
@@ -566,7 +566,7 @@ end
     # empty indexcols
     @test_throws ArgumentError completecombinations(DataFrame(a=1), [])
 
-    # emmpty data frame case
+    # empty data frame case
     df = DataFrame(a=Int[], b=categorical(Int[]), c=String[])
     levels!(df.b, [1, 2])
     @test isequal_coltyped(completecombinations(df, :a), DataFrame(a=Int[]))

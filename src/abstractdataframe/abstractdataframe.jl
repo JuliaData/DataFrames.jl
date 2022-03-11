@@ -1451,25 +1451,29 @@ julia> unique!(df)  # modifies df
 (unique, unique!)
 
 """
-    completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=false,
-                         allowduplicates::Bool=false, fill=missing)
+    completecombinations(df::AbstractDataFrame, indexcols;
+                         allcols::Bool=false, allowduplicates::Bool=false,
+                         fill=missing)
 
-    Generate all combinations of `levels` (including `missing` value if
-    present) of `indexcols` in `df` data frame in the order of `levels`.
+Generate all combinations of levels of column(s) `indexcols` in data frame `df`.
+Levels and their order are determined by the `levels` function
+(i.e. unique values sorted lexicographically by default, or a custom set
+of levels for e.g. `CategoricalArray` columns), in addition to `missing` if present.
 
-    If `allcols` is `false` (the default) in the resulting data frame only the
-    unique combinations of `indexcols` are included (without duplicates).
+If `allcols=false` (the default) the returned data frame contains
+only columns `indexcols`, with one row for each unique combination
+(without duplicates).
 
-    If `allcols` is `true` all columns from `df` are added to the resulting data
-    frame (the `indexcols` are the first columns stored in the result). For the
-    combinations of `indexcols` these columns take `fill` value (`missing`) by
-    default.
+If `allcols=true` all columns from `df` are also added at the end
+of the returned data frame. For combinations of `indexcols` not
+present in `df` these columns are filled with the `fill` value
+(`missing` by default).
 
-    If `allowduplicates` is `false` (the default) `indexcols` may only contain
-    unique combinations of `indexcols` values. If `allowduplicates` is `true`
-    duplicates are allowed. They are not repeated if `allcols` is `false`
-    only unique combinations are produced then, but if `allcols` is `true`
-    the duplicates are included.
+If `allowduplicates=false` (the default) `indexcols` may only contain
+unique combinations of `indexcols` values. If `allowduplicates=true`
+duplicates are allowed. Only one row for each unique combination
+is retained if `allcols=false`, but if `allcols=true` duplicates
+are included.
 
 # Examples
 ```jldoctest
@@ -1503,23 +1507,23 @@ julia> completecombinations(df, [:y, :z], allcols=true)
 ```
 """
 function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=false,
-                allowduplicates::Bool=false, fill=missing)
+                              allowduplicates::Bool=false, fill=missing)
     _check_consistency(df)
 
     colind = index(df)[indexcols]
 
     if length(colind) == 0
-        throw(ArgumentError("At least one column to complete combinations required"))
+        throw(ArgumentError("At least one column to complete combinations must be specified"))
     end
 
     has_duplicates = row_group_slots(ntuple(i -> df[!, colind[i]], length(colind)),
                                      Val(false), nothing, false, nothing)[1] != nrow(df)
     if has_duplicates && !allowduplicates
-        throw(ArgumentError("duplicate rows in input"))
+        throw(ArgumentError("duplicate combinations of `indexcols` are not allowed in input when `allowduplicates=false`"))
     end
 
     # Create a vector of vectors of unique values in each column
-    uniqueVals = []
+    uniquevals = []
     for col in colind
         # levels drops missing, handle the case where missing values are present
         # All levels are retained, missing is added only if present
