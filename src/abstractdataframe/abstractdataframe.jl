@@ -1486,7 +1486,6 @@ julia> completecombinations(df, [:x, :y])
 
 julia> completecombinations(df, [:y, :z], fill=0)
 4×3 DataFrame
-4×3 DataFrame
  Row │ x       y     z
      │ Int64?  Char  String
 ─────┼──────────────────────
