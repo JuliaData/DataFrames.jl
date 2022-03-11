@@ -1532,11 +1532,11 @@ function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=fa
         else
             tempcol = levels(df[!, col])
         end
-        push!(uniqueVals, tempcol)
+        push!(uniquevals, tempcol)
     end
 
     # make sure we do not overflow in the target data frame size
-    target_rows = Int(foldl((x, y) -> x * length(y), uniqueVals, init=big(1)))
+    target_rows = Int(prod(x -> big(length(x)), uniquevals))
     if iszero(target_rows)
         @assert iszero(nrow(df))
         return allcols ? select(df, colind, :) : select(df, colind)
@@ -1545,11 +1545,11 @@ function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=fa
     # construct expanded columns
     out_df = DataFrame()
     inner = 1
-    @assert length(uniqueVals) == length(colind)
-    for (val, cind) in zip(uniqueVals, colind)
+    @assert length(uniquevals) == length(colind)
+    for (val, cind) in zip(uniquevals, colind)
         len = length(val)
         target_col = Tables.allocatecolumn(eltype(df[!, cind]), len)
-        target_col .= val
+        copy!(target_col, val)
         last_inner = inner
         inner *= len
         outer, remv = divrem(target_rows, inner)
@@ -1572,8 +1572,8 @@ function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=fa
             end
             insertcols!(out_df, 1, string("order9427", order_ind) => 1:nrow(out_df))
             out_df = leftjoin(out_df, df; on=_names(df)[colind],
-                            source=string("source7249", idx_ind),
-                            matchmissing=:equal)
+                              source=string("source7249", idx_ind),
+                              matchmissing=:equal)
             sort!(out_df, 1)
             select!(out_df, 2:ncol(out_df))
         else

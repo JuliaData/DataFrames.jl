@@ -489,6 +489,7 @@ end
                                          b=[1, 1, 1, 2, 2, 2]))
         @test isequal_coltyped(completecombinations(df1, :c, allowduplicates=ad),
                                DataFrame(c=categorical([12, 11, 10, missing])))
+        @test levels(completecombinations(df1, :c, allowduplicates=ad).c) == [12, 11, 10]
         @test isequal_coltyped(completecombinations(df1, [:c, :b], allowduplicates=ad),
                                DataFrame(c=categorical([12, 11, 10, missing, 12, 11, 10, missing]),
                                          b=[1, 1, 1, 1, 2, 2, 2, 2]))
@@ -580,6 +581,11 @@ end
 
     df = DataFrame(order94270=[1,1], source72490=1:2)
     @test completecombinations(df, 1, allcols=true, allowduplicates=true) == df
+
+    df = DataFrame(a=[[1, 1], [2, 2], missing], b=[[1, 1, 1], [1, 1, 1], [2, 2, 2]])
+    @test completecombinations(df, 1:2, allcols=true) ≅
+        DataFrame(a=[[1, 1], [2, 2], missing, [1, 1], [2, 2], missing],
+                  b=[[1, 1, 1], [1, 1, 1], [1, 1, 1], [2, 2, 2], [2, 2, 2], [2, 2, 2]])
 end
 
 end # module
