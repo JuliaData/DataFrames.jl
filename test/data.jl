@@ -483,41 +483,30 @@ end
     levels!(df1.c, [12, 11, 10])
 
     for ad in (true, false)
-        # allcols=false
         @test isequal_coltyped(completecombinations(df1, [:a, :b], allowduplicates=ad),
-                               DataFrame(a=[1, 2, missing, 1, 2, missing],
-                                         b=[1, 1, 1, 2, 2, 2]))
-        @test isequal_coltyped(completecombinations(df1, :c, allowduplicates=ad),
-                               DataFrame(c=categorical([12, 11, 10, missing])))
-        @test levels(completecombinations(df1, :c, allowduplicates=ad).c) == [12, 11, 10]
-        @test isequal_coltyped(completecombinations(df1, [:c, :b], allowduplicates=ad),
-                               DataFrame(c=categorical([12, 11, 10, missing, 12, 11, 10, missing]),
-                                         b=[1, 1, 1, 1, 2, 2, 2, 2]))
-        # allcols=true
-        @test isequal_coltyped(completecombinations(df1, [:a, :b], allcols=true, allowduplicates=ad),
                                DataFrame(a=[1, 2, missing, 1, 2, missing],
                                          b=[1, 1, 1, 2, 2, 2],
                                          c=categorical([11, 12, missing, missing, missing, missing]),
                                          d=[111, 112, missing, missing, missing, 113]))
-        @test isequal_coltyped(completecombinations(df1, [:a, :b], allcols=true, fill="X", allowduplicates=ad),
+        @test isequal_coltyped(completecombinations(df1, [:a, :b], fill="X", allowduplicates=ad),
                                DataFrame(a=[1, 2, missing, 1, 2, missing],
                                          b=[1, 1, 1, 2, 2, 2],
                                          c=[11, 12, "X", "X", "X", missing],
                                          d=[111, 112, "X", "X", "X", 113]))
-        @test isequal_coltyped(completecombinations(df1, :c, allcols=true, allowduplicates=ad),
-                               DataFrame(c=categorical([12, 11, 10, missing]),
-                                         a=[2, 1, missing, missing],
+        @test isequal_coltyped(completecombinations(df1, :c, allowduplicates=ad),
+                               DataFrame(a=[2, 1, missing, missing],
                                          b=[1, 1, missing, 2],
+                                         c=categorical([12, 11, 10, missing]),
                                          d=[112, 111, missing, 113]))
-        @test isequal_coltyped(completecombinations(df1, :c, allcols=true, fill="X", allowduplicates=ad),
-                               DataFrame(c=categorical([12, 11, 10, missing]),
-                                         a=[2, 1, "X", missing],
+        @test isequal_coltyped(completecombinations(df1, :c, fill="X", allowduplicates=ad),
+                               DataFrame(a=[2, 1, "X", missing],
                                          b=[1, 1, "X", 2],
+                                         c=categorical([12, 11, 10, missing]),
                                          d=[112, 111, "X", 113]))
-        @test isequal_coltyped(completecombinations(df1, [:c, :b], allcols=true, allowduplicates=ad),
-                               DataFrame(c=categorical([12, 11, 10, missing, 12, 11, 10, missing]),
+        @test isequal_coltyped(completecombinations(df1, [:c, :b], allowduplicates=ad),
+                               DataFrame(a=[2; 1; fill(missing, 6)],
                                          b=[1, 1, 1, 1, 2, 2, 2, 2],
-                                         a=[2; 1; fill(missing, 6)],
+                                         c=categorical([12, 11, 10, missing, 12, 11, 10, missing]),
                                          d=[112; 111; fill(missing, 5); 113]))
     end
 
@@ -527,22 +516,22 @@ end
     @test_throws ArgumentError completecombinations(df2, :a)
     @test_throws ArgumentError completecombinations(df2, :b)
     @test_throws ArgumentError completecombinations(df2, [:a, :c])
-    @test isequal_coltyped(completecombinations(df2, [:a, :c], allowduplicates=true),
-                           DataFrame(a=repeat([1, 2, missing], outer=4),
-                                     c=categorical(repeat([12, 11, 10, missing], inner=3))))
-    @test isequal_coltyped(completecombinations(df2, [:a, :c], allowduplicates=true, allcols=true),
+    @test isequal_coltyped(completecombinations(df2, [:a, :c], allowduplicates=true, fill=0),
                            DataFrame(a=[1, 2, missing, 1, 1, 2, missing, 1, 2, missing, 1, 2, missing],
+                                     b=Union{Int,Missing}[0, 0, 1, 3, 2, 0, 0, 0, 0, 0, 0, 2, 0],
                                      c=categorical([12, 12, 12, 11, 11, 11, 11, 10, 10, 10, missing, missing, missing]),
+                                     d=Union{Int,Missing}[0, 0, 112, 111, 114, 0, 0, 0, 0, 0, 0, 113, 0]))
+    @test isequal_coltyped(completecombinations(df2, [:a, :c], allowduplicates=true),
+                           DataFrame(a=[1, 2, missing, 1, 1, 2, missing, 1, 2, missing, 1, 2, missing],
                                      b=[missing, missing, 1, 3, 2, missing, missing, missing, missing, missing, missing, 2, missing],
+                                     c=categorical([12, 12, 12, 11, 11, 11, 11, 10, 10, 10, missing, missing, missing]),
                                      d=[missing, missing, 112, 111, 114, missing, missing, missing, missing, missing, missing, 113, missing]))
 
     # test of a larger scenario
     Random.seed!(1234)
     df3 = DataFrame(a=rand(1:10, 100), b=rand(1:10, 100), c=1:100)
-    @test_throws ArgumentError completecombinations(df3, [:a, :b], allcols=true)
-    @test completecombinations(df3, [:a, :b], allowduplicates=true) ==
-          DataFrame(a=repeat(1:10, outer=10), b=repeat(1:10, inner=10))
-    large_res = completecombinations(df3, [:a, :b], allowduplicates=true, allcols=true)
+    @test_throws ArgumentError completecombinations(df3, [:a, :b])
+    large_res = completecombinations(df3, [:a, :b], allowduplicates=true)
     @test issorted(large_res.b)
     @test levels(large_res.b) == levels(large_res.b) == 1:10
     for (i, sdf) in enumerate(groupby(large_res, :b))
@@ -570,22 +559,27 @@ end
     # empty data frame case
     df = DataFrame(a=Int[], b=categorical(Int[]), c=String[])
     levels!(df.b, [1, 2])
-    @test isequal_coltyped(completecombinations(df, :a), DataFrame(a=Int[]))
-    @test isequal_coltyped(completecombinations(df, :a, allcols=true), df)
-    @test isequal_coltyped(completecombinations(df, :b), DataFrame(b=categorical([1, 2])))
-    @test isequal_coltyped(completecombinations(df, :b, allcols=true),
-                           DataFrame(b=categorical([1, 2]), a=missings(Int, 2), c=missings(String, 2)))
-    @test isequal_coltyped(completecombinations(df, :c), DataFrame(c=String[]))
-    @test isequal_coltyped(completecombinations(df, :c, allcols=true), df[:, [3, 1, 2]])
-    @test isequal_coltyped(completecombinations(df, [:c, :b], allcols=true), df[:, [3, 2, 1]])
+    @test isequal_coltyped(completecombinations(df, :a), df)
+    @test isequal_coltyped(completecombinations(df, :b),
+                           DataFrame(a=missings(Int, 2), b=categorical([1, 2]), c=missings(String, 2)))
+    @test isequal_coltyped(completecombinations(df, :c), df)
+    @test isequal_coltyped(completecombinations(df, [:c, :b]), df)
 
     df = DataFrame(order94270=[1,1], source72490=1:2)
-    @test completecombinations(df, 1, allcols=true, allowduplicates=true) == df
+    @test completecombinations(df, 1, allowduplicates=true) == df
 
     df = DataFrame(a=[[1, 1], [2, 2], missing], b=[[1, 1, 1], [1, 1, 1], [2, 2, 2]])
-    @test completecombinations(df, 1:2, allcols=true) ≅
+    @test completecombinations(df, 1:2) ≅
         DataFrame(a=[[1, 1], [2, 2], missing, [1, 1], [2, 2], missing],
                   b=[[1, 1, 1], [1, 1, 1], [1, 1, 1], [2, 2, 2], [2, 2, 2], [2, 2, 2]])
+
+    df = DataFrame(a=[1, 1, 2, 3], b=["a", "a", "a", "b"])
+    @test completecombinations(df, 1:2, allowduplicates=true) ==
+          DataFrame(a=[1, 1, 2, 3, 1, 2, 3],
+                    b=["a", "a", "a", "a", "b", "b", "b"])
+    @test_throws ArgumentError completecombinations(df, 1:2)
+    @test_throws ArgumentError completecombinations(df, 1)
+    @test_throws ArgumentError completecombinations(df, 2)
 end
 
 end # module

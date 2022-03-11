@@ -1452,7 +1452,7 @@ julia> unique!(df)  # modifies df
 
 """
     completecombinations(df::AbstractDataFrame, indexcols;
-                         allcols::Bool=false, allowduplicates::Bool=false,
+                         allowduplicates::Bool=false,
                          fill=missing)
 
 Generate all combinations of levels of column(s) `indexcols` in data frame `df`.
@@ -1460,20 +1460,9 @@ Levels and their order are determined by the `levels` function
 (i.e. unique values sorted lexicographically by default, or a custom set
 of levels for e.g. `CategoricalArray` columns), in addition to `missing` if present.
 
-If `allcols=false` (the default) the returned data frame contains
-only columns `indexcols`, with one row for each unique combination
-(without duplicates).
-
-If `allcols=true` all columns from `df` are also added at the end
-of the returned data frame. For combinations of `indexcols` not
-present in `df` these columns are filled with the `fill` value
-(`missing` by default).
-
 If `allowduplicates=false` (the default) `indexcols` may only contain
 unique combinations of `indexcols` values. If `allowduplicates=true`
-duplicates are allowed. Only one row for each unique combination
-is retained if `allcols=false`, but if `allcols=true` duplicates
-are included.
+duplicates are allowed
 
 # Examples
 ```jldoctest
@@ -1486,40 +1475,43 @@ julia> df = DataFrame(x=1:2, y='a':'b', z=["x", "y"])
    2 │     2  b     y
 
 julia> completecombinations(df, [:x, :y])
-4×2 DataFrame
- Row │ x      y
-     │ Int64  Char
-─────┼─────────────
-   1 │     1  a
-   2 │     2  a
-   3 │     1  b
-   4 │     2  b
-
-julia> completecombinations(df, [:y, :z], allcols=true)
 4×3 DataFrame
- Row │ y     z       x
-     │ Char  String  Int64?
-─────┼───────────────────────
-   1 │ a     x             1
-   2 │ b     x       missing
-   3 │ a     y       missing
-   4 │ b     y             2
+ Row │ x      y     z
+     │ Int64  Char  String?
+─────┼──────────────────────
+   1 │     1  a     x
+   2 │     2  a     missing
+   3 │     1  b     missing
+   4 │     2  b     y
+
+julia> completecombinations(df, [:y, :z], fill=0)
+4×3 DataFrame
+4×3 DataFrame
+ Row │ x       y     z
+     │ Int64?  Char  String
+─────┼──────────────────────
+   1 │      1  a     x
+   2 │      0  b     x
+   3 │      0  a     y
+   4 │      2  b     y
 ```
 """
-function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=false,
+function completecombinations(df::AbstractDataFrame, indexcols;
                               allowduplicates::Bool=false, fill=missing)
     _check_consistency(df)
 
     colind = index(df)[indexcols]
 
     if length(colind) == 0
-        throw(ArgumentError("At least one column to complete combinations must be specified"))
+        throw(ArgumentError("At least one column to complete combinations " *
+                            "must be specified"))
     end
 
     has_duplicates = row_group_slots(ntuple(i -> df[!, colind[i]], length(colind)),
                                      Val(false), nothing, false, nothing)[1] != nrow(df)
     if has_duplicates && !allowduplicates
-        throw(ArgumentError("duplicate combinations of `indexcols` are not allowed in input when `allowduplicates=false`"))
+        throw(ArgumentError("duplicate combinations of `indexcols` are not " *
+                            "allowed in input when `allowduplicates=false`"))
     end
 
     # Create a vector of vectors of unique values in each column
@@ -1539,7 +1531,7 @@ function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=fa
     target_rows = Int(prod(x -> big(length(x)), uniquevals))
     if iszero(target_rows)
         @assert iszero(nrow(df))
-        return allcols ? select(df, colind, :) : select(df, colind)
+        return copy(df)
     end
 
     # construct expanded columns
@@ -1558,46 +1550,45 @@ function completecombinations(df::AbstractDataFrame, indexcols; allcols::Bool=fa
     end
     @assert inner == target_rows
 
-    # optionally join the remaining columns
-    if allcols
-        idx_ind = 0
-        while columnindex(df, string("source7249", idx_ind)) != 0
-            idx_ind += 1
-        end
-
-        if has_duplicates
-            order_ind = 0
-            while columnindex(df, string("order9427", order_ind)) != 0
-                order_ind += 1
-            end
-            insertcols!(out_df, 1, string("order9427", order_ind) => 1:nrow(out_df))
-            out_df = leftjoin(out_df, df; on=_names(df)[colind],
-                              source=string("source7249", idx_ind),
-                              matchmissing=:equal)
-            sort!(out_df, 1)
-            select!(out_df, 2:ncol(out_df))
-        else
-            leftjoin!(out_df, df; on=_names(df)[colind],
-                      source=string("source7249", idx_ind),
-                      matchmissing=:equal)
-        end
-        # Replace missing values with the fill
-        if !ismissing(fill)
-            mask = out_df[!, end] .== "left_only"
-            if count(mask) > 0
-                for n in length(colind)+1:ncol(out_df)-1
-                    tmp_col = out_df[!, n]
-                    out_col = similar(tmp_col,
-                                      promote_type(eltype(tmp_col), typeof(fill)),
-                                      length(tmp_col))
-                    out_col .= ifelse.(mask, Ref(fill), out_df[!, n])
-                    out_df[!, n] = out_col
-                end
-            end
-        end
-        select!(out_df, 1:ncol(out_df)-1)
+    idx_ind = 0
+    while columnindex(df, string("source7249", idx_ind)) != 0
+        idx_ind += 1
     end
-    return out_df
+
+    if has_duplicates
+        order_ind = 0
+        while columnindex(df, string("order9427", order_ind)) != 0
+            order_ind += 1
+        end
+        insertcols!(out_df, 1, string("order9427", order_ind) => 1:nrow(out_df))
+        out_df = leftjoin(out_df, df; on=_names(df)[colind],
+                            source=string("source7249", idx_ind),
+                            matchmissing=:equal)
+        sort!(out_df, 1)
+        select!(out_df, 2:ncol(out_df))
+    else
+        leftjoin!(out_df, df; on=_names(df)[colind],
+                    source=string("source7249", idx_ind),
+                    matchmissing=:equal)
+    end
+
+    # Replace missing values with the fill
+    if !ismissing(fill)
+        mask = out_df[!, end] .== "left_only"
+        if count(mask) > 0
+            for n in length(colind)+1:ncol(out_df)-1
+                tmp_col = out_df[!, n]
+                out_col = similar(tmp_col,
+                                    promote_type(eltype(tmp_col), typeof(fill)),
+                                    length(tmp_col))
+                out_col .= ifelse.(mask, Ref(fill), out_df[!, n])
+                out_df[!, n] = out_col
+            end
+        end
+    end
+
+    # keep only columns from the source in their original order
+    return select!(out_df, _names(df))
 end
 
 """
