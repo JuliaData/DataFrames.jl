@@ -17,6 +17,8 @@
   ([#3010](https://github.com/JuliaData/DataFrames.jl/pull/3010)).
 * `first` and `last` for `GroupedDataFrame` now support passing number of elements to get
   ([#3006](https://github.com/JuliaData/DataFrames.jl/issues/3006))
+* Add `insertcols` is a version of `insertcols!` that creates a new data frame
+  ([#3020](https://github.com/JuliaData/DataFrames.jl/issues/3020))
 
 # DataFrames.jl v1.3.2 Patch Release Notes
 

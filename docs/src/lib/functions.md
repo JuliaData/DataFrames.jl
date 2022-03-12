@@ -73,6 +73,7 @@ append!
 combine
 flatten
 hcat
+insertcols
 insertcols!
 invpermute!
 mapcols

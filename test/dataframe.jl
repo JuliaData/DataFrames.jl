@@ -344,6 +344,19 @@ end
     @test insertcols!(df, "a" => 2, makeunique=true) == DataFrame(a=1, a_1=2)
 end
 
+@testset "insertcols!" begin
+    df = DataFrame(a=1:3, b=4:6)
+    df2 = insertcols(df, :c => 1)
+    @test df == DataFrame(a=1:3, b=4:6)
+    @test df2 == DataFrame(a=1:3, b=4:6, c=1)
+    @test df.a !== df2.a
+    @test df.b !== df2.b
+    x = [7, 8, 9]
+    df2 = insertcols(df, 0, :a => x, after=true, makeunique=true, copycols=false)
+    @test df2 == DataFrame(a_1=x, a=1:3, b=4:6)
+    @test df2[!, 1] === x
+end
+
 @testset "unsupported insertcols!" begin
     df = DataFrame(x=1:2)
     @test_throws ArgumentError insertcols!(df, 2, y=2:3)
