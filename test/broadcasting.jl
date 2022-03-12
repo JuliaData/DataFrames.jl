@@ -1479,6 +1479,25 @@ end
         @test v1 == [100.0, 100.0, 100.0]
     end
 
+    if isdefined(Base, :dotgetproperty)
+        df = DataFrame(a=1:4, b=1, c=2)
+        df.a .= 'a':'d'
+        @test df == DataFrame(a='a':'d', b=1, c=2)
+        dfv = view(df, 2:3, 2:3)
+        x = df.b
+        dfv.b .= 0
+        @test df.b == [1, 0, 0, 1]
+        @test x == [1, 1, 1, 1]
+    else
+        df = DataFrame(a=1:4, b=1, c=2)
+        df.a .= 'a':'d'
+        @test df == DataFrame(a=97:100, b=1, c=2)
+        dfv = view(df, 2:3, 2:3)
+        dfv.b .= 0
+        @test df.b == [1, 0, 0, 1]
+        @test x === df.b
+    end
+
     df = copy(refdf)
     if isdefined(Base, :dotgetproperty)
         df.newcol .= 'd'
@@ -1890,10 +1909,10 @@ end
 
 @testset "broadcasting of getproperty" begin
     df = DataFrame(a=1:4)
-    df.b .= 1
-    x = df.b
-    df.c .= 4:-1:1
     if isdefined(Base, :dotgetproperty)
+        df.b .= 1
+        x = df.b
+        df.c .= 4:-1:1
         df.a .= 'a':'d'
         @test df.a isa Vector{Char}
         @test df == DataFrame(a='a':'d', b=1, c=4:-1:1)
@@ -1908,6 +1927,9 @@ end
         @test df == DataFrame(a='a':'d', b=[1, 0, 0, 1], c=[4, "p", "q", 1])
     else
         # Julia older than 1.7
+        df[!, :b] .= 1
+        x = df.b
+        df[!, :c] .= 4:-1:1
         df.a .= 'a':'d'
         dfv = view(df, 2:3, 2:3)
         dfv.b .= 0

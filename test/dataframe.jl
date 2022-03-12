@@ -1561,7 +1561,11 @@ end
     @test x == 1:10
     df.y .= 1
     @test df.y == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    @test df.y === y
+    if isdefined(Base, :dotgetproperty)
+        @test y == 1.0:10.0
+    else
+        @test df.y === y
+    end
     df.z = z
     @test df.z === z
     df[!, :zz] .= 1
