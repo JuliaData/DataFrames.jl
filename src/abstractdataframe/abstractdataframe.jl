@@ -2552,7 +2552,7 @@ Random.shuffle!(r::AbstractRNG, df::AbstractDataFrame) =
 Insert a column into a copy of `df` data frame using the [`insertcols!`](@ref)
 function and return the newly created data frame.
 
-See [insertcols!](@ref) for the explanation of arguments and examples.
+See [`insertcols!`](@ref) for the explanation of arguments and examples.
 ```
 """
 insertcols(df::AbstractDataFrame, args...;
