@@ -1463,12 +1463,21 @@ end
 
     df = copy(refdf)
     v1 = df[!, 1]
-    df.x1 .= 'd'
-    @test v1 == [100.0, 100.0, 100.0]
-    @test_throws MethodError df[:, 1] .= "d"
-    @test v1 == [100.0, 100.0, 100.0]
-    @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
-    @test v1 == [100.0, 100.0, 100.0]
+    if isdefined(Base, :dotgetproperty)
+        df.x1 .= 'd'
+        @test df.x1 == ['d', 'd', 'd']
+        @test eltype(df.x1) === Char
+        @test_throws MethodError df[:, 1] .= "d"
+        @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
+        @test v1 == [1.5, 2.5, 3.5]
+    else
+        df.x1 .= 'd'
+        @test v1 == [100.0, 100.0, 100.0]
+        @test_throws MethodError df[:, 1] .= "d"
+        @test v1 == [100.0, 100.0, 100.0]
+        @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
+        @test v1 == [100.0, 100.0, 100.0]
+    end
 
     df = copy(refdf)
     if isdefined(Base, :dotgetproperty)
@@ -1608,12 +1617,22 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    df.x1 .= 'd'
-    @test v1 == [100.0, 100.0, 100.0]
-    @test_throws MethodError df[:, 1] .= "d"
-    @test v1 == [100.0, 100.0, 100.0]
-    @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
-    @test v1 == [100.0, 100.0, 100.0]
+    if isdefined(Base, :dotgetproperty)
+        df.x1 .= 'd'
+        @test df.x1 == ['d', 'd', 'd']
+        @test eltype(df.x1) === Any
+        df[:, 1] .= "d"
+        @test df.x1 == ["d", "d", "d"]
+        @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
+        @test v1 == [1.5, 2.5, 3.5]
+    else
+        df.x1 .= 'd'
+        @test v1 == [100.0, 100.0, 100.0]
+        @test_throws MethodError df[:, 1] .= "d"
+        @test v1 == [100.0, 100.0, 100.0]
+        @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
+        @test v1 == [100.0, 100.0, 100.0]
+    end
 
     df = view(copy(refdf), :, :)
     if VERSION >= v"1.7"
@@ -1870,16 +1889,33 @@ end
 end
 
 @testset "broadcasting of getproperty" begin
+    df = DataFrame(a=1:4)
+    df.b .= 1
+    x = df.b
+    df.c .= 4:-1:1
     if isdefined(Base, :dotgetproperty)
-        df = DataFrame(a=1:4)
-        df.b .= 1
-        df.c .= 4:-1:1
-        # TODO: enable this in the future when the deprecation period is finished
-        # df.a .= 'a':'d'
-        # @test df.a isa Vector{Char}
-        # @test df == DataFrame(a='a':'d', b=1, c=4:-1:1)
-        # dfv = view(df, 2:3, 2:3)
-        # @test_throws ArgumentError dfv.b .= 0
+        df.a .= 'a':'d'
+        @test df.a isa Vector{Char}
+        @test df == DataFrame(a='a':'d', b=1, c=4:-1:1)
+
+        # in views also column replacement is performed
+        dfv = view(df, 2:3, 2:3)
+        dfv.b .= 0
+        @test x == [1, 1, 1, 1]
+        @test df.b !== x
+        @test df == DataFrame(a='a':'d', b=[1, 0, 0, 1], c=4:-1:1)
+        dfv.c .= ["p", "q"]
+        @test df == DataFrame(a='a':'d', b=[1, 0, 0, 1], c=[4, "p", "q", 1])
+    else
+        # Julia older than 1.7
+        df.a .= 'a':'d'
+        dfv = view(df, 2:3, 2:3)
+        dfv.b .= 0
+        @test x == [1, 0, 0, 1]
+        @test df.b === x
+        @test df == DataFrame(a='a':'d', b=[1, 0, 0, 1], c=4:-1:1)
+        @test_throws MethodError dfv.c .= ["p", "q"]
+        @test df == DataFrame(a=97:100, b=[1, 0, 0, 1], c=[4, 3, 2, 1])
     end
 end
 
