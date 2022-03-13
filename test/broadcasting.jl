@@ -1493,6 +1493,7 @@ end
         df.a .= 'a':'d'
         @test df == DataFrame(a=97:100, b=1, c=2)
         dfv = view(df, 2:3, 2:3)
+        x = df.b
         dfv.b .= 0
         @test df.b == [1, 0, 0, 1]
         @test x === df.b
