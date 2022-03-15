@@ -1073,9 +1073,9 @@ end
     filter(fun, gdf::GroupedDataFrame; ungroup::Bool=false)
     filter(cols => fun, gdf::GroupedDataFrame; ungroup::Bool=false)
 
-Return a new `GroupedDataFrame` containing only groups for which `fun` returns
-`true`. If `ungroup=true` then a data frame that is a result of passing the
-produced `GroupedDataFrame` to a `DataFrame` constructor is returned instead.
+Return only groups in `gd` for which `fun` returns `true` as a
+`GroupedDataFrame` if `ungroup=false` (the default), or as a data frame if
+`ungroup=true`.
 
 If `cols` is not specified then the predicate `fun` is called with a
 `SubDataFrame` for each group.
@@ -1136,41 +1136,43 @@ julia> filter(:x => x -> x[1] == 'a', gd, ungroup=true)
    1 │     1  a
 ```
 """
-function Base.filter(f, gdf::GroupedDataFrame; ungroup::Bool=false)
-    res = gdf[[f(sdf)::Bool for sdf in gdf]]
+@inline function Base.filter(f, gdf::GroupedDataFrame; ungroup::Bool=false)
+    res = _filter_helper(gdf, f)
     return ungroup ? DataFrame(res) : res
 end
 
-function Base.filter((col, f)::Pair{<:ColumnIndex}, gdf::GroupedDataFrame;
+@inline function Base.filter((col, f)::Pair{<:ColumnIndex}, gdf::GroupedDataFrame;
                      ungroup::Bool=false)
     res = _filter_helper(gdf, f, gdf.idx, gdf.starts, gdf.ends, parent(gdf)[!, col])
     return ungroup ? DataFrame(res) : res
 end
 
-function Base.filter((cols, f)::Pair{<:AbstractVector{Symbol}}, gdf::GroupedDataFrame;
+@inline function Base.filter((cols, f)::Pair{<:AbstractVector{Symbol}}, gdf::GroupedDataFrame;
                      ungroup::Bool=false)
     res = filter([index(parent(gdf))[col] for col in cols] => f, gdf)
     return ungroup ? DataFrame(res) : res
 end
 
-function Base.filter((cols, f)::Pair{<:AbstractVector{<:AbstractString}},
+@inline function Base.filter((cols, f)::Pair{<:AbstractVector{<:AbstractString}},
                      gdf::GroupedDataFrame; ungroup::Bool=false)
     res = filter([index(parent(gdf))[col] for col in cols] => f, gdf)
     return ungroup ? DataFrame(res) : res
 end
 
-function Base.filter((cols, f)::Pair, gdf::GroupedDataFrame;
+@inline function Base.filter((cols, f)::Pair, gdf::GroupedDataFrame;
                      ungroup::Bool=false)
     res = filter(index(parent(gdf))[cols] => f, gdf)
     return ungroup ? DataFrame(res) : res
 end
 
-function Base.filter((cols, f)::Pair{<:AbstractVector{Int}}, gdf::GroupedDataFrame;
+@inline function Base.filter((cols, f)::Pair{<:AbstractVector{Int}}, gdf::GroupedDataFrame;
                      ungroup::Bool=false)
     res = _filter_helper(gdf, f, gdf.idx, gdf.starts, gdf.ends,
                          (parent(gdf)[!, i] for i in cols)...)
     return ungroup ? DataFrame(res) : res
 end
+
+_filter_helper(gdf::GroupedDataFrame, f) = gdf[[f(sdf)::Bool for sdf in gdf]]
 
 function _filter_helper(gdf::GroupedDataFrame, f, idx::Vector{Int},
                         starts::Vector{Int}, ends::Vector{Int}, cols...)
@@ -1186,7 +1188,7 @@ function _filter_helper(gdf::GroupedDataFrame, f, idx::Vector{Int},
     return gdf[sel]
 end
 
-function Base.filter((cols, f)::Pair{<:AsTable}, gdf::GroupedDataFrame;
+@inline function Base.filter((cols, f)::Pair{<:AsTable}, gdf::GroupedDataFrame;
                      ungroup::Bool=false)
     df_tmp = select(parent(gdf), cols.cols, copycols=false)
     if ncol(df_tmp) == 0
