@@ -1936,7 +1936,7 @@ end
         dfv.b .= 0
         @test x == [1, 0, 0, 1]
         @test df.b === x
-        @test df == DataFrame(a='a':'d', b=[1, 0, 0, 1], c=4:-1:1)
+        @test df == DataFrame(a=97:100, b=[1, 0, 0, 1], c=4:-1:1)
         @test_throws MethodError dfv.c .= ["p", "q"]
         @test df == DataFrame(a=97:100, b=[1, 0, 0, 1], c=[4, 3, 2, 1])
     end
