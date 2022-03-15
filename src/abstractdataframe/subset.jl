@@ -230,15 +230,28 @@ julia> subset(groupby(df, :y), :v => x -> x .> minimum(x))
 """
 function subset(df::AbstractDataFrame, @nospecialize(args...);
                 skipmissing::Bool=false, view::Bool=false)
-    row_selector = _get_subset_conditions(df, Ref{Any}(args), skipmissing)
+    if isempty(args)
+        row_selector = axes(df, 1)
+    else
+        row_selector = _get_subset_conditions(df, Ref{Any}(args), skipmissing)
+    end
     return view ? Base.view(df, row_selector, :) : df[row_selector, :]
 end
 
 function subset(gdf::GroupedDataFrame, @nospecialize(args...);
                 skipmissing::Bool=false, view::Bool=false,
                         ungroup::Bool=true)
-    row_selector = _get_subset_conditions(gdf, Ref{Any}(args), skipmissing)
     df = parent(gdf)
+    if isempty(args)
+        if nrow(parent(gdf)) > 0 && minimum(gdf.groups) == 0
+            throw(ArgumentError("subset does not support " *
+                                "`GroupedDataFrame`s from which some groups have " *
+                                "been dropped (including skipmissing=true)"))
+        end
+        row_selector = axes(df, 1)
+    else
+        row_selector = _get_subset_conditions(gdf, Ref{Any}(args), skipmissing)
+    end
     res = view ? Base.view(df, row_selector, :) : df[row_selector, :]
     # TODO: in some cases it might be faster to groupby gdf.groups[row_selector]
     return ungroup ? res : groupby(res, groupcols(gdf))
@@ -259,16 +272,16 @@ described for [`select`](@ref) with the restriction that:
 * specifying target column name is not allowed as `subset!` does not create new
   columns;
 * every passed transformation must return a scalar or a vector (returning
-  `AbstractDataFrame`, `NamedTuple`, `DataFrameRow` or `AbstractMatrix`
-  is not supported).
+  `AbstractDataFrame`, `NamedTuple`, `DataFrameRow` or `AbstractMatrix` is not
+  supported).
 
 If `skipmissing=false` (the default) `args` are required to produce vectors
 containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
 allowed and it is treated as `false` (i.e. rows for which one of the conditions
 returns `missing` are skipped).
 
-If `ungroup=false` the resulting data frame is re-grouped based on the same
-grouping columns as `gdf` and a `GroupedDataFrame` is returned.
+If `ungroup=false` a passed `GroupedDataFrame` is updated (keeping its group
+order) and returned.
 
 If `GroupedDataFrame` is subsetted then it must include all groups present in
 the `parent` data frame, like in [`select!`](@ref). In this case the passed
@@ -358,17 +371,26 @@ julia> df
 ```
 """
 function subset!(df::AbstractDataFrame, @nospecialize(args...); skipmissing::Bool=false)
+    isempty(args) && return df
     row_selector = _get_subset_conditions(df, Ref{Any}(args), skipmissing)
     return deleteat!(df, findall(!, row_selector))
 end
 
 function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Bool=false,
                  ungroup::Bool=true)
+    df = parent(gdf)
+    if isempty(args)
+        if nrow(parent(gdf)) > 0 && minimum(gdf.groups) == 0
+            throw(ArgumentError("subset! does not support " *
+                                "`GroupedDataFrame`s from which some groups have " *
+                                "been dropped (including skipmissing=true)"))
+        end
+        return ungroup ? df : gdf
+    end
     ngroups = length(gdf)
     groups = gdf.groups
     lazy_lock = gdf.lazy_lock
     row_selector = _get_subset_conditions(gdf, Ref{Any}(args), skipmissing)
-    df = parent(gdf)
     res = deleteat!(df, findall(!, row_selector))
     if nrow(res) == length(groups) # we have not removed any rows
         return ungroup ? res : gdf
