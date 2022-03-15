@@ -126,7 +126,7 @@ end
                             Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
     @test isa(udf[!, 1], Vector{Int})
     @test all(i -> isa(eachcol(udf)[i], Vector{Union{Int, Missing}}), 2:5)
-    df = DataFrame([categorical(repeat(1:2, inner=4)),
+    df = DataFrame(Any[categorical(repeat(1:2, inner=4)),
                        categorical(repeat('a':'d', outer=2)), categorical(1:8)],
                    [:id, :variable, :value])
     udf = unstack(df, :variable, :value)

@@ -89,7 +89,9 @@ const TRANSFORMATION_COMMON_RULES =
     As a special rule, with the `cols => function` and `cols => function =>
     target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
     object then a `NamedTuple` containing columns selected by `cols` is passed to
-    `function`.
+    `function`. The documentation of [`DataFrames.table_transformation`][@ref] provides
+    more information about this functionality, in particular covering performance
+    considerations.
 
     What is allowed for `function` to return is determined by the `target_cols` value:
     1. If both `cols` and `target_cols` are omitted (so only a `function` is passed),
@@ -624,8 +626,9 @@ function _gen_colnames(@nospecialize(res), newname::Union{AbstractVector{Symbol}
 
     if newname !== AsTable && newname !== nothing
         if length(colnames) != length(newname)
-            throw(ArgumentError("Number of returned columns does not match the " *
-                                "length of requested output"))
+            throw(ArgumentError("Number of returned columns is $(length(colnames)) " *
+                                "and it does not match the number of provided output " *
+                                "names which is $(length(newname))"))
         end
         colnames = newname
     end

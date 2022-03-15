@@ -24,9 +24,9 @@ Fast paths are implemented within DataFrames.jl for the following functions `fun
 * `sum`, `ByRow(sum), `ByRow(sum∘skipmissing)`
 * `length`, `ByRow(length)`, `ByRow(length∘skipmissing)`
 * `mean`, `ByRow(mean), `ByRow(mean∘skipmissing)`
-* `ByRow(var), `ByRow(var∘skipmissing)`
-* `ByRow(std), `ByRow(std∘skipmissing)`
-* `ByRow(median), `ByRow(median∘skipmissing)`
+* `ByRow(var)`, `ByRow(var∘skipmissing)`
+* `ByRow(std)`, `ByRow(std∘skipmissing)`
+* `ByRow(median)`, `ByRow(median∘skipmissing)`
 * `minimum`, `ByRow(minimum)`, `ByRow(minimum∘skipmissing)`
 * `maximum`, `ByRow(maximum)`, `ByRow(maximum∘skipmissing)`
 * `fun∘collect` and `ByRow(fun∘collect)` where `fun` is any function

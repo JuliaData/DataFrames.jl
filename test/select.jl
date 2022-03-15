@@ -2696,4 +2696,15 @@ end
     @test allunique(df2.y)
 end
 
+@testset "improved error message when numbers requested and returned columns does not match" begin
+    df = DataFrame(id=1:2, a=[(a=1,b=2),(a=3,b=4)])
+    gdf = groupby(df, :id)
+    @test_throws ArgumentError select(df, :a => [:x])
+    @test_throws ArgumentError select(gdf, :a => [:x])
+    @test select(df, :id, :a => [:x, :y]) == DataFrame(id=1:2, x=[1, 3], y=[2, 4])
+    @test select(gdf, :a => [:x, :y]) == DataFrame(id=1:2, x=[1, 3], y=[2, 4])
+    @test_throws ArgumentError select(df, :a => [:x, :y, :z])
+    @test_throws ArgumentError select(gdf, :a => [:x, :y, :z])
+end
+
 end # module

@@ -89,6 +89,7 @@ select
 select!
 shuffle
 shuffle!
+table_transformation
 transform
 transform!
 vcat
