@@ -967,16 +967,16 @@ end
     @test_throws AssertionError OnCol(c1, [1])
     @test_throws MethodError OnCol(c1, 1)
 
-    oncols = [OnCol(c1, c2), OnCol(c3, c4), OnCol(c5, c6), OnCol(c1, c2, c3),
-              OnCol(c2, c3, c4), OnCol(c4, c5, c6), OnCol(c1, c2, c3, c4),
-              OnCol(c2, c3, c4, c5), OnCol(c3, c4, c5, c6), OnCol(c1, c2, c3, c4, c5),
-              OnCol(c2, c3, c4, c5, c6), OnCol(c1, c2, c3, c4, c5, c6),
-              OnCol(c4, c7), OnCol(c4, c5, c7), OnCol(c4, c5, c6, c7)]
-    tupcols = [tuple.(c1, c2), tuple.(c3, c4), tuple.(c5, c6), tuple.(c1, c2, c3),
-               tuple.(c2, c3, c4), tuple.(c4, c5, c6), tuple.(c1, c2, c3, c4),
-               tuple.(c2, c3, c4, c5), tuple.(c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5),
-               tuple.(c2, c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5, c6),
-               tuple.(c4, c7), tuple.(c4, c5, c7), tuple.(c4, c5, c6, c7)]
+    oncols = Any[OnCol(c1, c2), OnCol(c3, c4), OnCol(c5, c6), OnCol(c1, c2, c3),
+                 OnCol(c2, c3, c4), OnCol(c4, c5, c6), OnCol(c1, c2, c3, c4),
+                 OnCol(c2, c3, c4, c5), OnCol(c3, c4, c5, c6), OnCol(c1, c2, c3, c4, c5),
+                 OnCol(c2, c3, c4, c5, c6), OnCol(c1, c2, c3, c4, c5, c6),
+                 OnCol(c4, c7), OnCol(c4, c5, c7), OnCol(c4, c5, c6, c7)]
+    tupcols = Any[tuple.(c1, c2), tuple.(c3, c4), tuple.(c5, c6), tuple.(c1, c2, c3),
+                  tuple.(c2, c3, c4), tuple.(c4, c5, c6), tuple.(c1, c2, c3, c4),
+                  tuple.(c2, c3, c4, c5), tuple.(c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5),
+                  tuple.(c2, c3, c4, c5, c6), tuple.(c1, c2, c3, c4, c5, c6),
+                  tuple.(c4, c7), tuple.(c4, c5, c7), tuple.(c4, c5, c6, c7)]
 
     for (oncol, tupcol) in zip(oncols, tupcols)
         @test issorted(oncol) == issorted(tupcol)

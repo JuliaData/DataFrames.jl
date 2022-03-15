@@ -972,10 +972,10 @@ end
 end
 
 @testset "test categorical values" begin
-    for v in [categorical([1, 2, 3]), categorical([1, 2, missing]),
-              categorical([missing, 1, 2]),
-              categorical(["1", "2", "3"]), categorical(["1", "2", missing]),
-              categorical([missing, "1", "2"])]
+    for v in Any[categorical([1, 2, 3]), categorical([1, 2, missing]),
+                 categorical([missing, 1, 2]),
+                 categorical(["1", "2", "3"]), categorical(["1", "2", missing]),
+                 categorical([missing, "1", "2"])]
         df = copy(refdf)
         df[!, :c1] .= v
         @test df.c1 ≅ v

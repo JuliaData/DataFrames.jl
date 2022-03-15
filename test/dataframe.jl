@@ -1199,8 +1199,8 @@ end
         @test isa(df[!, 1], Vector{Int}) && isa(df[!, 2], Vector{Int})
     end
 
-    df = DataFrame([CategoricalArray(1:10),
-                    CategoricalArray(string.('a':'j'))], :auto)
+    df = DataFrame(Any[CategoricalArray(1:10),
+                       CategoricalArray(string.('a':'j'))], :auto)
     @test allowmissing!(df) === df
     @test all(x->x <: CategoricalVector, typeof.(eachcol(df)))
     @test eltype(df[!, 1]) <: Union{CategoricalValue{Int}, Missing}
