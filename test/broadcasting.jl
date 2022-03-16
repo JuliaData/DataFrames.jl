@@ -1942,4 +1942,15 @@ end
     end
 end
 
+@testset "dotgetproperty on SubDataFrame" begin
+    df = DataFrame(a=1:3, b=4:6)
+    dfv = @view df[[3, 1], :]
+    dfv.c .= [1, 2]
+    @test df ≅ DataFrame(a=1:3, b=4:6, c=[2, missing, 1])
+
+    df = DataFrame(a=1:3, b=4:6)
+    dfv = @view df[[3, 1], 1:2]
+    @test_throws ArgumentError dfv.c .= [1, 2]
+end
+
 end # module
