@@ -37,7 +37,7 @@ const ≅ = isequal
               filter([:x, :id] => (x, id) -> x && id < 4, df)
         @test subset(df, :x, :id => ByRow(<(4)), view=true) ≅
               filter([:x, :id] => (x, id) -> x && id < 4, df)
-        @test_throws ArgumentError subset(df)
+        @test subset(df) ≅ df
         @test isempty(subset(df, :x, :x => ByRow(!)))
         @test_throws ArgumentError subset(df, :x => x -> false, :x => x -> missing)
         @test_throws ArgumentError subset(df, :x => x -> true, :x => x -> missing)
@@ -78,7 +78,7 @@ const ≅ = isequal
               filter([:x, :id] => (x, id) -> x && id < 4, df)
         @test subset(gdf, :x, :id => ByRow(<(4)), view=true) ≅
               filter([:x, :id] => (x, id) -> x && id < 4, df)
-        @test_throws ArgumentError subset(gdf)
+        @test subset(gdf) ≅ df
         @test isempty(subset(gdf, :x, :x => ByRow(!)))
         @test_throws ArgumentError subset(gdf, :x => x -> false, :x => x -> missing)
         @test_throws ArgumentError subset(gdf, :x => x -> true, :x => x -> missing)
@@ -105,7 +105,7 @@ const ≅ = isequal
     @test subset!(df, :x, :id => ByRow(<(4))) ≅ df ≅
           filter([:x, :id] => (x, id) -> x && id < 4, refdf)
     df = copy(refdf)
-    @test_throws ArgumentError subset!(df)
+    @test subset!(df) === df
     df = copy(refdf)
     @test isempty(subset!(df, :x, :x => ByRow(!)))
     @test isempty(df)
@@ -156,7 +156,7 @@ const ≅ = isequal
           filter([:x, :id] => (x, id) -> x && id < 4, refdf)
     df = copy(refdf)
     gdf = groupby(df, :z)
-    @test_throws ArgumentError subset!(gdf)
+    @test subset!(gdf) === df
     df = copy(refdf)
     gdf = groupby(df, :z)
     @test isempty(subset!(gdf, :x, :x => ByRow(!)))
@@ -191,7 +191,7 @@ const ≅ = isequal
           filter([:x, :id] => (x, id) -> x && id < 4, refdf)
     df = copy(refdf)
     gdf = groupby(df, :z)[[3, 2, 1]]
-    @test_throws ArgumentError subset!(gdf)
+    @test subset!(gdf) === df
     df = copy(refdf)
     gdf = groupby(df, :z)[[3, 2, 1]]
     @test isempty(subset!(gdf, :x, :x => ByRow(!)))
