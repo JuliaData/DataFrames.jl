@@ -129,21 +129,11 @@ end
 
 if isdefined(Base, :dotgetproperty)
     function Base.dotgetproperty(df::AbstractDataFrame, col::SymbolOrString)
-        if columnindex(df, col) == 0
-            if !is_column_insertion_allowed(df)
-                throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
-                                    "columns of its parent data frame is disallowed"))
-            end
-            # TODO: double check that this is tested
-            return LazyNewColDataFrame(df, Symbol(col))
-        else
-            # TODO: remove the deprecation in DataFrames.jl 1.4 release
-            Base.depwarn("In the 1.4 release of DataFrames.jl this operation will allocate a new column " *
-                         "instead of performing an in-place assignment. " *
-                         "To perform an in-place assignment use `df[:, col] .= ...` instead.",
-                         :dotgetproperty)
-            return getproperty(df, col)
+        if columnindex(df, col) == 0 && !is_column_insertion_allowed(df)
+            throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
+                                "columns of its parent data frame is disallowed"))
         end
+        return LazyNewColDataFrame(df, Symbol(col))
     end
 end
 

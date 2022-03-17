@@ -18,6 +18,13 @@
 * `first` and `last` for `GroupedDataFrame` now support passing number of elements to get
   ([#3006](https://github.com/JuliaData/DataFrames.jl/issues/3006))
 
+## Previously announced breaking changes
+
+* On Julia 1.7 or newer broadcasting assignment
+  into an existing column of a data frame replaces it. Under Julia 1.6
+  or older it is an in place operation.
+  ([#3022](https://github.com/JuliaData/DataFrames.jl/pull/3022)
+
 # DataFrames.jl v1.3.2 Patch Release Notes
 
 ## Bug fixes
