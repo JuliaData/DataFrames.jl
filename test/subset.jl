@@ -411,6 +411,30 @@ end
     @test subset!(gdf, ungroup=false) === gdf
     @test df == DataFrame(a=repeat(1:4, 2), b=1:8)
     @test getproperty.(keys(gdf), :a) == [4, 2, 1, 3]
+
+    df = DataFrame(a=Int[])
+    gdf = groupby(df, :a)
+    res = subset(gdf)
+    @test nrow(res) == 0
+    @test names(res) == ["a"]
+    @test eltype(res.a) === Int
+    @test gdf == subset(gdf, ungroup=false)
+
+    df = DataFrame(a=Int[])
+    gdf = groupby(df, :a)
+    res = subset!(gdf)
+    @test res === df
+    @test nrow(res) == 0
+    @test names(res) == ["a"]
+    @test eltype(res.a) === Int
+    @test subset!(gdf, ungroup=false) == groupby(DataFrame(a=Int[]), :a)
+
+    df = DataFrame(a=1:3)
+    gdf = groupby(df, :a)[[3, 1]]
+    @test_throws ArgumentError subset(gdf)
+    @test_throws ArgumentError subset!(gdf)
+    @test df == DataFrame(a=1:3)
+    @test gdf == groupby(DataFrame(a=1:3), :a)[[3, 1]]
 end
 
 end
