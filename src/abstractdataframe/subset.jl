@@ -240,7 +240,7 @@ end
 
 function subset(gdf::GroupedDataFrame, @nospecialize(args...);
                 skipmissing::Bool=false, view::Bool=false,
-                        ungroup::Bool=true)
+                ungroup::Bool=true)
     df = parent(gdf)
     if isempty(args)
         if nrow(parent(gdf)) > 0 && minimum(gdf.groups) == 0
@@ -280,8 +280,8 @@ containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
 allowed and it is treated as `false` (i.e. rows for which one of the conditions
 returns `missing` are skipped).
 
-If `ungroup=false` a passed `GroupedDataFrame` is updated (keeping its group
-order) and returned.
+If `ungroup=false` the passed `GroupedDataFrame` `gdf` is updated (preserving the order
+of its groups) and returned.
 
 If `GroupedDataFrame` is subsetted then it must include all groups present in
 the `parent` data frame, like in [`select!`](@ref). In this case the passed
