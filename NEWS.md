@@ -2,6 +2,8 @@
 
 ## New functionalities
 
+* `subset` and `subset!` now allow passing zero column selectors
+   ([#3025](https://github.com/JuliaData/DataFrames.jl/pull/3025))
 * `permutedims` now supports a `strict` keyword argument that allows
   for a more flexible handling of values stored in a column that will
   become a new header
