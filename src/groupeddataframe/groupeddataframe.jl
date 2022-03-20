@@ -1142,31 +1142,31 @@ julia> filter(:x => x -> x[1] == 'a', gd, ungroup=true)
 end
 
 @inline function Base.filter((col, f)::Pair{<:ColumnIndex}, gdf::GroupedDataFrame;
-                     ungroup::Bool=false)
+                             ungroup::Bool=false)
     res = _filter_helper(gdf, f, gdf.idx, gdf.starts, gdf.ends, parent(gdf)[!, col])
     return ungroup ? DataFrame(res) : res
 end
 
 @inline function Base.filter((cols, f)::Pair{<:AbstractVector{Symbol}}, gdf::GroupedDataFrame;
-                     ungroup::Bool=false)
+                             ungroup::Bool=false)
     res = filter([index(parent(gdf))[col] for col in cols] => f, gdf)
     return ungroup ? DataFrame(res) : res
 end
 
 @inline function Base.filter((cols, f)::Pair{<:AbstractVector{<:AbstractString}},
-                     gdf::GroupedDataFrame; ungroup::Bool=false)
+                             gdf::GroupedDataFrame; ungroup::Bool=false)
     res = filter([index(parent(gdf))[col] for col in cols] => f, gdf)
     return ungroup ? DataFrame(res) : res
 end
 
 @inline function Base.filter((cols, f)::Pair, gdf::GroupedDataFrame;
-                     ungroup::Bool=false)
+                             ungroup::Bool=false)
     res = filter(index(parent(gdf))[cols] => f, gdf)
     return ungroup ? DataFrame(res) : res
 end
 
 @inline function Base.filter((cols, f)::Pair{<:AbstractVector{Int}}, gdf::GroupedDataFrame;
-                     ungroup::Bool=false)
+                             ungroup::Bool=false)
     res = _filter_helper(gdf, f, gdf.idx, gdf.starts, gdf.ends,
                          (parent(gdf)[!, i] for i in cols)...)
     return ungroup ? DataFrame(res) : res
@@ -1189,7 +1189,7 @@ function _filter_helper(gdf::GroupedDataFrame, f, idx::Vector{Int},
 end
 
 @inline function Base.filter((cols, f)::Pair{<:AsTable}, gdf::GroupedDataFrame;
-                     ungroup::Bool=false)
+                             ungroup::Bool=false)
     df_tmp = select(parent(gdf), cols.cols, copycols=false)
     if ncol(df_tmp) == 0
         throw(ArgumentError("At least one column must be passed to filter on"))
