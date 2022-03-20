@@ -1460,9 +1460,12 @@ Levels and their order are determined by the `levels` function
 (i.e. unique values sorted lexicographically by default, or a custom set
 of levels for e.g. `CategoricalArray` columns), in addition to `missing` if present.
 
+For combinations of `indexcols` not present in `df` these columns are
+filled with the `fill` value (`missing` by default).
+
 If `allowduplicates=false` (the default) `indexcols` may only contain
 unique combinations of `indexcols` values. If `allowduplicates=true`
-duplicates are allowed
+duplicates are allowed.
 
 # Examples
 ```jldoctest
@@ -1550,7 +1553,9 @@ function completecombinations(df::AbstractDataFrame, indexcols;
     @assert inner == target_rows
 
     idx_ind = 0
-    while columnindex(df, string("source7249", idx_ind)) != 0
+    while true
+        idx_col = string("source7249", idx_ind)
+        columnindex(df, idx_col) == 0 && break
         idx_ind += 1
     end
 
@@ -1561,14 +1566,14 @@ function completecombinations(df::AbstractDataFrame, indexcols;
         end
         insertcols!(out_df, 1, string("order9427", order_ind) => 1:nrow(out_df))
         out_df = leftjoin(out_df, df; on=_names(df)[colind],
-                            source=string("source7249", idx_ind),
-                            matchmissing=:equal)
+                          source=string("source7249", idx_ind),
+                          matchmissing=:equal)
         sort!(out_df, 1)
         select!(out_df, 2:ncol(out_df))
     else
         leftjoin!(out_df, df; on=_names(df)[colind],
-                    source=string("source7249", idx_ind),
-                    matchmissing=:equal)
+                  source=string("source7249", idx_ind),
+                  matchmissing=:equal)
     end
 
     # Replace missing values with the fill
@@ -1578,8 +1583,8 @@ function completecombinations(df::AbstractDataFrame, indexcols;
             for n in length(colind)+1:ncol(out_df)-1
                 tmp_col = out_df[!, n]
                 out_col = similar(tmp_col,
-                                    promote_type(eltype(tmp_col), typeof(fill)),
-                                    length(tmp_col))
+                                  promote_type(eltype(tmp_col), typeof(fill)),
+                                  length(tmp_col))
                 out_col .= ifelse.(mask, Ref(fill), out_df[!, n])
                 out_df[!, n] = out_col
             end
