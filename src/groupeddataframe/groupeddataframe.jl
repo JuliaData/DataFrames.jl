@@ -1137,7 +1137,7 @@ julia> filter(:x => x -> x[1] == 'a', gd, ungroup=true)
 ```
 """
 @inline function Base.filter(f, gdf::GroupedDataFrame; ungroup::Bool=false)
-    res = _filter_helper(gdf, f)
+    res = gdf[[f(sdf)::Bool for sdf in gdf]]
     return ungroup ? DataFrame(res) : res
 end
 
@@ -1171,8 +1171,6 @@ end
                          (parent(gdf)[!, i] for i in cols)...)
     return ungroup ? DataFrame(res) : res
 end
-
-_filter_helper(gdf::GroupedDataFrame, f) = gdf[[f(sdf)::Bool for sdf in gdf]]
 
 function _filter_helper(gdf::GroupedDataFrame, f, idx::Vector{Int},
                         starts::Vector{Int}, ends::Vector{Int}, cols...)
