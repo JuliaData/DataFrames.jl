@@ -483,27 +483,60 @@ end
     levels!(df1.c, [12, 11, 10])
 
     for ad in (true, false)
-        @test isequal_coltyped(completecombinations(df1, [:a, :b], allowduplicates=ad),
+        res = completecombinations(df1, [:a, :b], allowduplicates=ad)
+        @test levels(res.c) == levels(df1.c)
+        @test isequal_coltyped(res,
                                DataFrame(a=[1, 2, missing, 1, 2, missing],
                                          b=[1, 1, 1, 2, 2, 2],
                                          c=categorical([11, 12, missing, missing, missing, missing]),
                                          d=[111, 112, missing, missing, missing, 113]))
-        @test isequal_coltyped(completecombinations(df1, [:a, :b], fill="X", allowduplicates=ad),
+
+        # fill in the pool - column :c becomes Vector
+        res = completecombinations(df1, [:a, :b], fill=12, allowduplicates=ad)
+        @test isequal_coltyped(res,
+                               DataFrame(a=[1, 2, missing, 1, 2, missing],
+                                         b=[1, 1, 1, 2, 2, 2],
+                                         c=[11, 12, 12, 12, 12, missing],
+                                         d=Union{Int, Missing}[111, 112, 12, 12, 12, 113]))
+        # fill not in the pool - column :c becomes Vector
+        res = completecombinations(df1, [:a, :b], fill=-100, allowduplicates=ad)
+        @test isequal_coltyped(res,
+                               DataFrame(a=[1, 2, missing, 1, 2, missing],
+                                         b=[1, 1, 1, 2, 2, 2],
+                                         c=[11, 12, -100, -100, -100, missing],
+                                         d=Union{Int, Missing}[111, 112, -100, -100, -100, 113]))
+        # fill is CategoricalValue - in column :d it gets unwrapped to its integer value
+        res = completecombinations(df1, [:a, :b], fill=CategoricalValue(12, df1.c), allowduplicates=ad)
+        @test levels(res.c) == levels(df1.c)
+        @test isequal_coltyped(res,
+                               DataFrame(a=[1, 2, missing, 1, 2, missing],
+                                         b=[1, 1, 1, 2, 2, 2],
+                                         c=categorical([11, 12, 12, 12, 12, missing]),
+                                         d=Union{Int, Missing}[111, 112, 12, 12, 12, 113]))
+        res = completecombinations(df1, [:a, :b], fill="X", allowduplicates=ad)
+
+        @test isequal_coltyped(res,
                                DataFrame(a=[1, 2, missing, 1, 2, missing],
                                          b=[1, 1, 1, 2, 2, 2],
                                          c=[11, 12, "X", "X", "X", missing],
                                          d=[111, 112, "X", "X", "X", 113]))
-        @test isequal_coltyped(completecombinations(df1, :c, allowduplicates=ad),
+        res = completecombinations(df1, :c, allowduplicates=ad)
+        @test levels(res.c) == levels(df1.c)
+        @test isequal_coltyped(res,
                                DataFrame(a=[2, 1, missing, missing],
                                          b=[1, 1, missing, 2],
                                          c=categorical([12, 11, 10, missing]),
                                          d=[112, 111, missing, 113]))
-        @test isequal_coltyped(completecombinations(df1, :c, fill="X", allowduplicates=ad),
+        res = completecombinations(df1, :c, fill="X", allowduplicates=ad)
+        @test levels(res.c) == levels(df1.c)
+        @test isequal_coltyped(res,
                                DataFrame(a=[2, 1, "X", missing],
                                          b=[1, 1, "X", 2],
                                          c=categorical([12, 11, 10, missing]),
                                          d=[112, 111, "X", 113]))
-        @test isequal_coltyped(completecombinations(df1, [:c, :b], allowduplicates=ad),
+        res = completecombinations(df1, [:c, :b], allowduplicates=ad)
+        @test levels(res.c) == levels(df1.c)
+        @test isequal_coltyped(res,
                                DataFrame(a=[2; 1; fill(missing, 6)],
                                          b=[1, 1, 1, 1, 2, 2, 2, 2],
                                          c=categorical([12, 11, 10, missing, 12, 11, 10, missing]),

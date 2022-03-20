@@ -1553,6 +1553,7 @@ function completecombinations(df::AbstractDataFrame, indexcols;
     @assert inner == target_rows
 
     idx_ind = 0
+    idx_col = ""
     while true
         idx_col = string("source7249", idx_ind)
         columnindex(df, idx_col) == 0 && break
@@ -1561,12 +1562,15 @@ function completecombinations(df::AbstractDataFrame, indexcols;
 
     if has_duplicates
         order_ind = 0
-        while columnindex(df, string("order9427", order_ind)) != 0
+        order_col = ""
+        while true
+            order_col = string("order9427", order_ind)
+            columnindex(df, order_col) == 0 && break
             order_ind += 1
         end
-        insertcols!(out_df, 1, string("order9427", order_ind) => 1:nrow(out_df))
+        insertcols!(out_df, 1, order_col => 1:nrow(out_df))
         out_df = leftjoin(out_df, df; on=_names(df)[colind],
-                          source=string("source7249", idx_ind),
+                          source=idx_col,
                           matchmissing=:equal)
         sort!(out_df, 1)
         select!(out_df, 2:ncol(out_df))
