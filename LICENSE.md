@@ -1,7 +1,7 @@
 DataFrames.jl is licensed under the MIT License:
 
-> Copyright (c) 2012-2015: Harlan Harris, EPRI (Tom Short's code), Chris DuBois,
-> John Myles White, and other contributors.
+> Copyright (c) 2012-2022: Harlan Harris, EPRI (Tom Short's code), Chris DuBois,
+> John Myles White, Milan Bouchet-Valat, Bogumił Kamiński and other contributors.
 >
 > Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the
