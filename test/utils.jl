@@ -149,6 +149,14 @@ end
     @test_throws AssertionError DataFrames.split_to_chunks(10, 11)
 end
 
+@testset "DataFrames.MULTITHREADING" begin
+    @test DataFrames.MULTITHREADING[]
+    DataFrames.MULTITHREADING[] = false
+    @test !DataFrames.MULTITHREADING[]
+    DataFrames.MULTITHREADING[] = true
+    @test DataFrames.MULTITHREADING[]
+end
+
 @testset "_findall(B::BitVector)" begin
     Random.seed!(1234)
     BD = Dict(

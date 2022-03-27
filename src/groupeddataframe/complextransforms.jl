@@ -261,7 +261,7 @@ function _combine_rows_with_first!((firstrow,)::Ref{Any},
     # Create up to one task per thread
     # This has lower overhead than creating one task per group,
     # but is optimal only if operations take roughly the same time for all groups
-    if VERSION >= v"1.4" && isthreadsafe(outcols, incols)
+    if VERSION >= v"1.4" && MULTITHREADING[] && isthreadsafe(outcols, incols)
         basesize = max(1, cld(len - 1, Threads.nthreads()))
         partitions = Iterators.partition(2:len, basesize)
     else
@@ -271,13 +271,24 @@ function _combine_rows_with_first!((firstrow,)::Ref{Any},
     outcolsref = Ref{NTuple{<:Any, AbstractVector}}(outcols)
     type_widened = fill(false, length(partitions))
     tasks = Vector{Task}(undef, length(partitions))
-    for (tid, idx) in enumerate(partitions)
-        tasks[tid] =
-            @spawn _combine_rows_with_first_task!(tid, first(idx), last(idx), first(idx),
-                                                  outcols, outcolsref,
-                                                  type_widened, widen_type_lock,
-                                                  f, gd, starts, ends, incols, colnames,
-                                                  firstcoltype(firstmulticol))
+    if MULTITHREADING[] && Threads.nthreads() > 1
+        for (tid, idx) in enumerate(partitions)
+            tasks[tid] =
+                @spawn _combine_rows_with_first_task!(tid, first(idx), last(idx), first(idx),
+                                                    outcols, outcolsref,
+                                                    type_widened, widen_type_lock,
+                                                    f, gd, starts, ends, incols, colnames,
+                                                    firstcoltype(firstmulticol))
+        end
+    else
+        for (tid, idx) in enumerate(partitions)
+            tasks[tid] =
+                @async _combine_rows_with_first_task!(tid, first(idx), last(idx), first(idx),
+                                                      outcols, outcolsref,
+                                                      type_widened, widen_type_lock,
+                                                      f, gd, starts, ends, incols, colnames,
+                                                      firstcoltype(firstmulticol))
+        end
     end
 
     # Workaround JuliaLang/julia#38931:

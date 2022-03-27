@@ -159,7 +159,7 @@ if VERSION >= v"1.4"
 
                 nt = Threads.nthreads()
                 len = length(x)
-                if nt > 1 && len > basesize
+                if MULTITHREADING[] && nt > 1 && len > basesize
                     tasks = [Threads.@spawn begin
                                  for i in p
                                      local $(esc(lidx)) = @inbounds x[i]

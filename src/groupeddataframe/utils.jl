@@ -414,10 +414,15 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
         else
             xl = view(x, 1:len ÷ 2)
             xr = view(x, len ÷ 2 + 1:len)
-            t1 = @spawn reduce_or!(xl)
-            t2 = @spawn reduce_or!(xr)
-            fetch(t1)
-            fetch(t2)
+            if MULTITHREADING[] && Threads.nthreads() > 1
+                t1 = @spawn reduce_or!(xl)
+                t2 = @spawn reduce_or!(xr)
+                fetch(t1)
+                fetch(t2)
+            else
+                reduce_or!(xl)
+                reduce_or!(xr)
+            end
             xl[1] .|= xr[1]
         end
         return

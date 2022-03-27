@@ -6,8 +6,11 @@ CurrentModule = DataFrames
 
 ## Multi-threading support
 
-Selected operations in DataFrames.jl automatically use multiple threads when available.
-It is task-based and implemented using the `@spawn` macro from Julia Base.
+By default, selected operations in DataFrames.jl automatically use multiple threads
+when available. It is task-based and implemented using the `@spawn` macro from Julia Base.
+Multithreading can be disabled by setting the [`DataFrames.MULTITHREADING`](@ref)
+global flag to `false` using `DataFrames.MULTITHREADING[] = false`.
+This can be useful notably when distribution of work across threads is managed separately.
 
 This is a list of operations that currently make use of multi-threading:
 - `DataFrame` constructor with `copycols=true`; also recursively all functions
@@ -35,6 +38,10 @@ This means that while they can be called from any thread, the caller is responsi
 for ensuring that a given `DataFrame` object is never modified by one thread while
 others are using it (either for reading or writing). Using the same `DataFrame`
 at the same time from different threads is safe as long as it is not modified.
+
+```@docs
+DataFrames.MULTITHREADING
+```
 
 ## Index
 ```@index
