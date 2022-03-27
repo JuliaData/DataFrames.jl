@@ -666,7 +666,7 @@ function _combine(gd::GroupedDataFrame,
     for i in eachindex(cs_norm, optional_transform, tasks)
         cs_i = cs_norm[i]
         optional_i = optional_transform[i]
-        f() = if length(gd) > 0 && isagg(cs_i, gd)
+        tasks[i] = @spawn_or_async if length(gd) > 0 && isagg(cs_i, gd)
             _combine_process_agg(Ref{Any}(cs_i), optional_i, parentdf, gd,
                                  seen_cols, trans_res, idx_agg[])
         elseif keeprows && cs_i isa Pair && first(last(cs_i)) === identity &&
@@ -693,8 +693,6 @@ function _combine(gd::GroupedDataFrame,
                                       seen_cols, trans_res, idx_agg)
             end
         end
-        tasks[i] = MULTITHREADING[] && Threads.nthreads() > 1 ?
-            @spawn(f()) : @async(f())
     end
     # Workaround JuliaLang/julia#38931:
     # we want to preserve the exception type thrown in user code,
@@ -760,17 +758,10 @@ function _combine(gd::GroupedDataFrame,
     # here first field in trans_res[i] is used to keep track how the column was generated
     # a correct index is stored in idx variable
 
-    if MULTITHREADING[] && Threads.nthreads() > 1
-        @sync for i in eachindex(trans_res)
-            let i=i
-                @spawn reorder_cols!(trans_res, i, trans_res[i].col, trans_res[i].col_idx,
-                                    keeprows, idx_keeprows, gd)
-            end
-        end
-    else
-        for i in eachindex(trans_res)
-            reorder_cols!(trans_res, i, trans_res[i].col, trans_res[i].col_idx,
-                          keeprows, idx_keeprows, gd)
+    @sync for i in eachindex(trans_res)
+        let i=i
+            @spawn_or_run reorder_cols!(trans_res, i, trans_res[i].col, trans_res[i].col_idx,
+                                        keeprows, idx_keeprows, gd)
         end
     end
 

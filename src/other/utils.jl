@@ -215,6 +215,85 @@ macro spawn_for_chunks(basesize, ex)
     return _spawn_for_chunks_helper(ex.args[1], ex.args[2], basesize)
 end
 
+if VERSION >= v"1.4"
+    """
+        @spawn_or_async expr
+
+    Equivalent to `Threads.@spawn` if [`DataFrames.MULTITHREADING[] == true`](@ref)
+    and to `@async` otherwise.
+    """
+    macro spawn_or_async(expr)
+        letargs = Base._lift_one_interp!(expr)
+
+        thunk = esc(:(()->($expr)))
+        var = esc(Base.sync_varname)
+        quote
+            let $(letargs...)
+                local task = Task($thunk)
+                task.sticky = !DataFrames.MULTITHREADING[]
+                if $(Expr(:islocal, var))
+                    @static if VERSION >= v"1.5.0"
+                        put!($var, task)
+                    else
+                        push!($var, task)
+                    end
+                end
+                schedule(task)
+                task
+            end
+        end
+    end
+
+    """
+        @spawn_or_run expr
+
+    Equivalent to `Threads.@spawn` if [`DataFrames.MULTITHREADING[] === true`](@ref),
+    otherwise simply runs `expr`.
+    """
+    macro spawn_or_run(expr)
+        letargs = Base._lift_one_interp!(expr)
+
+        thunk = esc(:(()->($expr)))
+        var = esc(Base.sync_varname)
+        quote
+            let $(letargs...)
+                if DataFrames.MULTITHREADING[]
+                    local task = Task($thunk)
+                    task.sticky = false
+                    if $(Expr(:islocal, var))
+                        @static if VERSION >= v"1.5.0"
+                            put!($var, task)
+                        else
+                            push!($var, task)
+                        end
+                    end
+                    schedule(task)
+                else
+                    $thunk()
+                end
+                nothing
+            end
+        end
+    end
+else
+    # This is the definition of @async in Base
+    macro spawn_or_async(expr)
+        thunk = esc(:(()->($expr)))
+        var = esc(Base.sync_varname)
+        quote
+            local task = Task($thunk)
+            if $(Expr(:isdefined, var))
+                push!($var, task)
+            end
+            schedule(task)
+        end
+    end
+
+    macro spawn_or_run(expr)
+        esc(:($expr; nothing))
+    end
+end
+
 function _nt_like_hash(v, h::UInt)
     length(v) == 0 && return hash(NamedTuple(), h)
 

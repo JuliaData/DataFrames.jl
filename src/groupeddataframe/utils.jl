@@ -354,7 +354,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
             refmap
         end
         @sync for (seeni, range_chunk) in zip(seen_vec, range_chunks)
-            @spawn for i in range_chunk
+            @spawn_or_run for i in range_chunk
                 @inbounds begin
                     local refs_i
                     let i=i # Workaround for julia#15276
@@ -378,7 +378,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
         end
     else
         @sync for (seeni, range_chunk) in zip(seen_vec, range_chunks)
-            @spawn for i in range_chunk
+            @spawn_or_run for i in range_chunk
                 @inbounds begin
                     local refs_i
                     let i=i # Workaround for julia#15276
@@ -414,14 +414,9 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
         else
             xl = view(x, 1:len ÷ 2)
             xr = view(x, len ÷ 2 + 1:len)
-            if MULTITHREADING[] && Threads.nthreads() > 1
-                t1 = @spawn reduce_or!(xl)
-                t2 = @spawn reduce_or!(xr)
-                fetch(t1)
-                fetch(t2)
-            else
-                reduce_or!(xl)
-                reduce_or!(xr)
+            @sync begin
+                @spawn_or_run reduce_or!(xl)
+                @spawn_or_run reduce_or!(xr)
             end
             xl[1] .|= xr[1]
         end

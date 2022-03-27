@@ -271,24 +271,13 @@ function _combine_rows_with_first!((firstrow,)::Ref{Any},
     outcolsref = Ref{NTuple{<:Any, AbstractVector}}(outcols)
     type_widened = fill(false, length(partitions))
     tasks = Vector{Task}(undef, length(partitions))
-    if MULTITHREADING[] && Threads.nthreads() > 1
-        for (tid, idx) in enumerate(partitions)
-            tasks[tid] =
-                @spawn _combine_rows_with_first_task!(tid, first(idx), last(idx), first(idx),
-                                                    outcols, outcolsref,
-                                                    type_widened, widen_type_lock,
-                                                    f, gd, starts, ends, incols, colnames,
-                                                    firstcoltype(firstmulticol))
-        end
-    else
-        for (tid, idx) in enumerate(partitions)
-            tasks[tid] =
-                @async _combine_rows_with_first_task!(tid, first(idx), last(idx), first(idx),
-                                                      outcols, outcolsref,
-                                                      type_widened, widen_type_lock,
-                                                      f, gd, starts, ends, incols, colnames,
-                                                      firstcoltype(firstmulticol))
-        end
+    for (tid, idx) in enumerate(partitions)
+        tasks[tid] =
+            @spawn_or_async _combine_rows_with_first_task!(tid, first(idx), last(idx), first(idx),
+                                                           outcols, outcolsref,
+                                                           type_widened, widen_type_lock,
+                                                           f, gd, starts, ends, incols, colnames,
+                                                           firstcoltype(firstmulticol))
     end
 
     # Workaround JuliaLang/julia#38931:

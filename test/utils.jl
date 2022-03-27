@@ -149,10 +149,55 @@ end
     @test_throws AssertionError DataFrames.split_to_chunks(10, 11)
 end
 
-@testset "DataFrames.MULTITHREADING" begin
+@testset "MULTITHREADING, @spawn_or_async and @spawn_or_run" begin
+    t = DataFrames.@spawn_or_async 1
+    @test fetch(t) === 1
+
+    x = Ref(false)
+    @sync begin
+        t = DataFrames.@spawn_or_async begin
+            sleep(0.1)
+            x[] = true
+        end
+    end
+    @test x[]
+
+    x = Ref(false)
+    @sync begin
+        res = DataFrames.@spawn_or_run begin
+            sleep(0.1)
+            x[] = true
+        end
+        @test res === nothing
+    end
+    @test x[]
+
     @test DataFrames.MULTITHREADING[]
     DataFrames.MULTITHREADING[] = false
     @test !DataFrames.MULTITHREADING[]
+
+    t = DataFrames.@spawn_or_async 1
+    @test fetch(t) === 1
+
+    x = Ref(false)
+    @sync begin
+        t = DataFrames.@spawn_or_async begin
+            sleep(0.1)
+            x[] = true
+        end
+    end
+    @test x[]
+
+    x = Ref(false)
+    @sync begin
+        res = DataFrames.@spawn_or_run begin
+            sleep(0.1)
+            x[] = true
+        end
+        @test res === nothing
+    end
+    @test x[]
+
     DataFrames.MULTITHREADING[] = true
     @test DataFrames.MULTITHREADING[]
 end
