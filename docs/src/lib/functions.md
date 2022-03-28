@@ -71,7 +71,7 @@ rename!
 ```@docs
 append!
 combine
-completecombinations
+fillcombinations
 flatten
 hcat
 insertcols!

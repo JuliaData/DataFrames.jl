@@ -1451,7 +1451,7 @@ julia> unique!(df)  # modifies df
 (unique, unique!)
 
 """
-    completecombinations(df::AbstractDataFrame, indexcols;
+    fillcombinations(df::AbstractDataFrame, indexcols;
                          allowduplicates::Bool=false,
                          fill=missing)
 
@@ -1477,7 +1477,7 @@ julia> df = DataFrame(x=1:2, y='a':'b', z=["x", "y"])
    1 │     1  a     x
    2 │     2  b     y
 
-julia> completecombinations(df, [:x, :y])
+julia> fillcombinations(df, [:x, :y])
 4×3 DataFrame
  Row │ x      y     z
      │ Int64  Char  String?
@@ -1487,7 +1487,7 @@ julia> completecombinations(df, [:x, :y])
    3 │     1  b     missing
    4 │     2  b     y
 
-julia> completecombinations(df, [:y, :z], fill=0)
+julia> fillcombinations(df, [:y, :z], fill=0)
 4×3 DataFrame
  Row │ x       y     z
      │ Int64?  Char  String
@@ -1498,8 +1498,8 @@ julia> completecombinations(df, [:y, :z], fill=0)
    4 │      2  b     y
 ```
 """
-function completecombinations(df::AbstractDataFrame, indexcols;
-                              allowduplicates::Bool=false, fill=missing)
+function fillcombinations(df::AbstractDataFrame, indexcols;
+                          allowduplicates::Bool=false, fill=missing)
     _check_consistency(df)
 
     colind = index(df)[indexcols]
