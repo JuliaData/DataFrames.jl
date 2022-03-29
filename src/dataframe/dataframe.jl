@@ -1814,14 +1814,13 @@ expandgrid(pairs::Pair{<:AbstractString, <:Any}...) =
 
 """
     expandgrid(pairs::Pair...)
-    expandgrid(kwargs...)
+    expandgrid(; kwargs...)
 
-Create a `DataFrame`` from all combinations of the passed arguments.
+Create a `DataFrame` from all combinations of values in passed arguments.
 
-It is allowed to pass  a list of `Pair`s as positional
-arguments, or a list of keyword arguments. Each `Pair`` is considered
-to represent a column name to column values to expand mapping.
-Column name must be a `Symbol` or string. All passed column names must be unique.
+Arguments associating a column name with values to expand can be specified
+either as `Pair`s passed as positional arguments, or as keyword arguments.
+Column names must be `Symbol`s or strings and must be unique.
 
 Column value can be a vector which is consumed as is or an object of any other
 type (except `AbstractArray`). In the latter case the passed value is treated
