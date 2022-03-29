@@ -1505,7 +1505,7 @@ function fillcombinations(df::AbstractDataFrame, indexcols;
     colind = index(df)[indexcols]
 
     if length(colind) == 0
-        throw(ArgumentError("At least one column to complete combinations " *
+        throw(ArgumentError("At least one column to fill combinations " *
                             "must be specified"))
     end
 
@@ -1521,6 +1521,7 @@ function fillcombinations(df::AbstractDataFrame, indexcols;
     for col in colind
         # levels drops missing, handle the case where missing values are present
         # All levels are retained, missing is added only if present
+        # TODO: change this after DataAPI.jl levels supports missing
         if any(ismissing, df[!, col])
             tempcol = vcat(levels(df[!, col]), missing)
         else
