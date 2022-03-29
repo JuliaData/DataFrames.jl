@@ -44,6 +44,7 @@ Pages = ["functions.md"]
 ## Constructing data frames
 ```@docs
 copy
+expandgrid
 similar
 ```
 
