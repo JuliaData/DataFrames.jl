@@ -2910,7 +2910,7 @@ end
                           AsTable(:x1) => x -> length(x.x1) > cutoff,
                           AsTable(r"x") => x -> length(x.x1) > cutoff)
             gdf1  = groupby_checked(df, gcols)
-            gdf2 = filter(predicate, gdf1)
+            gdf2 = @inferred filter(predicate, gdf1)
             if cutoff == 1
                 @test getindex.(keys(gdf2), 1) == 1:2
             elseif cutoff == 0

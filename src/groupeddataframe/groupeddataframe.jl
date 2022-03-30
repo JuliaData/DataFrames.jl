@@ -1143,7 +1143,8 @@ end
 
 @inline function Base.filter((col, f)::Pair{<:ColumnIndex}, gdf::GroupedDataFrame;
                              ungroup::Bool=false)
-    res = _filter_helper_gdf(gdf, f, gdf.idx, gdf.starts, gdf.ends, parent(gdf)[!, col])
+    res::typeof(gdf) = _filter_helper_gdf(gdf, f, gdf.idx, gdf.starts, gdf.ends,
+                                          parent(gdf)[!, col])
     return ungroup ? DataFrame(res) : res
 end
 
@@ -1167,8 +1168,8 @@ end
 
 @inline function Base.filter((cols, f)::Pair{<:AbstractVector{Int}}, gdf::GroupedDataFrame;
                              ungroup::Bool=false)
-    res = _filter_helper_gdf(gdf, f, gdf.idx, gdf.starts, gdf.ends,
-                             (parent(gdf)[!, i] for i in cols)...)
+    res::typeof(gdf) = _filter_helper_gdf(gdf, f, gdf.idx, gdf.starts, gdf.ends,
+                                          (parent(gdf)[!, i] for i in cols)...)
     return ungroup ? DataFrame(res) : res
 end
 
@@ -1192,8 +1193,8 @@ end
     if ncol(df_tmp) == 0
         throw(ArgumentError("At least one column must be passed to filter on"))
     end
-    res = _filter_helper_gdf_astable(gdf, Tables.columntable(df_tmp), f,
-                                     gdf.idx, gdf.starts, gdf.ends)
+    res::typeof(gdf) = _filter_helper_gdf_astable(gdf, Tables.columntable(df_tmp), f,
+                                                  gdf.idx, gdf.starts, gdf.ends)
     return ungroup ? DataFrame(res) : res
 end
 
