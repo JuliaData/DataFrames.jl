@@ -1070,11 +1070,12 @@ function Base.get(gd::GroupedDataFrame, key::GroupKeyTypes, default)
 end
 
 """
-    filter(fun, gdf::GroupedDataFrame)
-    filter(cols => fun, gdf::GroupedDataFrame)
+    filter(fun, gdf::GroupedDataFrame; ungroup::Bool=false)
+    filter(cols => fun, gdf::GroupedDataFrame; ungroup::Bool=false)
 
-Return a new `GroupedDataFrame` containing only groups for which `fun` returns
-`true`.
+Return only groups in `gd` for which `fun` returns `true` as a
+`GroupedDataFrame` if `ungroup=false` (the default), or as a data frame if
+`ungroup=true`.
 
 If `cols` is not specified then the predicate `fun` is called with a
 `SubDataFrame` for each group.
@@ -1126,23 +1127,54 @@ First Group (1 row): g = 1
      │ Int64  Char
 ─────┼─────────────
    1 │     1  a
+
+julia> filter(:x => x -> x[1] == 'a', gd, ungroup=true)
+1×2 DataFrame
+ Row │ g      x
+     │ Int64  Char
+─────┼─────────────
+   1 │     1  a
 ```
 """
-Base.filter(f, gdf::GroupedDataFrame) =
-    gdf[[f(sdf)::Bool for sdf in gdf]]
-Base.filter((col, f)::Pair{<:ColumnIndex}, gdf::GroupedDataFrame) =
-    _filter_helper(gdf, f, gdf.idx, gdf.starts, gdf.ends, parent(gdf)[!, col])
-Base.filter((cols, f)::Pair{<:AbstractVector{Symbol}}, gdf::GroupedDataFrame) =
-    filter([index(parent(gdf))[col] for col in cols] => f, gdf)
-Base.filter((cols, f)::Pair{<:AbstractVector{<:AbstractString}}, gdf::GroupedDataFrame) =
-    filter([index(parent(gdf))[col] for col in cols] => f, gdf)
-Base.filter((cols, f)::Pair, gdf::GroupedDataFrame) =
-    filter(index(parent(gdf))[cols] => f, gdf)
-Base.filter((cols, f)::Pair{<:AbstractVector{Int}}, gdf::GroupedDataFrame) =
-    _filter_helper(gdf, f, gdf.idx, gdf.starts, gdf.ends, (parent(gdf)[!, i] for i in cols)...)
+@inline function Base.filter(f, gdf::GroupedDataFrame; ungroup::Bool=false)
+    res = gdf[[f(sdf)::Bool for sdf in gdf]]
+    return ungroup ? DataFrame(res) : res
+end
 
-function _filter_helper(gdf::GroupedDataFrame, f, idx::Vector{Int},
-                        starts::Vector{Int}, ends::Vector{Int}, cols...)
+@inline function Base.filter((col, f)::Pair{<:ColumnIndex}, gdf::GroupedDataFrame;
+                             ungroup::Bool=false)
+    res::typeof(gdf) = _filter_helper_gdf(gdf, f, gdf.idx, gdf.starts, gdf.ends,
+                                          parent(gdf)[!, col])
+    return ungroup ? DataFrame(res) : res
+end
+
+@inline function Base.filter((cols, f)::Pair{<:AbstractVector{Symbol}}, gdf::GroupedDataFrame;
+                             ungroup::Bool=false)
+    res = filter([index(parent(gdf))[col] for col in cols] => f, gdf)
+    return ungroup ? DataFrame(res) : res
+end
+
+@inline function Base.filter((cols, f)::Pair{<:AbstractVector{<:AbstractString}},
+                             gdf::GroupedDataFrame; ungroup::Bool=false)
+    res = filter([index(parent(gdf))[col] for col in cols] => f, gdf)
+    return ungroup ? DataFrame(res) : res
+end
+
+@inline function Base.filter((cols, f)::Pair, gdf::GroupedDataFrame;
+                             ungroup::Bool=false)
+    res = filter(index(parent(gdf))[cols] => f, gdf)
+    return ungroup ? DataFrame(res) : res
+end
+
+@inline function Base.filter((cols, f)::Pair{<:AbstractVector{Int}}, gdf::GroupedDataFrame;
+                             ungroup::Bool=false)
+    res::typeof(gdf) = _filter_helper_gdf(gdf, f, gdf.idx, gdf.starts, gdf.ends,
+                                          (parent(gdf)[!, i] for i in cols)...)
+    return ungroup ? DataFrame(res) : res
+end
+
+function _filter_helper_gdf(gdf::GroupedDataFrame, f, idx::Vector{Int},
+                            starts::Vector{Int}, ends::Vector{Int}, cols...)
     function mapper(i::Integer)
         idxs = idx[starts[i]:ends[i]]
         return map(x -> view(x, idxs), cols)
@@ -1155,17 +1187,20 @@ function _filter_helper(gdf::GroupedDataFrame, f, idx::Vector{Int},
     return gdf[sel]
 end
 
-function Base.filter((cols, f)::Pair{<:AsTable}, gdf::GroupedDataFrame)
+@inline function Base.filter((cols, f)::Pair{<:AsTable}, gdf::GroupedDataFrame;
+                             ungroup::Bool=false)
     df_tmp = select(parent(gdf), cols.cols, copycols=false)
     if ncol(df_tmp) == 0
         throw(ArgumentError("At least one column must be passed to filter on"))
     end
-    return _filter_helper_astable(gdf, Tables.columntable(df_tmp), f,
-                                      gdf.idx, gdf.starts, gdf.ends)
+    res::typeof(gdf) = _filter_helper_gdf_astable(gdf, Tables.columntable(df_tmp), f,
+                                                  gdf.idx, gdf.starts, gdf.ends)
+    return ungroup ? DataFrame(res) : res
 end
 
-function _filter_helper_astable(gdf::GroupedDataFrame, nt::NamedTuple, f,
-                                idx::Vector{Int}, starts::Vector{Int}, ends::Vector{Int})
+function _filter_helper_gdf_astable(gdf::GroupedDataFrame, nt::NamedTuple, f,
+                                    idx::Vector{Int}, starts::Vector{Int},
+                                    ends::Vector{Int})
     function mapper(i::Integer)
         idxs = idx[starts[i]:ends[i]]
         return map(x -> view(x, idxs), nt)
