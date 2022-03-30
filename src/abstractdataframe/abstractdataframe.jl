@@ -1451,6 +1451,156 @@ julia> unique!(df)  # modifies df
 (unique, unique!)
 
 """
+    fillcombinations(df::AbstractDataFrame, indexcols;
+                         allowduplicates::Bool=false,
+                         fill=missing)
+
+Generate all combinations of levels of column(s) `indexcols` in data frame `df`.
+Levels and their order are determined by the `levels` function
+(i.e. unique values sorted lexicographically by default, or a custom set
+of levels for e.g. `CategoricalArray` columns), in addition to `missing` if present.
+
+For combinations of `indexcols` not present in `df` these columns are
+filled with the `fill` value (`missing` by default).
+
+If `allowduplicates=false` (the default) `indexcols` may only contain
+unique combinations of `indexcols` values. If `allowduplicates=true`
+duplicates are allowed.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(x=1:2, y='a':'b', z=["x", "y"])
+2×3 DataFrame
+ Row │ x      y     z
+     │ Int64  Char  String
+─────┼─────────────────────
+   1 │     1  a     x
+   2 │     2  b     y
+
+julia> fillcombinations(df, [:x, :y])
+4×3 DataFrame
+ Row │ x      y     z
+     │ Int64  Char  String?
+─────┼──────────────────────
+   1 │     1  a     x
+   2 │     2  a     missing
+   3 │     1  b     missing
+   4 │     2  b     y
+
+julia> fillcombinations(df, [:y, :z], fill=0)
+4×3 DataFrame
+ Row │ x       y     z
+     │ Int64?  Char  String
+─────┼──────────────────────
+   1 │      1  a     x
+   2 │      0  b     x
+   3 │      0  a     y
+   4 │      2  b     y
+```
+"""
+function fillcombinations(df::AbstractDataFrame, indexcols;
+                          allowduplicates::Bool=false, fill=missing)
+    _check_consistency(df)
+
+    colind = index(df)[indexcols]
+
+    if length(colind) == 0
+        throw(ArgumentError("At least one column to fill combinations " *
+                            "must be specified"))
+    end
+
+    has_duplicates = row_group_slots(ntuple(i -> df[!, colind[i]], length(colind)),
+                                     Val(false), nothing, false, nothing)[1] != nrow(df)
+    if has_duplicates && !allowduplicates
+        throw(ArgumentError("duplicate combinations of `indexcols` are not " *
+                            "allowed in input when `allowduplicates=false`"))
+    end
+
+    # Create a vector of vectors of unique values in each column
+    uniquevals = []
+    for col in colind
+        # levels drops missing, handle the case where missing values are present
+        # All levels are retained, missing is added only if present
+        # TODO: change this after DataAPI.jl levels supports missing
+        if any(ismissing, df[!, col])
+            tempcol = vcat(levels(df[!, col]), missing)
+        else
+            tempcol = levels(df[!, col])
+        end
+        push!(uniquevals, tempcol)
+    end
+
+    # make sure we do not overflow in the target data frame size
+    target_rows = Int(prod(x -> big(length(x)), uniquevals))
+    if iszero(target_rows)
+        @assert iszero(nrow(df))
+        return copy(df)
+    end
+
+    # construct expanded columns
+    out_df = DataFrame()
+    inner = 1
+    @assert length(uniquevals) == length(colind)
+    for (val, cind) in zip(uniquevals, colind)
+        len = length(val)
+        target_col = Tables.allocatecolumn(eltype(df[!, cind]), len)
+        copy!(target_col, val)
+        last_inner = inner
+        inner *= len
+        outer, remv = divrem(target_rows, inner)
+        @assert iszero(remv)
+        out_df[!, _names(df)[cind]] = repeat(target_col, inner=last_inner, outer=outer)
+    end
+    @assert inner == target_rows
+
+    idx_ind = 0
+    idx_col = ""
+    while true
+        idx_col = string("source7249", idx_ind)
+        columnindex(df, idx_col) == 0 && break
+        idx_ind += 1
+    end
+
+    if has_duplicates
+        order_ind = 0
+        order_col = ""
+        while true
+            order_col = string("order9427", order_ind)
+            columnindex(df, order_col) == 0 && break
+            order_ind += 1
+        end
+        insertcols!(out_df, 1, order_col => 1:nrow(out_df))
+        out_df = leftjoin(out_df, df; on=_names(df)[colind],
+                          source=idx_col,
+                          matchmissing=:equal)
+        sort!(out_df, 1)
+        select!(out_df, 2:ncol(out_df))
+    else
+        leftjoin!(out_df, df; on=_names(df)[colind],
+                  source=string("source7249", idx_ind),
+                  matchmissing=:equal)
+    end
+
+    # Replace missing values with the fill
+    if !ismissing(fill)
+        mask = out_df[!, end] .== "left_only"
+        if count(mask) > 0
+            for n in length(colind)+1:ncol(out_df)-1
+                tmp_col = out_df[!, n]
+                out_col = similar(tmp_col,
+                                  promote_type(eltype(tmp_col), typeof(fill)),
+                                  length(tmp_col))
+                out_col .= ifelse.(mask, Ref(fill), out_df[!, n])
+                out_df[!, n] = out_col
+            end
+        end
+    end
+
+    # keep only columns from the source in their original order
+    return select!(out_df, _names(df))
+end
+
+"""
     hcat(df::AbstractDataFrame...;
          makeunique::Bool=false, copycols::Bool=true)
 

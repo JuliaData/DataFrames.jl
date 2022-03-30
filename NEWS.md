@@ -2,6 +2,8 @@
 
 ## New functionalities
 
+* `subset` and `subset!` now allow passing zero column selectors
+   ([#3025](https://github.com/JuliaData/DataFrames.jl/pull/3025))
 * `permutedims` now supports a `strict` keyword argument that allows
   for a more flexible handling of values stored in a column that will
   become a new header
@@ -19,6 +21,16 @@
   ([#3006](https://github.com/JuliaData/DataFrames.jl/issues/3006))
 * Add `insertcols`, which is a version of `insertcols!` that creates a new data frame
   ([#3020](https://github.com/JuliaData/DataFrames.jl/issues/3020))
+* Add `fillcombinations` function that generates all combinations of
+  levels of selected columns of a data frame
+  ([#3012](https://github.com/JuliaData/DataFrames.jl/issues/3012))
+
+## Previously announced breaking changes
+
+* On Julia 1.7 or newer broadcasting assignment
+  into an existing column of a data frame replaces it. Under Julia 1.6
+  or older it is an in place operation.
+  ([#3022](https://github.com/JuliaData/DataFrames.jl/pull/3022)
 
 # DataFrames.jl v1.3.2 Patch Release Notes
 
