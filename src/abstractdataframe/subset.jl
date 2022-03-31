@@ -57,6 +57,20 @@ function _and_long_missing(x, y)
                         "but only true, false, or missing are allowed"))
 end
 
+# we are guaranteed that ByRow returns a vector
+# this workaround is needed for 0-argument ByRow
+assert_bool_vec(fun::ByRow) = fun
+
+function assert_bool_vec(@nospecialize(fun))
+    return function(x...)
+        val = fun(x...)
+        if !(val isa AbstractVector)
+            throw(ArgumentError("functions passed to `subset` must return an AbstractVector."))
+        end
+        return val
+    end
+end
+
 function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
                                 (args,)::Ref{Any}, skipmissing::Bool)
     cs_vec = []
@@ -74,7 +88,7 @@ function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
     conditions = Any[if a isa ColumnIndex
                          a => Symbol(:x, i)
                      elseif a isa Pair{<:Any, <:Base.Callable}
-                         first(a) => last(a) => Symbol(:x, i)
+                         first(a) => assert_bool_vec(last(a)) => Symbol(:x, i)
                      else
                          throw(ArgumentError("condition specifier $a is not supported by `subset`"))
                      end for (i, a) in enumerate(cs_vec)]
@@ -110,15 +124,8 @@ function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
             cond = _and.(cols...)
         end
     end
-    if isempty(cond)
-        if eltype(cond) !== Bool
-            throw(ArgumentError("passed conditions produce $(eltype(cond)) " *
-                                "as element type of the result while only " *
-                                "Bool is allowed."))
-        end
-    else
-        @assert eltype(cond) === Bool
-    end
+
+    @assert eltype(cond) === Bool
     return cond
 end
 
@@ -130,8 +137,7 @@ end
 Return a copy of data frame `df` or parent of `gdf` containing only rows for
 which all values produced by transformation(s) `args` for a given row are
 `true`. All transformations must produce vectors containing `true` or `false`
-(and optionally `missing` if `skipmissing=true`) or scalars
-(multi-column return values are not allowed).
+(and optionally `missing` if `skipmissing=true`).
 
 Each argument passed in `args` can be any specifier following the rules
 described for [`select`](@ref) with the restriction that:
@@ -162,17 +168,6 @@ If a `GroupedDataFrame` is passed then it must include all groups present in the
     different set of rules for specifying transformations than [`filter`](@ref)
     which is implemented in DataFrames.jl to ensure support for the
     standard Julia API for collections.
-
-!!! warning
-
-    `subset` supports conditions returning scalars. This is allowed since
-    such functionality is convenient for selecting groups from
-    `GroupedDataFrame` based on aggregation condition for example
-    `subset(gdf, :x => x -> mean(x) < 0)`. However, this can lead
-    to silently incorrect results when the user forgets to broadcast a
-    condition, especially when working with data frames,
-    for example `subset(df, :x => x -> x == 0)` will drop all rows, since
-    the condition is always `false` as it compares a vector to a scalar.
 
 See also: [`subset!`](@ref), [`filter`](@ref), [`select`](@ref)
 
@@ -270,8 +265,7 @@ end
 Update data frame `df` or the parent of `gdf` in place to contain only rows for
 which all values produced by transformation(s) `args` for a given row is `true`.
 All transformations must produce vectors containing `true` or `false` (and
-optionally `missing` if `skipmissing=true`)  or scalars
-(multi-column return values are not allowed).
+optionally `missing` if `skipmissing=true`).
 
 Each argument passed in `args` can be any specifier following the rules
 described for [`select`](@ref) with the restriction that:
@@ -302,17 +296,6 @@ updated.
     different set of rules for specifying transformations than [`filter!`](@ref)
     which is implemented in DataFrames.jl to ensure support for the
     standard Julia API for collections.
-
-!!! warning
-
-    `subset!` supports conditions returning scalars. This is allowed since
-    such functionality is convenient for selecting groups from
-    `GroupedDataFrame` based on aggregation condition for example
-    `subset!(gdf, :x => x -> mean(x) < 0)`. However, this can lead
-    to silently incorrect results when the user forgets to broadcast a
-    condition, especially when working with data frames,
-    for example `subset!(df, :x => x -> x == 0)` will drop all rows, since
-    the condition is always `false` as it compares a vector to a scalar.
 
 See also: [`subset`](@ref), [`filter!`](@ref), [`select!`](@ref)
 
