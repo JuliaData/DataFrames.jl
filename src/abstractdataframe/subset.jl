@@ -65,7 +65,10 @@ function assert_bool_vec(@nospecialize(fun))
     return function(x...)
         val = fun(x...)
         if !(val isa AbstractVector)
-            throw(ArgumentError("functions passed to `subset` must return an AbstractVector."))
+            throw(ArgumentError("functions passed to `subset`/`subset!` must return " *
+                                "an `AbstractVector` when subsetting a data frame " *
+                                "to ensure common mistakes in code are caught. Please " *
+                                "report an issue if you find this restriction inconvenient."))
         end
         return val
     end
@@ -88,11 +91,19 @@ function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
     conditions = Any[if a isa ColumnIndex
                          a => Symbol(:x, i)
                      elseif a isa Pair{<:Any, <:Base.Callable}
-                         first(a) => assert_bool_vec(last(a)) => Symbol(:x, i)
+                         # we require that vector is returned by the condition only
+                         # for AbstractDataFrame
+                         if df isa GroupedDataFrame
+                             first(a) => last(a) => Symbol(:x, i)
+                         else
+                             @assert df isa AbstractDataFrame
+                             first(a) => assert_bool_vec(last(a)) => Symbol(:x, i)
+                         end
                      else
                          throw(ArgumentError("condition specifier $a is not supported by `subset`"))
                      end for (i, a) in enumerate(cs_vec)]
-    isempty(conditions) && throw(ArgumentError("at least one condition must be passed"))
+    # we handle empty conditions case outside of this function
+    @assert !isempty(conditions)
 
     if df isa AbstractDataFrame
         df_conditions = select(df, conditions..., copycols=!(df isa DataFrame))
@@ -125,7 +136,17 @@ function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
         end
     end
 
-    @assert eltype(cond) === Bool
+    # we special case 0-length cond, as in this case broadcasting does not
+    # guarantee setting a proper eltype for the result
+    if isempty(cond)
+        if eltype(cond) !== Bool
+            throw(ArgumentError("passed conditions produce $(eltype(cond)) " *
+                                "as element type of the result while only " *
+                                "Bool is allowed."))
+        end
+    else
+        @assert eltype(cond) === Bool
+    end
     return cond
 end
 
@@ -138,6 +159,8 @@ Return a copy of data frame `df` or parent of `gdf` containing only rows for
 which all values produced by transformation(s) `args` for a given row are
 `true`. All transformations must produce vectors containing `true` or `false`
 (and optionally `missing` if `skipmissing=true`).
+When `subset` is called on `GroupedDataFrame` returning a scalar is allowed
+(this will result in including/excluding a whole group with the passed condition).
 
 Each argument passed in `args` can be any specifier following the rules
 described for [`select`](@ref) with the restriction that:
@@ -226,6 +249,14 @@ julia> subset(groupby(df, :y), :v => x -> x .> minimum(x))
 ─────┼─────────────────────────────────────
    1 │     2  false   true     true      2
    2 │     4  false  false  missing     12
+
+julia> subset(groupby(df, :y), :v => x -> minimum(x) > 5)
+2×5 DataFrame
+ Row │ id     x      y      z        v
+     │ Int64  Bool   Bool   Bool?    Int64
+─────┼─────────────────────────────────────
+   1 │     3   true  false  missing     11
+   2 │     4  false  false  missing     12
 ```
 """
 function subset(df::AbstractDataFrame, @nospecialize(args...);
@@ -265,7 +296,9 @@ end
 Update data frame `df` or the parent of `gdf` in place to contain only rows for
 which all values produced by transformation(s) `args` for a given row is `true`.
 All transformations must produce vectors containing `true` or `false` (and
-optionally `missing` if `skipmissing=true`).
+optionally `missing` if `skipmissing=true`). When `subset`
+is called on `GroupedDataFrame` returning a scalar is additionally allowed
+(this will result in including/excluding a whole group with the passed condition).
 
 Each argument passed in `args` can be any specifier following the rules
 described for [`select`](@ref) with the restriction that:
@@ -367,6 +400,19 @@ julia> df
      │ Int64  Bool   Bool   Bool?    Int64
 ─────┼─────────────────────────────────────
    1 │     2  false   true     true      2
+   2 │     4  false  false  missing     12
+
+julia> df = DataFrame(id=1:4, x=[true, false, true, false], y=[true, true, false, false],
+                      z=[true, true, missing, missing], v=[1, 2, 11, 12]);
+
+julia> subset!(groupby(df, :y), :v => x -> minimum(x) > 5);
+
+julia> df
+2×5 DataFrame
+ Row │ id     x      y      z        v
+     │ Int64  Bool   Bool   Bool?    Int64
+─────┼─────────────────────────────────────
+   1 │     3   true  false  missing     11
    2 │     4  false  false  missing     12
 ```
 """
