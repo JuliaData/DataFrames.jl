@@ -1828,10 +1828,6 @@ type (except `AbstractArray`). In the latter case the passed value is treated
 as having length one for expansion. As a particular rule values stored in a `Ref`
 or a `0`-dimensional `AbstractArray` are unwrapped and treated as having length one.
 
-`DataFrame` can store only columns that use 1-based indexing. Attempting
-to store a vector using non-standard indexing after `repeat` is called on it
-will raise an error.
-
 # Examples
 
 ```jldoctest
