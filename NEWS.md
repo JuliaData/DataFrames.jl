@@ -22,13 +22,16 @@
 * Add `fillcombinations` function that generates all combinations of
   levels of selected columns of a data frame
   ([#3012](https://github.com/JuliaData/DataFrames.jl/issues/3012))
+* Add `allcombinations` function that returns a data frame created
+  from all combinations of the passed vectors
+  ([#3031](https://github.com/JuliaData/DataFrames.jl/pull/3031))
 
 ## Previously announced breaking changes
 
 * On Julia 1.7 or newer broadcasting assignment
   into an existing column of a data frame replaces it. Under Julia 1.6
   or older it is an in place operation.
-  ([#3022](https://github.com/JuliaData/DataFrames.jl/pull/3022)
+  ([#3022](https://github.com/JuliaData/DataFrames.jl/pull/3022))
 
 # DataFrames.jl v1.3.2 Patch Release Notes
 
