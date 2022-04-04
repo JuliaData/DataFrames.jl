@@ -2165,44 +2165,46 @@ end
     @test invpermute!(dfv, dfv.d) === dfv
     @test df2 == dfc
 
-    @test df == invpermute!(copy(df), [1])
+    @test DataFrame(x=[17]) == invpermute!(DataFrame(x=[17]), [1])
     
-    @test_throws ArgumentError("Permutation is too long") permute!(df, [1, 4, 3, 2, 5, 6])
-    @test_throws ArgumentError("Not a permutation") permute!(df, [1, 1])
-    @test_throws ArgumentError("Not a permutation") permute!(df, [2, 2])
+    @test_throws DimensionMismatch("Permutation does not have a correct length (5 != 6)") permute!(df, [1, 4, 3, 2, 5, 6])
+    @test_throws DimensionMismatch("Permutation does not have a correct length (5 != 3)") permute!(df, [1, 3, 2])
     @test_throws ArgumentError("Not a permutation") permute!(df, [4, 4, 2, 5, 3])
-    @test_throws ArgumentError("Permutation vectors must have 1-based indexing") invpermute!(df, OffsetArray([5,4], 4:5))
+    @test_throws ArgumentError("Permutation vectors must have 1-based indexing") invpermute!(df, OffsetArray([5,4,7,8,6], 4:8))
 end
 
 @testset "exhaustive permute!, invpermute!" begin
-    for len in 0:6
-        df = DataFrame([rand(len) for _ in 1:3], :auto)
-        df0 = copy(df)
-        for perm_len in 0:min(6, len+1)
-            p = fill(0, perm_len)
+    for perm_len in 0:6
+        p = fill(0, perm_len)
+        for len in (perm_len > 4 ? [perm_len] : (max(0, perm_len-1):perm_len+1))
+            df = DataFrame([rand(len) for _ in 1:3], :auto)
+            dfc = copy(df)
             for i in 0:(perm_len+3)^perm_len
                 digits!(p, i, base=perm_len+3)
                 p .-= 2
-                if perm_len > len
-                    if len < 4
-                        @test_throws ArgumentError("Permutation is too long") permute!(df, p)
-                        @test_throws ArgumentError("Permutation is too long") invpermute!(df, p)
-                    end
+                if perm_len != len
+                    @test_throws DimensionMismatch("Permutation does not have a correct length ($len != $perm_len)") permute!(df, p)
+                    @test_throws DimensionMismatch("Permutation does not have a correct length ($len != $perm_len)") invpermute!(df, p)
                 elseif sort(p) != collect(1:perm_len)
-                    if len < 5
+                    if perm_len <= 4 || rand() < .005
                         @test_throws ArgumentError("Not a permutation") permute!(df, p)
                         @test_throws ArgumentError("Not a permutation") invpermute!(df, p)
                     end
                 else
-                    p2 = copy(p)
-                    while length(p2) < len
-                        push!(p2, length(p2)+1)
-                    end
-                    @test df[p2, :] == permute!(df, p)
-                    @test df0 == invpermute!(df, p)
+                    @test df[p, :] == permute!(df, p)
+                    @test dfc == invpermute!(df, p)
                 end
             end
         end
+    end
+    for _ in 1:1000
+        len = rand(1:1000)
+        p = shuffle!(collect(1:len))
+        v = rand(len)
+        df = DataFrame([v, v, rand(len), v], :auto)
+        dfc = copy(df)
+        @test df[p, :] == permute!(df, p)
+        @test dfc == invpermute!(df, p)
     end
 end
 

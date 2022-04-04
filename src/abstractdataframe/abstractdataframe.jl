@@ -2525,7 +2525,7 @@ end
 
 function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.invpermute!!)},
                               df::AbstractDataFrame, p::AbstractVector{<:Integer})
-    length(p) == nrow(df) || throw(ArgumentError("Permutation does not have a correct length"))
+    nrow(df) != length(p) && throw(DimensionMismatch("Permutation does not have a correct length ($(nrow(df)) != $(length(p)))"))
     
     cp = _compile_permutation!(Base.copymutable(p))
 
