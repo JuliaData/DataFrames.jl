@@ -2174,6 +2174,7 @@ end
 end
 
 @testset "exhaustive permute!, invpermute!" begin
+    Random.seed!(1729)
     for perm_len in 0:6
         p = fill(0, perm_len)
         for len in (perm_len > 4 ? [perm_len] : (max(0, perm_len-1):perm_len+1))
