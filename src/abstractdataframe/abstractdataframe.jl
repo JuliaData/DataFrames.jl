@@ -2531,11 +2531,14 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
         if haskey(seen_cols, col)
             push!(toskip, i)
         else
+            checkbounds(col, eachindex(p))
             seen_cols[col] = nothing
         end
     end
 
     cp = _compile_permutation!(Base.copymutable(p))
+
+    isempty(cp) && return df
 
     if fun === Base.invpermute!! 
         pop!(cp)
@@ -2545,7 +2548,6 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
 
     for (i, col) in enumerate(eachcol(df))
         if !(i in toskip)
-            checkbounds(col, eachindex(p))
             _cycle_permute!(col, cp)
         end
     end

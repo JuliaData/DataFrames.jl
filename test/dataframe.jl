@@ -2170,6 +2170,38 @@ end
     @test_throws ArgumentError("Not a permutation") permute!(df, [4, 4, 2, 5, 3])
 end
 
+@testset "exhaustive permute!, invpermute!" begin
+    for len in 0:6
+        df = DataFrame([rand(len) for _ in 1:3], :auto)
+        df0 = copy(df)
+        for perm_len in 0:min(6, len+1)
+            p = fill(0, perm_len)
+            for i in 0:(perm_len+3)^perm_len
+                digits!(p, i, base=perm_len+3)
+                p .-= 2
+                if perm_len > len
+                    if len < 4
+                        @test_throws BoundsError permute!(df, p)
+                        @test_throws BoundsError invpermute!(df, p)
+                    end
+                elseif sort(p) != collect(1:perm_len)
+                    if len < 5
+                        @test_throws ArgumentError("Not a permutation") permute!(df, p)
+                        @test_throws ArgumentError("Not a permutation") invpermute!(df, p)
+                    end
+                else
+                    p2 = copy(p)
+                    while length(p2) < len
+                        push!(p2, length(p2)+1)
+                    end
+                    @test df[p2, :] == permute!(df, p)
+                    @test df0 == invpermute!(df, p)
+                end
+            end
+        end
+    end
+end
+
 @testset "shuffle, shuffle!" begin
     refdf = DataFrame(a=1:5, b=11:15)
     refdf.c = refdf.a
