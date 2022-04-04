@@ -2163,6 +2163,11 @@ end
     @test dfv == dfc[[3, 1, 2, 4], :]
     @test invpermute!(dfv, dfv.d) === dfv
     @test df2 == dfc
+
+    @test_throws BoundsError permute!(df, [1, 4, 3, 2, 5, 6])
+    @test_throws ArgumentError("Not a permutation") permute!(df, [1, 1])
+    @test_throws ArgumentError("Not a permutation") permute!(df, [2, 2])
+    @test_throws ArgumentError("Not a permutation") permute!(df, [4, 4, 2, 5, 3])
 end
 
 @testset "shuffle, shuffle!" begin

@@ -2545,6 +2545,7 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
 
     for (i, col) in enumerate(eachcol(df))
         if !(i in toskip)
+            checkbounds(col, eachindex(p))
             _cycle_permute!(col, cp)
         end
     end
@@ -2565,25 +2566,25 @@ function _compile_permutation!(p::AbstractVector{<:Integer})
     @inbounds while count > 0
         start = findnext(!iszero, p, start + 1)
         start isa Int || throw(ArgumentError("Not a permutation"))
-        k = p[start]
+        last_k = p[start]
         count -= 1
-        k == start && continue
+        last_k == start && continue
         out_len += 1
-        out[out_len] = k
+        out[out_len] = last_k
         p[start] = 0
-        last_k = k
-        checkbounds(Bool, p, k) || throw(ArgumentError("Not a permutation"))
+        start <= last_k <= length(p) || throw(ArgumentError("Not a permutation"))
         out_len += 1
-        k = out[out_len] = p[k]
+        k = out[out_len] = p[last_k]
         while true
             count -= 1
             p[last_k] = 0
             last_k = k
-            checkbounds(Bool, p, k) || throw(ArgumentError("Not a permutation"))
+            start <= k <= length(p) || throw(ArgumentError("Not a permutation"))
             out_len += 1
             k = out[out_len] = p[k]
             k == 0 && break
         end
+        last_k == start  || throw(ArgumentError("Not a permutation"))
     end
     return resize!(out, out_len)
 end
@@ -2614,7 +2615,7 @@ end
     permute!(df::AbstractDataFrame, p)
 
 Permute data frame `df` in-place, according to permutation `p`.
-No checking is done to verify that `p` is a permutation.
+Throws `ArgumentError` if `p` is not a permutation.
 
 To return a new data frame instead of permuting `df` in-place, use `df[p]`.
 Note that this is generally faster than `permute!(df, p)` for large data frames.
