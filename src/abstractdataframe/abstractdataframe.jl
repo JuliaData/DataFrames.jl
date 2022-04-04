@@ -2532,9 +2532,7 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
     isempty(cp) && return df
 
     if fun === Base.invpermute!! 
-        pop!(cp)
-        reverse!(cp)
-        push!(cp, 0)
+        reverse!(@view cp[1:end-1])
     end
 
     seen_cols = IdDict{Any, Nothing}()
