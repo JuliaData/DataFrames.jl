@@ -2533,10 +2533,6 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
         else
             seen_cols[col] = nothing
         end
-        # p might be a column of df so we make sure we unalias
-        if col === p
-            p = copy(p)
-        end
     end
 
     cp = _compile_permutation!(Base.copymutable(p))
