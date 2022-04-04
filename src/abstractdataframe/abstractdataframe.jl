@@ -2617,8 +2617,7 @@ end
 Permute data frame `df` in-place, according to permutation `p`.
 Throws `ArgumentError` if `p` is not a permutation.
 
-To return a new data frame instead of permuting `df` in-place, use `df[p]`.
-Note that this is generally faster than `permute!(df, p)` for large data frames.
+To return a new data frame instead of permuting `df` in-place, use `df[p, :]`.
 
 `permute!` will produce a correct result even if some columns of passed data frame
 or permutation `p` are identical (checked with `===`). Otherwise, if two columns share
