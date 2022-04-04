@@ -3,6 +3,7 @@ module TestDataFrame
 using Dates, DataFrames, Statistics, Random, Test, Logging, DataStructures,
       CategoricalArrays
 using DataFrames: _columns, index
+using OffsetArrays: OffsetArray
 const ≅ = isequal
 const ≇ = !isequal
 
