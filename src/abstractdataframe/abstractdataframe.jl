@@ -2525,17 +2525,8 @@ end
 
 function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.invpermute!!)},
                               df::AbstractDataFrame, p::AbstractVector{<:Integer})
-    toskip = Set{Int}()
-    seen_cols = IdDict{Any, Nothing}()
-    for (i, col) in enumerate(eachcol(df))
-        if haskey(seen_cols, col)
-            push!(toskip, i)
-        else
-            checkbounds(col, eachindex(p))
-            seen_cols[col] = nothing
-        end
-    end
-
+    length(p) <= nrow(df) || throw(ArgumentError("Permutation is too long"))
+    
     cp = _compile_permutation!(Base.copymutable(p))
 
     isempty(cp) && return df
@@ -2546,11 +2537,14 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
         push!(cp, 0)
     end
 
+    seen_cols = IdDict{Any, Nothing}()
     for (i, col) in enumerate(eachcol(df))
-        if !(i in toskip)
+        if !haskey(seen_cols, col)
+            seen_cols[col] = nothing
             _cycle_permute!(col, cp)
         end
     end
+    
     return df
 end
 

@@ -2164,10 +2164,13 @@ end
     @test invpermute!(dfv, dfv.d) === dfv
     @test df2 == dfc
 
-    @test_throws BoundsError permute!(df, [1, 4, 3, 2, 5, 6])
+    @test df == invpermute!(copy(df), [1])
+    
+    @test_throws ArgumentError("Permutation is too long") permute!(df, [1, 4, 3, 2, 5, 6])
     @test_throws ArgumentError("Not a permutation") permute!(df, [1, 1])
     @test_throws ArgumentError("Not a permutation") permute!(df, [2, 2])
     @test_throws ArgumentError("Not a permutation") permute!(df, [4, 4, 2, 5, 3])
+    @test_throws ArgumentError("Permutation vectors must have 1-based indexing") invpermute!(df, OffsetArray([5,4], 4:5))
 end
 
 @testset "exhaustive permute!, invpermute!" begin
@@ -2181,8 +2184,8 @@ end
                 p .-= 2
                 if perm_len > len
                     if len < 4
-                        @test_throws BoundsError permute!(df, p)
-                        @test_throws BoundsError invpermute!(df, p)
+                        @test_throws ArgumentError("Permutation is too long") permute!(df, p)
+                        @test_throws ArgumentError("Permutation is too long") invpermute!(df, p)
                     end
                 elseif sort(p) != collect(1:perm_len)
                     if len < 5
