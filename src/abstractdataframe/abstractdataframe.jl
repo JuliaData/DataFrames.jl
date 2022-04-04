@@ -2654,7 +2654,7 @@ Like [`permute!`](@ref), but the inverse of the given permutation is applied.
 `invpermute!` will produce a correct result even if some columns of passed data
 frame or permutation `p` are identical (checked with `===`). Otherwise, if two
 columns share some part of memory but are not identical (e.g. are different views
-of the same parent vector) then `permute!` result might be incorrect.
+of the same parent vector) then `invpermute!` result might be incorrect.
 
 # Examples
 
