@@ -2539,15 +2539,70 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
         end
     end
 
-    pp = similar(p)
+    cp = _compile_permutation!(Base.copymutable(p))
+
+    if fun === Base.invpermute!! 
+        pop!(cp)
+        reverse!(cp)
+        push!(cp, 0)
+    end
 
     for (i, col) in enumerate(eachcol(df))
         if !(i in toskip)
-            copyto!(pp, p)
-            fun(col, pp)
+            _cycle_permute!(col, cp)
         end
     end
     return df
+end
+
+# convert a classical permutation to cycle notation, 
+# destroying the original permutation in the process.
+function _compile_permutation!(p::AbstractVector{<:Integer})
+    Base.require_one_based_indexing(p)
+    out = similar(p, 3length(p)÷2)
+    out_len = 0
+    start = 0
+    count = length(p)
+    @inbounds while count > 0
+        start = findnext(!iszero, p, start+1)
+        start isa Int || throw(ArgumentError("Not a permutation"))
+        k = p[start]
+        count -= 1
+        k == start && continue
+        out[out_len += 1] = k
+        p[start] = 0
+        last_k = k
+        checkbounds(Bool, p, k) || throw(ArgumentError("Not a permutation"))
+        k = out[out_len += 1] = p[k]
+        while true
+            count -= 1
+            p[last_k] = 0
+            last_k = k
+            checkbounds(Bool, p, k) || throw(ArgumentError("Not a permutation"))
+            k = out[out_len += 1] = p[k]
+            k == 0 && break # or k < start+1
+        end
+    end
+    resize!(out, out_len)
+end
+
+# permute a vector `v` based on a permutation `p` listed in cycle notation
+function _cycle_permute!(v::AbstractVector, p::AbstractVector{<:Integer})
+    i = firstindex(p)
+    @inbounds while i < lastindex(p)
+        last_p_i = p[i]
+        start = v[last_p_i]
+        while true
+            i += 1
+            p_i = p[i]
+            p_i == 0 && break
+            v[last_p_i] = v[p_i]
+            last_p_i = p_i
+        end
+        v[last_p_i] = start
+        i += 1
+    end
+    v
 end
 
 """
