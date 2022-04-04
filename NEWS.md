@@ -26,7 +26,7 @@
 * Add `fillcombinations` function that generates all combinations of
   levels of selected columns of a data frame
   ([#3012](https://github.com/JuliaData/DataFrames.jl/issues/3012))
-* Guarantee that permute! and invpermute! throw on invalid input
+* Guarantee that `permute!` and `invpermute!` throw on invalid input
   ([#3035](https://github.com/JuliaData/DataFrames.jl/pull/3035))
 
 ## Previously announced breaking changes
@@ -38,7 +38,7 @@
 
 ## Performance
 
-* Speed up permute! and invpermute! (and therefore sort!) 2x-8x 
+* Speed up `permute!` and `invpermute!` (and therefore sort!) 2x-8x 
   for large tables by using cycle notation
   ([#3035](https://github.com/JuliaData/DataFrames.jl/pull/3035))
 
