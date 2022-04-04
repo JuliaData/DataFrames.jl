@@ -2551,8 +2551,8 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
     return df
 end
 
-# convert a classical permutation to cycle notation, 
-# zeroing the original permutation in the process.
+# convert a classical permutation to zero terminated cycle 
+# notation, zeroing the original permutation in the process.
 function _compile_permutation!(p::AbstractVector{<:Integer})
     firstindex(p) == 1 || 
         throw(ArgumentError("Permutation vectors must have 1-based indexing"))
@@ -2588,7 +2588,10 @@ function _compile_permutation!(p::AbstractVector{<:Integer})
     return resize!(out, out_len)
 end
 
-# permute a vector `v` based on a permutation `p` listed in cycle notation
+# Permute a vector `v` based on a permutation `p` listed in zero terminated
+# cycle notation. For example, the permutation 1 -> 2, 2 -> 3, 3 -> 1, 4 -> 6,
+# 5 -> 5, 6 -> 4 is traditionaly expressed as [2, 3, 1, 6, 5, 4] but in cycle
+# notation is expressed as [1, 2, 3, 0, 4, 6, 0] (or [1, 2, 3, 0, 4, 6, 0, 5, 0])
 function _cycle_permute!(v::AbstractVector, p::AbstractVector{<:Integer})
     i = firstindex(p)
     @inbounds while i < lastindex(p)
