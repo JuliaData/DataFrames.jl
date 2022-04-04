@@ -2552,10 +2552,13 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
 end
 
 # convert a classical permutation to cycle notation, 
-# destroying the original permutation in the process.
+# zeroing the original permutation in the process.
 function _compile_permutation!(p::AbstractVector{<:Integer})
-    Base.require_one_based_indexing(p)
-    out = similar(p, 3 * length(p) ÷ 2)
+    firstindex(p) == 1 || 
+        throw(ArgumentError("Permutation vectors must have 1-based indexing"))
+    # this length is sufficient because we do not record 1-cycles,
+    # so the worst case is all 2-cycles.
+    out = similar(p, 3 * length(p) ÷ 2) 
     out_len = 0
     start = 0
     count = length(p)
@@ -2565,18 +2568,21 @@ function _compile_permutation!(p::AbstractVector{<:Integer})
         k = p[start]
         count -= 1
         k == start && continue
-        out[out_len += 1] = k
+        out_len += 1
+        out[out_len] = k
         p[start] = 0
         last_k = k
         checkbounds(Bool, p, k) || throw(ArgumentError("Not a permutation"))
-        k = out[out_len += 1] = p[k]
+        out_len += 1
+        k = out[out_len] = p[k]
         while true
             count -= 1
             p[last_k] = 0
             last_k = k
             checkbounds(Bool, p, k) || throw(ArgumentError("Not a permutation"))
-            k = out[out_len += 1] = p[k]
-            k == 0 && break # or k < start+1
+            out_len += 1
+            k = out[out_len] = p[k]
+            k == 0 && break
         end
     end
     return resize!(out, out_len)
