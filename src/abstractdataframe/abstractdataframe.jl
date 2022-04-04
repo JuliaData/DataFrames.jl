@@ -2555,12 +2555,12 @@ end
 # destroying the original permutation in the process.
 function _compile_permutation!(p::AbstractVector{<:Integer})
     Base.require_one_based_indexing(p)
-    out = similar(p, 3length(p)÷2)
+    out = similar(p, 3 * length(p) ÷ 2)
     out_len = 0
     start = 0
     count = length(p)
     @inbounds while count > 0
-        start = findnext(!iszero, p, start+1)
+        start = findnext(!iszero, p, start + 1)
         start isa Int || throw(ArgumentError("Not a permutation"))
         k = p[start]
         count -= 1
@@ -2579,7 +2579,7 @@ function _compile_permutation!(p::AbstractVector{<:Integer})
             k == 0 && break # or k < start+1
         end
     end
-    resize!(out, out_len)
+    return resize!(out, out_len)
 end
 
 # permute a vector `v` based on a permutation `p` listed in cycle notation
@@ -2598,7 +2598,7 @@ function _cycle_permute!(v::AbstractVector, p::AbstractVector{<:Integer})
         v[last_p_i] = start
         i += 1
     end
-    v
+    return v
 end
 
 """
