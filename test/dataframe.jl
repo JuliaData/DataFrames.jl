@@ -2188,7 +2188,7 @@ end
                     @test_throws DimensionMismatch("Permutation does not have a correct length ($len != $perm_len)") permute!(df, p)
                     @test_throws DimensionMismatch("Permutation does not have a correct length ($len != $perm_len)") invpermute!(df, p)
                 elseif sort(p) != collect(1:perm_len)
-                    if perm_len <= 5 || rand() < .01
+                    if perm_len <= 5 || rand() < 0.01
                         @test_throws ArgumentError("Not a permutation") permute!(df, p)
                         @test_throws ArgumentError("Not a permutation") invpermute!(df, p)
                     end
