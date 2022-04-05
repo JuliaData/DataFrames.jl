@@ -2552,8 +2552,10 @@ function _compile_permutation!(p::AbstractVector{<:Integer})
     firstindex(p) == 1 || 
         throw(ArgumentError("Permutation vectors must have 1-based indexing"))
     # this length is sufficient because we do not record 1-cycles,
-    # so the worst case is all 2-cycles.
-    out = similar(p, 3 * length(p) ÷ 2) 
+    # so the worst case is all 2-cycles. One extra element gives the
+    # algorithm leeway to defer error detection without unsafe reads.
+    # trace _compile_permutation!([3,3,1]) for example.
+    out = similar(p, 3 * length(p) ÷ 2 + 1)
     out_len = 0
     start = 0
     count = length(p)

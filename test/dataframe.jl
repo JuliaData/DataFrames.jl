@@ -2166,10 +2166,11 @@ end
     @test df2 == dfc
 
     @test DataFrame(x=[17]) == invpermute!(DataFrame(x=[17]), [1])
-    
+
     @test_throws DimensionMismatch("Permutation does not have a correct length (5 != 6)") permute!(df, [1, 4, 3, 2, 5, 6])
     @test_throws DimensionMismatch("Permutation does not have a correct length (5 != 3)") permute!(df, [1, 3, 2])
     @test_throws ArgumentError("Not a permutation") permute!(df, [4, 4, 2, 5, 3])
+    @test_throws ArgumentError("Not a permutation") DataFrames._compile_permutation!([3, 3, 1])
     @test_throws ArgumentError("Permutation vectors must have 1-based indexing") invpermute!(df, OffsetArray([5,4,7,8,6], 4:8))
 end
 
@@ -2187,7 +2188,7 @@ end
                     @test_throws DimensionMismatch("Permutation does not have a correct length ($len != $perm_len)") permute!(df, p)
                     @test_throws DimensionMismatch("Permutation does not have a correct length ($len != $perm_len)") invpermute!(df, p)
                 elseif sort(p) != collect(1:perm_len)
-                    if perm_len <= 4 || rand() < .005
+                    if perm_len <= 5 || rand() < .01
                         @test_throws ArgumentError("Not a permutation") permute!(df, p)
                         @test_throws ArgumentError("Not a permutation") invpermute!(df, p)
                     end
