@@ -2525,7 +2525,9 @@ end
 
 function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.invpermute!!)},
                               df::AbstractDataFrame, p::AbstractVector{<:Integer})
-    nrow(df) != length(p) && throw(DimensionMismatch("Permutation does not have a correct length ($(nrow(df)) != $(length(p)))"))
+    nrow(df) != length(p) &&
+        throw(DimensionMismatch("Permutation does not have a correct length " *
+                                "(expected $(nrow(df)) but got $(length(p)))"))
     
     cp = _compile_permutation!(Base.copymutable(p))
 
@@ -2587,7 +2589,7 @@ end
 
 # Permute a vector `v` based on a permutation `p` listed in zero terminated
 # cycle notation. For example, the permutation 1 -> 2, 2 -> 3, 3 -> 1, 4 -> 6,
-# 5 -> 5, 6 -> 4 is traditionaly expressed as [2, 3, 1, 6, 5, 4] but in cycle
+# 5 -> 5, 6 -> 4 is traditionally expressed as [2, 3, 1, 6, 5, 4] but in cycle
 # notation is expressed as [1, 2, 3, 0, 4, 6, 0]
 function _cycle_permute!(v::AbstractVector, p::AbstractVector{<:Integer})
     i = firstindex(p)
