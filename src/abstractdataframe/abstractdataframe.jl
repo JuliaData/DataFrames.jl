@@ -2570,7 +2570,7 @@ function _compile_permutation!(p::AbstractVector{<:Integer})
         out_len += 1
         out[out_len] = last_k
         p[start] = 0
-        start <= last_k <= length(p) || throw(ArgumentError("Passed vector p is not a valid permutation"))
+        start < last_k <= length(p) || throw(ArgumentError("Passed vector p is not a valid permutation"))
         out_len += 1
         k = out[out_len] = p[last_k]
         while true
@@ -2582,7 +2582,7 @@ function _compile_permutation!(p::AbstractVector{<:Integer})
             k = out[out_len] = p[k]
             k == 0 && break
         end
-        last_k == start  || throw(ArgumentError("Passed vector p is not a valid permutation"))
+        last_k == start || throw(ArgumentError("Passed vector p is not a valid permutation"))
     end
     return resize!(out, out_len)
 end
