@@ -26,6 +26,8 @@
 * Add `fillcombinations` function that generates all combinations of
   levels of selected columns of a data frame
   ([#3012](https://github.com/JuliaData/DataFrames.jl/issues/3012))
+* Guarantee that `permute!` and `invpermute!` throw on invalid input
+  ([#3035](https://github.com/JuliaData/DataFrames.jl/pull/3035))
 
 ## Previously announced breaking changes
 
@@ -33,6 +35,12 @@
   into an existing column of a data frame replaces it. Under Julia 1.6
   or older it is an in place operation.
   ([#3022](https://github.com/JuliaData/DataFrames.jl/pull/3022)
+
+## Performance
+
+* Speed up `permute!` and `invpermute!` (and therefore sorting) 2x-8x 
+  for large tables by using cycle notation
+  ([#3035](https://github.com/JuliaData/DataFrames.jl/pull/3035))
 
 # DataFrames.jl v1.3.2 Patch Release Notes
 
