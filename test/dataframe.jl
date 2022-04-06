@@ -2166,6 +2166,7 @@ end
     @test df2 == dfc
 
     @test DataFrame(x=[17]) == invpermute!(DataFrame(x=[17]), [1])
+    @test DataFrame(x=[17, 29]) == invpermute!(DataFrame(x=[29, 17]), [2, 1])
 
     @test_throws DimensionMismatch permute!(df, [1, 4, 3, 2, 5, 6])
     @test_throws DimensionMismatch permute!(df, [1, 3, 2])
