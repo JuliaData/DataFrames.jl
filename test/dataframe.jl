@@ -2208,6 +2208,10 @@ end
         dfc = copy(df)
         @test df[p, :] == permute!(df, p)
         @test dfc == invpermute!(df, p)
+        df = DataFrame([v, v, rand(len), v], :auto, copycols=false)
+        dfc = copy(df)
+        @test df[p, :] == permute!(df, p)
+        @test dfc == invpermute!(df, p)
     end
 end
 
