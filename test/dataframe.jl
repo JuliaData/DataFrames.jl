@@ -3,6 +3,7 @@ module TestDataFrame
 using Dates, DataFrames, Statistics, Random, Test, Logging, DataStructures,
       CategoricalArrays
 using DataFrames: _columns, index
+using OffsetArrays: OffsetArray
 const ≅ = isequal
 const ≇ = !isequal
 
@@ -2163,6 +2164,55 @@ end
     @test dfv == dfc[[3, 1, 2, 4], :]
     @test invpermute!(dfv, dfv.d) === dfv
     @test df2 == dfc
+
+    @test DataFrame(x=[17]) == invpermute!(DataFrame(x=[17]), [1])
+    @test DataFrame(x=[17, 29]) == invpermute!(DataFrame(x=[29, 17]), [2, 1])
+
+    @test_throws DimensionMismatch permute!(df, [1, 4, 3, 2, 5, 6])
+    @test_throws DimensionMismatch permute!(df, [1, 3, 2])
+    @test_throws ArgumentError permute!(df, [4, 4, 2, 5, 3])
+    @test_throws ArgumentError DataFrames._compile_permutation!([3, 3, 1])
+    @test_throws ArgumentError invpermute!(df, OffsetArray([5,4,7,8,6], 4:8))
+end
+
+@testset "exhaustive permute!, invpermute!" begin
+    Random.seed!(1729)
+    for perm_len in 0:6
+        p = fill(0, perm_len)
+        for len in (perm_len > 4 ? [perm_len] : (max(0, perm_len-1):perm_len+1))
+            df = DataFrame([rand(len) for _ in 1:3], :auto)
+            dfc = copy(df)
+            for i in 0:(perm_len+3)^perm_len
+                digits!(p, i, base=perm_len+3)
+                p .-= 2
+                if perm_len != len
+                    @test_throws DimensionMismatch permute!(df, p)
+                    @test_throws DimensionMismatch invpermute!(df, p)
+                elseif sort(p) != collect(1:perm_len)
+                    if perm_len <= 5 || rand() < 0.01
+                        @test_throws ArgumentError permute!(df, p)
+                        @test_throws ArgumentError invpermute!(df, p)
+                    end
+                else
+                    @test df[p, :] == permute!(df, p)
+                    @test dfc == invpermute!(df, p)
+                end
+            end
+        end
+    end
+    for _ in 1:1000
+        len = rand(1:1000)
+        p = shuffle!(collect(1:len))
+        v = rand(len)
+        df = DataFrame([v, v, rand(len), v], :auto)
+        dfc = copy(df)
+        @test df[p, :] == permute!(df, p)
+        @test dfc == invpermute!(df, p)
+        df = DataFrame([v, v, rand(len), v], :auto, copycols=false)
+        dfc = copy(df)
+        @test df[p, :] == permute!(df, p)
+        @test dfc == invpermute!(df, p)
+    end
 end
 
 @testset "shuffle, shuffle!" begin

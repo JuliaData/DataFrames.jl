@@ -2525,39 +2525,97 @@ end
 
 function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.invpermute!!)},
                               df::AbstractDataFrame, p::AbstractVector{<:Integer})
-    toskip = Set{Int}()
+    nrow(df) != length(p) &&
+        throw(DimensionMismatch("Permutation does not have a correct length " *
+                                "(expected $(nrow(df)) but got $(length(p)))"))
+    
+    cp = _compile_permutation!(Base.copymutable(p))
+
+    isempty(cp) && return df
+
+    if fun === Base.invpermute!! 
+        reverse!(@view cp[1:end-1])
+    end
+
     seen_cols = IdDict{Any, Nothing}()
     for (i, col) in enumerate(eachcol(df))
-        if haskey(seen_cols, col)
-            push!(toskip, i)
-        else
+        if !haskey(seen_cols, col)
             seen_cols[col] = nothing
-        end
-        # p might be a column of df so we make sure we unalias
-        if col === p
-            p = copy(p)
+            _cycle_permute!(col, cp)
         end
     end
-
-    pp = similar(p)
-
-    for (i, col) in enumerate(eachcol(df))
-        if !(i in toskip)
-            copyto!(pp, p)
-            fun(col, pp)
-        end
-    end
+    
     return df
+end
+
+# convert a classical permutation to zero terminated cycle 
+# notation, zeroing the original permutation in the process.
+function _compile_permutation!(p::AbstractVector{<:Integer})
+    firstindex(p) == 1 || 
+        throw(ArgumentError("Permutation vectors must have 1-based indexing"))
+    # this length is sufficient because we do not record 1-cycles,
+    # so the worst case is all 2-cycles. One extra element gives the
+    # algorithm leeway to defer error detection without unsafe reads.
+    # trace _compile_permutation!([3,3,1]) for example.
+    out = similar(p, 3 * length(p) ÷ 2 + 1)
+    out_len = 0
+    start = 0
+    count = length(p)
+    @inbounds while count > 0
+        start = findnext(!iszero, p, start + 1)
+        start isa Int || throw(ArgumentError("Passed vector p is not a valid permutation"))
+        last_k = p[start]
+        count -= 1
+        last_k == start && continue
+        out_len += 1
+        out[out_len] = last_k
+        p[start] = 0
+        start < last_k <= length(p) || throw(ArgumentError("Passed vector p is not a valid permutation"))
+        out_len += 1
+        k = out[out_len] = p[last_k]
+        while true
+            count -= 1
+            p[last_k] = 0
+            last_k = k
+            start <= k <= length(p) || throw(ArgumentError("Passed vector p is not a valid permutation"))
+            out_len += 1
+            k = out[out_len] = p[k]
+            k == 0 && break
+        end
+        last_k == start || throw(ArgumentError("Passed vector p is not a valid permutation"))
+    end
+    return resize!(out, out_len)
+end
+
+# Permute a vector `v` based on a permutation `p` listed in zero terminated
+# cycle notation. For example, the permutation 1 -> 2, 2 -> 3, 3 -> 1, 4 -> 6,
+# 5 -> 5, 6 -> 4 is traditionally expressed as [2, 3, 1, 6, 5, 4] but in cycle
+# notation is expressed as [1, 2, 3, 0, 4, 6, 0]
+function _cycle_permute!(v::AbstractVector, p::AbstractVector{<:Integer})
+    i = firstindex(p)
+    @inbounds while i < lastindex(p)
+        last_p_i = p[i]
+        start = v[last_p_i]
+        while true
+            i += 1
+            p_i = p[i]
+            p_i == 0 && break
+            v[last_p_i] = v[p_i]
+            last_p_i = p_i
+        end
+        v[last_p_i] = start
+        i += 1
+    end
+    return v
 end
 
 """
     permute!(df::AbstractDataFrame, p)
 
 Permute data frame `df` in-place, according to permutation `p`.
-No checking is done to verify that `p` is a permutation.
+Throws `ArgumentError` if `p` is not a permutation.
 
-To return a new data frame instead of permuting `df` in-place, use `df[p]`.
-Note that this is generally faster than `permute!(df, p)` for large data frames.
+To return a new data frame instead of permuting `df` in-place, use `df[p, :]`.
 
 `permute!` will produce a correct result even if some columns of passed data frame
 or permutation `p` are identical (checked with `===`). Otherwise, if two columns share
@@ -2598,7 +2656,7 @@ Like [`permute!`](@ref), but the inverse of the given permutation is applied.
 `invpermute!` will produce a correct result even if some columns of passed data
 frame or permutation `p` are identical (checked with `===`). Otherwise, if two
 columns share some part of memory but are not identical (e.g. are different views
-of the same parent vector) then `permute!` result might be incorrect.
+of the same parent vector) then `invpermute!` result might be incorrect.
 
 # Examples
 
