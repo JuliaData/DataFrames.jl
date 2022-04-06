@@ -75,6 +75,7 @@ combine
 fillcombinations
 flatten
 hcat
+insertcols
 insertcols!
 invpermute!
 mapcols
