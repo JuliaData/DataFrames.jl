@@ -2563,26 +2563,26 @@ function _compile_permutation!(p::AbstractVector{<:Integer})
     count = length(p)
     @inbounds while count > 0
         start = findnext(!iszero, p, start + 1)
-        start isa Int || throw(ArgumentError("Not a permutation"))
+        start isa Int || throw(ArgumentError("Passed vector p is not a valid permutation"))
         last_k = p[start]
         count -= 1
         last_k == start && continue
         out_len += 1
         out[out_len] = last_k
         p[start] = 0
-        start <= last_k <= length(p) || throw(ArgumentError("Not a permutation"))
+        start <= last_k <= length(p) || throw(ArgumentError("Passed vector p is not a valid permutation"))
         out_len += 1
         k = out[out_len] = p[last_k]
         while true
             count -= 1
             p[last_k] = 0
             last_k = k
-            start <= k <= length(p) || throw(ArgumentError("Not a permutation"))
+            start <= k <= length(p) || throw(ArgumentError("Passed vector p is not a valid permutation"))
             out_len += 1
             k = out[out_len] = p[k]
             k == 0 && break
         end
-        last_k == start  || throw(ArgumentError("Not a permutation"))
+        last_k == start  || throw(ArgumentError("Passed vector p is not a valid permutation"))
     end
     return resize!(out, out_len)
 end
