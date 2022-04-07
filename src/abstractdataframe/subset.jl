@@ -157,23 +157,23 @@ end
 
 Return a copy of data frame `df` or parent of `gdf` containing only rows for
 which all values produced by transformation(s) `args` for a given row are
-`true`. All transformations must produce vectors containing `true` or `false`
-(and optionally `missing` if `skipmissing=true`).
-When the first argument is a `GroupedDataFrame`, transformations are also allowed to return
-a single `true` or `false` value, which results in including or excluding a whole group.
+`true`. All transformations must produce vectors containing `true` or `false`.
+When the first argument is a `GroupedDataFrame`, transformations are also
+allowed to return a single `true` or `false` value, which results in including
+or excluding a whole group.
+
+If `skipmissing=false` (the default) `args` are required to produce results
+containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
+allowed and it is treated as `false` (i.e. rows for which one of the conditions
+returns `missing` are skipped).
 
 Each argument passed in `args` can be any specifier following the rules
 described for [`select`](@ref) with the restriction that:
 * specifying target column name is not allowed as `subset` does not create new
   columns;
 * every passed transformation must return a scalar or a vector (returning
-  `AbstractDataFrame`, `NamedTuple`, `DataFrameRow` or `AbstractMatrix`
-  is not supported).
-
-If `skipmissing=false` (the default) `args` are required to produce vectors
-containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
-allowed and it is treated as `false` (i.e. rows for which one of the conditions
-returns `missing` are skipped).
+  `AbstractDataFrame`, `NamedTuple`, `DataFrameRow` or `AbstractMatrix` is not
+  supported).
 
 If `view=true` a `SubDataFrame` view  is returned instead of a `DataFrame`.
 
@@ -295,9 +295,15 @@ end
 
 Update data frame `df` or the parent of `gdf` in place to contain only rows for
 which all values produced by transformation(s) `args` for a given row is `true`.
-All transformations must produce vectors containing `true` or `false` (and
-When the first argument is a `GroupedDataFrame`, transformations are also allowed to return
-a single `true` or `false` value,  which results in including or excluding a whole group.
+All transformations must produce vectors containing `true` or `false`. When the
+first argument is a `GroupedDataFrame`, transformations are also allowed to
+return a single `true` or `false` value, which results in including or excluding
+a whole group.
+
+If `skipmissing=false` (the default) `args` are required to produce results
+containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
+allowed and it is treated as `false` (i.e. rows for which one of the conditions
+returns `missing` are skipped).
 
 Each argument passed in `args` can be any specifier following the rules
 described for [`select`](@ref) with the restriction that:
@@ -307,13 +313,8 @@ described for [`select`](@ref) with the restriction that:
   `AbstractDataFrame`, `NamedTuple`, `DataFrameRow` or `AbstractMatrix` is not
   supported).
 
-If `skipmissing=false` (the default) `args` are required to produce vectors
-containing only `Bool` values. If `skipmissing=true`, additionally `missing` is
-allowed and it is treated as `false` (i.e. rows for which one of the conditions
-returns `missing` are skipped).
-
-If `ungroup=false` the passed `GroupedDataFrame` `gdf` is updated (preserving the order
-of its groups) and returned.
+If `ungroup=false` the passed `GroupedDataFrame` `gdf` is updated (preserving
+the order of its groups) and returned.
 
 If `GroupedDataFrame` is subsetted then it must include all groups present in
 the `parent` data frame, like in [`select!`](@ref). In this case the passed
