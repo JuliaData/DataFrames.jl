@@ -159,8 +159,8 @@ Return a copy of data frame `df` or parent of `gdf` containing only rows for
 which all values produced by transformation(s) `args` for a given row are
 `true`. All transformations must produce vectors containing `true` or `false`
 (and optionally `missing` if `skipmissing=true`).
-When `subset` is called on `GroupedDataFrame` returning a scalar is allowed
-(this will result in including/excluding a whole group with the passed condition).
+When the first argument is a `GroupedDataFrame`, transformations are also allowed to return
+a single `true` or `false` value, which results in including or excluding a whole group.
 
 Each argument passed in `args` can be any specifier following the rules
 described for [`select`](@ref) with the restriction that:
@@ -296,9 +296,8 @@ end
 Update data frame `df` or the parent of `gdf` in place to contain only rows for
 which all values produced by transformation(s) `args` for a given row is `true`.
 All transformations must produce vectors containing `true` or `false` (and
-optionally `missing` if `skipmissing=true`). When `subset!`
-is called on `GroupedDataFrame` returning a scalar is additionally allowed
-(this will result in including/excluding a whole group with the passed condition).
+When the first argument is a `GroupedDataFrame`, transformations are also allowed to return
+a single `true` or `false` value,  which results in including or excluding a whole group.
 
 Each argument passed in `args` can be any specifier following the rules
 described for [`select`](@ref) with the restriction that:
