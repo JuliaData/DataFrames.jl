@@ -101,17 +101,6 @@ else
     export only
 end
 
-"""
-    DataFrames.MULTITHREADING
-
-This global flag controls whether DataFrames functions may spawn tasks that can run
-on multiple threads in parallel when deemed appropriate.
-This is set to `true` by default.
-Call `DataFrames.MULTITHREADING[] = false` to disable multithreading,
-for example because distribution of work across threads is managed separately.
-"""
-const MULTITHREADING = Threads.Atomic{Bool}(true)
-
 if VERSION >= v"1.3"
     using Base.Threads: @spawn
 else

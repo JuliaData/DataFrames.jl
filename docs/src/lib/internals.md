@@ -15,6 +15,8 @@ gennames
 getmaxwidths
 ourshow
 ourstrwidth
+setmultithreading
+singlethreaded
 @spawn_for_chunks
 @spawn_or_async
 @spawn_or_run

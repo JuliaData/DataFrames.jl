@@ -172,9 +172,9 @@ end
     end
     @test x[]
 
-    @test DataFrames.MULTITHREADING[]
-    DataFrames.MULTITHREADING[] = false
-    @test !DataFrames.MULTITHREADING[]
+    @test DataFrames.ismultithreaded()
+    @test DataFrames.setmultithreading(false) === false
+    @test !DataFrames.ismultithreaded()
 
     t = DataFrames.@spawn_or_async 1
     @test fetch(t) === 1
@@ -198,8 +198,14 @@ end
     end
     @test x[]
 
-    DataFrames.MULTITHREADING[] = true
-    @test DataFrames.MULTITHREADING[]
+    @test DataFrames.setmultithreading(true) === true
+    @test DataFrames.ismultithreaded()
+
+    @test DataFrames.singlethreaded() do
+        @test !DataFrames.ismultithreaded()
+        1
+    end === 1
+    @test DataFrames.ismultithreaded()
 end
 
 @testset "_findall(B::BitVector)" begin

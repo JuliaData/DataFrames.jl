@@ -261,7 +261,7 @@ function _combine_rows_with_first!((firstrow,)::Ref{Any},
     # Create up to one task per thread
     # This has lower overhead than creating one task per group,
     # but is optimal only if operations take roughly the same time for all groups
-    if VERSION >= v"1.4" && MULTITHREADING[] && isthreadsafe(outcols, incols)
+    if VERSION >= v"1.4" && ismultithreaded() && isthreadsafe(outcols, incols)
         basesize = max(1, cld(len - 1, Threads.nthreads()))
         partitions = Iterators.partition(2:len, basesize)
     else
