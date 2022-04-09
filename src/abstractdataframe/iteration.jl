@@ -78,6 +78,8 @@ Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
 Base.size(itr::DataFrameRows) = (size(parent(itr), 1), )
 
 Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, i::Int) = parent(itr)[i, :]
+Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, idx) =
+    eachrow(@view parent(itr)[idx, :])
 
 # separate methods are needed due to dispatch ambiguity
 Base.getproperty(itr::DataFrameRows, col_ind::Symbol) =

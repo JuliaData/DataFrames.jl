@@ -38,9 +38,12 @@
 
 ## Performance
 
-* Speed up `permute!` and `invpermute!` (and therefore sorting) 2x-8x 
+* Speed up `permute!` and `invpermute!` (and therefore sorting) 2x-8x
   for large tables by using cycle notation
   ([#3035](https://github.com/JuliaData/DataFrames.jl/pull/3035))
+* Make one-dimensional multi-element indexing of `DataFrameRows` return
+  `DataFrameRows`
+  ([#3037](https://github.com/JuliaData/DataFrames.jl/pull/3037))
 
 # DataFrames.jl v1.3.2 Patch Release Notes
 
