@@ -2910,7 +2910,7 @@ end
                           AsTable(:x1) => x -> length(x.x1) > cutoff,
                           AsTable(r"x") => x -> length(x.x1) > cutoff)
             gdf1  = groupby_checked(df, gcols)
-            gdf2 = filter(predicate, gdf1)
+            gdf2 = @inferred filter(predicate, gdf1)
             if cutoff == 1
                 @test getindex.(keys(gdf2), 1) == 1:2
             elseif cutoff == 0
@@ -2918,16 +2918,19 @@ end
             elseif cutoff == 10
                 @test isempty(gdf2)
             end
+            @test filter(predicate, gdf1, ungroup=true) == DataFrame(gdf2)
         end
 
-        @test_throws TypeError filter(x -> 1, groupby_checked(df, :g1))
-        @test_throws TypeError filter(r"x" => (x...) -> 1, groupby_checked(df, :g1))
-        @test_throws TypeError filter(AsTable(r"x") => (x...) -> 1, groupby_checked(df, :g1))
+        for ug in (true, false)
+            @test_throws TypeError filter(x -> 1, groupby_checked(df, :g1), ungroup=ug)
+            @test_throws TypeError filter(r"x" => (x...) -> 1, groupby_checked(df, :g1), ungroup=ug)
+            @test_throws TypeError filter(AsTable(r"x") => (x...) -> 1, groupby_checked(df, :g1), ungroup=ug)
 
-        @test_throws ArgumentError filter(r"y" => (x...) -> true, groupby_checked(df, :g1))
-        @test_throws ArgumentError filter([] => (x...) -> true, groupby_checked(df, :g1))
-        @test_throws ArgumentError filter(AsTable(r"y") => (x...) -> true, groupby_checked(df, :g1))
-        @test_throws ArgumentError filter(AsTable([]) => (x...) -> true, groupby_checked(df, :g1))
+            @test_throws ArgumentError filter(r"y" => (x...) -> true, groupby_checked(df, :g1), ungroup=ug)
+            @test_throws ArgumentError filter([] => (x...) -> true, groupby_checked(df, :g1), ungroup=ug)
+            @test_throws ArgumentError filter(AsTable(r"y") => (x...) -> true, groupby_checked(df, :g1), ungroup=ug)
+            @test_throws ArgumentError filter(AsTable([]) => (x...) -> true, groupby_checked(df, :g1), ungroup=ug)
+        end
     end
 end
 

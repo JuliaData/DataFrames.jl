@@ -1451,6 +1451,156 @@ julia> unique!(df)  # modifies df
 (unique, unique!)
 
 """
+    fillcombinations(df::AbstractDataFrame, indexcols;
+                         allowduplicates::Bool=false,
+                         fill=missing)
+
+Generate all combinations of levels of column(s) `indexcols` in data frame `df`.
+Levels and their order are determined by the `levels` function
+(i.e. unique values sorted lexicographically by default, or a custom set
+of levels for e.g. `CategoricalArray` columns), in addition to `missing` if present.
+
+For combinations of `indexcols` not present in `df` these columns are
+filled with the `fill` value (`missing` by default).
+
+If `allowduplicates=false` (the default) `indexcols` may only contain
+unique combinations of `indexcols` values. If `allowduplicates=true`
+duplicates are allowed.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(x=1:2, y='a':'b', z=["x", "y"])
+2×3 DataFrame
+ Row │ x      y     z
+     │ Int64  Char  String
+─────┼─────────────────────
+   1 │     1  a     x
+   2 │     2  b     y
+
+julia> fillcombinations(df, [:x, :y])
+4×3 DataFrame
+ Row │ x      y     z
+     │ Int64  Char  String?
+─────┼──────────────────────
+   1 │     1  a     x
+   2 │     2  a     missing
+   3 │     1  b     missing
+   4 │     2  b     y
+
+julia> fillcombinations(df, [:y, :z], fill=0)
+4×3 DataFrame
+ Row │ x       y     z
+     │ Int64?  Char  String
+─────┼──────────────────────
+   1 │      1  a     x
+   2 │      0  b     x
+   3 │      0  a     y
+   4 │      2  b     y
+```
+"""
+function fillcombinations(df::AbstractDataFrame, indexcols;
+                          allowduplicates::Bool=false, fill=missing)
+    _check_consistency(df)
+
+    colind = index(df)[indexcols]
+
+    if length(colind) == 0
+        throw(ArgumentError("At least one column to fill combinations " *
+                            "must be specified"))
+    end
+
+    has_duplicates = row_group_slots(ntuple(i -> df[!, colind[i]], length(colind)),
+                                     Val(false), nothing, false, nothing)[1] != nrow(df)
+    if has_duplicates && !allowduplicates
+        throw(ArgumentError("duplicate combinations of `indexcols` are not " *
+                            "allowed in input when `allowduplicates=false`"))
+    end
+
+    # Create a vector of vectors of unique values in each column
+    uniquevals = []
+    for col in colind
+        # levels drops missing, handle the case where missing values are present
+        # All levels are retained, missing is added only if present
+        # TODO: change this after DataAPI.jl levels supports missing
+        if any(ismissing, df[!, col])
+            tempcol = vcat(levels(df[!, col]), missing)
+        else
+            tempcol = levels(df[!, col])
+        end
+        push!(uniquevals, tempcol)
+    end
+
+    # make sure we do not overflow in the target data frame size
+    target_rows = Int(prod(x -> big(length(x)), uniquevals))
+    if iszero(target_rows)
+        @assert iszero(nrow(df))
+        return copy(df)
+    end
+
+    # construct expanded columns
+    out_df = DataFrame()
+    inner = 1
+    @assert length(uniquevals) == length(colind)
+    for (val, cind) in zip(uniquevals, colind)
+        len = length(val)
+        target_col = Tables.allocatecolumn(eltype(df[!, cind]), len)
+        copy!(target_col, val)
+        last_inner = inner
+        inner *= len
+        outer, remv = divrem(target_rows, inner)
+        @assert iszero(remv)
+        out_df[!, _names(df)[cind]] = repeat(target_col, inner=last_inner, outer=outer)
+    end
+    @assert inner == target_rows
+
+    idx_ind = 0
+    idx_col = ""
+    while true
+        idx_col = string("source7249", idx_ind)
+        columnindex(df, idx_col) == 0 && break
+        idx_ind += 1
+    end
+
+    if has_duplicates
+        order_ind = 0
+        order_col = ""
+        while true
+            order_col = string("order9427", order_ind)
+            columnindex(df, order_col) == 0 && break
+            order_ind += 1
+        end
+        insertcols!(out_df, 1, order_col => 1:nrow(out_df))
+        out_df = leftjoin(out_df, df; on=_names(df)[colind],
+                          source=idx_col,
+                          matchmissing=:equal)
+        sort!(out_df, 1)
+        select!(out_df, 2:ncol(out_df))
+    else
+        leftjoin!(out_df, df; on=_names(df)[colind],
+                  source=string("source7249", idx_ind),
+                  matchmissing=:equal)
+    end
+
+    # Replace missing values with the fill
+    if !ismissing(fill)
+        mask = out_df[!, end] .== "left_only"
+        if count(mask) > 0
+            for n in length(colind)+1:ncol(out_df)-1
+                tmp_col = out_df[!, n]
+                out_col = similar(tmp_col,
+                                  promote_type(eltype(tmp_col), typeof(fill)),
+                                  length(tmp_col))
+                out_col .= ifelse.(mask, Ref(fill), out_df[!, n])
+                out_df[!, n] = out_col
+            end
+        end
+    end
+
+    # keep only columns from the source in their original order
+    return select!(out_df, _names(df))
+end
+
+"""
     hcat(df::AbstractDataFrame...;
          makeunique::Bool=false, copycols::Bool=true)
 
@@ -2375,39 +2525,97 @@ end
 
 function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.invpermute!!)},
                               df::AbstractDataFrame, p::AbstractVector{<:Integer})
-    toskip = Set{Int}()
+    nrow(df) != length(p) &&
+        throw(DimensionMismatch("Permutation does not have a correct length " *
+                                "(expected $(nrow(df)) but got $(length(p)))"))
+    
+    cp = _compile_permutation!(Base.copymutable(p))
+
+    isempty(cp) && return df
+
+    if fun === Base.invpermute!! 
+        reverse!(@view cp[1:end-1])
+    end
+
     seen_cols = IdDict{Any, Nothing}()
     for (i, col) in enumerate(eachcol(df))
-        if haskey(seen_cols, col)
-            push!(toskip, i)
-        else
+        if !haskey(seen_cols, col)
             seen_cols[col] = nothing
-        end
-        # p might be a column of df so we make sure we unalias
-        if col === p
-            p = copy(p)
+            _cycle_permute!(col, cp)
         end
     end
-
-    pp = similar(p)
-
-    for (i, col) in enumerate(eachcol(df))
-        if !(i in toskip)
-            copyto!(pp, p)
-            fun(col, pp)
-        end
-    end
+    
     return df
+end
+
+# convert a classical permutation to zero terminated cycle 
+# notation, zeroing the original permutation in the process.
+function _compile_permutation!(p::AbstractVector{<:Integer})
+    firstindex(p) == 1 || 
+        throw(ArgumentError("Permutation vectors must have 1-based indexing"))
+    # this length is sufficient because we do not record 1-cycles,
+    # so the worst case is all 2-cycles. One extra element gives the
+    # algorithm leeway to defer error detection without unsafe reads.
+    # trace _compile_permutation!([3,3,1]) for example.
+    out = similar(p, 3 * length(p) ÷ 2 + 1)
+    out_len = 0
+    start = 0
+    count = length(p)
+    @inbounds while count > 0
+        start = findnext(!iszero, p, start + 1)
+        start isa Int || throw(ArgumentError("Passed vector p is not a valid permutation"))
+        last_k = p[start]
+        count -= 1
+        last_k == start && continue
+        out_len += 1
+        out[out_len] = last_k
+        p[start] = 0
+        start < last_k <= length(p) || throw(ArgumentError("Passed vector p is not a valid permutation"))
+        out_len += 1
+        k = out[out_len] = p[last_k]
+        while true
+            count -= 1
+            p[last_k] = 0
+            last_k = k
+            start <= k <= length(p) || throw(ArgumentError("Passed vector p is not a valid permutation"))
+            out_len += 1
+            k = out[out_len] = p[k]
+            k == 0 && break
+        end
+        last_k == start || throw(ArgumentError("Passed vector p is not a valid permutation"))
+    end
+    return resize!(out, out_len)
+end
+
+# Permute a vector `v` based on a permutation `p` listed in zero terminated
+# cycle notation. For example, the permutation 1 -> 2, 2 -> 3, 3 -> 1, 4 -> 6,
+# 5 -> 5, 6 -> 4 is traditionally expressed as [2, 3, 1, 6, 5, 4] but in cycle
+# notation is expressed as [1, 2, 3, 0, 4, 6, 0]
+function _cycle_permute!(v::AbstractVector, p::AbstractVector{<:Integer})
+    i = firstindex(p)
+    @inbounds while i < lastindex(p)
+        last_p_i = p[i]
+        start = v[last_p_i]
+        while true
+            i += 1
+            p_i = p[i]
+            p_i == 0 && break
+            v[last_p_i] = v[p_i]
+            last_p_i = p_i
+        end
+        v[last_p_i] = start
+        i += 1
+    end
+    return v
 end
 
 """
     permute!(df::AbstractDataFrame, p)
 
 Permute data frame `df` in-place, according to permutation `p`.
-No checking is done to verify that `p` is a permutation.
+Throws `ArgumentError` if `p` is not a permutation.
 
-To return a new data frame instead of permuting `df` in-place, use `df[p]`.
-Note that this is generally faster than `permute!(df, p)` for large data frames.
+To return a new data frame instead of permuting `df` in-place, use `df[p, :]`.
 
 `permute!` will produce a correct result even if some columns of passed data frame
 or permutation `p` are identical (checked with `===`). Otherwise, if two columns share
@@ -2448,7 +2656,7 @@ Like [`permute!`](@ref), but the inverse of the given permutation is applied.
 `invpermute!` will produce a correct result even if some columns of passed data
 frame or permutation `p` are identical (checked with `===`). Otherwise, if two
 columns share some part of memory but are not identical (e.g. are different views
-of the same parent vector) then `permute!` result might be incorrect.
+of the same parent vector) then `invpermute!` result might be incorrect.
 
 # Examples
 
@@ -2544,3 +2752,296 @@ Random.shuffle!(df::AbstractDataFrame) =
     permute!(df, randperm(nrow(df)))
 Random.shuffle!(r::AbstractRNG, df::AbstractDataFrame) =
     permute!(df, randperm(r, nrow(df)))
+
+const INSERTCOLS_ARGUMENTS =
+    """
+    If `col` is omitted it is set to `ncol(df)+1`
+    (the column is inserted as the last column).
+
+    # Arguments
+    - `df` : the data frame to which we want to add columns
+    - `col` : a position at which we want to insert a column, passed as an integer
+      or a column name (a string or a `Symbol`); the column selected with `col`
+      and columns following it are shifted to the right in `df` after the operation
+    - `name` : the name of the new column
+    - `val` : an `AbstractVector` giving the contents of the new column or a value of any
+      type other than `AbstractArray` which will be repeated to fill a new vector;
+      As a particular rule a values stored in a `Ref` or a `0`-dimensional `AbstractArray`
+      are unwrapped and treated in the same way
+    - `after` : if `true` columns are inserted after `col`
+    - `makeunique` : defines what to do if `name` already exists in `df`;
+      if it is `false` an error will be thrown; if it is `true` a new unique name will
+      be generated by adding a suffix
+    - `copycols` : whether vectors passed as columns should be copied
+
+    If `val` is an `AbstractRange` then the result of `collect(val)` is inserted.
+
+    If `df` is a `SubDataFrame` then it must have been created with `:` as column selector
+    (otherwise an error is thrown). In this case the `copycols` keyword argument
+    is ignored (i.e. the added column is always copied) and the parent data frame's
+    column is filled with `missing` in rows that are filtered out by `df`.
+
+    If `df` isa `DataFrame` that has no columns and only values
+    other than `AbstractVector` are passed then it is used to create a one-element
+    column.
+    If `df` isa `DataFrame` that has no columns and at least one `AbstractVector` is
+    passed then its length is used to determine the number of elements in all
+    created columns.
+    In all other cases the number of rows in all created columns must match
+    `nrow(df)`.
+    """
+
+"""
+    insertcols(df::AbstractDataFrame[, col], (name=>val)::Pair...;
+               after::Bool=false, makeunique::Bool=false, copycols::Bool=true)
+
+Insert a column into a copy of `df` data frame using the [`insertcols!`](@ref)
+function and return the newly created data frame.
+
+$INSERTCOLS_ARGUMENTS
+
+See also [`insertcols!`](@ref).
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3)
+3×1 DataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+
+julia> insertcols(df, 1, :b => 'a':'c')
+3×2 DataFrame
+ Row │ b     a
+     │ Char  Int64
+─────┼─────────────
+   1 │ a         1
+   2 │ b         2
+   3 │ c         3
+
+julia> insertcols(df, :c => 2:4, :c => 3:5, makeunique=true)
+3×3 DataFrame
+ Row │ a      c      c_1
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
+   2 │     2      3      4
+   3 │     3      4      5
+
+julia> insertcols(df, :a, :d => 7:9, after=true)
+3×2 DataFrame
+ Row │ a      d
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      7
+   2 │     2      8
+   3 │     3      9
+```
+"""
+insertcols(df::AbstractDataFrame, args...;
+           after::Bool=false, makeunique::Bool=false, copycols::Bool=true) =
+    insertcols!(copy(df), args...;
+                after=after, makeunique=makeunique, copycols=copycols)
+
+"""
+    insertcols!(df::AbstractDataFrame[, col], (name=>val)::Pair...;
+                after::Bool=false, makeunique::Bool=false, copycols::Bool=true)
+
+Insert a column into a data frame in place. Return the updated data frame.
+
+$INSERTCOLS_ARGUMENTS
+
+See also [`insertcols`](@ref).
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3)
+3×1 DataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+
+julia> insertcols!(df, 1, :b => 'a':'c')
+3×2 DataFrame
+ Row │ b     a
+     │ Char  Int64
+─────┼─────────────
+   1 │ a         1
+   2 │ b         2
+   3 │ c         3
+
+julia> insertcols!(df, 2, :c => 2:4, :c => 3:5, makeunique=true)
+3×4 DataFrame
+ Row │ b     c      c_1    a
+     │ Char  Int64  Int64  Int64
+─────┼───────────────────────────
+   1 │ a         2      3      1
+   2 │ b         3      4      2
+   3 │ c         4      5      3
+
+julia> insertcols!(df, :b, :d => 7:9, after=true)
+3×5 DataFrame
+ Row │ b     d      c      c_1    a
+     │ Char  Int64  Int64  Int64  Int64
+─────┼──────────────────────────────────
+   1 │ a         7      2      3      1
+   2 │ b         8      3      4      2
+   3 │ c         9      4      5      3
+```
+"""
+function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:Any}...;
+                     after::Bool=false, makeunique::Bool=false, copycols::Bool=true)
+    if !is_column_insertion_allowed(df)
+        throw(ArgumentError("insertcols! is only supported for DataFrame, or for " *
+                            "SubDataFrame created with `:` as column selector"))
+    end
+    if !(copycols || df isa DataFrame)
+        throw(ArgumentError("copycols=false is only allowed if df isa DataFrame "))
+    end
+    if col isa SymbolOrString
+        col_ind = Int(columnindex(df, col))
+        if col_ind == 0
+            throw(ArgumentError("column $col does not exist in data frame"))
+        end
+    else
+        col_ind = Int(col)
+    end
+
+    if after
+        col_ind += 1
+    end
+
+    if !(0 < col_ind <= ncol(df) + 1)
+        throw(ArgumentError("attempt to insert a column to a data frame with " *
+                            "$(ncol(df)) columns at index $col_ind"))
+    end
+
+    if !makeunique
+        if !allunique(first.(name_cols))
+            throw(ArgumentError("Names of columns to be inserted into a data frame " *
+                                "must be unique when `makeunique=true`"))
+        end
+        for (n, _) in name_cols
+            if hasproperty(df, n)
+                throw(ArgumentError("Column $n is already present in the data frame " *
+                                    "which is not allowed when `makeunique=true`"))
+            end
+        end
+    end
+
+    if ncol(df) == 0 && df isa DataFrame
+        target_row_count = -1
+    else
+        target_row_count = nrow(df)
+    end
+
+    for (n, v) in name_cols
+        if v isa AbstractVector
+            if target_row_count == -1
+                target_row_count = length(v)
+            elseif length(v) != target_row_count
+                if target_row_count == nrow(df)
+                    throw(DimensionMismatch("length of new column $n which is " *
+                                            "$(length(v)) must match the number " *
+                                            "of rows in data frame ($(nrow(df)))"))
+                else
+                    throw(DimensionMismatch("all vectors passed to be inserted into " *
+                                            "a data frame must have the same length"))
+                end
+            end
+        elseif v isa AbstractArray && ndims(v) > 1
+            throw(ArgumentError("adding AbstractArray other than AbstractVector as " *
+                                "a column of a data frame is not allowed"))
+        end
+    end
+    if target_row_count == -1
+        target_row_count = 1
+    end
+
+    for (name, item) in name_cols
+        if !(item isa AbstractVector)
+            if item isa Union{AbstractArray{<:Any, 0}, Ref}
+                x = item[]
+                item_new = fill!(Tables.allocatecolumn(typeof(x), target_row_count), x)
+            else
+                @assert !(item isa AbstractArray)
+                item_new = fill!(Tables.allocatecolumn(typeof(item), target_row_count), item)
+            end
+        elseif item isa AbstractRange
+            item_new = collect(item)
+        elseif copycols && df isa DataFrame
+            item_new = copy(item)
+        else
+            item_new = item
+        end
+
+        if df isa DataFrame
+            dfp = df
+        else
+            @assert df isa SubDataFrame
+            dfp = parent(df)
+            item_new_orig = item_new
+            T = eltype(item_new_orig)
+            item_new = similar(item_new_orig, Union{T, Missing}, nrow(dfp))
+            fill!(item_new, missing)
+            item_new[rows(df)] = item_new_orig
+        end
+
+        firstindex(item_new) != 1 && _onebased_check_error()
+
+        if ncol(dfp) == 0
+            dfp[!, name] = item_new
+        else
+            if hasproperty(dfp, name)
+                @assert makeunique
+                k = 1
+                while true
+                    nn = Symbol("$(name)_$k")
+                    if !hasproperty(dfp, nn)
+                        name = nn
+                        break
+                    end
+                    k += 1
+                end
+            end
+            insert!(index(dfp), col_ind, name)
+            insert!(_columns(dfp), col_ind, item_new)
+        end
+        col_ind += 1
+    end
+    return df
+end
+
+insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{<:AbstractString, <:Any}...;
+            after::Bool=false, makeunique::Bool=false, copycols::Bool=true) =
+    insertcols!(df, col, (Symbol(n) => v for (n, v) in name_cols)...,
+                after=after, makeunique=makeunique, copycols=copycols)
+
+insertcols!(df::AbstractDataFrame, name_cols::Pair{Symbol, <:Any}...;
+            after::Bool=false, makeunique::Bool=false, copycols::Bool=true) =
+    insertcols!(df, ncol(df)+1, name_cols..., after=after,
+                makeunique=makeunique, copycols=copycols)
+
+insertcols!(df::AbstractDataFrame, name_cols::Pair{<:AbstractString, <:Any}...;
+            after::Bool=false, makeunique::Bool=false, copycols::Bool=true) =
+    insertcols!(df, (Symbol(n) => v for (n, v) in name_cols)...,
+                after=after, makeunique=makeunique, copycols=copycols)
+
+function insertcols!(df::AbstractDataFrame, col::Int=ncol(df)+1; makeunique::Bool=false, name_cols...)
+    if !(0 < col <= ncol(df) + 1)
+        throw(ArgumentError("attempt to insert a column to a data frame with " *
+                            "$(ncol(df)) columns at index $col"))
+    end
+    if !isempty(name_cols)
+        # an explicit error is thrown as keyword argument was supported in the past
+        throw(ArgumentError("inserting colums using a keyword argument is not supported, " *
+                            "pass a Pair as a positional argument instead"))
+    end
+    return df
+end

@@ -37,7 +37,7 @@ const ≅ = isequal
               filter([:x, :id] => (x, id) -> x && id < 4, df)
         @test subset(df, :x, :id => ByRow(<(4)), view=true) ≅
               filter([:x, :id] => (x, id) -> x && id < 4, df)
-        @test_throws ArgumentError subset(df)
+        @test subset(df) ≅ df
         @test isempty(subset(df, :x, :x => ByRow(!)))
         @test_throws ArgumentError subset(df, :x => x -> false, :x => x -> missing)
         @test_throws ArgumentError subset(df, :x => x -> true, :x => x -> missing)
@@ -78,7 +78,7 @@ const ≅ = isequal
               filter([:x, :id] => (x, id) -> x && id < 4, df)
         @test subset(gdf, :x, :id => ByRow(<(4)), view=true) ≅
               filter([:x, :id] => (x, id) -> x && id < 4, df)
-        @test_throws ArgumentError subset(gdf)
+        @test subset(gdf) ≅ df
         @test isempty(subset(gdf, :x, :x => ByRow(!)))
         @test_throws ArgumentError subset(gdf, :x => x -> false, :x => x -> missing)
         @test_throws ArgumentError subset(gdf, :x => x -> true, :x => x -> missing)
@@ -105,7 +105,7 @@ const ≅ = isequal
     @test subset!(df, :x, :id => ByRow(<(4))) ≅ df ≅
           filter([:x, :id] => (x, id) -> x && id < 4, refdf)
     df = copy(refdf)
-    @test_throws ArgumentError subset!(df)
+    @test subset!(df) === df
     df = copy(refdf)
     @test isempty(subset!(df, :x, :x => ByRow(!)))
     @test isempty(df)
@@ -156,7 +156,7 @@ const ≅ = isequal
           filter([:x, :id] => (x, id) -> x && id < 4, refdf)
     df = copy(refdf)
     gdf = groupby(df, :z)
-    @test_throws ArgumentError subset!(gdf)
+    @test subset!(gdf) === df
     df = copy(refdf)
     gdf = groupby(df, :z)
     @test isempty(subset!(gdf, :x, :x => ByRow(!)))
@@ -191,7 +191,7 @@ const ≅ = isequal
           filter([:x, :id] => (x, id) -> x && id < 4, refdf)
     df = copy(refdf)
     gdf = groupby(df, :z)[[3, 2, 1]]
-    @test_throws ArgumentError subset!(gdf)
+    @test subset!(gdf) === df
     df = copy(refdf)
     gdf = groupby(df, :z)[[3, 2, 1]]
     @test isempty(subset!(gdf, :x, :x => ByRow(!)))
@@ -357,6 +357,84 @@ end
             @test_throws ArgumentError subset(df2, Not(:id))
         end
     end
+end
+
+@testset "test grouping order after the operation" begin
+    df = DataFrame(a=repeat(1:4, 2), b=1:8, c=repeat([true, false], inner=4))
+    gdf = groupby(df, :a)[[4, 2, 1, 3]]
+    @test subset(gdf, :c) == DataFrame(a=1:4, b=1:4, c=true)
+    res = subset(gdf, :c, ungroup=false)
+    @test res == groupby(DataFrame(a=1:4, b=1:4, c=true), :a)
+    @test getproperty.(keys(res), :a) == 1:4
+
+    df = DataFrame(a=repeat(1:4, 2), b=1:8, c=repeat([true, false], inner=4))
+    gdf = groupby(df, :a)[[4, 2, 1, 3]]
+    @test subset!(gdf, :c) === df
+    @test df == DataFrame(a=1:4, b=1:4, c=true)
+
+    df = DataFrame(a=repeat(1:4, 2), b=1:8, c=repeat([true, false], inner=4))
+    gdf = groupby(df, :a)[[4, 2, 1, 3]]
+    @test subset!(gdf, :c, ungroup=false) === gdf
+    @test df == DataFrame(a=1:4, b=1:4, c=true)
+    @test getproperty.(keys(gdf), :a) == [4, 2, 1, 3]
+end
+
+@testset "empty args" begin
+    df = DataFrame()
+    @test subset(df) == DataFrame()
+    @test subset(df, view=true) isa SubDataFrame
+    @test subset!(df) === df
+
+    gdf = groupby(df, [])
+    @test subset(gdf) == DataFrame()
+    @test subset(gdf, ungroup=false) == groupby(DataFrame(), [])
+    @test subset!(gdf) === df
+    @test subset!(gdf, ungroup=false) === gdf
+
+    df = DataFrame(a=repeat(1:4, 2), b=1:8)
+    @test subset(df) == df
+    gdf = groupby(df, :a)[[4, 2, 1, 3]]
+    @test subset(gdf) == df
+    res = subset(gdf, ungroup=false)
+    @test res == groupby(df, :a)
+    @test getproperty.(keys(res), :a) == 1:4
+
+    df = DataFrame(a=repeat(1:4, 2), b=1:8)
+    @test subset!(df) === df
+    @test df == DataFrame(a=repeat(1:4, 2), b=1:8)
+    gdf = groupby(df, :a)[[4, 2, 1, 3]]
+    @test subset!(gdf) === df
+    @test df == DataFrame(a=repeat(1:4, 2), b=1:8)
+
+    df = DataFrame(a=repeat(1:4, 2), b=1:8)
+    gdf = groupby(df, :a)[[4, 2, 1, 3]]
+    @test subset!(gdf, ungroup=false) === gdf
+    @test df == DataFrame(a=repeat(1:4, 2), b=1:8)
+    @test getproperty.(keys(gdf), :a) == [4, 2, 1, 3]
+
+    df = DataFrame(a=Int[])
+    gdf = groupby(df, :a)
+    res = subset(gdf)
+    @test nrow(res) == 0
+    @test names(res) == ["a"]
+    @test eltype(res.a) === Int
+    @test gdf == subset(gdf, ungroup=false)
+
+    df = DataFrame(a=Int[])
+    gdf = groupby(df, :a)
+    res = subset!(gdf)
+    @test res === df
+    @test nrow(res) == 0
+    @test names(res) == ["a"]
+    @test eltype(res.a) === Int
+    @test subset!(gdf, ungroup=false) == groupby(DataFrame(a=Int[]), :a)
+
+    df = DataFrame(a=1:3)
+    gdf = groupby(df, :a)[[3, 1]]
+    @test_throws ArgumentError subset(gdf)
+    @test_throws ArgumentError subset!(gdf)
+    @test df == DataFrame(a=1:3)
+    @test gdf == groupby(DataFrame(a=1:3), :a)[[3, 1]]
 end
 
 end
