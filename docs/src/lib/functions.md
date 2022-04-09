@@ -9,7 +9,7 @@ CurrentModule = DataFrames
 By default, selected operations in DataFrames.jl automatically use multiple threads
 when available. It is task-based and implemented using the `@spawn` macro from Julia Base.
 Multithreading can be disabled when running a particular block of code using the
-[`DataFrames.singlethreading() do... end`(@ref) syntax. It can also be disabled
+[`DataFrames.singlethreaded() do... end`(@ref) syntax. It can also be disabled
 globally by calling [`DataFrames.setmultithreading(true)`](@ref).
 This is useful in particular to run functions which are not thread-safe, or when
 distribution of work across threads is managed separately.
