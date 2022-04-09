@@ -4,7 +4,7 @@ CurrentModule = DataFrames
 
 # Functions
 
-## Multi-threading support
+## Multithreading support
 
 By default, selected operations in DataFrames.jl automatically use multiple threads
 when available. It is task-based and implemented using the `@spawn` macro from Julia Base.
@@ -182,4 +182,10 @@ pairs
 ## Equality
 ```@docs
 isapprox
+```
+
+# Multithreading configuration (experimental)
+```@docs
+setmultithreading
+singlethreaded
 ```
