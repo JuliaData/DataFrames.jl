@@ -327,18 +327,18 @@ end
 """
     @spawn_or_async expr
 
-Equivalent to `Threads.@spawn` if [`DataFrames.ismultithreaded() === true`](@ref)
+Equivalent to `Threads.@spawn` if `DataFrames.ismultithreaded() === true`
 and to `@async` otherwise.
 """
-spawn_or_async
+macro spawn_or_async end
 
 """
     @spawn_or_run expr
 
-Equivalent to `Threads.@spawn` if [`DataFrames.ismultithreaded() === true`](@ref),
+Equivalent to `Threads.@spawn` if `DataFrames.ismultithreaded() === true`,
 otherwise simply runs `expr`.
 """
-spawn_or_run
+macro spawn_or_run end
 
 if VERSION >= v"1.4"
     macro spawn_or_async(expr)
