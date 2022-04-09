@@ -149,7 +149,7 @@ end
     @test_throws AssertionError DataFrames.split_to_chunks(10, 11)
 end
 
-@testset "MULTITHREADING, @spawn_or_async and @spawn_or_run" begin
+@testset "singlethreaded, setmultithreading, @spawn_or_async and @spawn_or_run" begin
     t = DataFrames.@spawn_or_async 1
     @test fetch(t) === 1
 
