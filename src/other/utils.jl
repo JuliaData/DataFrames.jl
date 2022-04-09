@@ -231,7 +231,7 @@ julia> DataFrames.setmultithreading(true);
 ```
 """
 function setmultithreading(enable::Bool)
-    old_state = Threads.atomic_xchg!(SINGLETHREADING[], !enable)
+    old_state = Threads.atomic_xchg!(SINGLETHREADING, !enable)
     if !enable && !old_state
         Threads.atomic_add!(SINGLETHREADING_DEPTH, 1)
     elseif enable && old_state
