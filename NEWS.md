@@ -17,6 +17,9 @@
   ([#3010](https://github.com/JuliaData/DataFrames.jl/pull/3010)).
 * `first` and `last` for `GroupedDataFrame` now support passing number of elements to get
   ([#3006](https://github.com/JuliaData/DataFrames.jl/issues/3006))
+* New experimental functions `DataFrames.singlethreaded` and `DataFrames.setmultithreading`
+  allow disabling multithreading in all DataFrames operations
+  ([#3030](https://github.com/JuliaData/DataFrames.jl/pull/3030))
 
 ## Previously announced breaking changes
 
