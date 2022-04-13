@@ -1,17 +1,17 @@
 """
     DataFrame <: AbstractDataFrame
 
-An AbstractDataFrame that stores a set of named columns
+An `AbstractDataFrame` that stores a set of named columns
 
-The columns are normally AbstractVectors stored in memory,
-particularly a Vector or CategoricalVector.
+The columns are normally `AbstractVector`s stored in memory,
+particularly a `Vector`, `PooledVector` or `CategoricalVector`.
 
 # Constructors
 ```julia
 DataFrame(pairs::Pair...; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(ds::AbstractDict; copycols::Bool=true)
-DataFrame(kwargs..., copycols::Bool=true)
+DataFrame(; kwargs..., copycols::Bool=true)
 
 DataFrame(columns::AbstractVecOrMat,
           names::AbstractVector;
