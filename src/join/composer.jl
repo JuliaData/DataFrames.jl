@@ -584,7 +584,8 @@ innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
           makeunique::Bool=false,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
           matchmissing::Symbol=:error) =
-    innerjoin(innerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
+    innerjoin(innerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate,
+                        matchmissing=matchmissing),
               dfs..., on=on, makeunique=makeunique, validate=validate,
               matchmissing=matchmissing)
 
@@ -1042,7 +1043,8 @@ outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame
           on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
           matchmissing::Symbol=:error) =
-    outerjoin(outerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate),
+    outerjoin(outerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate,
+                        matchmissing=matchmissing),
               dfs..., on=on, makeunique=makeunique, validate=validate,
               matchmissing=matchmissing)
 
