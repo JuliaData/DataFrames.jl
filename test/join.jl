@@ -2184,4 +2184,19 @@ end
     @test df1.y isa Vector{Union{Int, Missing}}
 end
 
+@testset "passing matchmissing in multi-data frame innerjoin and outerjoin" begin
+    @test innerjoin(DataFrame(a=missing, b=1),
+                    DataFrame(a=missing, c=2),
+                    DataFrame(a=missing, d=3),
+                    on=:a, matchmissing=:equal) ≅ DataFrame(a=missing, b=1, c=2, d=3)
+    @test isempty(innerjoin(DataFrame(a=missing, b=1),
+                  DataFrame(a=missing, c=2),
+                  DataFrame(a=missing, d=3),
+                  on=:a, matchmissing=:notequal))
+    @test outerjoin(DataFrame(a=missing, b=1),
+                    DataFrame(a=missing, c=2),
+                    DataFrame(a=missing, d=3),
+                    on=:a, matchmissing=:equal) ≅ DataFrame(a=missing, b=1, c=2, d=3)
+end
+
 end # module
