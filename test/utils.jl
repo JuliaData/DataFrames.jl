@@ -149,13 +149,13 @@ end
     @test_throws AssertionError DataFrames.split_to_chunks(10, 11)
 end
 
-@testset "singlethreaded, setmultithreading, @spawn_or_async and @spawn_or_run" begin
-    t = DataFrames.@spawn_or_async 1
+@testset "singlethreaded, setmultithreading, @spawn_or_run_task and @spawn_or_run" begin
+    t = DataFrames.@spawn_or_run_task 1
     @test fetch(t) === 1
 
     x = Ref(false)
     @sync begin
-        t = DataFrames.@spawn_or_async begin
+        t = DataFrames.@spawn_or_run_task begin
             sleep(0.1)
             x[] = true
         end
@@ -176,12 +176,12 @@ end
     @test DataFrames.setmultithreading(false) === false
     @test !DataFrames.ismultithreaded()
 
-    t = DataFrames.@spawn_or_async 1
+    t = DataFrames.@spawn_or_run_task 1
     @test fetch(t) === 1
 
     x = Ref(false)
     @sync begin
-        t = DataFrames.@spawn_or_async begin
+        t = DataFrames.@spawn_or_run_task begin
             sleep(0.1)
             x[] = true
         end

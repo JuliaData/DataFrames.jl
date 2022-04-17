@@ -325,31 +325,39 @@ macro spawn_for_chunks(basesize, ex)
 end
 
 """
-    @spawn_or_async expr
+    @spawn_or_run_task expr
 
-Equivalent to `Threads.@spawn` if `DataFrames.ismultithreaded() === true`
-and to `@async` otherwise.
+Equivalent to `Threads.@spawn` if `DataFrames.ismultithreaded() === true`,
+otherwise run `expr` and return a `Task` that returns its value.
 """
-macro spawn_or_async end
+macro spawn_or_run_task end
 
 """
     @spawn_or_run expr
 
 Equivalent to `Threads.@spawn` if `DataFrames.ismultithreaded() === true`,
-otherwise simply runs `expr`.
+otherwise run `expr`.
 """
 macro spawn_or_run end
 
 if VERSION >= v"1.4"
-    macro spawn_or_async(expr)
+    macro spawn_or_run_task(expr)
         letargs = Base._lift_one_interp!(expr)
 
         thunk = esc(:(()->($expr)))
         var = esc(Base.sync_varname)
         quote
             let $(letargs...)
-                local task = Task($thunk)
-                task.sticky = !DataFrames.ismultithreaded()
+                if DataFrames.ismultithreaded()
+                    local task = Task($thunk)
+                    task.sticky = false
+                else
+                    # Run expr immediately
+                    res = $thunk()
+                    # Return a Task that returns the value of expr
+                    local task = Task(() -> res)
+                    task.sticky = true
+                end
                 if $(Expr(:islocal, var))
                     @static if VERSION >= v"1.5.0"
                         put!($var, task)
@@ -389,12 +397,15 @@ if VERSION >= v"1.4"
         end
     end
 else
-    # This is the definition of @async in Base
-    macro spawn_or_async(expr)
+    # Based on the definition of @async in Base
+    macro spawn_or_run_task(expr)
         thunk = esc(:(()->($expr)))
         var = esc(Base.sync_varname)
         quote
-            local task = Task($thunk)
+            # Run expr immediately
+            res = $thunk()
+            # Return a Task that returns the value of expr
+            local task = Task(() -> res)
             if $(Expr(:isdefined, var))
                 push!($var, task)
             end

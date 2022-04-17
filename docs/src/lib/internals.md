@@ -16,7 +16,7 @@ getmaxwidths
 ourshow
 ourstrwidth
 @spawn_for_chunks
-@spawn_or_async
+@spawn_or_run_task
 @spawn_or_run
 default_table_transformation
 isreadonly

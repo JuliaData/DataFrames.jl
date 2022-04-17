@@ -666,7 +666,7 @@ function _combine(gd::GroupedDataFrame,
     for i in eachindex(cs_norm, optional_transform, tasks)
         cs_i = cs_norm[i]
         optional_i = optional_transform[i]
-        tasks[i] = @spawn_or_async if length(gd) > 0 && isagg(cs_i, gd)
+        tasks[i] = @spawn_or_run_task if length(gd) > 0 && isagg(cs_i, gd)
             _combine_process_agg(Ref{Any}(cs_i), optional_i, parentdf, gd,
                                  seen_cols, trans_res, idx_agg[])
         elseif keeprows && cs_i isa Pair && first(last(cs_i)) === identity &&
