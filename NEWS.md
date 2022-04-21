@@ -4,6 +4,11 @@
 
 * `subset` and `subset!` now allow passing zero column selectors
    ([#3025](https://github.com/JuliaData/DataFrames.jl/pull/3025))
+* `subset` and `subset!` processing `GroupedDataFrame` allow using a scalar as
+  a subsetting condition (this will result in including/excluding a whole group);
+  for `AbstractDataFrame` processing only `AbstractVector` subsetting condition is
+  allowed as accepting scalars can lead to hard to catch bugs in users' code
+  ([#3032](https://github.com/JuliaData/DataFrames.jl/pull/3032))
 * `permutedims` now supports a `strict` keyword argument that allows
   for a more flexible handling of values stored in a column that will
   become a new header

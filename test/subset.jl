@@ -239,16 +239,16 @@ const ≅ = isequal
     @test_throws ArgumentError DataFrames._and_missing()
 end
 
-@testset "subsetting requires passing vector" begin
+@testset "subsetting requires passing vector for data frame input" begin
     @test_throws ArgumentError subset(DataFrame(x=[]), :x => x -> 1)
-    @test_throws AssertionError subset(DataFrame(x=[]), :x => ByRow(x -> 1))
+    @test_throws ArgumentError subset(DataFrame(x=[]), :x => ByRow(x -> 1))
     @test_throws ArgumentError subset(DataFrame(x=1:3), [] => () -> true)
     @test subset(DataFrame(x=1:3), [] => ByRow(() -> true)) == DataFrame(x=1:3)
     @test_throws ArgumentError subset(DataFrame(x=[0, 1]), :x => ==(0))
     @test_throws ArgumentError subset(DataFrame(x=[0, missing]), :x => ismissing)
-    @test_throws ArgumentError subset(groupby(DataFrame(id=[0, 0, 1, 1],
-                                                        x=[-1, 1, 3, 4]), :id),
-                                      :x => (x -> sum(x) > 0))
+    @test subset(groupby(DataFrame(id=[0, 0, 1, 1],
+                                   x=[-1, 1, 3, 4]), :id),
+                 :x => (x -> sum(x) > 0)) == DataFrame(id=[1, 1], x=[3, 4])
     @test_throws ArgumentError subset(DataFrame(x=1:3), :x => x -> fill(missing, length(x)))
     @test isempty(subset(DataFrame(x=1:3), :x => x -> fill(missing, length(x)),
                          skipmissing=true))
@@ -256,8 +256,10 @@ end
     @test subset(DataFrame(x=1:3), :x => x -> trues(length(x))) == DataFrame(x=1:3)
     @test isempty(subset(DataFrame(x=1:3), :x => x -> fill(false, length(x))))
     @test isempty(subset(DataFrame(x=1:3), :x => x -> falses(length(x))))
-    @test_throws AssertionError subset(DataFrame(), [] => () -> Union{}[])
-    @test_throws AssertionError subset(DataFrame(), [] => () -> Union{}[], skipmissing=true)
+    @test_throws ArgumentError subset(DataFrame(), [] => () -> Union{}[])
+    @test_throws ArgumentError subset(DataFrame(), [] => () -> Union{}[], skipmissing=true)
+    @test_throws ArgumentError subset(groupby(DataFrame(), []), [] => () -> Union{}[])
+    @test_throws ArgumentError subset(groupby(DataFrame(), []), [] => () -> Union{}[], skipmissing=true)
     @test subset(DataFrame(x=1:3:15, y=1:5), [:x, :y] => (x, y) -> iseven.(x) .& iseven.(y)) ==
           DataFrame(x=[4, 10], y=[2, 4])
     @test subset(DataFrame(x=1:3:15, y=1:5),
@@ -275,6 +277,9 @@ end
     @test_throws ArgumentError subset(DataFrame(x=1:3), :x => x -> Any[true, false, 1],
                                       skipmissing=true)
     @test_throws ArgumentError subset(DataFrame(x=1:3), :x => x -> (true for i in 1:3))
+    @test subset(groupby(DataFrame(x=1:5), :x), :x => x -> sum(x) > (2.5)) == DataFrame(x=3:5)
+    @test subset(groupby(DataFrame(x=1:5), :x), :x => x -> sum(x) > (2.5), ungroup=false) ==
+          groupby(DataFrame(x=3:5), :x)
 end
 
 @testset "multicolumn selectors" begin
