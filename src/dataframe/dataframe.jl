@@ -1573,14 +1573,15 @@ function _replace_columns!(df::DataFrame, newdf::DataFrame)
     return df
 end
 
-allcombinations(; kwargs...) = isempty(kwargs) ? DataFrame() : allcombinations(kwargs...)
+allcombinations(::Type{DataFrame}; kwargs...) =
+    isempty(kwargs) ? DataFrame() : allcombinations(DataFrame, kwargs...)
 
-allcombinations(pairs::Pair{<:AbstractString, <:Any}...) =
+allcombinations(::Type{DataFrame}, pairs::Pair{<:AbstractString, <:Any}...) =
     allcombinations((Symbol(k) => v for (k, v) in pairs)...)
 
 """
-    allcombinations(pairs::Pair...)
-    allcombinations(; kwargs...)
+    allcombinations(DataFrame, pairs::Pair...)
+    allcombinations(DataFrame, ; kwargs...)
 
 Create a `DataFrame` from all combinations of values in passed arguments.
 
@@ -1596,7 +1597,7 @@ or a `0`-dimensional `AbstractArray` are unwrapped and treated as having length 
 # Examples
 
 ```jldoctest
-julia> allcombinations(a=1:2, b='a':'c')
+julia> allcombinations(DataFrame, a=1:2, b='a':'c')
 6×2 DataFrame
  Row │ a      b
      │ Int64  Char
@@ -1608,7 +1609,7 @@ julia> allcombinations(a=1:2, b='a':'c')
    5 │     1  c
    6 │     2  c
 
-julia> allcombinations("a" => 1:2, "b" => 'a':'c', "c" => "const")
+julia> allcombinations(DataFrame, "a" => 1:2, "b" => 'a':'c', "c" => "const")
 6×3 DataFrame
  Row │ a      b     c
      │ Int64  Char  String
@@ -1621,7 +1622,7 @@ julia> allcombinations("a" => 1:2, "b" => 'a':'c', "c" => "const")
    6 │     2  c     const
 ```
 """
-function allcombinations(pairs::Pair{Symbol, <:Any}...)
+function allcombinations(::Type{DataFrame}, pairs::Pair{Symbol, <:Any}...)
     colnames = first.(pairs)
     if !allunique(colnames)
         throw(ArgumentError("All column names passed to allcombinations must be unique"))
