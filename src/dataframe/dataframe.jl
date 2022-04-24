@@ -1577,7 +1577,7 @@ allcombinations(::Type{DataFrame}; kwargs...) =
     isempty(kwargs) ? DataFrame() : allcombinations(DataFrame, kwargs...)
 
 allcombinations(::Type{DataFrame}, pairs::Pair{<:AbstractString, <:Any}...) =
-    allcombinations((Symbol(k) => v for (k, v) in pairs)...)
+    allcombinations(DataFrame, (Symbol(k) => v for (k, v) in pairs)...)
 
 """
     allcombinations(DataFrame, pairs::Pair...)
