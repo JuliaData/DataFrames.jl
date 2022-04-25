@@ -1581,7 +1581,7 @@ allcombinations(::Type{DataFrame}, pairs::Pair{<:AbstractString, <:Any}...) =
 
 """
     allcombinations(DataFrame, pairs::Pair...)
-    allcombinations(DataFrame, ; kwargs...)
+    allcombinations(DataFrame; kwargs...)
 
 Create a `DataFrame` from all combinations of values in passed arguments.
 
