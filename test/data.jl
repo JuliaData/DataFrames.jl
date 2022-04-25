@@ -615,4 +615,72 @@ end
     @test_throws ArgumentError fillcombinations(df, 2)
 end
 
+@testset "allcombinations" begin
+    @test allcombinations(DataFrame) == DataFrame()
+    @test allcombinations(DataFrame, a=1:2, b=3:4) ==
+          allcombinations(DataFrame, "a" => 1:2, "b" => 3:4) ==
+          allcombinations(DataFrame, :a => 1:2, :b => 3:4) ==
+          DataFrame(a=[1, 2, 1, 2], b=[3, 3, 4, 4])
+    @test_throws MethodError allcombinations(DataFrame, "a" => 1:2, :b => 3:4)
+    @test_throws ArgumentError allcombinations(DataFrame, "a" => 1:2, "a" => 3:4)
+
+    res = allcombinations(DataFrame, a=categorical(["a", "b", "a"], levels=["c", "b", "a"]))
+    @test res == DataFrame(a=["a", "b", "a"])
+    @test res.a isa CategoricalVector
+    @test levels(res.a) == ["c", "b", "a"]
+
+    @test allcombinations(DataFrame, a=categorical(["a", "b", "a"]),
+                          b=Ref([1, 2]),
+                          c=fill(1:2),
+                          d=DataFrame(p=1, q=2)) ==
+          DataFrame(a=categorical(["a", "b", "a"]),
+                    b=Ref([1, 2]),
+                    c=fill(1:2),
+                    d=DataFrame(p=1, q=2))
+    @test allcombinations(DataFrame, a=categorical(["a", "b", "a"]),
+                          b=Ref([1, 2]),
+                          c=fill(1:2),
+                          d=DataFrame(p=1, q=2),
+                          e=1:2) ==
+          DataFrame(a=categorical(["a", "b", "a", "a", "b", "a"]),
+                    b=Ref([1, 2]),
+                    c=fill(1:2),
+                    d=DataFrame(p=1, q=2),
+                    e=[1, 1, 1, 2, 2, 2])
+    @test_throws ArgumentError allcombinations(DataFrame, a=[1 2; 3 4])
+
+    @test allcombinations(DataFrame, a=[1, 1, 1], b=[2, 2, 2]) ==
+          DataFrame(a=fill(1, 9), b=fill(2, 9))
+    @test allcombinations(DataFrame, a=[1, 1, 1], b='a':'b', c=[2, 2, 2]) ==
+          DataFrame(a=fill(1, 18), b=repeat('a':'b', inner=3, outer=3), c=fill(2, 18))
+
+    res = allcombinations(DataFrame, b=categorical(String[], levels=["a"]))
+    @test nrow(res) == 0
+    @test names(res) == ["b"]
+    @test typeof(res.b) <: CategoricalVector{String}
+    @test levels(res.b) == ["a"]
+
+    res = allcombinations(DataFrame, b=categorical(String[], levels=["a"]), c='a':'b')
+    @test nrow(res) == 0
+    @test names(res) == ["b", "c"]
+    @test typeof(res.b) <: CategoricalVector{String}
+    @test levels(res.b) == ["a"]
+    @test typeof(res.c) === Vector{Char}
+
+    res = allcombinations(DataFrame, a=1:3, b=categorical(String[], levels=["a"]))
+    @test nrow(res) == 0
+    @test names(res) == ["a", "b"]
+    @test typeof(res.a) === Vector{Int}
+    @test typeof(res.b) <: CategoricalVector{String}
+    @test levels(res.b) == ["a"]
+
+    res = allcombinations(DataFrame, a=1:3, b=categorical(String[], levels=["a"]), c='a':'b')
+    @test nrow(res) == 0
+    @test names(res) == ["a", "b", "c"]
+    @test typeof(res.a) === Vector{Int}
+    @test typeof(res.b) <: CategoricalVector{String}
+    @test levels(res.b) == ["a"]
+    @test typeof(res.c) === Vector{Char}
+end
+
 end # module

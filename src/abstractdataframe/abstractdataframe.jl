@@ -1519,14 +1519,8 @@ function fillcombinations(df::AbstractDataFrame, indexcols;
     # Create a vector of vectors of unique values in each column
     uniquevals = []
     for col in colind
-        # levels drops missing, handle the case where missing values are present
         # All levels are retained, missing is added only if present
-        # TODO: change this after DataAPI.jl levels supports missing
-        if any(ismissing, df[!, col])
-            tempcol = vcat(levels(df[!, col]), missing)
-        else
-            tempcol = levels(df[!, col])
-        end
+        tempcol = levels(df[!, col], skipmissing=false)
         push!(uniquevals, tempcol)
     end
 
@@ -2528,12 +2522,12 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
     nrow(df) != length(p) &&
         throw(DimensionMismatch("Permutation does not have a correct length " *
                                 "(expected $(nrow(df)) but got $(length(p)))"))
-    
+
     cp = _compile_permutation!(Base.copymutable(p))
 
     isempty(cp) && return df
 
-    if fun === Base.invpermute!! 
+    if fun === Base.invpermute!!
         reverse!(@view cp[1:end-1])
     end
 
@@ -2544,14 +2538,14 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
             _cycle_permute!(col, cp)
         end
     end
-    
+
     return df
 end
 
-# convert a classical permutation to zero terminated cycle 
+# convert a classical permutation to zero terminated cycle
 # notation, zeroing the original permutation in the process.
 function _compile_permutation!(p::AbstractVector{<:Integer})
-    firstindex(p) == 1 || 
+    firstindex(p) == 1 ||
         throw(ArgumentError("Permutation vectors must have 1-based indexing"))
     # this length is sufficient because we do not record 1-cycles,
     # so the worst case is all 2-cycles. One extra element gives the

@@ -33,13 +33,16 @@
   ([#3012](https://github.com/JuliaData/DataFrames.jl/issues/3012))
 * Guarantee that `permute!` and `invpermute!` throw on invalid input
   ([#3035](https://github.com/JuliaData/DataFrames.jl/pull/3035))
+* Add `allcombinations` function that returns a data frame created
+  from all combinations of the passed vectors
+  ([#3031](https://github.com/JuliaData/DataFrames.jl/pull/3031))
 
 ## Previously announced breaking changes
 
 * On Julia 1.7 or newer broadcasting assignment
   into an existing column of a data frame replaces it. Under Julia 1.6
   or older it is an in place operation.
-  ([#3022](https://github.com/JuliaData/DataFrames.jl/pull/3022)
+  ([#3022](https://github.com/JuliaData/DataFrames.jl/pull/3022))
 
 ## Performance
 
