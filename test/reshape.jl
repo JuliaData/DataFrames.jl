@@ -845,4 +845,18 @@ end
     end
 end
 
+@testset "variable_eltype in stack tests" begin
+    df = DataFrame(A = 1:3, B = [2.0, -1.1, 2.8], C = ["p","q","r"])
+    @test_throws MethodError stack(df, :C, variable_name=:D, variable_eltype=Int)
+    for T in (AbstractString, Any)
+        sdf = stack(df, [:A, :B], variable_name=:D, variable_eltype=T)
+        @test sdf == DataFrame(C=["p", "q", "r", "p", "q", "r"],
+                            D=["A", "A", "A", "B", "B", "B"],
+                            value=[1.0, 2.0, 3.0, 2.0, -1.1, 2.8])
+        @test sdf.C isa Vector{String}
+        @test sdf.value isa Vector{Float64}
+        @test sdf.D isa PooledVector{T}
+    end
+end
+
 end # module
