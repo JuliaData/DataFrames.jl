@@ -164,7 +164,7 @@ function stack(df::AbstractDataFrame,
         # (note that copyto! inserts levels in their order of appearance)
         nms = names(df, ints_measure_vars)
         simnms = similar(nms, variable_eltype)
-        catnms = simnms isa Vector ? PooledArray(catnms) : simnms
+        catnms = simnms isa Vector ? PooledArray(simnms) : simnms
         copyto!(catnms, nms)
     end
     return DataFrame(AbstractVector[[repeat(df[!, c], outer=N) for c in ints_id_vars]..., # id_var columns
