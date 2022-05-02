@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Sorting · DataFrames.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link rel="canonical" href="https://juliadata.github.io/DataFrames.jl/stable/man/sorting/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.044/juliamono.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="DataFrames.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">DataFrames.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><a class="tocitem" href="../basics/">First Steps with DataFrames.jl</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../getting_started/">Getting Started</a></li><li><a class="tocitem" href="../working_with_dataframes/">Working with DataFrames</a></li><li><a class="tocitem" href="../importing_and_exporting/">Importing and Exporting Data (I/O)</a></li><li><a class="tocitem" href="../joins/">Joins</a></li><li><a class="tocitem" href="../split_apply_combine/">Split-apply-combine</a></li><li><a class="tocitem" href="../reshaping_and_pivoting/">Reshaping</a></li><li class="is-active"><a class="tocitem" href>Sorting</a></li><li><a class="tocitem" href="../categorical/">Categorical Data</a></li><li><a class="tocitem" href="../missing/">Missing Data</a></li><li><a class="tocitem" href="../querying_frameworks/">Data manipulation frameworks</a></li><li><a class="tocitem" href="../comparisons/">Comparison with Python/R/Stata</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../lib/types/">Types</a></li><li><a class="tocitem" href="../../lib/functions/">Functions</a></li><li><a class="tocitem" href="../../lib/indexing/">Indexing</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href>Sorting</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Sorting</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaData/DataFrames.jl/blob/main/docs/src/man/sorting.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Sorting"><a class="docs-heading-anchor" href="#Sorting">Sorting</a><a id="Sorting-1"></a><a class="docs-heading-anchor-permalink" href="#Sorting" title="Permalink"></a></h1><p>Sorting is a fundamental component of data analysis. Basic sorting is trivial: just calling <code>sort!</code> will sort all columns, in place:</p><pre><code class="language-julia-repl hljs">julia&gt; using DataFrames, CSV
+
+julia&gt; iris = CSV.read((joinpath(dirname(pathof(DataFrames)),
+                                 &quot;..&quot;, &quot;docs&quot;, &quot;src&quot;, &quot;assets&quot;, &quot;iris.csv&quot;)),
+                       DataFrame)
+150×5 DataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         5.1         3.5          1.4         0.2  Iris-setosa
+   2 │         4.9         3.0          1.4         0.2  Iris-setosa
+   3 │         4.7         3.2          1.3         0.2  Iris-setosa
+   4 │         4.6         3.1          1.5         0.2  Iris-setosa
+   5 │         5.0         3.6          1.4         0.2  Iris-setosa
+   6 │         5.4         3.9          1.7         0.4  Iris-setosa
+   7 │         4.6         3.4          1.4         0.3  Iris-setosa
+   8 │         5.0         3.4          1.5         0.2  Iris-setosa
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+ 144 │         6.8         3.2          5.9         2.3  Iris-virginica
+ 145 │         6.7         3.3          5.7         2.5  Iris-virginica
+ 146 │         6.7         3.0          5.2         2.3  Iris-virginica
+ 147 │         6.3         2.5          5.0         1.9  Iris-virginica
+ 148 │         6.5         3.0          5.2         2.0  Iris-virginica
+ 149 │         6.2         3.4          5.4         2.3  Iris-virginica
+ 150 │         5.9         3.0          5.1         1.8  Iris-virginica
+                                                        135 rows omitted
+
+julia&gt; sort!(iris)
+150×5 DataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         4.3         3.0          1.1         0.1  Iris-setosa
+   2 │         4.4         2.9          1.4         0.2  Iris-setosa
+   3 │         4.4         3.0          1.3         0.2  Iris-setosa
+   4 │         4.4         3.2          1.3         0.2  Iris-setosa
+   5 │         4.5         2.3          1.3         0.3  Iris-setosa
+   6 │         4.6         3.1          1.5         0.2  Iris-setosa
+   7 │         4.6         3.2          1.4         0.2  Iris-setosa
+   8 │         4.6         3.4          1.4         0.3  Iris-setosa
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+ 144 │         7.4         2.8          6.1         1.9  Iris-virginica
+ 145 │         7.6         3.0          6.6         2.1  Iris-virginica
+ 146 │         7.7         2.6          6.9         2.3  Iris-virginica
+ 147 │         7.7         2.8          6.7         2.0  Iris-virginica
+ 148 │         7.7         3.0          6.1         2.3  Iris-virginica
+ 149 │         7.7         3.8          6.7         2.2  Iris-virginica
+ 150 │         7.9         3.8          6.4         2.0  Iris-virginica
+                                                        135 rows omitted</code></pre><p>Observe that all columns are taken into account lexicographically when sorting the <code>DataFrame</code>.</p><p>You can also call the <code>sort</code> function to create a new <code>DataFrame</code> with freshly allocated sorted vectors.</p><p>In sorting <code>DataFrame</code>s, you may want to sort different columns with different options. Here are some examples showing most of the possible options:</p><pre><code class="language-julia-repl hljs">julia&gt; sort!(iris, rev = true)
+150×5 DataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         7.9         3.8          6.4         2.0  Iris-virginica
+   2 │         7.7         3.8          6.7         2.2  Iris-virginica
+   3 │         7.7         3.0          6.1         2.3  Iris-virginica
+   4 │         7.7         2.8          6.7         2.0  Iris-virginica
+   5 │         7.7         2.6          6.9         2.3  Iris-virginica
+   6 │         7.6         3.0          6.6         2.1  Iris-virginica
+   7 │         7.4         2.8          6.1         1.9  Iris-virginica
+   8 │         7.3         2.9          6.3         1.8  Iris-virginica
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+ 144 │         4.6         3.2          1.4         0.2  Iris-setosa
+ 145 │         4.6         3.1          1.5         0.2  Iris-setosa
+ 146 │         4.5         2.3          1.3         0.3  Iris-setosa
+ 147 │         4.4         3.2          1.3         0.2  Iris-setosa
+ 148 │         4.4         3.0          1.3         0.2  Iris-setosa
+ 149 │         4.4         2.9          1.4         0.2  Iris-setosa
+ 150 │         4.3         3.0          1.1         0.1  Iris-setosa
+                                                        135 rows omitted
+
+julia&gt; sort!(iris, [:Species, :SepalWidth])
+150×5 DataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         4.5         2.3          1.3         0.3  Iris-setosa
+   2 │         4.4         2.9          1.4         0.2  Iris-setosa
+   3 │         5.0         3.0          1.6         0.2  Iris-setosa
+   4 │         4.9         3.0          1.4         0.2  Iris-setosa
+   5 │         4.8         3.0          1.4         0.3  Iris-setosa
+   6 │         4.8         3.0          1.4         0.1  Iris-setosa
+   7 │         4.4         3.0          1.3         0.2  Iris-setosa
+   8 │         4.3         3.0          1.1         0.1  Iris-setosa
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+ 144 │         6.7         3.3          5.7         2.1  Iris-virginica
+ 145 │         6.3         3.3          6.0         2.5  Iris-virginica
+ 146 │         6.3         3.4          5.6         2.4  Iris-virginica
+ 147 │         6.2         3.4          5.4         2.3  Iris-virginica
+ 148 │         7.2         3.6          6.1         2.5  Iris-virginica
+ 149 │         7.9         3.8          6.4         2.0  Iris-virginica
+ 150 │         7.7         3.8          6.7         2.2  Iris-virginica
+                                                        135 rows omitted
+
+julia&gt; sort!(iris, [order(:Species, by=length), order(:SepalLength, rev=true)])
+150×5 DataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼───────────────────────────────────────────────────────────────────
+   1 │         5.8         4.0          1.2         0.2  Iris-setosa
+   2 │         5.7         3.8          1.7         0.3  Iris-setosa
+   3 │         5.7         4.4          1.5         0.4  Iris-setosa
+   4 │         5.5         3.5          1.3         0.2  Iris-setosa
+   5 │         5.5         4.2          1.4         0.2  Iris-setosa
+   6 │         5.4         3.4          1.7         0.2  Iris-setosa
+   7 │         5.4         3.4          1.5         0.4  Iris-setosa
+   8 │         5.4         3.7          1.5         0.2  Iris-setosa
+  ⋮  │      ⋮           ⋮            ⋮           ⋮              ⋮
+ 144 │         5.5         2.6          4.4         1.2  Iris-versicolor
+ 145 │         5.4         3.0          4.5         1.5  Iris-versicolor
+ 146 │         5.2         2.7          3.9         1.4  Iris-versicolor
+ 147 │         5.1         2.5          3.0         1.1  Iris-versicolor
+ 148 │         5.0         2.0          3.5         1.0  Iris-versicolor
+ 149 │         5.0         2.3          3.3         1.0  Iris-versicolor
+ 150 │         4.9         2.4          3.3         1.0  Iris-versicolor
+                                                         135 rows omitted</code></pre><p>Keywords used above include <code>rev</code> (to sort in reverse), and <code>by</code> (to apply a function to values before comparing them). Each keyword can either be a single value, a vector with values corresponding to individual columns, or a selector: <code>:</code>, <code>Cols</code>, <code>All</code>, <code>Not</code>, <code>Between</code>, or <code>Regex</code>.</p><p>As an alternative to using a vector values you can use <code>order</code> to specify an ordering for a particular column within a set of columns.</p><p>The following two examples show two ways to sort the <code>iris</code> dataset with the same result: <code>:Species</code> will be ordered in reverse order, and within groups, rows will be sorted by increasing <code>:PetalLength</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; sort!(iris, [:Species, :PetalLength], rev=[true, false])
+150×5 DataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         4.9         2.5          4.5         1.7  Iris-virginica
+   2 │         6.2         2.8          4.8         1.8  Iris-virginica
+   3 │         6.0         3.0          4.8         1.8  Iris-virginica
+   4 │         6.3         2.7          4.9         1.8  Iris-virginica
+   5 │         6.1         3.0          4.9         1.8  Iris-virginica
+   6 │         5.6         2.8          4.9         2.0  Iris-virginica
+   7 │         6.3         2.5          5.0         1.9  Iris-virginica
+   8 │         6.0         2.2          5.0         1.5  Iris-virginica
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+ 144 │         4.7         3.2          1.6         0.2  Iris-setosa
+ 145 │         5.7         3.8          1.7         0.3  Iris-setosa
+ 146 │         5.4         3.4          1.7         0.2  Iris-setosa
+ 147 │         5.4         3.9          1.7         0.4  Iris-setosa
+ 148 │         5.1         3.3          1.7         0.5  Iris-setosa
+ 149 │         5.1         3.8          1.9         0.4  Iris-setosa
+ 150 │         4.8         3.4          1.9         0.2  Iris-setosa
+                                                        135 rows omitted
+
+julia&gt; sort!(iris, [order(:Species, rev=true), :PetalLength])
+150×5 DataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         4.9         2.5          4.5         1.7  Iris-virginica
+   2 │         6.2         2.8          4.8         1.8  Iris-virginica
+   3 │         6.0         3.0          4.8         1.8  Iris-virginica
+   4 │         6.3         2.7          4.9         1.8  Iris-virginica
+   5 │         6.1         3.0          4.9         1.8  Iris-virginica
+   6 │         5.6         2.8          4.9         2.0  Iris-virginica
+   7 │         6.3         2.5          5.0         1.9  Iris-virginica
+   8 │         6.0         2.2          5.0         1.5  Iris-virginica
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+ 144 │         4.7         3.2          1.6         0.2  Iris-setosa
+ 145 │         5.7         3.8          1.7         0.3  Iris-setosa
+ 146 │         5.4         3.4          1.7         0.2  Iris-setosa
+ 147 │         5.4         3.9          1.7         0.4  Iris-setosa
+ 148 │         5.1         3.3          1.7         0.5  Iris-setosa
+ 149 │         5.1         3.8          1.9         0.4  Iris-setosa
+ 150 │         4.8         3.4          1.9         0.2  Iris-setosa
+                                                        135 rows omitted</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../reshaping_and_pivoting/">« Reshaping</a><a class="docs-footer-nextpage" href="../categorical/">Categorical Data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.16 on <span class="colophon-date" title="Monday 2 May 2022 22:46">Monday 2 May 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
