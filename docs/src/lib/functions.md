@@ -144,9 +144,13 @@ empty
 empty!
 filter
 filter!
+keepat!
 first
 last
 only
+pop!
+popat!
+popfirst!
 nonunique
 subset
 subset!
