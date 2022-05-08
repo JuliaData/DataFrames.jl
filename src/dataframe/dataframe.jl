@@ -807,7 +807,7 @@ function Base.deleteat!(df::DataFrame, inds::AbstractVector)
     return _deleteat!_helper(df, inds)
 end
 
-function Base.deleteat!(df::DataFrame, inds::Integer) = deleteat!(df, Int[inds])
+Base.deleteat!(df::DataFrame, inds::Integer) = deleteat!(df, Int[inds])
 
 function Base.deleteat!(df::DataFrame, inds::AbstractVector{Bool})
     if length(inds) != size(df, 1)
