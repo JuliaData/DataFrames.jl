@@ -105,6 +105,14 @@ else
     export only
 end
 
+if isdefined(Base, :keepat!)  # Introduced in 1.7.0
+    import Base.keepat!
+else
+    # TODO: uncomment when keepat! is added to Compat.jl
+    # import Compat.keepat!
+    export keepat!
+end
+
 if VERSION >= v"1.3"
     using Base.Threads: @spawn
 else

@@ -769,9 +769,8 @@ end
 
 Delete rows specified by `inds` from a `DataFrame` `df` in place and return it.
 
-Internally `deleteat!` is called for all columns so `inds` must be:
-a vector of sorted and unique integers, a boolean vector, an integer,
-or `Not` wrapping any valid selector.
+`inds` do not have to be sorted nor unique. Non-unique elements of `inds`
+are de-duplicated before deleting rows.
 
 # Examples
 ```jldoctest
@@ -793,7 +792,7 @@ julia> deleteat!(df, 2)
    2 │     3      6
 ```
 """
-function Base.deleteat!(df::DataFrame, inds)
+function Base.deleteat!(df::DataFrame, inds::AbstractVector)
     if !isempty(inds) && size(df, 2) == 0
         throw(BoundsError(df, (inds, :)))
     end
@@ -807,6 +806,8 @@ function Base.deleteat!(df::DataFrame, inds)
     # otherwise an error will be thrown and the data frame will get corrupted
     return _deleteat!_helper(df, inds)
 end
+
+function Base.deleteat!(df::DataFrame, inds::Integer) = deleteat!(df, Int[inds])
 
 function Base.deleteat!(df::DataFrame, inds::AbstractVector{Bool})
     if length(inds) != size(df, 1)
@@ -822,7 +823,34 @@ end
 
 Base.deleteat!(df::DataFrame, inds::Not) = deleteat!(df, axes(df, 1)[inds])
 
-function _deleteat!_helper(df::DataFrame, drop)
+function _isincreasing(v::AbstractVector)
+    length(v) < 2 && return true
+    last = v[begin]
+    for i in firstindex(v)+1:lastindex(v)
+        cur = @inbounds x[i]
+        cur > last || return false
+        last = cur
+    end
+    return true
+end
+
+function _uniquesorted(v::AbstractVector)
+    x = sort(v)
+    # here we know that length of v is at least 2
+    last = v[begin]
+    u = eltype(v)[last]
+    for i in firstindex(v)+1:lastindex(v)
+        cur = @inbounds x[i]
+        cur == last && continue
+        push!(u, cur)
+        last = cur
+    end
+    return u
+end
+
+function _deleteat!_helper(df::DataFrame,
+                           drop_raw::AbstractVector{<:Union{Signed, Unsigned}})
+    drop = _isincreasing(drop_raw) ? drop_raw : _uniquesorted(drop_raw)
     cols = _columns(df)
     isempty(cols) && return df
 
@@ -847,6 +875,34 @@ function _deleteat!_helper(df::DataFrame, drop)
 end
 
 """
+    keepat!(df::DataFrame, inds)
+
+Delete rows at all indices not specified by `inds` from a `DataFrame` `df`
+in place and return it.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> keepat!(df, [1, 3])
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     3      6
+```
+"""
+keepat!(df::DataFrame, inds) = deleteat!(df, Not(inds))
+
+"""
     empty!(df::DataFrame)
 
 Remove all rows from `df`, making each of its columns empty.
@@ -854,6 +910,41 @@ Remove all rows from `df`, making each of its columns empty.
 function Base.empty!(df::DataFrame)
     foreach(empty!, eachcol(df))
     return df
+end
+
+"""
+    resize!(df::DataFrame, n::Integer)
+
+Resize `df` to have `n` rows by calling `resize!` on all columns of `df`.
+"""
+function Base.resize!(df::DataFrame, n::Integer)
+    foreach(col -> resize!(col, n), eachcol(df))
+    return df
+end
+
+"""
+    pop!(df::DataFrame)
+
+Remove the last row from `df` and return a `NamedTuple` created from this row.
+"""
+pop!(df::DataFrame) = popat!(df, nrow(df))
+
+"""
+    popfirst!(df::DataFrame)
+
+Remove the first row from `df` and return a `NamedTuple` created from this row.
+"""
+popfirst!(df::DataFrame) = popat!(df, 1)
+
+"""
+    popat!(df::DataFrame, i::Integer)
+
+Remove the `i`-th row from `df` and return a `NamedTuple` created from this row.
+"""
+function popat!(df::DataFrame, i::Integer)
+    nt = NamedTuple(df[i, :])
+    deleteat!(df, i)
+    return nt
 end
 
 ##############################################################################
