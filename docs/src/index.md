@@ -102,6 +102,8 @@ integrated they are with DataFrames.jl.
     - [Gadfly.jl](http://gadflyjl.org/stable/): High-level plotting library with
       a "grammar of graphics" syntax akin to that of
       [ggplot](https://ggplot2.tidyverse.org/reference/ggplot.html) (in R).
+    - [AlgebraOfGraphics.jl](http://juliaplots.org/AlgebraOfGraphics.jl/stable/): A
+      "grammar of graphics" library build upon [Makie.jl](makie.juliaplots.org/).
     - [VegaLite.jl](https://www.queryverse.org/VegaLite.jl/stable/): High-level
       plotting library that uses a different "grammar of graphics" syntax and has
       an emphasis on interactive graphics.
@@ -120,7 +122,7 @@ integrated they are with DataFrames.jl.
     - You can find more on both of these packages in the
       [Data manipulation frameworks](@ref) section of this manual.
 - **And More!**
-    - [LightGraphs.jl](https://github.com/JuliaGraphs/LightGraphs.jl): A pure-Julia,
+    - [Graphs.jl](https://github.com/JuliaGraphs/Graphs.jl): A pure-Julia,
       high performance network analysis library. Edgelists in `DataFrame`s can be
       easily converted into graphs using the
       [GraphDataFrameBridge.jl](https://github.com/JuliaGraphs/GraphDataFrameBridge.jl)
