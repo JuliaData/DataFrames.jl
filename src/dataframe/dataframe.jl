@@ -1596,7 +1596,7 @@ or a `0`-dimensional `AbstractArray` are unwrapped and treated as having length 
 
 # See also
                                                                                                     
-[`crossjoin`](@ref) can be used to the cartesian product
+[`crossjoin`](@ref) can be used to get the cartesian product
 of rows from passed data frames.
 
 # Examples
