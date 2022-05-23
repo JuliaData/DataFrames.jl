@@ -1594,6 +1594,11 @@ type (except `AbstractArray`). In the latter case the passed value is treated
 as having length one for expansion. As a particular rule values stored in a `Ref`
 or a `0`-dimensional `AbstractArray` are unwrapped and treated as having length one.
 
+# See also
+                                                                                                    
+[`crossjoin`](@ref) can be used to the cartesian product
+of rows from passed data frames.
+
 # Examples
 
 ```jldoctest
