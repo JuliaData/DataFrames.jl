@@ -131,115 +131,6 @@ end
 
 funname(c::ComposedFunction) = Symbol(funname(c.outer), :_, funname(c.inner))
 
-
-const SINGLETHREADING = Threads.Atomic{Bool}(false)
-const SINGLETHREADING_DEPTH = Threads.Atomic{Int}(0)
-
-ismultithreaded() = SINGLETHREADING_DEPTH[] == 0
-
-"""
-    DataFrames.singlethreaded(f)
-
-Run function `f` while disabling multithreading in all DataFrames.jl operations.
-This is useful in particular to run functions which are not thread-safe, or when
-distribution of work across threads is managed separately.
-
-*See also*: [`DataFrames.setmultithreading`](@ref) to disable multithreading globally
-
-!!! note
-
-    This function is considered as experimental and may change or be removed once
-    a cross-package mechanism for multithreading configuration is developed.
-
-    Currently, it disables multithreading for any DataFrames.jl
-    operations which may be run while `f` is running (e.g. if tasks using data
-    frames have been spawned on multiple threads).
-    This may change in the future.
-
-# Examples
-```jldoctest
-julia> df = DataFrame(x=repeat(1:5, inner=2), y=1:10);
-
-julia> gd = groupby(df, :x);
-
-julia> counter = 0;
-
-julia> f(x) = (sleep(0.1); global counter += 1); # Thread-unsafe function
-
-julia> DataFrames.singlethreaded() do
-           combine(gd, :y => f)
-       end
-5×2 DataFrame
- Row │ x      y_f   
-     │ Int64  Int64 
-─────┼──────────────
-   1 │     1      1
-   2 │     2      2
-   3 │     3      3
-   4 │     4      4
-   5 │     5      5
-```
-"""
-function singlethreaded(f)
-    Threads.atomic_add!(SINGLETHREADING_DEPTH, 1)
-    try
-        return f()
-    finally
-        Threads.atomic_sub!(SINGLETHREADING_DEPTH, 1)
-    end
-end
-
-"""
-    DataFrames.setmultithreading(enable::Bool)
-
-Enable or disable multithreading permanently in all DataFrames.jl operations.
-This is useful in particular to run functions which are not thread-safe, or when
-distribution of work across threads is managed separately.
-
-*See also*: [`DataFrames.singlethreaded`](@ref) to disable multithreading only
-for a specific code block
-
-!!! note
-
-    This function is considered as experimental and may change or be removed once
-    a cross-package mechanism for multithreading configuration is developed.
-
-# Examples
-```jldoctest
-julia> df = DataFrame(x=repeat(1:5, inner=2), y=1:10);
-
-julia> gd = groupby(df, :x);
-
-julia> counter = 0;
-
-julia> f(x) = (sleep(0.1); global counter += 1); # Thread-unsafe function
-
-julia> DataFrames.setmultithreading(false);
-
-julia> combine(gd, :y => f)
-5×2 DataFrame
- Row │ x      y_f   
-     │ Int64  Int64 
-─────┼──────────────
-   1 │     1      1
-   2 │     2      2
-   3 │     3      3
-   4 │     4      4
-   5 │     5      5
-
-julia> DataFrames.setmultithreading(true);
-```
-"""
-function setmultithreading(enable::Bool)
-    old_state = Threads.atomic_xchg!(SINGLETHREADING, !enable)
-    if !enable && !old_state
-        Threads.atomic_add!(SINGLETHREADING_DEPTH, 1)
-    elseif enable && old_state
-        Threads.atomic_sub!(SINGLETHREADING_DEPTH, 1)
-    end
-    return enable
-end
-
 # Compute chunks of indices, each with at least `basesize` entries
 # This method ensures balanced sizes by avoiding a small last chunk
 function split_indices(len::Integer, basesize::Integer)
@@ -268,7 +159,7 @@ if VERSION >= v"1.4"
 
                 nt = Threads.nthreads()
                 len = length(x)
-                if ismultithreaded() && nt > 1 && len > basesize
+                if nt > 1 && len > basesize
                     tasks = [Threads.@spawn begin
                                  for i in p
                                      local $(esc(lidx)) = @inbounds x[i]
@@ -310,7 +201,7 @@ Parallelize a `for` loop by spawning separate tasks
 iterating each over a chunk of at least `basesize` elements
 in `range`.
 
-A number of task higher than `Threads.nthreads()` may be spawned,
+A number of tasks higher than `Threads.nthreads()` may be spawned,
 since that can allow for a more efficient load balancing in case
 some threads are busy (nested parallelism).
 """
@@ -325,30 +216,30 @@ macro spawn_for_chunks(basesize, ex)
 end
 
 """
-    @spawn_or_run_task expr
+    @spawn_or_run_task multithreaded expr
 
-Equivalent to `Threads.@spawn` if `DataFrames.ismultithreaded() === true`,
+Equivalent to `Threads.@spawn` if `multithreaded === true`,
 otherwise run `expr` and return a `Task` that returns its value.
 """
 macro spawn_or_run_task end
 
 """
-    @spawn_or_run expr
+    @spawn_or_run multithreaded expr
 
-Equivalent to `Threads.@spawn` if `DataFrames.ismultithreaded() === true`,
+Equivalent to `Threads.@spawn` if `multithreaded === true`,
 otherwise run `expr`.
 """
 macro spawn_or_run end
 
 if VERSION >= v"1.4"
-    macro spawn_or_run_task(expr)
+    macro spawn_or_run_task(multithreaded, expr)
         letargs = Base._lift_one_interp!(expr)
 
         thunk = esc(:(()->($expr)))
         var = esc(Base.sync_varname)
         quote
             let $(letargs...)
-                if DataFrames.ismultithreaded()
+                if $(esc(multithreaded))
                     local task = Task($thunk)
                     task.sticky = false
                 else
@@ -371,14 +262,14 @@ if VERSION >= v"1.4"
         end
     end
 
-    macro spawn_or_run(expr)
+    macro spawn_or_run(multithreaded, expr)
         letargs = Base._lift_one_interp!(expr)
 
         thunk = esc(:(()->($expr)))
         var = esc(Base.sync_varname)
         quote
             let $(letargs...)
-                if DataFrames.ismultithreaded()
+                if $(esc(multithreaded))
                     local task = Task($thunk)
                     task.sticky = false
                     if $(Expr(:islocal, var))
@@ -398,7 +289,7 @@ if VERSION >= v"1.4"
     end
 else
     # Based on the definition of @async in Base
-    macro spawn_or_run_task(expr)
+    macro spawn_or_run_task(multithreaded, expr)
         thunk = esc(:(()->($expr)))
         var = esc(Base.sync_varname)
         quote
@@ -413,7 +304,7 @@ else
         end
     end
 
-    macro spawn_or_run(expr)
+    macro spawn_or_run(multithreaded, expr)
         esc(:($expr; nothing))
     end
 end

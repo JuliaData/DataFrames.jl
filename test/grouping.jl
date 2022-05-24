@@ -4185,4 +4185,94 @@ end
     end
 end
 
+@testset "disabling multithreading via keyword argument" begin
+    refdf = DataFrame(x=1:1000, y=rand(1:4, 1000))
+
+    # On DataFrame
+    df = copy(refdf)
+    n = Ref(0)
+    @test combine(df, [] => (() -> n[] += 1) => :n1,
+                  [] => (() -> n[] += 1) => :n2,
+                  multithreaded=false) ==
+        DataFrame(n1=1, n2=2)
+
+    df = copy(refdf)
+    m = Ref(0)
+    n = Ref(0)
+    @test select(df, [] => (() -> m[] += 1) => :n1,
+                  [] => (() -> m[] += 1) => :n2,
+                  multithreaded=false) ==
+        select!(df, [] => (() -> n[] += 1) => :n1,
+                  [] => (() -> n[] += 1) => :n2,
+                  multithreaded=false) ==
+        DataFrame(n1=fill(1, 1000), n2=fill(2, 1000))
+
+    df = copy(refdf)
+    m = Ref(0)
+    n = Ref(0)
+    @test transform(df, [] => (() -> m[] += 1) => :n1,
+                  [] => (() -> m[] += 1) => :n2,
+                  multithreaded=false) ==
+        transform(df, [] => (() -> n[] += 1) => :n1,
+                  [] => (() -> n[] += 1) => :n2,
+                  multithreaded=false) ==
+        [refdf DataFrame(n1=fill(1, 1000), n2=fill(2, 1000))]
+
+    df = copy(refdf)
+    m = Ref(0)
+    n = Ref(0)
+    @test df[1:100,:] ==
+        subset(df, [] => ByRow(() -> (m[] += 1; m[] <= 100)),
+                 [] => ByRow(() -> (m[] += 1; m[] <= 1100)),
+                 multithreaded=false) ==
+        subset(df, [] => ByRow(() -> (n[] += 1; n[] <= 100)),
+                 [] => ByRow(() -> (n[] += 1; n[] <= 1100)),
+                 multithreaded=false)
+
+    # On GroupedDataFrame
+    df = copy(refdf)
+    gd = groupby(df, :y)
+    n = Ref(0)
+    @test combine(gd, [] => (() -> n[] += 1) => :n1,
+                  [] => (() -> n[] += 1) => :n2,
+                  multithreaded=false) ==
+        DataFrame(y=1:4, n1=1:4, n2=5:8)
+
+    df = copy(refdf)
+    gd = groupby(df, :y)
+    m = Ref(0)
+    n = Ref(0)
+    @test select(gd, [] => (() -> m[] += 1) => :n1,
+                 [] => (() -> m[] += 1) => :n2,
+                 multithreaded=false) ==
+        select!(gd, [] => (() -> n[] += 1) => :n1,
+                [] => (() -> n[] += 1) => :n2,
+                multithreaded=false) ==
+        select(leftjoin(refdf, DataFrame(y=1:4, n1=1:4, n2=5:8), on=:y), :y, :n1, :n2)
+
+    df = copy(refdf)
+    gd = groupby(df, :y)
+    m = Ref(0)
+    n = Ref(0)
+    @test transform(gd, [] => (() -> m[] += 1) => :n1,
+                    [] => (() -> m[] += 1) => :n2,
+                    multithreaded=false) ==
+        transform!(gd, [] => (() -> n[] += 1) => :n1,
+                [] => (() -> n[] += 1) => :n2,
+                    multithreaded=false) ==
+        leftjoin(refdf, DataFrame(y=1:4, n1=1:4, n2=5:8), on=:y)
+
+    df = copy(refdf)
+    gd = groupby(df, :y)
+    m = Ref(0)
+    n = Ref(0)
+    @test df[in.(df.y, Ref((keys(gd)[1].y, keys(gd)[2].y))),:] ==
+        subset(gd, [:y] => (y -> (m[] += 1; fill(m[] <= 2, length(y)))),
+               [:y] => (y -> (m[] += 1; fill(m[] <= 6, length(y)))),
+               multithreaded=false) ==
+        subset!(gd, [:y] => (y -> (n[] += 1; fill(n[] <= 2, length(y)))),
+                [:y] => (y -> (n[] += 1; fill(n[] <= 6, length(y)))),
+                multithreaded=false)
+end
+
 end # module

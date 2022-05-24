@@ -106,7 +106,7 @@ function compose_inner_table(joiner::DataFrameJoiner,
     left_ixs, right_ixs = find_inner_rows(joiner)
 
     @static if VERSION >= v"1.4"
-        if ismultithreaded() && Threads.nthreads() > 1 && length(left_ixs) >= 1_000_000
+        if Threads.nthreads() > 1 && length(left_ixs) >= 1_000_000
             dfl_task = Threads.@spawn joiner.dfl[left_ixs, :]
             dfr_noon_task = Threads.@spawn joiner.dfr[right_ixs, Not(joiner.right_on)]
             dfl = fetch(dfl_task)
@@ -238,8 +238,7 @@ function _compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique
     @assert col_idx == ncol(joiner.dfl_on) + 1
 
     @static if VERSION >= v"1.4"
-        if ismultithreaded() && Threads.nthreads() > 1 &&
-            target_nrow >= 1_000_000 && length(cols) > col_idx
+        if Threads.nthreads() > 1 && target_nrow >= 1_000_000 && length(cols) > col_idx
             @sync begin
                 for col in eachcol(dfl_noon)
                     cols_i = left_idxs[col_idx]

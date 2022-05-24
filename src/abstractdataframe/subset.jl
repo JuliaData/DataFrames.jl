@@ -72,7 +72,7 @@ function assert_bool_vec(@nospecialize(fun))
 end
 
 function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
-                                (args,)::Ref{Any}, skipmissing::Bool)
+                                (args,)::Ref{Any}, skipmissing::Bool, multithreaded::Bool)
     cs_vec = []
     for v in map(x -> broadcast_pair(df isa GroupedDataFrame ? parent(df) : df, x), args)
         if v isa AbstractVecOrMat{<:Pair}
@@ -95,10 +95,12 @@ function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
     isempty(conditions) && throw(ArgumentError("at least one condition must be passed"))
 
     if df isa AbstractDataFrame
-        df_conditions = select(df, conditions..., copycols=!(df isa DataFrame))
+        df_conditions = select(df, conditions...,
+                               copycols=!(df isa DataFrame), multithreaded=multithreaded)
     else
         df_conditions = select(df, conditions...,
-                               copycols=!(parent(df) isa DataFrame), keepkeys=false)
+                               copycols=!(parent(df) isa DataFrame), keepkeys=false,
+                               multithreaded=multithreaded)
     end
 
     @assert ncol(df_conditions) == length(conditions)
@@ -130,9 +132,11 @@ function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
 end
 
 """
-    subset(df::AbstractDataFrame, args...; skipmissing::Bool=false, view::Bool=false)
-    subset(gdf::GroupedDataFrame, args...; skipmissing::Bool=false, view::Bool=false,
-           ungroup::Bool=true)
+    subset(df::AbstractDataFrame, args...;
+           skipmissing::Bool=false, view::Bool=false, multithreaded::Bool=true)
+    subset(gdf::GroupedDataFrame, args...;
+           skipmissing::Bool=false, view::Bool=false,
+           ungroup::Bool=true, multithreaded::Bool=true)
 
 Return a copy of data frame `df` or parent of `gdf` containing only rows for
 which all values produced by transformation(s) `args` for a given row are
@@ -156,6 +160,11 @@ If `view=true` a `SubDataFrame` view  is returned instead of a `DataFrame`.
 
 If `ungroup=false` the resulting data frame is re-grouped based on the same
 grouping columns as `gdf` and a `GroupedDataFrame` is returned.
+
+If `multithreaded=true` (the default) transformations may be run in separate tasks which
+can execute in parallel (possibly being applied to multiple rows or at the same time).
+Whether or not tasks are actually spawned and their number are determined automatically.
+Set to `false` if some transformations require serial execution or are not thread-safe.
 
 If a `GroupedDataFrame` is passed then it must include all groups present in the
 `parent` data frame, like in [`select!`](@ref).
@@ -229,18 +238,19 @@ julia> subset(groupby(df, :y), :v => x -> x .> minimum(x))
 ```
 """
 function subset(df::AbstractDataFrame, @nospecialize(args...);
-                skipmissing::Bool=false, view::Bool=false)
+                skipmissing::Bool=false, view::Bool=false, multithreaded::Bool=true)
     if isempty(args)
         row_selector = axes(df, 1)
     else
-        row_selector = _get_subset_conditions(df, Ref{Any}(args), skipmissing)
+        row_selector = _get_subset_conditions(df, Ref{Any}(args),
+                                              skipmissing, multithreaded)
     end
     return view ? Base.view(df, row_selector, :) : df[row_selector, :]
 end
 
 function subset(gdf::GroupedDataFrame, @nospecialize(args...);
                 skipmissing::Bool=false, view::Bool=false,
-                ungroup::Bool=true)
+                ungroup::Bool=true, multithreaded::Bool=true)
     df = parent(gdf)
     if isempty(args)
         if nrow(parent(gdf)) > 0 && minimum(gdf.groups) == 0
@@ -250,7 +260,8 @@ function subset(gdf::GroupedDataFrame, @nospecialize(args...);
         end
         row_selector = axes(df, 1)
     else
-        row_selector = _get_subset_conditions(gdf, Ref{Any}(args), skipmissing)
+        row_selector = _get_subset_conditions(gdf, Ref{Any}(args),
+                                              skipmissing, multithreaded)
     end
     res = view ? Base.view(df, row_selector, :) : df[row_selector, :]
     # TODO: in some cases it might be faster to groupby gdf.groups[row_selector]
@@ -258,9 +269,10 @@ function subset(gdf::GroupedDataFrame, @nospecialize(args...);
 end
 
 """
-    subset!(df::AbstractDataFrame, args...; skipmissing::Bool=false)
-    subset!(gdf::GroupedDataFrame{DataFrame}, args..., skipmissing::Bool=false,
-            ungroup::Bool=true)
+    subset!(df::AbstractDataFrame, args...;
+            skipmissing::Bool=false, multithreaded::Bool=true)
+    subset!(gdf::GroupedDataFrame{DataFrame}, args...;
+            skipmissing::Bool=false, ungroup::Bool=true, multithreaded::Bool=true)
 
 Update data frame `df` or the parent of `gdf` in place to contain only rows for
 which all values produced by transformation(s) `args` for a given row is `true`.
@@ -282,6 +294,11 @@ returns `missing` are skipped).
 
 If `ungroup=false` the passed `GroupedDataFrame` `gdf` is updated (preserving the order
 of its groups) and returned.
+
+If `multithreaded=true` (the default) transformations may be run in separate tasks which
+can execute in parallel (possibly being applied to multiple rows or at the same time).
+Whether or not tasks are actually spawned and their number are determined automatically.
+Set to `false` if some transformations require serial execution or are not thread-safe.
 
 If `GroupedDataFrame` is subsetted then it must include all groups present in
 the `parent` data frame, like in [`select!`](@ref). In this case the passed
@@ -370,14 +387,15 @@ julia> df
    2 │     4  false  false  missing     12
 ```
 """
-function subset!(df::AbstractDataFrame, @nospecialize(args...); skipmissing::Bool=false)
+function subset!(df::AbstractDataFrame, @nospecialize(args...);
+                skipmissing::Bool=false, multithreaded::Bool=true)
     isempty(args) && return df
-    row_selector = _get_subset_conditions(df, Ref{Any}(args), skipmissing)
+    row_selector = _get_subset_conditions(df, Ref{Any}(args), skipmissing, multithreaded)
     return deleteat!(df, findall(!, row_selector))
 end
 
 function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Bool=false,
-                 ungroup::Bool=true)
+                 ungroup::Bool=true, multithreaded::Bool=true)
     df = parent(gdf)
     if isempty(args)
         if nrow(parent(gdf)) > 0 && minimum(gdf.groups) == 0
@@ -390,7 +408,7 @@ function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Boo
     ngroups = length(gdf)
     groups = gdf.groups
     lazy_lock = gdf.lazy_lock
-    row_selector = _get_subset_conditions(gdf, Ref{Any}(args), skipmissing)
+    row_selector = _get_subset_conditions(gdf, Ref{Any}(args), skipmissing, multithreaded)
     res = deleteat!(df, findall(!, row_selector))
     if nrow(res) == length(groups) # we have not removed any rows
         return ungroup ? res : gdf

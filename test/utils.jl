@@ -149,63 +149,30 @@ end
     @test_throws AssertionError DataFrames.split_to_chunks(10, 11)
 end
 
-@testset "singlethreaded, setmultithreading, @spawn_or_run_task and @spawn_or_run" begin
-    t = DataFrames.@spawn_or_run_task 1
-    @test fetch(t) === 1
+@testset "@spawn_or_run_task and @spawn_or_run" begin
+    for multithreaded in (true, false)
+        t = DataFrames.@spawn_or_run_task multithreaded 1
+        @test fetch(t) === 1
 
-    x = Ref(false)
-    @sync begin
-        t = DataFrames.@spawn_or_run_task begin
-            sleep(0.1)
-            x[] = true
+        x = Ref(false)
+        @sync begin
+            t = DataFrames.@spawn_or_run_task multithreaded begin
+                sleep(0.1)
+                x[] = true
+            end
         end
-    end
-    @test x[]
+        @test x[]
 
-    x = Ref(false)
-    @sync begin
-        res = DataFrames.@spawn_or_run begin
-            sleep(0.1)
-            x[] = true
+        x = Ref(false)
+        @sync begin
+            res = DataFrames.@spawn_or_run multithreaded begin
+                sleep(0.1)
+                x[] = true
+            end
+            @test res === nothing
         end
-        @test res === nothing
+        @test x[]
     end
-    @test x[]
-
-    @test DataFrames.ismultithreaded()
-    @test DataFrames.setmultithreading(false) === false
-    @test !DataFrames.ismultithreaded()
-
-    t = DataFrames.@spawn_or_run_task 1
-    @test fetch(t) === 1
-
-    x = Ref(false)
-    @sync begin
-        t = DataFrames.@spawn_or_run_task begin
-            sleep(0.1)
-            x[] = true
-        end
-    end
-    @test x[]
-
-    x = Ref(false)
-    @sync begin
-        res = DataFrames.@spawn_or_run begin
-            sleep(0.1)
-            x[] = true
-        end
-        @test res === nothing
-    end
-    @test x[]
-
-    @test DataFrames.setmultithreading(true) === true
-    @test DataFrames.ismultithreaded()
-
-    @test DataFrames.singlethreaded() do
-        @test !DataFrames.ismultithreaded()
-        1
-    end === 1
-    @test DataFrames.ismultithreaded()
 end
 
 @testset "_findall(B::BitVector)" begin

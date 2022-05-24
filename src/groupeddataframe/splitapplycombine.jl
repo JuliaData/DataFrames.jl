@@ -25,7 +25,8 @@ end
 function _combine_prepare(gd::GroupedDataFrame,
                           (cs,)::Ref{Any};
                           keepkeys::Bool, ungroup::Bool, copycols::Bool,
-                          keeprows::Bool, renamecols::Bool)
+                          keeprows::Bool, renamecols::Bool,
+                          multithreaded::Bool)
     for cei in cs
         if !(cei isa AbstractMatrix && isempty(cei))
             @assert cei isa Union{Pair, Base.Callable, ColumnIndex,
@@ -48,13 +49,14 @@ function _combine_prepare(gd::GroupedDataFrame,
         end
     end
     return _combine_prepare_norm(gd, cs_vec, keepkeys, ungroup, copycols,
-                                 keeprows, renamecols)
+                                 keeprows, renamecols, multithreaded)
 end
 
 function _combine_prepare_norm(gd::GroupedDataFrame,
                                cs_vec::Vector{Any},
                                keepkeys::Bool, ungroup::Bool, copycols::Bool,
-                               keeprows::Bool, renamecols::Bool)
+                               keeprows::Bool, renamecols::Bool,
+                               multithreaded::Bool)
     if any(x -> x isa Pair && first(x) isa Tuple, cs_vec)
         x = cs_vec[findfirst(x -> first(x) isa Tuple, cs_vec)]
         # an explicit error is thrown as this was allowed in the past
@@ -81,7 +83,8 @@ function _combine_prepare_norm(gd::GroupedDataFrame,
     # if optional_transform[i] is true then the transformation will be skipped
     # if earlier column with a column with the same name was created
 
-    idx, valscat = _combine(gd, cs_norm, optional_transform, copycols, keeprows, renamecols)
+    idx, valscat = _combine(gd, cs_norm, optional_transform, copycols, keeprows,
+                            renamecols, multithreaded)
 
     !keepkeys && ungroup && return valscat
 
@@ -357,11 +360,13 @@ function _combine_process_callable(wcs_i::Ref{Any},
                                    gd::GroupedDataFrame,
                                    seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                    trans_res::Vector{TransformationResult},
-                                   idx_agg::Ref{Vector{Int}})
+                                   idx_agg::Ref{Vector{Int}},
+                                   multithreaded::Bool)
     cs_i = only(wcs_i)
     @assert cs_i isa Base.Callable
     firstres = length(gd) > 0 ? cs_i(gd[1]) : cs_i(similar(parentdf, 0))
-    idx, outcols, nms = _combine_multicol(Ref{Any}(firstres), wcs_i, gd, Ref{Any}(nothing))
+    idx, outcols, nms = _combine_multicol(Ref{Any}(firstres), wcs_i, gd,
+                                          Ref{Any}(nothing), multithreaded)
 
     if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
                             NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
@@ -410,7 +415,8 @@ function _combine_process_pair_symbol(optional_i::Bool,
                                       firstmulticol::Bool,
                                       (firstres,)::Ref{Any},
                                       wfun::Ref{Any},
-                                      wincols::Ref{Any})
+                                      wincols::Ref{Any},
+                                      multithreaded::Bool)
     @assert only(wfun) isa Base.Callable
     @assert only(wincols) isa Union{Tuple, NamedTuple}
 
@@ -434,7 +440,8 @@ function _combine_process_pair_symbol(optional_i::Bool,
     # NOTHING_IDX_AGG to signal that idx has to be computed in _combine_with_first
     idx, outcols, _ = _combine_with_first(Ref{Any}(wrap(firstres)), wfun, gd, wincols,
                                           firstmulticol,
-                                          firstres isa AbstractVector ? NOTHING_IDX_AGG : idx_agg[])
+                                          firstres isa AbstractVector ? NOTHING_IDX_AGG : idx_agg[],
+                                          multithreaded)
     @assert length(outcols) == 1
     outcol = outcols[1]
 
@@ -466,13 +473,14 @@ function _combine_process_pair_astable(optional_i::Bool,
                                        firstmulticol::Bool,
                                        (firstres,)::Ref{Any},
                                        wfun::Ref{Any},
-                                       wincols::Ref{Any})
+                                       wincols::Ref{Any},
+                                       multithreaded::Bool)
     fun = only(wfun)
     @assert fun isa Base.Callable
     @assert only(wincols) isa Union{Tuple, NamedTuple}
     if firstres isa AbstractVector
         idx, outcol_vec, _ = _combine_with_first(Ref{Any}(wrap(firstres)), wfun, gd, wincols,
-                                                 firstmulticol, NOTHING_IDX_AGG)
+                                                 firstmulticol, NOTHING_IDX_AGG, multithreaded)
         @assert length(outcol_vec) == 1
         res = outcol_vec[1]
         @assert length(res) > 0
@@ -494,7 +502,8 @@ function _combine_process_pair_astable(optional_i::Bool,
             oldfun = fun
             fun = (x...) -> Tables.columntable(oldfun(x...))
         end
-        idx, outcols, nms = _combine_multicol(Ref{Any}(firstres), Ref{Any}(fun), gd, wincols)
+        idx, outcols, nms = _combine_multicol(Ref{Any}(firstres), Ref{Any}(fun), gd,
+                                              wincols, multithreaded)
 
         if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
             NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
@@ -562,7 +571,8 @@ function _combine_process_pair((cs_i,)::Ref{Any},
                                gd::GroupedDataFrame,
                                seen_cols::Dict{Symbol, Tuple{Bool, Int}},
                                trans_res::Vector{TransformationResult},
-                               idx_agg::Ref{Vector{Int}})
+                               idx_agg::Ref{Vector{Int}},
+                               multithreaded::Bool)
     @assert cs_i isa Pair
 
     source_cols, (fun, out_col_name) = cs_i
@@ -586,12 +596,12 @@ function _combine_process_pair((cs_i,)::Ref{Any},
     if out_col_name isa Symbol
         return _combine_process_pair_symbol(optional_i, gd, seen_cols, trans_res, idx_agg,
                                             out_col_name, firstmulticol, Ref{Any}(firstres),
-                                            Ref{Any}(fun), Ref{Any}(incols))
+                                            Ref{Any}(fun), Ref{Any}(incols), multithreaded)
     end
     if out_col_name == AsTable || out_col_name isa AbstractVector{Symbol}
         return _combine_process_pair_astable(optional_i, gd, seen_cols, trans_res, idx_agg,
                                              out_col_name, firstmulticol, Ref{Any}(firstres),
-                                             Ref{Any}(fun), Ref{Any}(incols))
+                                             Ref{Any}(fun), Ref{Any}(incols), multithreaded)
     end
     throw(ArgumentError("unsupported target column name specifier $out_col_name"))
 end
@@ -615,7 +625,8 @@ end
 
 function _combine(gd::GroupedDataFrame,
                   cs_norm::Vector{Any}, optional_transform::Vector{Bool},
-                  copycols::Bool, keeprows::Bool, renamecols::Bool)
+                  copycols::Bool, keeprows::Bool, renamecols::Bool,
+                  multithreaded::Bool)
     if isempty(cs_norm)
         if keeprows && nrow(parent(gd)) > 0 && minimum(gd.groups) == 0
             throw(ArgumentError("select and transform do not support " *
@@ -666,7 +677,7 @@ function _combine(gd::GroupedDataFrame,
     for i in eachindex(cs_norm, optional_transform, tasks)
         cs_i = cs_norm[i]
         optional_i = optional_transform[i]
-        tasks[i] = @spawn_or_run_task if length(gd) > 0 && isagg(cs_i, gd)
+        tasks[i] = @spawn_or_run_task multithreaded if length(gd) > 0 && isagg(cs_i, gd)
             _combine_process_agg(Ref{Any}(cs_i), optional_i, parentdf, gd,
                                  seen_cols, trans_res, idx_agg[])
         elseif keeprows && cs_i isa Pair && first(last(cs_i)) === identity &&
@@ -677,7 +688,7 @@ function _combine(gd::GroupedDataFrame,
                                   seen_cols, trans_res, idx_keeprows, copycols)
         elseif cs_i isa Base.Callable
             _combine_process_callable(Ref{Any}(cs_i), optional_i, parentdf, gd,
-                                      seen_cols, trans_res, idx_agg)
+                                      seen_cols, trans_res, idx_agg, multithreaded)
         else
             @assert cs_i isa Pair
             if first(cs_i) isa Vector{Int} && isempty(first(cs_i)) &&
@@ -690,7 +701,7 @@ function _combine(gd::GroupedDataFrame,
                                          seen_cols, trans_res, idx_agg[])
             else
                 _combine_process_pair(Ref{Any}(cs_i), optional_i, parentdf, gd,
-                                      seen_cols, trans_res, idx_agg)
+                                      seen_cols, trans_res, idx_agg, multithreaded)
             end
         end
     end
@@ -760,8 +771,8 @@ function _combine(gd::GroupedDataFrame,
 
     @sync for i in eachindex(trans_res)
         let i=i
-            @spawn_or_run reorder_cols!(trans_res, i, trans_res[i].col, trans_res[i].col_idx,
-                                        keeprows, idx_keeprows, gd)
+            @spawn_or_run multithreaded reorder_cols!(trans_res, i, trans_res[i].col, trans_res[i].col_idx,
+                                                      keeprows, idx_keeprows, gd)
         end
     end
 
@@ -793,15 +804,18 @@ function reorder_cols!(trans_res::Vector{TransformationResult}, i::Integer,
 end
 
 function combine(@nospecialize(f::Base.Callable), gd::GroupedDataFrame;
-                 keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
+                 keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
+                 multithreaded::Bool=true)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a GroupedDataFrame"))
     end
-    return combine(gd, f, keepkeys=keepkeys, ungroup=ungroup, renamecols=renamecols)
+    return combine(gd, f, keepkeys=keepkeys, ungroup=ungroup, renamecols=renamecols,
+                   multithreaded=multithreaded)
 end
 
 combine(@nospecialize(f::Pair), gd::GroupedDataFrame;
-        keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
+        keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
+        multithreaded::Bool=true) =
     throw(ArgumentError("First argument must be a transformation if the second argument is a GroupedDataFrame. " *
                         "You can pass a `Pair` as the second argument of the transformation. If you want the return " *
                         "value to be processed as having multiple columns add `=> AsTable` suffix to the pair."))
@@ -809,68 +823,82 @@ combine(@nospecialize(f::Pair), gd::GroupedDataFrame;
 combine(gd::GroupedDataFrame,
         @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
                                   AbstractVecOrMat}...);
-        keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
+        keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
+        multithreaded::Bool=true) =
     _combine_prepare(gd, Ref{Any}(map(x -> broadcast_pair(parent(gd), x), args)),
                      keepkeys=keepkeys, ungroup=ungroup,
-                     copycols=true, keeprows=false, renamecols=renamecols)
+                     copycols=true, keeprows=false, renamecols=renamecols,
+                     multithreaded=multithreaded)
 
 function select(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols::Bool=true,
-                keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
+                keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
+                multithreaded::Bool=true)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
     end
-    return select(gd, f, copycols=copycols, keepkeys=keepkeys, ungroup=ungroup)
+    return select(gd, f, copycols=copycols, keepkeys=keepkeys, ungroup=ungroup,
+                  multithreaded=multithreaded)
 end
 
 select(gd::GroupedDataFrame, @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
                                                        AbstractVecOrMat}...);
-       copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
+       copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
+       multithreaded::Bool=true) =
     _combine_prepare(gd, Ref{Any}(map(x -> broadcast_pair(parent(gd), x), args)),
                      copycols=copycols, keepkeys=keepkeys,
-                     ungroup=ungroup, keeprows=true, renamecols=renamecols)
+                     ungroup=ungroup, keeprows=true, renamecols=renamecols,
+                     multithreaded=multithreaded)
 
 function transform(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols::Bool=true,
-                keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
+                   keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
+                   multithreaded::Bool=true)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
     end
-    return transform(gd, f, copycols=copycols, keepkeys=keepkeys, ungroup=ungroup)
+    return transform(gd, f, copycols=copycols, keepkeys=keepkeys, ungroup=ungroup,
+                     multithreaded=multithreaded)
 end
 
 function transform(gd::GroupedDataFrame, @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
                                                                    AbstractVecOrMat}...);
-                   copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
+                   copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true,
+                   renamecols::Bool=true,
+                   multithreaded::Bool=true)
     res = select(gd, :, args..., copycols=copycols, keepkeys=keepkeys,
-                 ungroup=ungroup, renamecols=renamecols)
+                 ungroup=ungroup, renamecols=renamecols, multithreaded=multithreaded)
     # res can be a GroupedDataFrame based on DataFrame or a DataFrame,
     # so parent always gives a data frame
-    select!(parent(res), propertynames(parent(gd)), :)
+    select!(parent(res), propertynames(parent(gd)), :, multithreaded=multithreaded)
     return res
 end
 
-function select!(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; ungroup::Bool=true, renamecols::Bool=true)
+function select!(@nospecialize(f::Base.Callable), gd::GroupedDataFrame;
+                 ungroup::Bool=true, renamecols::Bool=true, multithreaded::Bool=true)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
     end
-    return select!(gd, f, ungroup=ungroup)
+    return select!(gd, f, ungroup=ungroup, multithreaded=multithreaded)
 end
 
 function select!(gd::GroupedDataFrame,
                  @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
                                            AbstractVecOrMat}...);
-                 ungroup::Bool=true, renamecols::Bool=true)
+                 ungroup::Bool=true, renamecols::Bool=true, multithreaded::Bool=true)
     df = parent(gd)
     if df isa DataFrame
-        newdf = select(gd, args..., copycols=false, renamecols=renamecols)
+        newdf = select(gd, args..., copycols=false, renamecols=renamecols,
+                       multithreaded=multithreaded)
     else
         @assert df isa SubDataFrame
-        newdf = select(gd, args..., copycols=true, renamecols=renamecols)
+        newdf = select(gd, args..., copycols=true, renamecols=renamecols,
+                       multithreaded=multithreaded)
     end
     _replace_columns!(df, newdf)
     return ungroup ? df : gd
 end
 
-function transform!(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; ungroup::Bool=true, renamecols::Bool=true)
+function transform!(@nospecialize(f::Base.Callable), gd::GroupedDataFrame;
+                    ungroup::Bool=true, renamecols::Bool=true, multithreaded::Bool=true)
     if f isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a grouped data frame"))
     end
@@ -880,15 +908,17 @@ end
 function transform!(gd::GroupedDataFrame,
                     @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
                                               AbstractVecOrMat}...);
-                    ungroup::Bool=true, renamecols::Bool=true)
+                    ungroup::Bool=true, renamecols::Bool=true, multithreaded::Bool=true)
     df = parent(gd)
     if df isa DataFrame
-        newdf = select(gd, :, args..., copycols=false, renamecols=renamecols)
+        newdf = select(gd, :, args..., copycols=false, renamecols=renamecols,
+                       multithreaded=multithreaded)
     else
         @assert df isa SubDataFrame
-        newdf = select(gd, :, args..., copycols=true, renamecols=renamecols)
+        newdf = select(gd, :, args..., copycols=true, renamecols=renamecols,
+                       multithreaded=multithreaded)
     end
-    select!(newdf, propertynames(df), :)
+    select!(newdf, propertynames(df), :, multithreaded=multithreaded)
     _replace_columns!(df, newdf)
     return ungroup ? df : gd
 end

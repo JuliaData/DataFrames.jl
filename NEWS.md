@@ -28,8 +28,8 @@
   ([#3012](https://github.com/JuliaData/DataFrames.jl/issues/3012))
 * Guarantee that `permute!` and `invpermute!` throw on invalid input
   ([#3035](https://github.com/JuliaData/DataFrames.jl/pull/3035))
-* New experimental functions `DataFrames.singlethreaded` and `DataFrames.setmultithreading`
-  allow disabling multithreading in all DataFrames.jl operations
+* New `multithreaded` argument allows disabling multithreading in
+  `combine`, `select`, `select!`, `transform`, `transform!`, `subset` and `subset!`
   ([#3030](https://github.com/JuliaData/DataFrames.jl/pull/3030))
 
 ## Previously announced breaking changes
