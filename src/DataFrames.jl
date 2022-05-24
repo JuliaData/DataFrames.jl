@@ -108,8 +108,7 @@ end
 if isdefined(Base, :keepat!)  # Introduced in 1.7.0
     import Base.keepat!
 else
-    # TODO: uncomment when keepat! is added to Compat.jl
-    # import Compat.keepat!
+    import Compat.keepat!
     export keepat!
 end
 
