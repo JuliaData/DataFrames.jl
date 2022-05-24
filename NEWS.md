@@ -38,8 +38,6 @@
   ([#3031](https://github.com/JuliaData/DataFrames.jl/pull/3031))
 * Add `keepat!` and `pop!`, `popfirst!`, `popat!`
    ([#3047](https://github.com/JuliaData/DataFrames.jl/pull/3047))
-* In `deleteat!` allow unsorted or duplicate indices passed
-   ([#3047](https://github.com/JuliaData/DataFrames.jl/pull/3047))
 
 ## Previously announced breaking changes
 

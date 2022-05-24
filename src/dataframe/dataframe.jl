@@ -792,7 +792,7 @@ julia> deleteat!(df, 2)
    2 │     3      6
 ```
 """
-function Base.deleteat!(df::DataFrame, inds::AbstractVector)
+function Base.deleteat!(df::DataFrame, inds)
     if !isempty(inds) && size(df, 2) == 0
         throw(BoundsError(df, (inds, :)))
     end
@@ -823,34 +823,10 @@ end
 
 Base.deleteat!(df::DataFrame, inds::Not) = deleteat!(df, axes(df, 1)[inds])
 
-function _isincreasing(v::AbstractVector)
-    length(v) < 2 && return true
-    last = v[begin]
-    for i in firstindex(v)+1:lastindex(v)
-        cur = @inbounds x[i]
-        cur > last || return false
-        last = cur
+function _deleteat!_helper(df::DataFrame, drop)
+    if !issorted(drop, lt=<=)
+        throw(ArgumentError("Indices passed to deleteat! must be unique and sorted"))
     end
-    return true
-end
-
-function _uniquesorted(v::AbstractVector)
-    x = sort(v)
-    # here we know that length of v is at least 2
-    last = v[begin]
-    u = eltype(v)[last]
-    for i in firstindex(v)+1:lastindex(v)
-        cur = @inbounds x[i]
-        cur == last && continue
-        push!(u, cur)
-        last = cur
-    end
-    return u
-end
-
-function _deleteat!_helper(df::DataFrame,
-                           drop_raw::AbstractVector{<:Union{Signed, Unsigned}})
-    drop = _isincreasing(drop_raw) ? drop_raw : _uniquesorted(drop_raw)
     cols = _columns(df)
     isempty(cols) && return df
 
@@ -900,7 +876,20 @@ julia> keepat!(df, [1, 3])
    2 │     3      6
 ```
 """
-keepat!(df::DataFrame, inds) = deleteat!(df, Not(inds))
+function keepat!(df::DataFrame, inds)
+    if !issorted(inds, lt=<=)
+        throw(ArgumentError("Indices passed to keepat! must be unique and sorted"))
+    end
+    return deleteat!(df, Not(inds))
+end
+
+function keepat!(df::DataFrame, inds::Integer)
+    inds isa Bool && throw(ArgumentError("Invalid index of type Bool"))
+    return keepat!(df, Int[inds])
+end
+
+keepat!(df::DataFrame, inds::AbstractVector{Bool}) = deleteat!(df, .!inds)
+keepat!(df::DataFrame, inds::Not) = keepat!(df, axes(df, 1)[inds])
 
 """
     empty!(df::DataFrame)
@@ -918,6 +907,10 @@ end
 Resize `df` to have `n` rows by calling `resize!` on all columns of `df`.
 """
 function Base.resize!(df::DataFrame, n::Integer)
+    if ncol(df) == 0 && n != 0
+        throw(ArgumentError("data frame has no columns and requested number " *
+                            "of rows is not zero"))
+    end
     foreach(col -> resize!(col, n), eachcol(df))
     return df
 end
@@ -927,21 +920,21 @@ end
 
 Remove the last row from `df` and return a `NamedTuple` created from this row.
 """
-pop!(df::DataFrame) = popat!(df, nrow(df))
+Base.pop!(df::DataFrame) = popat!(df, nrow(df))
 
 """
     popfirst!(df::DataFrame)
 
 Remove the first row from `df` and return a `NamedTuple` created from this row.
 """
-popfirst!(df::DataFrame) = popat!(df, 1)
+Base.popfirst!(df::DataFrame) = popat!(df, 1)
 
 """
     popat!(df::DataFrame, i::Integer)
 
 Remove the `i`-th row from `df` and return a `NamedTuple` created from this row.
 """
-function popat!(df::DataFrame, i::Integer)
+function Base.popat!(df::DataFrame, i::Integer)
     nt = NamedTuple(df[i, :])
     deleteat!(df, i)
     return nt
