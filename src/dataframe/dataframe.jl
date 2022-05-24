@@ -769,9 +769,6 @@ end
 
 Delete rows specified by `inds` from a `DataFrame` `df` in place and return it.
 
-`inds` do not have to be sorted nor unique. Non-unique elements of `inds`
-are de-duplicated before deleting rows.
-
 # Examples
 ```jldoctest
 julia> df = DataFrame(a=1:3, b=4:6)

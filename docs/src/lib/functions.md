@@ -147,11 +147,12 @@ filter!
 keepat!
 first
 last
+nonunique
 only
 pop!
 popat!
 popfirst!
-nonunique
+resize!
 subset
 subset!
 unique
