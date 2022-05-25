@@ -4,6 +4,11 @@
 
 * `subset` and `subset!` now allow passing zero column selectors
    ([#3025](https://github.com/JuliaData/DataFrames.jl/pull/3025))
+* `subset` and `subset!` processing `GroupedDataFrame` allow using a scalar as
+  a subsetting condition (this will result in including/excluding a whole group);
+  for `AbstractDataFrame` processing only `AbstractVector` subsetting condition is
+  allowed as accepting scalars can lead to hard to catch bugs in users' code
+  ([#3032](https://github.com/JuliaData/DataFrames.jl/pull/3032))
 * `permutedims` now supports a `strict` keyword argument that allows
   for a more flexible handling of values stored in a column that will
   become a new header
@@ -28,6 +33,9 @@
   ([#3012](https://github.com/JuliaData/DataFrames.jl/issues/3012))
 * Guarantee that `permute!` and `invpermute!` throw on invalid input
   ([#3035](https://github.com/JuliaData/DataFrames.jl/pull/3035))
+* Add `allcombinations` function that returns a data frame created
+  from all combinations of the passed vectors
+  ([#3031](https://github.com/JuliaData/DataFrames.jl/pull/3031))
 * New `multithreaded` argument allows disabling multithreading in
   `combine`, `select`, `select!`, `transform`, `transform!`, `subset` and `subset!`
   ([#3030](https://github.com/JuliaData/DataFrames.jl/pull/3030))
@@ -37,13 +45,30 @@
 * On Julia 1.7 or newer broadcasting assignment
   into an existing column of a data frame replaces it. Under Julia 1.6
   or older it is an in place operation.
-  ([#3022](https://github.com/JuliaData/DataFrames.jl/pull/3022)
+  ([#3022](https://github.com/JuliaData/DataFrames.jl/pull/3022))
 
 ## Performance
 
-* Speed up `permute!` and `invpermute!` (and therefore sorting) 2x-8x 
+* Speed up `permute!` and `invpermute!` (and therefore sorting) 2x-8x
   for large tables by using cycle notation
   ([#3035](https://github.com/JuliaData/DataFrames.jl/pull/3035))
+* Make one-dimensional multi-element indexing of `DataFrameRows` return
+  `DataFrameRows`
+  ([#3037](https://github.com/JuliaData/DataFrames.jl/pull/3037))
+
+# DataFrames.jl v1.3.4 Patch Release Notes
+
+## Bug fixes
+
+* Fix handling of `variable_eltype` in `stack`
+  ([#3043](https://github.com/JuliaData/DataFrames.jl/issues/3043))
+
+# DataFrames.jl v1.3.3 Patch Release Notes
+
+## Bug fixes
+
+* Fix handling of `matchmissing` keyword argument in joins
+  ([#3040](https://github.com/JuliaData/DataFrames.jl/issues/3040))
 
 # DataFrames.jl v1.3.2 Patch Release Notes
 

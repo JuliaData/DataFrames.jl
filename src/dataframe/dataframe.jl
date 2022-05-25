@@ -1,17 +1,17 @@
 """
     DataFrame <: AbstractDataFrame
 
-An AbstractDataFrame that stores a set of named columns
+An `AbstractDataFrame` that stores a set of named columns
 
-The columns are normally AbstractVectors stored in memory,
-particularly a Vector or CategoricalVector.
+The columns are normally `AbstractVector`s stored in memory,
+particularly a `Vector`, `PooledVector` or `CategoricalVector`.
 
 # Constructors
 ```julia
 DataFrame(pairs::Pair...; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(ds::AbstractDict; copycols::Bool=true)
-DataFrame(kwargs..., copycols::Bool=true)
+DataFrame(; kwargs..., copycols::Bool=true)
 
 DataFrame(columns::AbstractVecOrMat,
           names::AbstractVector;
@@ -1571,4 +1571,94 @@ function _replace_columns!(df::DataFrame, newdf::DataFrame)
     copy!(_names(index(df)), _names(newdf))
     copy!(index(df).lookup, index(newdf).lookup)
     return df
+end
+
+allcombinations(::Type{DataFrame}; kwargs...) =
+    isempty(kwargs) ? DataFrame() : allcombinations(DataFrame, kwargs...)
+
+allcombinations(::Type{DataFrame}, pairs::Pair{<:AbstractString, <:Any}...) =
+    allcombinations(DataFrame, (Symbol(k) => v for (k, v) in pairs)...)
+
+"""
+    allcombinations(DataFrame, pairs::Pair...)
+    allcombinations(DataFrame; kwargs...)
+
+Create a `DataFrame` from all combinations of values in passed arguments.
+
+Arguments associating a column name with values to expand can be specified
+either as `Pair`s passed as positional arguments, or as keyword arguments.
+Column names must be `Symbol`s or strings and must be unique.
+
+Column value can be a vector which is consumed as is or an object of any other
+type (except `AbstractArray`). In the latter case the passed value is treated
+as having length one for expansion. As a particular rule values stored in a `Ref`
+or a `0`-dimensional `AbstractArray` are unwrapped and treated as having length one.
+
+See also: [`crossjoin`](@ref) can be used to get the cartesian product
+of rows from passed data frames.
+
+# Examples
+
+```jldoctest
+julia> allcombinations(DataFrame, a=1:2, b='a':'c')
+6×2 DataFrame
+ Row │ a      b
+     │ Int64  Char
+─────┼─────────────
+   1 │     1  a
+   2 │     2  a
+   3 │     1  b
+   4 │     2  b
+   5 │     1  c
+   6 │     2  c
+
+julia> allcombinations(DataFrame, "a" => 1:2, "b" => 'a':'c', "c" => "const")
+6×3 DataFrame
+ Row │ a      b     c
+     │ Int64  Char  String
+─────┼─────────────────────
+   1 │     1  a     const
+   2 │     2  a     const
+   3 │     1  b     const
+   4 │     2  b     const
+   5 │     1  c     const
+   6 │     2  c     const
+```
+"""
+function allcombinations(::Type{DataFrame}, pairs::Pair{Symbol, <:Any}...)
+    colnames = first.(pairs)
+    if !allunique(colnames)
+        throw(ArgumentError("All column names passed to allcombinations must be unique"))
+    end
+    colvalues = map(pairs) do p
+        v = last(p)
+        if v isa AbstractVector
+            return v
+        elseif v isa Union{AbstractArray{<:Any, 0}, Ref}
+            x = v[]
+            return fill!(Tables.allocatecolumn(typeof(x), 1), x)
+        elseif v isa AbstractArray
+            throw(ArgumentError("adding AbstractArray other than AbstractVector " *
+                                "as a column of a data frame is not allowed"))
+        else
+            return fill!(Tables.allocatecolumn(typeof(v), 1), v)
+        end
+    end
+    @assert length(colvalues) == length(colnames)
+    @assert all(x -> x isa AbstractVector, colvalues)
+
+    target_rows = Int(prod(x -> big(length(x)), colvalues))
+    out_df = DataFrame()
+    inner = 1
+    for (val, cname) in zip(colvalues, colnames)
+        len = length(val)
+        last_inner = inner
+        inner *= len
+        outer, remv = inner == 0 ? (0, 0) : divrem(target_rows, inner)
+        @assert iszero(remv)
+        out_df[!, cname] = repeat(val, inner=last_inner, outer=outer)
+    end
+    @assert inner == target_rows
+    @assert size(out_df) == (target_rows, length(colnames))
+    return out_df
 end

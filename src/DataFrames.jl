@@ -11,6 +11,7 @@ using PrettyTables
 using Random
 
 import DataAPI,
+       DataAPI.allcombinations,
        DataAPI.All,
        DataAPI.Between,
        DataAPI.Cols,
@@ -39,6 +40,7 @@ export AbstractDataFrame,
        GroupedDataFrame,
        SubDataFrame,
        Tables,
+       allcombinations,
        allowmissing!,
        antijoin,
        columnindex,

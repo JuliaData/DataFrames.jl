@@ -497,7 +497,7 @@ for collections, but it is generally recommended to use the [`subset`](@ref)
 and [`subset!`](@ref) functions instead, as they are consistent with other
 DataFrames.jl functions (as opposed to [`filter`](@ref) and [`filter!`](@ref)).
 
-### Selecting and transforming columns
+## Selecting and transforming columns
 
 You can also use the [`select`](@ref)/[`select!`](@ref) and
 [`transform`](@ref)/[`transform!`](@ref) functions to select, rename and

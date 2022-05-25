@@ -200,4 +200,27 @@ end
     @test findall(col -> eltype(col) <: Int, cols) == [1, 3]
 end
 
+@testset "multirow indexing of DataFrameRows" begin
+    df = DataFrame(a=1:4, b=11:14)
+    er = eachrow(df)
+    for sel in (1:2, Not(3:4), [true, true, false, false])
+        er2 = er[sel]
+        @test er2 isa DataFrames.DataFrameRows
+        @test parent(er2) isa SubDataFrame
+        @test parent(parent(er2)) === df
+        @test collect(er2) == [er[1], er[2]]
+    end
+    er2 = er[:]
+    @test er2 == er
+    @test er2 isa DataFrames.DataFrameRows
+    er2 = er[2:1]
+    @test length(er2) == 0
+    @test isempty(parent(er2))
+
+    # this is still allowed
+    er2 = er[1:2, 1]
+    @test er2 isa Vector{DataFrameRow}
+    @test er2 == er[1:2]
+end
+
 end # module

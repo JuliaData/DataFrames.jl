@@ -46,6 +46,7 @@ Pages = ["functions.md"]
 
 ## Constructing data frames
 ```@docs
+allcombinations
 copy
 similar
 ```
