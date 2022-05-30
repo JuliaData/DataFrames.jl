@@ -2276,7 +2276,10 @@ generate a vector of column names for us rather than writing them all out manual
 Consider a data frame with temperature data at three different locations taken over time.
 
 ```julia
-julia> df = DataFrame(Time = 1:4, Temperature1 = [20, 23, 25, 28], Temperature2 = [33, 37, 41, 44], Temperature3 = [15, 10, 4, 0])
+julia> df = DataFrame(Time = 1:4,
+                      Temperature1 = [20, 23, 25, 28],
+                      Temperature2 = [33, 37, 41, 44],
+                      Temperature3 = [15, 10, 4, 0])
 4×4 DataFrame
  Row │ Time   Temperature1  Temperature2  Temperature3
      │ Int64  Int64         Int64         Int64
