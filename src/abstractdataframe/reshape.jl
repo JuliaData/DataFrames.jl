@@ -200,15 +200,15 @@ end
     unstack(df::AbstractDataFrame, rowkeys, colkey, value;
             renamecols::Function=identity, allowmissing::Bool=false,
             allowduplicates::Bool=false, valuestransform=nothing,
-            fill=missing)
+            fill=missing, multithreaded::Bool=true)
     unstack(df::AbstractDataFrame, colkey, value;
             renamecols::Function=identity, allowmissing::Bool=false,
             allowduplicates::Bool=false, valuestransform=nothing,
-            fill=missing)
+            fill=missing, multithreaded::Bool=true)
     unstack(df::AbstractDataFrame;
             renamecols::Function=identity, allowmissing::Bool=false,
             allowduplicates::Bool=false, valuestransform=nothing,
-            fill=missing)
+            fill=missing, multithreaded::Bool=true)
 
 Unstack data frame `df`, i.e. convert it from long to wide format.
 
@@ -244,6 +244,10 @@ Row and column keys will be ordered in the order of their first appearance.
   default is `missing`. If the `value` column is a `CategoricalVector` and
   `fill` is not `missing` then in order to keep unstacked value columns also
   `CategoricalVector` the `fill` must be passed as `CategoricalValue`
+  - `multithreaded`: whether `valuestransform` may be run in separate tasks which
+  can execute in parallel (possibly being applied to multiple groups at the same time).
+  Whether or not tasks are actually spawned and their number are determined automatically.
+  Set to `false` if `valuestransform` requires serial execution or is not thread-safe.
 
 # Examples
 
@@ -396,7 +400,8 @@ julia> unstack(df, :cols, :values, valuestransform=sum)
 function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
                  values::ColumnIndex; renamecols::Function=identity,
                  allowmissing::Bool=false, allowduplicates::Bool=false,
-                 valuestransform=nothing, fill=missing)
+                 valuestransform=nothing, fill=missing,
+                 multithreaded::Bool=true)
     if !isnothing(valuestransform)
         groupcols = vcat(index(df)[rowkeys], index(df)[colkey])
         @assert groupcols isa AbstractVector{Int}
@@ -412,7 +417,8 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
             # Ref that will get unwrapped by combine
             agg_fun = Ref∘valuestransform
         end
-        df_op = combine(gdf, values => agg_fun, renamecols=false)
+        df_op = combine(gdf, values => agg_fun,
+                        renamecols=false, multithreaded=multithreaded)
         group_rows = find_group_row(gdf)
         if !issorted(group_rows)
             df_op = df_op[sortperm(group_rows), :]
@@ -436,19 +442,23 @@ end
 function unstack(df::AbstractDataFrame, colkey::ColumnIndex, values::ColumnIndex;
                  renamecols::Function=identity,
                  allowmissing::Bool=false, allowduplicates::Bool=false,
-                 valuestransform=nothing, fill=missing)
+                 valuestransform=nothing, fill=missing,
+                 multithreaded::Bool=true)
     colkey_int = index(df)[colkey]
     value_int = index(df)[values]
     return unstack(df, Not(colkey_int, value_int), colkey_int, value_int,
             renamecols=renamecols, allowmissing=allowmissing,
-            allowduplicates=allowduplicates, valuestransform=valuestransform, fill=fill)
+            allowduplicates=allowduplicates, valuestransform=valuestransform,
+            fill=fill, multithreaded=multithreaded)
 end
 
 unstack(df::AbstractDataFrame; renamecols::Function=identity,
         allowmissing::Bool=false, allowduplicates::Bool=false,
-        valuestransform=nothing, fill=missing) =
+        valuestransform=nothing, fill=missing,
+        multithreaded::Bool=true) =
     unstack(df, :variable, :value, renamecols=renamecols, allowmissing=allowmissing,
-            allowduplicates=allowduplicates, valuestransform=valuestransform, fill=fill)
+            allowduplicates=allowduplicates, valuestransform=valuestransform,
+            fill=fill, multithreaded=multithreaded)
 
 # we take into account the fact that idx, starts and ends are computed lazily
 # so we rather directly reference the gdf.groups

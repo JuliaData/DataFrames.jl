@@ -185,7 +185,7 @@ If `ungroup=false` the resulting data frame is re-grouped based on the same
 grouping columns as `gdf` and a `GroupedDataFrame` is returned.
 
 If `multithreaded=true` (the default) transformations may be run in separate tasks which
-can execute in parallel (possibly being applied to multiple rows or at the same time).
+can execute in parallel (possibly being applied to multiple rows or groups at the same time).
 Whether or not tasks are actually spawned and their number are determined automatically.
 Set to `false` if some transformations require serial execution or are not thread-safe.
 
@@ -329,7 +329,7 @@ If `ungroup=false` the passed `GroupedDataFrame` `gdf` is updated (preserving
 the order of its groups) and returned.
 
 If `multithreaded=true` (the default) transformations may be run in separate tasks which
-can execute in parallel (possibly being applied to multiple rows or at the same time).
+can execute in parallel (possibly being applied to multiple rows or groups at the same time).
 Whether or not tasks are actually spawned and their number are determined automatically.
 Set to `false` if some transformations require serial execution or are not thread-safe.
 

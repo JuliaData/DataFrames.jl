@@ -907,7 +907,7 @@ $TRANSFORMATION_COMMON_RULES
 - `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
 - `multithreaded::Bool=true` : whether transformations may be run in separate tasks which
-  can execute in parallel (possibly being applied to multiple rows or at the same time).
+  can execute in parallel (possibly being applied to multiple rows or groups at the same time).
   Whether or not tasks are actually spawned and their number are determined automatically.
   Set to `false` if some transformations require serial execution or are not thread-safe.
 
@@ -915,11 +915,13 @@ See [`select`](@ref) for examples.
 """
 select!(df::DataFrame, @nospecialize(args...);
         renamecols::Bool=true, multithreaded::Bool=true) =
-    _replace_columns!(df, select(df, args..., copycols=false, renamecols=renamecols))
+    _replace_columns!(df, select(df, args..., copycols=false,
+                                 renamecols=renamecols, multithreaded=multithreaded))
 
 select!(df::SubDataFrame, @nospecialize(args...);
         renamecols::Bool=true, multithreaded::Bool=true) =
-    _replace_columns!(df, select(df, args..., copycols=true, renamecols=renamecols))
+    _replace_columns!(df, select(df, args..., copycols=true,
+                                 renamecols=renamecols, multithreaded=multithreaded))
 
 function select!(@nospecialize(arg::Base.Callable), df::AbstractDataFrame;
                  renamecols::Bool=true, multithreaded::Bool=true)
@@ -952,7 +954,7 @@ $TRANSFORMATION_COMMON_RULES
 - `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
 - `multithreaded::Bool=true` : whether transformations may be run in separate tasks which
-  can execute in parallel (possibly being applied to multiple rows or at the same time).
+  can execute in parallel (possibly being applied to multiple rows or groups at the same time).
   Whether or not tasks are actually spawned and their number are determined automatically.
   Set to `false` if some transformations require serial execution or are not thread-safe.
 
@@ -999,7 +1001,7 @@ $TRANSFORMATION_COMMON_RULES
 - `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
 - `multithreaded::Bool=true` : whether transformations may be run in separate tasks which
-  can execute in parallel (possibly being applied to multiple rows or at the same time).
+  can execute in parallel (possibly being applied to multiple rows or groups at the same time).
   Whether or not tasks are actually spawned and their number are determined automatically.
   Set to `false` if some transformations require serial execution or are not thread-safe.
 
@@ -1259,8 +1261,7 @@ julia> select(gd, nrow, proprow, groupindices, eachindex)
 select(df::AbstractDataFrame, @nospecialize(args...);
        copycols::Bool=true, renamecols::Bool=true, multithreaded::Bool=true) =
     manipulate(df, map(x -> broadcast_pair(df, x), args)...,
-               copycols=copycols, keeprows=true,
-               renamecols=renamecols, multithreaded=multithreaded)
+               copycols=copycols, keeprows=true, renamecols=renamecols)
 
 function select(@nospecialize(arg::Base.Callable), df::AbstractDataFrame;
                 renamecols::Bool=true, multithreaded::Bool=true)
@@ -1298,7 +1299,7 @@ $TRANSFORMATION_COMMON_RULES
 - `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
 - `multithreaded::Bool=true` : whether transformations may be run in separate tasks which
-  can execute in parallel (possibly being applied to multiple rows or at the same time).
+  can execute in parallel (possibly being applied to multiple rows or groups at the same time).
   Whether or not tasks are actually spawned and their number are determined automatically.
   Set to `false` if some transformations require serial execution or are not thread-safe.
 
@@ -1374,7 +1375,7 @@ $TRANSFORMATION_COMMON_RULES
 - `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
 - `multithreaded::Bool=true` : whether transformations may be run in separate tasks which
-  can execute in parallel (possibly being applied to multiple rows or at the same time).
+  can execute in parallel (possibly being applied to multiple rows or groups at the same time).
   Whether or not tasks are actually spawned and their number are determined automatically.
   Set to `false` if some transformations require serial execution or are not thread-safe.
 
@@ -1628,8 +1629,7 @@ julia> combine(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
 combine(df::AbstractDataFrame, @nospecialize(args...);
         renamecols::Bool=true, multithreaded::Bool=true) =
     manipulate(df, map(x -> broadcast_pair(df, x), args)...,
-               copycols=true, keeprows=false, renamecols=renamecols,
-               multithreaded=multithreaded)
+               copycols=true, keeprows=false, renamecols=renamecols)
 
 function combine(@nospecialize(arg::Base.Callable), df::AbstractDataFrame;
                  renamecols::Bool=true, multithreaded::Bool=true)
@@ -1645,9 +1645,7 @@ combine(@nospecialize(f::Pair), gd::AbstractDataFrame;
                         "You can pass a `Pair` as the second argument of the transformation. If you want the return " *
                         "value to be processed as having multiple columns add `=> AsTable` suffix to the pair."))
 
-function manipulate(df::DataFrame, @nospecialize(cs...);
-                    copycols::Bool, keeprows::Bool,
-                    renamecols::Bool, multithreaded::Bool)
+function manipulate(df::DataFrame, @nospecialize(cs...); copycols::Bool, keeprows::Bool, renamecols::Bool)
     cs_vec = []
     for v in cs
         if v isa AbstractVecOrMat{<:Pair}
@@ -1657,11 +1655,10 @@ function manipulate(df::DataFrame, @nospecialize(cs...);
         end
     end
     return _manipulate(df, Any[normalize_selection(index(df), make_pair_concrete(c), renamecols) for c in cs_vec],
-                       copycols, keeprows, multithreaded)
+                       copycols, keeprows)
 end
 
-function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols::Bool,
-                     keeprows::Bool, multithreaded::Bool)
+function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols::Bool, keeprows::Bool)
     @assert !(df isa SubDataFrame && copycols==false)
     newdf = DataFrame()
     # the role of transformed_cols is the following
@@ -1745,7 +1742,7 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
 end
 
 function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, keeprows::Bool,
-                    renamecols::Bool, multithreaded::Bool)
+                    renamecols::Bool)
     if copycols
         cs_vec = []
         for v in args
@@ -1757,7 +1754,7 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
         end
         return _manipulate(dfv, Any[normalize_selection(index(dfv),
                                     make_pair_concrete(c), renamecols) for c in cs_vec],
-                           true, keeprows, multithreaded)
+                           true, keeprows)
     else
         # we do not support transformations here
         # newinds contains only indexing; making it Vector{Any} avoids some compilation
@@ -1787,36 +1784,34 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
 end
 
 manipulate(df::DataFrame, args::AbstractVector{Int}; copycols::Bool, keeprows::Bool,
-           renamecols::Bool, multithreaded::Bool) =
+           renamecols::Bool) =
     DataFrame(_columns(df)[args], Index(_names(df)[args]), copycols=copycols)
 
 function manipulate(df::DataFrame, c::MultiColumnIndex; copycols::Bool, keeprows::Bool,
-                    renamecols::Bool, multithreaded::Bool)
+                    renamecols::Bool)
     if c isa AbstractVector{<:Pair}
         return manipulate(df, c..., copycols=copycols, keeprows=keeprows,
-                          renamecols=renamecols, multithreaded=multithreaded)
+                          renamecols=renamecols)
     else
         return manipulate(df, index(df)[c], copycols=copycols, keeprows=keeprows,
-                          renamecols=renamecols, multithreaded=multithreaded)
+                          renamecols=renamecols)
     end
 end
 
 function manipulate(dfv::SubDataFrame, args::MultiColumnIndex;
-                    copycols::Bool, keeprows::Bool, renamecols::Bool, multithreaded::Bool)
+                    copycols::Bool, keeprows::Bool, renamecols::Bool)
     if args isa AbstractVector{<:Pair}
         return manipulate(dfv, args..., copycols=copycols, keeprows=keeprows,
-                          renamecols=renamecols, multithreaded=multithreaded)
+                          renamecols=renamecols)
     else
         return copycols ? dfv[:, args] : view(dfv, :, args)
     end
 end
 
 manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool,
-           renamecols::Bool, multithreaded::Bool) =
-    manipulate(df, Int[index(df)[c]], copycols=copycols, keeprows=keeprows,
-               renamecols=renamecols, multithreaded=multithreaded)
+           renamecols::Bool) =
+    manipulate(df, Int[index(df)[c]], copycols=copycols, keeprows=keeprows, renamecols=renamecols)
 
 manipulate(dfv::SubDataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool,
-           renamecols::Bool, multithreaded::Bool) =
-    manipulate(dfv, Int[index(dfv)[c]], copycols=copycols, keeprows=keeprows,
-               renamecols=renamecols, multithreaded=multithreaded)
+           renamecols::Bool) =
+    manipulate(dfv, Int[index(dfv)[c]], copycols=copycols, keeprows=keeprows, renamecols=renamecols)

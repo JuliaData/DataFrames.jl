@@ -4273,6 +4273,26 @@ end
         subset!(gd, [:y] => (y -> (n[] += 1; fill(n[] <= 2, length(y)))),
                 [:y] => (y -> (n[] += 1; fill(n[] <= 6, length(y)))),
                 multithreaded=false)
+
+    # unstack
+    df = DataFrame(id=[1, 1, 1, 2, 2, 3, 3],
+                   variable=[:a, :a, :b, :a, :b, :a, :b],
+                   value=1:7)
+    l = Ref(0)
+    m = Ref(0)
+    n = Ref(0)
+    unstack(df,
+            allowduplicates=true, valuestransform=x -> (l[] += 1),
+            multithreaded=false) ==
+            DataFrame(id=1:3, a=[1, 3, 5], b=[2, 4, 6]) ==
+    unstack(df, :variable, :value,
+            allowduplicates=true, valuestransform=x -> (m[] += 1),
+            multithreaded=false) ==
+            DataFrame(id=1:3, a=[1, 3, 5], b=[2, 4, 6]) ==
+    unstack(df, :id, :variable, :value,
+            allowduplicates=true, valuestransform=x -> (n[] += 1),
+            multithreaded=false) ==
+            DataFrame(id=1:3, a=[1, 3, 5], b=[2, 4, 6])
 end
 
 end # module
