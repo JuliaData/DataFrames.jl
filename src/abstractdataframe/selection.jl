@@ -575,7 +575,8 @@ _transformation_helper(df::AbstractDataFrame, col_idx::Int, (fun,)::Ref{Any}) =
 _empty_astable_helper(fun, len) = [fun(NamedTuple()) for _ in 1:len]
 
 function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,)::Ref{Any})
-    df_sel = df[!, col_idx.cols]
+    cols = index(df)[col_idx.cols]
+    df_sel = select(df, cols, copycols=false)
     if ncol(df_sel) == 0
         if fun isa ByRow
             # work around fact that length∘skipmissing is not supported in Julia Base yet
