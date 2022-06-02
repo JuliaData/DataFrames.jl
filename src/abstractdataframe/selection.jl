@@ -343,7 +343,7 @@ normalize_selection(idx::AbstractIndex, @nospecialize(sel), renamecols::Bool) =
         idx[sel]
     catch e
         if e isa MethodError && e.f === getindex && e.args === (idx, sel)
-            throw(ArgumentError("Unrecognized column selector: $sel"))
+            throw(ArgumentError("Unrecognized column selector: $sel in AsTable constructor"))
         else
             rethrow(e)
         end
@@ -575,7 +575,7 @@ _transformation_helper(df::AbstractDataFrame, col_idx::Int, (fun,)::Ref{Any}) =
 _empty_astable_helper(fun, len) = [fun(NamedTuple()) for _ in 1:len]
 
 function _transformation_helper(df::AbstractDataFrame, col_idx::AsTable, (fun,)::Ref{Any})
-    df_sel = select(df, col_idx.cols, copycols=false)
+    df_sel = df[!, col_idx.cols]
     if ncol(df_sel) == 0
         if fun isa ByRow
             # work around fact that length∘skipmissing is not supported in Julia Base yet
@@ -685,6 +685,9 @@ function _add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
     cdf = eachcol(df)
     vpar = parent(v)
     parent_cols = col_idx isa AsTable ? col_idx.cols : something(col_idx, 1:ncol(df))
+    # note that if col_idx is AsTable thanks to normalization in preprocessing
+    # we know that cols is vector of integers here
+    @assert parent_cols isa Union{Int, AbstractVector{Int}}
     if copycols
         if !(fun isa ByRow) && (v isa SubArray || any(i -> vpar === parent(cdf[i]), parent_cols))
             newdf[!, newname] = copy(v)

@@ -529,4 +529,41 @@ end
     @test crossjoin(dfv, dfv, makeunique=true) == DataFrame(a=1, a_1=1)
 end
 
+@testset "AsTable constructor" begin
+    @test_throws ArgumentError AsTable(1.0)
+    @test_throws ArgumentError AsTable(true)
+    @test_throws ArgumentError AsTable(false)
+    @test_throws ArgumentError AsTable(Any[1, missing])
+    @test_throws ArgumentError AsTable([1, missing])
+    @test_throws ArgumentError AsTable([true, missing])
+    @test_throws ArgumentError AsTable(Any[true, missing])
+    @test_throws ArgumentError AsTable([:A, missing])
+    @test_throws ArgumentError AsTable(Any[:A, missing])
+    @test_throws ArgumentError AsTable(1.0:1.0)
+    @test_throws ArgumentError AsTable([1.0])
+    @test_throws ArgumentError AsTable(Any[1.0])
+    @test_throws ArgumentError AsTable([:a, "a", 1, true, 1.0])
+    @test_throws ArgumentError AsTable(:a => :b)
+
+    @test_nowarn AsTable(Union{Bool, Missing}[true, false])
+    @test_nowarn AsTable([:a, "a", 1, true])
+    @test_nowarn AsTable([])
+    @test_nowarn AsTable(Int[])
+    @test_nowarn AsTable(Symbol[])
+    @test_nowarn AsTable(:)
+    @test_nowarn AsTable(Not(Not(:)))
+    @test_nowarn AsTable(Not(1:0))
+    @test_nowarn AsTable(Not(1:0))
+    @test_nowarn AsTable(Between(1, 2))
+    @test_nowarn AsTable(All())
+    @test_nowarn AsTable(r"x")
+    @test_nowarn AsTable("a")
+    @test_nowarn AsTable(1)
+    @test_nowarn AsTable(0x1)
+    @test_nowarn AsTable([:a, :b])
+    @test_nowarn AsTable(["a", "b"])
+    @test_nowarn AsTable([1, 2])
+    @test_nowarn AsTable(Integer[1, true])
+end
+
 end # module
