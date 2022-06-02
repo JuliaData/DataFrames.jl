@@ -884,10 +884,24 @@ end
         for c in (:a, :b, :c, "a", "b", "c", 1, 2, 3)
             for v in (:a, :b, :c, "a", "b", "c", 1, 2, 3)
                 @test unstack(df, r, c, v) ≅
-                      map(x -> x isa Vector ? only(x) : x, unstack(df, r, c, v, valuestransform=copy))
+                      (x -> x isa Vector ? only(x) : x).(unstack(df, r, c, v, valuestransform=copy))
             end
         end
     end
+
+    df = DataFrame(values_out_3490283_=["a", "b", "c"],
+                   values_out_3490283_1=["d", "e", "f"],
+                   values_out_3490283_11=["g", "h", "i"])
+    @test unstack(df, 3, 2, 1) ≅
+          DataFrame(values_out_3490283_11=["g", "h", "i"],
+                    d=["a", missing, missing],
+                    e=[missing, "b", missing],
+                    f=[missing, missing, "c"])
+    @test unstack(df, 3, 2, 1, valuestransform=only) ≅
+          DataFrame(values_out_3490283_11=["g", "h", "i"],
+                    d=["a", missing, missing],
+                    e=[missing, "b", missing],
+                    f=[missing, missing, "c"])
 end
 
 end # module
