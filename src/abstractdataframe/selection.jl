@@ -343,7 +343,7 @@ normalize_selection(idx::AbstractIndex, @nospecialize(sel), renamecols::Bool) =
         idx[sel]
     catch e
         if e isa MethodError && e.f === getindex && e.args === (idx, sel)
-            throw(ArgumentError("Unrecognized column selector: $sel in AsTable constructor"))
+            throw(ArgumentError("Unrecognized column selector $sel in AsTable constructor"))
         else
             rethrow(e)
         end

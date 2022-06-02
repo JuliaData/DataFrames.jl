@@ -58,17 +58,18 @@ struct AsTable
     # the rules used here are simplified as not all column selectors
     # that pass through them are valid, but this is safe enough in practice
     function AsTable(cols)
-        if !(cols isa Union{AbstractString, Symbol, Signed, Unsigned,
+        if cols isa Union{AbstractString, Symbol, Signed, Unsigned,
                           AbstractVector{<:Integer},
                           AbstractVector{Symbol},
                           AbstractVector{<:AbstractString},
-                          Colon, Not, Between, All, Cols, Regex})
-            if !(cols isa AbstractVector &&
-                 all(col -> col isa Union{Integer, Symbol, AbstractString}, cols))
+                          Colon, Not, Between, All, Cols, Regex}) ||
+            (cols isa AbstractVector &&
+             all(col -> col isa Union{Integer, Symbol, AbstractString}, cols))
+                return new(cols)
+            else
                 throw(ArgumentError("Unrecognized column selector $cols"))
             end
         end
-        return new(cols)
     end
 end
 
