@@ -62,13 +62,12 @@ struct AsTable
                           AbstractVector{<:Integer},
                           AbstractVector{Symbol},
                           AbstractVector{<:AbstractString},
-                          Colon, Not, Between, All, Cols, Regex}) ||
+                          Colon, Not, Between, All, Cols, Regex} ||
             (cols isa AbstractVector &&
              all(col -> col isa Union{Integer, Symbol, AbstractString}, cols))
-                return new(cols)
-            else
-                throw(ArgumentError("Unrecognized column selector $cols"))
-            end
+            return new(cols)
+        else
+            throw(ArgumentError("Unrecognized column selector $cols"))
         end
     end
 end

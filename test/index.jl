@@ -545,25 +545,24 @@ end
     @test_throws ArgumentError AsTable([:a, "a", 1, true, 1.0])
     @test_throws ArgumentError AsTable(:a => :b)
 
-    @test_nowarn AsTable(Union{Bool, Missing}[true, false])
-    @test_nowarn AsTable([:a, "a", 1, true])
-    @test_nowarn AsTable([])
-    @test_nowarn AsTable(Int[])
-    @test_nowarn AsTable(Symbol[])
-    @test_nowarn AsTable(:)
-    @test_nowarn AsTable(Not(Not(:)))
-    @test_nowarn AsTable(Not(1:0))
-    @test_nowarn AsTable(Not(1:0))
-    @test_nowarn AsTable(Between(1, 2))
-    @test_nowarn AsTable(All())
-    @test_nowarn AsTable(r"x")
-    @test_nowarn AsTable("a")
-    @test_nowarn AsTable(1)
-    @test_nowarn AsTable(0x1)
-    @test_nowarn AsTable([:a, :b])
-    @test_nowarn AsTable(["a", "b"])
-    @test_nowarn AsTable([1, 2])
-    @test_nowarn AsTable(Integer[1, true])
+    @test AsTable(Union{Bool, Missing}[true, false]).cols == Union{Bool, Missing}[true, false]
+    @test AsTable([:a, "a", 1, true]).cols == [:a, "a", 1, true]
+    @test AsTable([]).cols == []
+    @test AsTable(Int[]).cols == Int[]
+    @test AsTable(Symbol[]).cols == Symbol[]
+    @test AsTable(:).cols == Colon()
+    @test AsTable(Not(Not(:))).cols == Not(Not(:))
+    @test AsTable(Not(1:0)).cols == Not(1:0)
+    @test AsTable(Between(1, 2)).cols == Between(1, 2)
+    @test AsTable(All()).cols == All()
+    @test AsTable(r"x").cols == r"x"
+    @test AsTable("a").cols == "a"
+    @test AsTable(1).cols == 1
+    @test AsTable(0x1).cols == 0x1
+    @test AsTable([:a, :b]).cols == [:a, :b]
+    @test AsTable(["a", "b"]).cols == ["a", "b"]
+    @test AsTable([1, 2]).cols == [1, 2]
+    @test AsTable(Integer[1, true]).cols == Integer[1, true]
 end
 
 end # module
