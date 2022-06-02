@@ -545,11 +545,11 @@ end
     @test_throws ArgumentError AsTable([:a, "a", 1, true, 1.0])
     @test_throws ArgumentError AsTable(:a => :b)
 
-    @test AsTable(Union{Bool, Missing}[true, false]).cols == Union{Bool, Missing}[true, false]
+    @test AsTable(Union{Bool, Missing}[true, false]).cols == [true, false]
     @test AsTable([:a, "a", 1, true]).cols == [:a, "a", 1, true]
     @test AsTable([]).cols == []
-    @test AsTable(Int[]).cols == Int[]
-    @test AsTable(Symbol[]).cols == Symbol[]
+    @test AsTable(Int[]).cols == []
+    @test AsTable(Symbol[]).cols == []
     @test AsTable(:).cols == Colon()
     @test AsTable(Not(Not(:))).cols == Not(Not(:))
     @test AsTable(Not(1:0)).cols == Not(1:0)
