@@ -398,15 +398,15 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
                  allowmissing::Bool=false, allowduplicates::Bool=false,
                  valuestransform=nothing, fill=missing)
     # first make sure that rowkeys are unique and
-    # normalize all selectors them as a strings
-    # if some of the selectors is wrong we will get an early error here
+    # normalize all selectors as a strings
+    # if some of the selectors are wrong we will get an early error here
     rowkeys = names(df, index(df)[rowkeys])
     colkey = only(names(df, colkey))
     values = only(names(df, values))
 
     if !isnothing(valuestransform)
         # potentially colkey can be also part of rowkeys so we need to do unique
-        groupcols = unique([rowkeys; colkey])
+        groupcols = unique!([rowkeys; colkey])
         @assert groupcols isa Vector{String}
 
         # generate some column name that is not conflicting with column name

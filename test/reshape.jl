@@ -884,7 +884,7 @@ end
         for c in (:a, :b, :c, "a", "b", "c", 1, 2, 3)
             for v in (:a, :b, :c, "a", "b", "c", 1, 2, 3)
                 @test unstack(df, r, c, v) ≅
-                      (x -> x isa Vector ? only(x) : x).(unstack(df, r, c, v, valuestransform=copy))
+                      map(x -> x isa Vector ? only(x) : x, unstack(df, r, c, v, valuestransform=copy))
             end
         end
     end
