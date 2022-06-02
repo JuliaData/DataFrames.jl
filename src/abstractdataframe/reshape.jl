@@ -429,7 +429,6 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
             agg_fun = Ref∘valuestransform
         end
         df_op = combine(gdf, values => agg_fun => values_out)
-        values = values_out
 
         group_rows = find_group_row(gdf)
         if !issorted(group_rows)
@@ -440,11 +439,12 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
         allowduplicates = true
     else
         df_op = df
+        values_out = values
     end
 
     g_rowkey = groupby(df_op, rowkeys)
     g_colkey = groupby(df_op, colkey)
-    valuecol = df_op[!, values]
+    valuecol = df_op[!, values_out]
     return _unstack(df_op, index(df_op)[rowkeys], index(df_op)[colkey], g_colkey,
                     valuecol, g_rowkey, renamecols, allowmissing, allowduplicates, fill)
 end
