@@ -397,9 +397,25 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
                  values::ColumnIndex; renamecols::Function=identity,
                  allowmissing::Bool=false, allowduplicates::Bool=false,
                  valuestransform=nothing, fill=missing)
+    # first make sure that rowkeys are unique and
+    # normalize all selectors them as a strings
+    # if some of the selectors is wrong we will get an early error here
+    rowkeys = names(df, index(df)[rowkeys])
+    colkey = only(names(df, colkey))
+    values = only(names(df, values))
+
     if !isnothing(valuestransform)
-        groupcols = vcat(index(df)[rowkeys], index(df)[colkey])
-        @assert groupcols isa AbstractVector{Int}
+        # potentially colkey can be also part of rowkeys so we need to do unique
+        groupcols = unique([rowkeys; colkey])
+        @assert groupcols isa Vector{String}
+
+        # generate some column name that is not conflicting with column name
+        # already present in the data frame
+        values_out = "values_out_3490283_"
+        while hasproperty(df, values_out)
+            values_out *= "1"
+        end
+
         gdf = groupby(df, groupcols)
         if check_aggregate(valuestransform, df[!, values]) isa AbstractAggregate
             # if valuestransform function is AbstractAggregate
@@ -412,7 +428,9 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
             # Ref that will get unwrapped by combine
             agg_fun = Ref∘valuestransform
         end
-        df_op = combine(gdf, values => agg_fun, renamecols=false)
+        df_op = combine(gdf, values => agg_fun => values_out)
+        values = values_out
+
         group_rows = find_group_row(gdf)
         if !issorted(group_rows)
             df_op = df_op[sortperm(group_rows), :]
@@ -423,13 +441,11 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
     else
         df_op = df
     end
-    # use df_op below to make sure it is type stable
-    rowkey_ints = vcat(index(df_op)[rowkeys])
-    @assert rowkey_ints isa AbstractVector{Int}
-    g_rowkey = groupby(df_op, rowkey_ints)
+
+    g_rowkey = groupby(df_op, rowkeys)
     g_colkey = groupby(df_op, colkey)
     valuecol = df_op[!, values]
-    return _unstack(df_op, rowkey_ints, index(df_op)[colkey], g_colkey,
+    return _unstack(df_op, index(df_op)[rowkeys], index(df_op)[colkey], g_colkey,
                     valuecol, g_rowkey, renamecols, allowmissing, allowduplicates, fill)
 end
 

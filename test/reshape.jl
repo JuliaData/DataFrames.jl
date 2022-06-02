@@ -859,4 +859,35 @@ end
     end
 end
 
+@testset "unstack hard cases" begin
+    df = DataFrame(a=["ax", "bx", "cx"], b=["x", "y", "z"], c=[1, 2, 3])
+
+    @test unstack(df, :a, :a, :a) ≅ DataFrame(a=["ax", "bx", "cx"],
+                                              ax=["ax", missing, missing],
+                                              bx=[missing, "bx", missing],
+                                              cx=[missing, missing, "cx"])
+    @test unstack(df, :c, :b, :a) ≅ DataFrame(c=[1, 2, 3],
+                                              x=["ax", missing, missing],
+                                              y=[missing, "bx", missing],
+                                              z=[missing, missing, "cx"])
+    @test unstack(df, [:b, :c], :c, :a) ≅ DataFrame("b" => ["x", "y", "z"],
+                                                    "c" => [1, 2, 3],
+                                                    "1" => ["ax", missing, missing],
+                                                    "2" => [missing, "bx", missing],
+                                                    "3" => [missing, missing, "cx"])
+
+    for r in (:a, :b, :c, "a", "b", "c", 1, 2, 3,
+              [:a, :b], ["b", "a"], [2, 1],
+              [:b, :a], ["a", "b"], [3, 2],
+              [:a, :c], ["c", "a"], [1, 2],
+              [1, 2, 3], [3, 2, 1], [2, 1, 3])
+        for c in (:a, :b, :c, "a", "b", "c", 1, 2, 3)
+            for v in (:a, :b, :c, "a", "b", "c", 1, 2, 3)
+                @test unstack(df, r, c, v) ≅
+                      (x -> x isa Vector ? only(x) : x).(unstack(df, r, c, v, valuestransform=copy))
+            end
+        end
+    end
+end
+
 end # module
