@@ -529,4 +529,40 @@ end
     @test crossjoin(dfv, dfv, makeunique=true) == DataFrame(a=1, a_1=1)
 end
 
+@testset "AsTable constructor" begin
+    @test_throws ArgumentError AsTable(1.0)
+    @test_throws ArgumentError AsTable(true)
+    @test_throws ArgumentError AsTable(false)
+    @test_throws ArgumentError AsTable(Any[1, missing])
+    @test_throws ArgumentError AsTable([1, missing])
+    @test_throws ArgumentError AsTable([true, missing])
+    @test_throws ArgumentError AsTable(Any[true, missing])
+    @test_throws ArgumentError AsTable([:A, missing])
+    @test_throws ArgumentError AsTable(Any[:A, missing])
+    @test_throws ArgumentError AsTable(1.0:1.0)
+    @test_throws ArgumentError AsTable([1.0])
+    @test_throws ArgumentError AsTable(Any[1.0])
+    @test_throws ArgumentError AsTable([:a, "a", 1, true, 1.0])
+    @test_throws ArgumentError AsTable(:a => :b)
+
+    @test AsTable(Union{Bool, Missing}[true, false]).cols == [true, false]
+    @test AsTable([:a, "a", 1, true]).cols == [:a, "a", 1, true]
+    @test AsTable([]).cols == []
+    @test AsTable(Int[]).cols == []
+    @test AsTable(Symbol[]).cols == []
+    @test AsTable(:).cols == Colon()
+    @test AsTable(Not(Not(:))).cols == Not(Not(:))
+    @test AsTable(Not(1:0)).cols == Not(1:0)
+    @test AsTable(Between(1, 2)).cols == Between(1, 2)
+    @test AsTable(All()).cols == All()
+    @test AsTable(r"x").cols == r"x"
+    @test AsTable("a").cols == "a"
+    @test AsTable(1).cols == 1
+    @test AsTable(0x1).cols == 0x1
+    @test AsTable([:a, :b]).cols == [:a, :b]
+    @test AsTable(["a", "b"]).cols == ["a", "b"]
+    @test AsTable([1, 2]).cols == [1, 2]
+    @test AsTable(Integer[1, true]).cols == Integer[1, true]
+end
+
 end # module

@@ -1111,7 +1111,8 @@ _filter_helper(f, cols...)::BitVector = ((x...) -> f(x...)::Bool).(cols...)
 
 @inline function Base.filter((cols, f)::Pair{AsTable}, df::AbstractDataFrame;
                              view::Bool=false)
-    df_tmp = select(df, cols.cols, copycols=false)
+    cols = index(df)[cols.cols]
+    df_tmp = select(df, cols, copycols=false)
     if ncol(df_tmp) == 0
         rowidxs = [f(NamedTuple()) for _ in axes(df, 1)]
     else
@@ -1230,7 +1231,8 @@ function _filter!_helper(df::AbstractDataFrame, f, cols...)
 end
 
 function Base.filter!((cols, f)::Pair{<:AsTable}, df::AbstractDataFrame)
-    dff = select(df, cols.cols, copycols=false)
+    cols = index(df)[cols.cols]
+    dff = select(df, cols, copycols=false)
     if ncol(dff) == 0
         return deleteat!(df, findall(x -> !f(NamedTuple()), axes(df, 1)))
     else
