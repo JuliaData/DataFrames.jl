@@ -892,6 +892,25 @@ keepat!(df::DataFrame, inds::Not) = keepat!(df, axes(df, 1)[inds])
     empty!(df::DataFrame)
 
 Remove all rows from `df`, making each of its columns empty.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> empty!(df)
+0×2 DataFrame
+
+julia> Tables.columntable(df)
+(a = Int64[], b = Int64[])
+```
+
 """
 function Base.empty!(df::DataFrame)
     foreach(empty!, eachcol(df))
@@ -902,6 +921,26 @@ end
     resize!(df::DataFrame, n::Integer)
 
 Resize `df` to have `n` rows by calling `resize!` on all columns of `df`.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> resize!(df, 2)
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+```
 """
 function Base.resize!(df::DataFrame, n::Integer)
     if ncol(df) == 0 && n != 0
@@ -916,6 +955,34 @@ end
     pop!(df::DataFrame)
 
 Remove the last row from `df` and return a `NamedTuple` created from this row.
+
+!!! note
+
+    Using this method for very wide data frames may lead to expensive compilation.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> pop!(df)
+(a = 3, b = 6)
+
+julia> df
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+```
+
 """
 Base.pop!(df::DataFrame) = popat!(df, nrow(df))
 
@@ -923,6 +990,32 @@ Base.pop!(df::DataFrame) = popat!(df, nrow(df))
     popfirst!(df::DataFrame)
 
 Remove the first row from `df` and return a `NamedTuple` created from this row.
+!!! note
+
+    Using this method for very wide data frames may lead to expensive compilation.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> popfirst!(df)
+(a = 1, b = 4)
+
+julia> df
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      5
+   2 │     3      6
+```
 """
 Base.popfirst!(df::DataFrame) = popat!(df, 1)
 
@@ -930,8 +1023,35 @@ Base.popfirst!(df::DataFrame) = popat!(df, 1)
     popat!(df::DataFrame, i::Integer)
 
 Remove the `i`-th row from `df` and return a `NamedTuple` created from this row.
+!!! note
+
+    Using this method for very wide data frames may lead to expensive compilation.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> popat!(df, 2)
+(a = 2, b = 5)
+
+julia> df
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     3      6
+```
 """
 function Base.popat!(df::DataFrame, i::Integer)
+    i isa Bool && throw(ArgumentError("Invalid index of type Bool"))
     nt = NamedTuple(df[i, :])
     deleteat!(df, i)
     return nt

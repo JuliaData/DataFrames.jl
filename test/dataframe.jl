@@ -667,6 +667,10 @@ end
     df = DataFrame(a=1, b=2)
     push!(df.b, 3)
     @test_throws AssertionError deleteat!(df, 1)
+
+    df = DataFrame(a=[1, 2], b=[3, 4])
+    @test deleteat!(df, true) == DataFrame(a=2, b=4)
+    @test_throws BoundsError deleteat!(df, false)
 end
 
 @testset "describe" begin
@@ -2248,6 +2252,142 @@ end
     @test df[1, :] == refdf[1, :]
     @test df[5, :] == refdf[5, :]
     @test df.b == refdf.b
+end
+
+@testset "keepat!" begin
+    df = DataFrame(a=[1, 2], b=[3.0, 4.0])
+    @test_throws BoundsError keepat!(df, [true, true, true])
+    @test keepat!(df, 2) === df
+    @test df == DataFrame(a=[2], b=[4.0])
+
+    df = DataFrame(a=[1, 2], b=[3.0, 4.0])
+    @test keepat!(df, 1) === df
+    @test df == DataFrame(a=[1], b=[3.0])
+
+    df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
+    @test keepat!(df, 2) === df
+    @test df == DataFrame(a=[2], b=[4.0])
+
+    df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
+    @test keepat!(df, 1) === df
+    @test df == DataFrame(a=[1], b=[3.0])
+
+    for v in (2:3, [2, 3])
+        df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
+        @test keepat!(df, v) === df
+        @test df == DataFrame(a=[2, 3], b=[4.0, 5.0])
+
+        df = DataFrame(a=[1, 2, 3], b=[3.0, 4.0, 5.0])
+        @test keepat!(df, v) === df
+        @test df == DataFrame(a=[2, 3], b=[4.0, 5.0])
+    end
+
+    df = DataFrame()
+    @test_throws BoundsError keepat!(df, 10)
+    @test_throws BoundsError keepat!(df, [10])
+
+    df = DataFrame(a=[])
+    @test_throws BoundsError keepat!(df, 10)
+    @test_throws BoundsError keepat!(df, [10])
+
+    df = DataFrame(a=[1, 2, 3], b=[3, 2, 1])
+    @test_throws ArgumentError keepat!(df, [3, 2])
+    @test_throws ArgumentError keepat!(df, [2, 2])
+    @test keepat!(df, [true, false, true]) === df
+    @test df == DataFrame(a=[1, 3], b=[3, 1])
+
+    for v in (2:3, [2, 3], [false, true, true])
+        x = [1, 2, 3]
+        df = DataFrame(x=x)
+        @test keepat!(df, v) == DataFrame(x=[2, 3])
+        @test x == [1, 2, 3]
+    end
+
+    for v in ([2, 3], 2:3, [false, true, true], Not(1), Not([true, false, false]))
+        x = [1, 2, 3]
+        df = DataFrame(x=x, copycols=false)
+        @test keepat!(df, v) == DataFrame(x=[2, 3])
+        @test x == [2, 3]
+    end
+
+    for inds in (2, [2], [false, true])
+        df = DataFrame(x1=[1, 2])
+        df.x2 = df.x1
+        @test keepat!(df, inds) === df
+        @test df == DataFrame(x1=[2], x2=[2])
+    end
+
+    df = DataFrame(a=1, b=2)
+    push!(df.b, 3)
+    @test_throws AssertionError keepat!(df, 1)
+
+    df = DataFrame(a=[1, 2], b=[3, 4])
+    @test_throws ArgumentError keepat!(df, true)
+    @test_throws ArgumentError keepat!(df, false)
+end
+
+@testset "resize!" begin
+    df = DataFrame()
+    @test_throws ArgumentError resize!(df, 1)
+    @test resize!(df, 0) == DataFrame()
+
+    df = DataFrame(a=Int[], b=Float64[])
+    resize!(df, 0)
+    @test size(df) == (0, 2)
+    @test names(df) == ["a", "b"]
+    @test eltype.(eachcol(df)) == [Int, Float64]
+    resize!(df, 1)
+    @test size(df) == (1, 2)
+    @test names(df) == ["a", "b"]
+    @test eltype.(eachcol(df)) == [Int, Float64]
+
+    df = DataFrame(a=[1, 2, 3], b=[11.0, 12.0, 13.0])
+    @test resize!(df, 1) == DataFrame(a=[1], b=[11.0])
+    resize!(df, 5)
+    @test size(df) == (5, 2)
+    @test names(df) == ["a", "b"]
+    @test eltype.(eachcol(df)) == [Int, Float64]
+    @test df[1:1, :] == DataFrame(a=[1], b=[11.0])
+
+    df = DataFrame(a=[1, 2, 3], b=[11.0, 12.0, 13.0])
+    @test resize!(df, true) == DataFrame(a=[1], b=[11.0])
+
+    df = DataFrame(a=[1, 2, 3], b=[11.0, 12.0, 13.0])
+    resize!(df, false)
+    @test size(df) == (0, 2)
+    @test names(df) == ["a", "b"]
+    @test eltype.(eachcol(df)) == [Int, Float64]
+end
+
+@testset "pop!, popfirst!, popat!" begin
+    df = DataFrame(a=Integer[1, 2, 3], b=[11.0, 12.0, 13.0])
+    nt = pop!(df)
+    @test nt == (a=3, b=13.0)
+    @test typeof(nt) == NamedTuple{(:a, :b), Tuple{Integer, Float64}}
+    @test df == DataFrame(a=Integer[1, 2], b=[11.0, 12.0])
+
+    df = DataFrame(a=Integer[1, 2, 3], b=[11.0, 12.0, 13.0])
+    nt = popfirst!(df)
+    @test nt == (a=1, b=11.0)
+    @test typeof(nt) == NamedTuple{(:a, :b), Tuple{Integer, Float64}}
+    @test df == DataFrame(a=Integer[2, 3], b=[12.0, 13.0])
+
+    df = DataFrame(a=Integer[1, 2, 3], b=[11.0, 12.0, 13.0])
+    nt = popat!(df, 2)
+    @test nt == (a=2, b=12.0)
+    @test typeof(nt) == NamedTuple{(:a, :b), Tuple{Integer, Float64}}
+    @test df == DataFrame(a=Integer[1, 3], b=[11.0, 13.0])
+    @test_throws ArgumentError popat!(df, true)
+    @test_throws ArgumentError popat!(df, false)
+    @test_throws BoundsError popat!(df, 0)
+    @test_throws BoundsError popat!(df, 5)
+
+    for df in (DataFrame(), DataFrame(a=[]))
+        @test_throws BoundsError pop!(df)
+        @test_throws BoundsError popfirst!(df)
+        @test_throws BoundsError popat!(df, 0)
+        @test_throws BoundsError popat!(df, 1)
+    end
 end
 
 end # module

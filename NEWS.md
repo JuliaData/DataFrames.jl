@@ -36,7 +36,7 @@
 * Add `allcombinations` function that returns a data frame created
   from all combinations of the passed vectors
   ([#3031](https://github.com/JuliaData/DataFrames.jl/pull/3031))
-* Add `keepat!` and `pop!`, `popfirst!`, `popat!`
+* Add `resize!`, `keepat!`, `pop!`, `popfirst!`, and `popat!`
    ([#3047](https://github.com/JuliaData/DataFrames.jl/pull/3047))
 
 ## Previously announced breaking changes
