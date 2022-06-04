@@ -899,7 +899,7 @@ function keepat!(df::DataFrame, inds::AbstractVector{<:Integer})
     return deleteat!(df, Not(inds))
 end
 
-Base.keepat!(df::DataFrame, inds::AbstractVector) =
+keepat!(df::DataFrame, inds::AbstractVector) =
     isempty(inds) ? empty!(df) : throw(ArgumentError("unsupported index $inds"))
 
 function keepat!(df::DataFrame, inds::Integer)
