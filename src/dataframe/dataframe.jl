@@ -890,7 +890,7 @@ end
 
 function keepat!(df::DataFrame, inds::Integer)
     inds isa Bool && throw(ArgumentError("Invalid index of type Bool"))
-    return keepat!(df, Int[inds])
+    return deleteat!(df, Not(Int[inds]))
 end
 
 keepat!(df::DataFrame, inds::AbstractVector{Bool}) = deleteat!(df, .!inds)
@@ -915,8 +915,8 @@ julia> df = DataFrame(a=1:3, b=4:6)
 julia> empty!(df)
 0×2 DataFrame
 
-julia> Tables.columntable(df)
-(a = Int64[], b = Int64[])
+julia> df.a, df.b
+Int64[], Int64[]
 ```
 
 """
@@ -998,6 +998,7 @@ Base.pop!(df::DataFrame) = popat!(df, nrow(df))
     popfirst!(df::DataFrame)
 
 Remove the first row from `df` and return a `NamedTuple` created from this row.
+
 !!! note
 
     Using this method for very wide data frames may lead to expensive compilation.
@@ -1031,6 +1032,7 @@ Base.popfirst!(df::DataFrame) = popat!(df, 1)
     popat!(df::DataFrame, i::Integer)
 
 Remove the `i`-th row from `df` and return a `NamedTuple` created from this row.
+
 !!! note
 
     Using this method for very wide data frames may lead to expensive compilation.
