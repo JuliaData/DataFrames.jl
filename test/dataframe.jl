@@ -2364,19 +2364,19 @@ end
     nt = pop!(df)
     @test nt == (a=3, b=13.0)
     @test typeof(nt) == NamedTuple{(:a, :b), Tuple{Integer, Float64}}
-    @test df == DataFrame(a=Integer[1, 2], b=[11.0, 12.0])
+    @test df == DataFrame(a=[1, 2], b=[11.0, 12.0])
 
     df = DataFrame(a=Integer[1, 2, 3], b=[11.0, 12.0, 13.0])
     nt = popfirst!(df)
     @test nt == (a=1, b=11.0)
     @test typeof(nt) == NamedTuple{(:a, :b), Tuple{Integer, Float64}}
-    @test df == DataFrame(a=Integer[2, 3], b=[12.0, 13.0])
+    @test df == DataFrame(a=[2, 3], b=[12.0, 13.0])
 
     df = DataFrame(a=Integer[1, 2, 3], b=[11.0, 12.0, 13.0])
     nt = popat!(df, 2)
     @test nt == (a=2, b=12.0)
     @test typeof(nt) == NamedTuple{(:a, :b), Tuple{Integer, Float64}}
-    @test df == DataFrame(a=Integer[1, 3], b=[11.0, 13.0])
+    @test df == DataFrame(a=[1, 3], b=[11.0, 13.0])
     @test_throws ArgumentError popat!(df, true)
     @test_throws ArgumentError popat!(df, false)
     @test_throws BoundsError popat!(df, 0)
