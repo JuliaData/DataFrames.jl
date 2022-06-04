@@ -793,9 +793,13 @@ julia> deleteat!(df, 2)
    2 │     3      6
 ```
 """
-function Base.deleteat!(df::DataFrame, inds)
+function Base.deleteat!(df::DataFrame, inds::AbstractVector{<:Integer})
     if !isempty(inds) && size(df, 2) == 0
         throw(BoundsError(df, (inds, :)))
+    end
+
+    if Bool <: eltype(inds) && any(x -> x isa Bool, inds)
+        throw(ArgumentError("invalid index of type Bool"))
     end
 
     # workaround https://github.com/JuliaLang/julia/pull/41646
@@ -803,12 +807,21 @@ function Base.deleteat!(df::DataFrame, inds)
         inds = collect(inds)
     end
 
-    # we require ind to be stored and unique like in Base
-    # otherwise an error will be thrown and the data frame will get corrupted
+    if !issorted(inds, lt=<=)
+        throw(ArgumentError("Indices passed to deleteat! must be unique and sorted"))
+    end
+
     return _deleteat!_helper(df, inds)
 end
 
-Base.deleteat!(df::DataFrame, inds::Integer) = deleteat!(df, Int[inds])
+function Base.deleteat!(df::DataFrame, inds::Integer)
+    size(df, 2) == 0 && throw(BoundsError(df, (inds, :)))
+    return _deleteat!_helper(df, Int[inds])
+end
+
+Base.deleteat!(df::DataFrame, ::Colon) = empty!(df)
+Base.deleteat!(df::DataFrame, inds::AbstractVector) =
+    isempty(inds) ? df : throw(ArgumentError("unsupported index $inds"))
 
 function Base.deleteat!(df::DataFrame, inds::AbstractVector{Bool})
     if length(inds) != size(df, 1)
@@ -822,12 +835,10 @@ function Base.deleteat!(df::DataFrame, inds::AbstractVector{Bool})
     return _deleteat!_helper(df, drop)
 end
 
-Base.deleteat!(df::DataFrame, inds::Not) = deleteat!(df, axes(df, 1)[inds])
+Base.deleteat!(df::DataFrame, inds::Not) =
+    _deleteat!_helper(df, axes(df, 1)[inds])
 
 function _deleteat!_helper(df::DataFrame, drop)
-    if !issorted(drop, lt=<=)
-        throw(ArgumentError("Indices passed to deleteat! must be unique and sorted"))
-    end
     cols = _columns(df)
     isempty(cols) && return df
 
@@ -881,12 +892,15 @@ julia> keepat!(df, [1, 3])
    2 │     3      6
 ```
 """
-function keepat!(df::DataFrame, inds)
+function keepat!(df::DataFrame, inds::AbstractVector{<:Integer})
     if !issorted(inds, lt=<=)
         throw(ArgumentError("Indices passed to keepat! must be unique and sorted"))
     end
     return deleteat!(df, Not(inds))
 end
+
+Base.keepat!(df::DataFrame, inds::AbstractVector) =
+    isempty(inds) ? empty!(df) : throw(ArgumentError("unsupported index $inds"))
 
 function keepat!(df::DataFrame, inds::Integer)
     inds isa Bool && throw(ArgumentError("Invalid index of type Bool"))
@@ -894,7 +908,8 @@ function keepat!(df::DataFrame, inds::Integer)
 end
 
 keepat!(df::DataFrame, inds::AbstractVector{Bool}) = deleteat!(df, .!inds)
-keepat!(df::DataFrame, inds::Not) = keepat!(df, axes(df, 1)[inds])
+keepat!(df::DataFrame, ::Colon) = df
+keepat!(df::DataFrame, inds::Not) = deleteat!(df, Not(inds))
 
 """
     empty!(df::DataFrame)

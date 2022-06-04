@@ -671,6 +671,17 @@ end
     df = DataFrame(a=[1, 2], b=[3, 4])
     @test deleteat!(df, true) == DataFrame(a=2, b=4)
     @test_throws BoundsError deleteat!(df, false)
+
+    df = DataFrame(a=[1, 2], b=[3.0, 4.0])
+    @test isempty(deleteat!(df, :))
+
+    df = DataFrame(a=[1, 2], b=[3.0, 4.0])
+    @test_throws MethodError deleteat!(df, "a")
+    @test_throws MethodError deleteat!(df, zeros(Int, 0, 0))
+    @test_throws ArgumentError deleteat!(df, [1.5])
+    @test_throws ArgumentError deleteat!(df, Integer[1, true])
+    @test deleteat!(df, []) == DataFrame(a=[1, 2], b=[3.0, 4.0])
+    @test_throws BoundsError keepat!(DataFrame(), Not(1))
 end
 
 @testset "describe" begin
@@ -2324,6 +2335,17 @@ end
     df = DataFrame(a=[1, 2], b=[3, 4])
     @test_throws ArgumentError keepat!(df, true)
     @test_throws ArgumentError keepat!(df, false)
+
+    df = DataFrame(a=[1, 2], b=[3.0, 4.0])
+    @test keepat!(df, :) == DataFrame(a=[1, 2], b=[3.0, 4.0])
+
+    df = DataFrame(a=[1, 2], b=[3.0, 4.0])
+    @test_throws MethodError keepat!(df, "a")
+    @test_throws MethodError keepat!(df, zeros(Int, 0, 0))
+    @test_throws ArgumentError keepat!(df, [1.5])
+    @test_throws ArgumentError keepat!(df, Integer[1, true])
+    @test isempty(keepat!(df, []))
+    @test_throws BoundsError keepat!(DataFrame(), Not(1))
 end
 
 @testset "resize!" begin
