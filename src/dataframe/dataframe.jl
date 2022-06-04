@@ -769,6 +769,10 @@ end
 
 Delete rows specified by `inds` from a `DataFrame` `df` in place and return it.
 
+Internally `deleteat!` is called for all columns so `inds` must be:
+a vector of sorted and unique integers, a boolean vector, an integer,
+or `Not` wrapping any valid selector.
+
 # Examples
 ```jldoctest
 julia> df = DataFrame(a=1:3, b=4:6)
@@ -852,6 +856,10 @@ end
 
 Delete rows at all indices not specified by `inds` from a `DataFrame` `df`
 in place and return it.
+
+Internally `deleteat!` is called for all columns so `inds` must be:
+a vector of sorted and unique integers, a boolean vector, an integer,
+or `Not` wrapping any valid selector.
 
 # Examples
 ```jldoctest
