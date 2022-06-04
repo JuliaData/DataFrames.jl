@@ -629,11 +629,11 @@ end
     @test_throws BoundsError deleteat!(df, [10])
 
     df = DataFrame(a=[])
-    @test_throws BoundsError deleteat!(df, 10)
-
     if VERSION >= v"1.1"
+        @test_throws BoundsError deleteat!(df, 10)
         @test_throws BoundsError deleteat!(df, [10])
     else
+        @test_throws InexactError deleteat!(df, 10)
         @test_throws InexactError deleteat!(df, [10])
     end
 
