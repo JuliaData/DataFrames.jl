@@ -916,7 +916,7 @@ julia> empty!(df)
 0×2 DataFrame
 
 julia> df.a, df.b
-Int64[], Int64[]
+(Int64[], Int64[])
 ```
 
 """
