@@ -47,6 +47,11 @@
   or older it is an in place operation.
   ([#3022](https://github.com/JuliaData/DataFrames.jl/pull/3022))
 
+## Bug fixes
+
+* Make sure that `AsTable` accepts only valid argument
+  ([#3064](https://github.com/JuliaData/DataFrames.jl/pull/3064))
+
 ## Performance
 
 * Speed up `permute!` and `invpermute!` (and therefore sorting) 2x-8x
