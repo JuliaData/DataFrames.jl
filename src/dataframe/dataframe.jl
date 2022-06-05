@@ -793,6 +793,8 @@ julia> deleteat!(df, 2)
    2 │     3      6
 ```
 """
+Base.deleteat!(df::DataFrame, inds)
+
 Base.deleteat!(df::DataFrame, ::Colon) = empty!(df)
 
 # Bool is accepted here because it is accepted in Base Julia
@@ -902,6 +904,8 @@ julia> keepat!(df, [1, 3])
    2 │     3      6
 ```
 """
+keepat!(df::DataFrame, inds)
+
 keepat!(df::DataFrame, ::Colon) = df
 
 function keepat!(df::DataFrame, inds::AbstractVector)
