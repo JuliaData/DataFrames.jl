@@ -819,10 +819,8 @@ function Base.deleteat!(df::DataFrame, inds::AbstractVector)
     end
 
     # workaround https://github.com/JuliaLang/julia/pull/41646
-    @static if VERSION <= v"1.6.2"
-        if inds isa UnitRange{<:Integer}
-            inds = collect(inds)
-        end
+    if VERSION <= v"1.6.2" && inds isa UnitRange{<:Integer}
+        inds = collect(inds)
     end
 
     if !issorted(inds, lt=<=)
@@ -838,10 +836,8 @@ function Base.deleteat!(df::DataFrame, inds::AbstractVector{Bool})
     end
     drop = _findall(inds)
     # workaround https://github.com/JuliaLang/julia/pull/41646
-    @static if VERSION <= v"1.6.2"
-        if drop isa UnitRange{<:Integer}
-            drop = collect(drop)
-        end
+    if VERSION <= v"1.6.2" && drop isa UnitRange{<:Integer}
+        drop = collect(drop)
     end
     return _deleteat!_helper(df, drop)
 end
