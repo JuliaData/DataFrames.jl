@@ -814,6 +814,7 @@ function Base.deleteat!(df::DataFrame, inds::AbstractVector{<:Integer})
     return _deleteat!_helper(df, inds)
 end
 
+# Bool is accepted here because it is accepted in Base Julia
 function Base.deleteat!(df::DataFrame, inds::Integer)
     size(df, 2) == 0 && throw(BoundsError(df, (inds, :)))
     return _deleteat!_helper(df, Int[inds])
