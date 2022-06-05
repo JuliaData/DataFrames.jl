@@ -793,8 +793,18 @@ julia> deleteat!(df, 2)
    2 │     3      6
 ```
 """
-function Base.deleteat!(df::DataFrame, inds::AbstractVector{<:Integer})
-    if !isempty(inds) && size(df, 2) == 0
+Base.deleteat!(df::DataFrame, ::Colon) = empty!(df)
+
+# Bool is accepted here because it is accepted in Base Julia
+function Base.deleteat!(df::DataFrame, inds::Integer)
+    size(df, 2) == 0 && throw(BoundsError(df, (inds, :)))
+    return _deleteat!_helper(df, Int[inds])
+end
+
+function Base.deleteat!(df::DataFrame, inds::AbstractVector)
+    if isempty(inds)
+        return df
+    elseif size(df, 2) == 0
         throw(BoundsError(df, (inds, :)))
     end
 
@@ -802,9 +812,15 @@ function Base.deleteat!(df::DataFrame, inds::AbstractVector{<:Integer})
         throw(ArgumentError("invalid index of type Bool"))
     end
 
+    if !(eltype(inds) <: Integer || all(x -> x isa Integer, inds))
+        throw(ArgumentError("unsupported index $inds"))
+    end
+
     # workaround https://github.com/JuliaLang/julia/pull/41646
-    if VERSION <= v"1.6.2" && inds isa UnitRange{<:Integer}
-        inds = collect(inds)
+    @static if VERSION <= v"1.6.2"
+        if inds isa UnitRange{<:Integer}
+            inds = collect(inds)
+        end
     end
 
     if !issorted(inds, lt=<=)
@@ -814,24 +830,16 @@ function Base.deleteat!(df::DataFrame, inds::AbstractVector{<:Integer})
     return _deleteat!_helper(df, inds)
 end
 
-# Bool is accepted here because it is accepted in Base Julia
-function Base.deleteat!(df::DataFrame, inds::Integer)
-    size(df, 2) == 0 && throw(BoundsError(df, (inds, :)))
-    return _deleteat!_helper(df, Int[inds])
-end
-
-Base.deleteat!(df::DataFrame, ::Colon) = empty!(df)
-Base.deleteat!(df::DataFrame, inds::AbstractVector) =
-    isempty(inds) ? df : throw(ArgumentError("unsupported index $inds"))
-
 function Base.deleteat!(df::DataFrame, inds::AbstractVector{Bool})
     if length(inds) != size(df, 1)
         throw(BoundsError(df, (inds, :)))
     end
     drop = _findall(inds)
     # workaround https://github.com/JuliaLang/julia/pull/41646
-    if VERSION <= v"1.6.2" && drop isa UnitRange{<:Integer}
-        drop = collect(drop)
+    @static if VERSION <= v"1.6.2"
+        if drop isa UnitRange{<:Integer}
+            drop = collect(drop)
+        end
     end
     return _deleteat!_helper(df, drop)
 end
@@ -850,6 +858,7 @@ function _deleteat!_helper(df::DataFrame, drop)
 
     for i in 2:length(cols)
         col = cols[i]
+        # this check is done to handle column aliases
         if length(col) == n
             deleteat!(col, drop)
         end
@@ -893,15 +902,26 @@ julia> keepat!(df, [1, 3])
    2 │     3      6
 ```
 """
-function keepat!(df::DataFrame, inds::AbstractVector{<:Integer})
+keepat!(df::DataFrame, ::Colon) = df
+
+function keepat!(df::DataFrame, inds::AbstractVector)
+    isempty(inds) && return empty!(df)
+
+    # this is required because of https://github.com/JuliaData/InvertedIndices.jl/issues/31
+    if !((eltype(inds) <: Integer) || all(x -> x isa Integer, inds))
+        throw(ArgumentError("unsupported index $inds"))
+    end
+
+    if Bool <: eltype(inds) && any(x -> x isa Bool, inds)
+        throw(ArgumentError("invalid index of type Bool"))
+    end
+
     if !issorted(inds, lt=<=)
         throw(ArgumentError("Indices passed to keepat! must be unique and sorted"))
     end
+
     return deleteat!(df, Not(inds))
 end
-
-keepat!(df::DataFrame, inds::AbstractVector) =
-    isempty(inds) ? empty!(df) : throw(ArgumentError("unsupported index $inds"))
 
 function keepat!(df::DataFrame, inds::Integer)
     inds isa Bool && throw(ArgumentError("Invalid index of type Bool"))
@@ -909,7 +929,6 @@ function keepat!(df::DataFrame, inds::Integer)
 end
 
 keepat!(df::DataFrame, inds::AbstractVector{Bool}) = deleteat!(df, .!inds)
-keepat!(df::DataFrame, ::Colon) = df
 keepat!(df::DataFrame, inds::Not) = deleteat!(df, Not(inds))
 
 """

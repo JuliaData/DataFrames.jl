@@ -680,8 +680,17 @@ end
     @test_throws MethodError deleteat!(df, zeros(Int, 0, 0))
     @test_throws ArgumentError deleteat!(df, [1.5])
     @test_throws ArgumentError deleteat!(df, Integer[1, true])
+    @test_throws ArgumentError deleteat!(df, Integer[true, 2])
     @test deleteat!(df, []) == DataFrame(a=[1, 2], b=[3.0, 4.0])
-    @test_throws BoundsError keepat!(DataFrame(), Not(1))
+    @test_throws BoundsError deleteat!(DataFrame(), Not(1))
+
+    df = DataFrame(a=[1, 2, 3], b=[3.0, 4.0, 5.0])
+    @test deleteat!(df, UnitRange{Integer}(1,2)) == DataFrame(a=3, b=5.0)
+    df = DataFrame(a=[1, 2, 3], b=[3.0, 4.0, 5.0])
+    @test_throws ArgumentError deleteat!(df, UnitRange{Integer}(true,true))
+    @test_throws BoundsError deleteat!(df, true:true)
+    df = DataFrame(a=1, b=3.0)
+    @test isempty(deleteat!(df, true:true))
 end
 
 @testset "describe" begin
@@ -2344,6 +2353,7 @@ end
     @test_throws MethodError keepat!(df, zeros(Int, 0, 0))
     @test_throws ArgumentError keepat!(df, [1.5])
     @test_throws ArgumentError keepat!(df, Integer[1, true])
+    @test_throws ArgumentError keepat!(df, Integer[true, 2])
     @test isempty(keepat!(df, []))
     @test_throws BoundsError keepat!(DataFrame(), Not(1))
 end
