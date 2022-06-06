@@ -1189,7 +1189,8 @@ end
 
 @inline function Base.filter((cols, f)::Pair{<:AsTable}, gdf::GroupedDataFrame;
                              ungroup::Bool=false)
-    df_tmp = select(parent(gdf), cols.cols, copycols=false)
+    cols = index(parent(gdf))[cols.cols]
+    df_tmp = select(parent(gdf), cols, copycols=false)
     if ncol(df_tmp) == 0
         throw(ArgumentError("At least one column must be passed to filter on"))
     end
