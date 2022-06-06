@@ -69,6 +69,15 @@ function Base.append!(df::DataFrame, table; cols::Symbol=:setequal,
     append!(df, DataFrame(table, copycols=false), cols=cols, promote=promote)
 end
 
+function Base.prepend!(df::DataFrame, table; cols::Symbol=:setequal,
+                      promote::Bool=(cols in [:union, :subset]))
+    if table isa Dict && cols == :orderequal
+        throw(ArgumentError("passing `Dict` as `table` when `cols` is equal to " *
+                            "`:orderequal` is not allowed as it is unordered"))
+    end
+    prepend!(df, DataFrame(table, copycols=false), cols=cols, promote=promote)
+end
+
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
 DataFrame(x::AbstractVector{NamedTuple{names, T}}; copycols::Bool=true) where {names, T} =
     fromcolumns(Tables.columns(Tables.IteratorWrapper(x)), collect(names), copycols=false)

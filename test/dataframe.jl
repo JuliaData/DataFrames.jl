@@ -596,6 +596,44 @@ end
     @test_throws ArgumentError push!(df, "ab")
 end
 
+@testset "extra push! tests" begin
+    for df in [DataFrame(a=Any[1]), DataFrame(a=1)]
+        @test push!(df, (b=1,), cols=:union) ≅
+              DataFrame(a=[1, missing], b=[missing, 1])
+        @test push!(df, (b=1,), cols=:union) ≅
+              DataFrame(a=[1, missing, missing], b=[missing, 1, 1])
+        df.x = 1:3
+        with_logger(SimpleLogger(IOBuffer())) do
+            @test_throws MethodError push!(df, (b=1,), cols=:union, promote=false)
+        end
+        @test df  ≅ DataFrame(a=[1, missing, missing], b=[missing, 1, 1], x=1:3)
+        allowmissing!(df, :x)
+        @test push!(df, (b=1,), cols=:union, promote=false) ≅
+              DataFrame(a=[1, missing, missing, missing], b=[missing, 1, 1, 1],
+                        x=[1:3; missing])
+    end
+
+    for df in [DataFrame(a=Any[1]), DataFrame(a=1)]
+        @test push!(df, DataFrame(b=1)[1, :], cols=:union) ≅
+              DataFrame(a=[1, missing], b=[missing, 1])
+        @test push!(df, DataFrame(b=1)[1, :], cols=:union) ≅
+              DataFrame(a=[1, missing, missing], b=[missing, 1, 1])
+        df.x = 1:3
+        with_logger(SimpleLogger(IOBuffer())) do
+            @test_throws MethodError push!(df, DataFrame(b=1)[1, :], cols=:union,
+                                           promote=false)
+        end
+        @test df  ≅ DataFrame(a=[1, missing, missing], b=[missing, 1, 1], x=1:3)
+        allowmissing!(df, :x)
+        @test push!(df, DataFrame(b=1)[1, :], cols=:union, promote=false) ≅
+              DataFrame(a=[1, missing, missing, missing], b=[missing, 1, 1, 1],
+                        x=[1:3; missing])
+    end
+
+    @test_throws ArgumentError push!(DataFrame(), (a=1, b=2), cols=:unions)
+    @test_throws ArgumentError push!(DataFrame(), Dict('a'=>1, 'b'=>2), cols=:union)
+end
+
 @testset "deleteat!" begin
     df = DataFrame(a=[1, 2], b=[3.0, 4.0])
     @test_throws BoundsError deleteat!(df, [true, true, true])
@@ -836,6 +874,77 @@ end
     @test df == DataFrame(A=1:2, B=1:2)
 end
 
+@testset "prepend!" begin
+    buf = IOBuffer()
+    sl = SimpleLogger(buf)
+    df = DataFrame(A=1:2, B=1:2)
+    df2 = DataFrame(A=[3, 4, 1, 2], B=[3, 4, 1, 2])
+    @test prepend!(df, DataFrame(A=3:4, B=[3.0, 4.0])) == df2
+    with_logger(sl) do
+        @test_throws InexactError prepend!(df, DataFrame(A=3:4, B=[3.5, 4.5]))
+    end
+    @test df == df2
+    @test occursin("Error adding value to column :B", String(take!(buf)))
+    with_logger(sl) do
+        @test_throws MethodError prepend!(df, DataFrame(A=3:4, B=["a", "b"]))
+    end
+    @test df == df2
+    @test occursin("Error adding value to column :B", String(take!(buf)))
+    @test_throws ArgumentError prepend!(df, DataFrame(A=1:4, C=1:4))
+    @test df == df2
+
+    dfx = DataFrame()
+    df3 = prepend!(dfx, df)
+    @test dfx === df3
+    @test df3 == df
+    @test df3[!, 1] !== df[!, 1]
+    @test df3[!, 2] !== df[!, 2]
+
+    df4 = prepend!(df3, DataFrame())
+    @test df4 === df3
+    @test df4 == df
+
+    df = DataFrame()
+    df.a = [1, 2, 3]
+    df.b = df.a
+    dfc = copy(df)
+    with_logger(sl) do
+        @test_throws AssertionError prepend!(df, dfc)
+    end
+    @test df == dfc
+    @test occursin("Error adding value to column :a", String(take!(buf)))
+
+    df = DataFrame()
+    df.a = [1, 2, 3, 4]
+    df.b = df.a
+    df.c = [1, 2, 3, 4]
+    dfc = copy(df)
+    with_logger(sl) do
+        @test_throws AssertionError prepend!(df, dfc)
+    end
+    @test df == dfc
+    @test occursin("Error adding value to column :a", String(take!(buf)))
+
+    rename!(df, [:a, :b, :z])
+    @test_throws ArgumentError prepend!(df, dfc)
+
+    df = DataFrame(A=1:2, B=1:2)
+    df2 = DataFrame(A=[3, 4, 1, 2], B=[3, 4, 1, 2])
+    @test prepend!(copy(df), DataFrame(A=3:4, B=[3.0, 4.0])) == df2
+    @test prepend!(copy(df), DataFrame(A=3:4, B=[3.0, 4.0]), cols=:setequal) == df2
+    @test prepend!(copy(df), DataFrame(B=3:4, A=[3.0, 4.0])) == df2
+    @test prepend!(copy(df), DataFrame(B=3:4, A=[3.0, 4.0]), cols=:setequal) == df2
+    @test prepend!(copy(df), Dict(:A => 3:4, :B => [3.0, 4.0])) == df2
+    @test prepend!(copy(df), Dict(:A => 3:4, :B => [3.0, 4.0]), cols=:setequal) == df2
+    @test prepend!(copy(df), DataFrame(A=3:4, B=[3.0, 4.0]), cols=:orderequal) == df2
+    @test prepend!(copy(df), OrderedDict(:A => 3:4, :B => [3.0, 4.0]), cols=:orderequal) == df2
+    @test_throws ArgumentError prepend!(df, Dict(:A => 3:4, :B => [3.0, 4.0]), cols=:orderequal)
+    @test_throws ArgumentError prepend!(df, DataFrame(B=3:4, A=[3.0, 4.0]), cols=:orderequal)
+    @test_throws ArgumentError prepend!(df, OrderedDict(:B => 3:4, :A => [3.0, 4.0]), cols=:orderequal)
+    @test_throws ArgumentError prepend!(df, DataFrame(B=3:4, A=[3.0, 4.0]), cols=:xxx)
+    @test df == DataFrame(A=1:2, B=1:2)
+end
+
 @testset "append! default options" begin
     buf = IOBuffer()
     sl = SimpleLogger(buf)
@@ -867,7 +976,42 @@ end
         df1 = DataFrame(x=1:3, y=1:3)
         df2 = DataFrame(y=4:6)
         append!(df1, df2, cols=cols)
-        @test df1 ≅ DataFrame(x=[1:3;missing; missing; missing], y=1:6)
+        @test df1 ≅ DataFrame(x=[1:3; missing; missing; missing], y=1:6)
+    end
+end
+
+@testset "prepend! default options" begin
+    buf = IOBuffer()
+    sl = SimpleLogger(buf)
+
+    df1 = DataFrame(x=1:3, y=1:3)
+    df2 = DataFrame(y=4:6, x=1:3)
+    prepend!(df1, df2)
+    @test df1 == DataFrame(x=[1:3;1:3], y=[4:6; 1:3])
+
+    df2 = DataFrame(y=4:6, x=1:3, z=1)
+    @test_throws ArgumentError prepend!(df1, df2)
+    @test df1 == DataFrame(x=[1:3;1:3], y=[4:6; 1:3])
+
+    df2 = DataFrame(y=4:6, x=[missing, missing, missing])
+    with_logger(sl) do
+        @test_throws MethodError prepend!(df1, df2)
+    end
+    @test df1 == DataFrame(x=[1:3;1:3], y=[4:6; 1:3])
+
+    df2 = DataFrame(x=[missing, missing, missing], y=4:6)
+    for cols in (:orderequal, :intersect)
+        with_logger(sl) do
+            @test_throws MethodError prepend!(df1, df2, cols=cols)
+        end
+        @test df1 == DataFrame(x=[1:3;1:3], y=[4:6; 1:3])
+    end
+
+    for cols in (:subset, :union)
+        df1 = DataFrame(x=1:3, y=1:3)
+        df2 = DataFrame(y=4:6)
+        prepend!(df1, df2, cols=cols)
+        @test df1 ≅ DataFrame(x=[missing; missing; missing; 1:3], y=[4:6; 1:3])
     end
 end
 
@@ -966,61 +1110,138 @@ end
             end
         end
     end
-end
 
-@testset "new append! and push! tests" begin
     for df in [DataFrame(a=Any[1]), DataFrame(a=1)]
         @test append!(df, DataFrame(b=1), cols=:union) ≅
               DataFrame(a=[1, missing], b=[missing, 1])
-        @test append!(df, DataFrame(b=1), cols=:union) ≅
-              DataFrame(a=[1, missing, missing], b=[missing, 1, 1])
+        @test append!(df, DataFrame(b=2), cols=:union) ≅
+              DataFrame(a=[1, missing, missing], b=[missing, 1, 2])
         df.x = 1:3
         with_logger(SimpleLogger(IOBuffer())) do
             @test_throws ArgumentError append!(df, DataFrame(b=1), cols=:union,
                                                promote=false)
         end
-        @test df  ≅ DataFrame(a=[1, missing, missing], b=[missing, 1, 1], x=1:3)
+        @test df ≅ DataFrame(a=[1, missing, missing], b=[missing, 1, 2], x=1:3)
         allowmissing!(df, :x)
-        @test append!(df, DataFrame(b=1), cols=:union, promote=false) ≅
-              DataFrame(a=[1, missing, missing, missing], b=[missing, 1, 1, 1],
+        @test append!(df, DataFrame(b=3), cols=:union, promote=false) ≅
+              DataFrame(a=[1, missing, missing, missing], b=[missing, 1, 2, 3],
                         x=[1:3; missing])
+    end
+end
+
+@testset "prepend! advanced options" begin
+    buf = IOBuffer()
+    sl = SimpleLogger(buf)
+
+    for cols in (:orderequal, :setequal, :intersect, :subset, :union)
+        for promote in (true, false)
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(x=1:3, y=4:6)
+            prepend!(df1, df2, cols=cols, promote=promote)
+            @test df1 == DataFrame(x=[1:3;1:3], y=[4:6; 1:3])
+            @test eltype(df1.x) == Int
+            @test eltype(df1.y) == Int
+
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(y=4:6, x=1:3)
+            if cols == :orderequal
+                @test_throws ArgumentError prepend!(df1, df2, cols=cols, promote=promote)
+                @test df1 == DataFrame(x=1:3, y=1:3)
+            else
+                prepend!(df1, df2, cols=cols, promote=promote)
+                @test df1 == DataFrame(x=[1:3;1:3], y=[4:6; 1:3])
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Int
+            end
+
+            df1 = DataFrame()
+            df1.x = 1:3
+            df1.y = df1.x
+            df2 = DataFrame(x=1:3, y=4:6)
+            with_logger(sl) do
+                @test_throws AssertionError prepend!(df1, df2, cols=cols, promote=promote)
+            end
+            @test df1 == DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(y=4:6, x=1:3)
+            with_logger(sl) do
+                @test_throws (cols == :orderequal ? ArgumentError :
+                              AssertionError) prepend!(df1, df2, cols=cols, promote=promote)
+            end
+            @test df1 == DataFrame(x=1:3, y=1:3)
+
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(x=1:3, y=4:6, z=11:13)
+            if cols in [:orderequal, :setequal]
+                @test_throws ArgumentError prepend!(df1, df2, cols=cols, promote=promote)
+                @test df1 == DataFrame(x=1:3, y=1:3)
+            elseif cols == :union
+                prepend!(df1, df2, cols=cols, promote=promote)
+                @test df1 ≅ DataFrame(x=[1:3;1:3], y=[4:6; 1:3],
+                                      z=[11:13; missing; missing; missing])
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Int
+                @test eltype(df1.z) == Union{Missing, Int}
+            else
+                prepend!(df1, df2, cols=cols, promote=promote)
+                @test df1 == DataFrame(x=[1:3;1:3], y=[4:6; 1:3])
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Int
+            end
+
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(x=1:3, y=[missing, missing, missing])
+            if promote
+                prepend!(df1, df2, cols=cols, promote=true)
+                @test df1 ≅ DataFrame(x=[1:3;1:3], y=[missing; missing; missing; 1:3])
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Union{Missing, Int}
+            else
+                with_logger(sl) do
+                    @test_throws MethodError prepend!(df1, df2, cols=cols, promote=promote)
+                end
+                @test df1 == DataFrame(x=1:3, y=1:3)
+            end
+
+            df1 = DataFrame(x=1:3, y=1:3)
+            df2 = DataFrame(x=1:3, z=11:13)
+            if !promote || cols in [:orderequal, :setequal, :intersect]
+                with_logger(sl) do
+                    @test_throws ArgumentError prepend!(df1, df2, cols=cols, promote=promote)
+                end
+                @test df1 == DataFrame(x=1:3, y=1:3)
+            elseif cols == :union
+                prepend!(df1, df2, cols=cols, promote=true)
+                @test df1 ≅ DataFrame(x=[1:3;1:3], y=[missing; missing; missing; 1:3],
+                                      z=[11:13; missing; missing; missing])
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Union{Missing, Int}
+                @test eltype(df1.z) == Union{Missing, Int}
+            else
+                prepend!(df1, df2, cols=cols, promote=true)
+                @test df1 ≅ DataFrame(x=[1:3;1:3], y=[missing; missing; missing; 1:3])
+                @test eltype(df1.x) == Int
+                @test eltype(df1.y) == Union{Missing, Int}
+            end
+        end
     end
 
     for df in [DataFrame(a=Any[1]), DataFrame(a=1)]
-        @test push!(df, (b=1,), cols=:union) ≅
-              DataFrame(a=[1, missing], b=[missing, 1])
-        @test push!(df, (b=1,), cols=:union) ≅
-              DataFrame(a=[1, missing, missing], b=[missing, 1, 1])
+        @test prepend!(df, DataFrame(b=1), cols=:union) ≅
+              DataFrame(a=[missing, 1], b=[1, missing])
+        @test prepend!(df, DataFrame(b=2), cols=:union) ≅
+              DataFrame(a=[missing, missing, 1], b=[2, 1, missing])
         df.x = 1:3
         with_logger(SimpleLogger(IOBuffer())) do
-            @test_throws MethodError push!(df, (b=1,), cols=:union, promote=false)
+            @test_throws ArgumentError prepend!(df, DataFrame(b=1), cols=:union,
+                                                promote=false)
         end
-        @test df  ≅ DataFrame(a=[1, missing, missing], b=[missing, 1, 1], x=1:3)
+        @test df ≅ DataFrame(a=[missing, missing, 1], b=[2, 1, missing], x=1:3)
         allowmissing!(df, :x)
-        @test push!(df, (b=1,), cols=:union, promote=false) ≅
-              DataFrame(a=[1, missing, missing, missing], b=[missing, 1, 1, 1],
-                        x=[1:3; missing])
+        @test prepend!(df, DataFrame(b=3), cols=:union, promote=false) ≅
+              DataFrame(a=[missing, missing, missing, 1], b=[3, 2, 1, missing],
+                        x=[missing; 1:3])
     end
 
-    for df in [DataFrame(a=Any[1]), DataFrame(a=1)]
-        @test push!(df, DataFrame(b=1)[1, :], cols=:union) ≅
-              DataFrame(a=[1, missing], b=[missing, 1])
-        @test push!(df, DataFrame(b=1)[1, :], cols=:union) ≅
-              DataFrame(a=[1, missing, missing], b=[missing, 1, 1])
-        df.x = 1:3
-        with_logger(SimpleLogger(IOBuffer())) do
-            @test_throws MethodError push!(df, DataFrame(b=1)[1, :], cols=:union,
-                                           promote=false)
-        end
-        @test df  ≅ DataFrame(a=[1, missing, missing], b=[missing, 1, 1], x=1:3)
-        allowmissing!(df, :x)
-        @test push!(df, DataFrame(b=1)[1, :], cols=:union, promote=false) ≅
-              DataFrame(a=[1, missing, missing, missing], b=[missing, 1, 1, 1],
-                        x=[1:3; missing])
-    end
-
-    @test_throws ArgumentError push!(DataFrame(), (a=1, b=2), cols=:unions)
-    @test_throws ArgumentError push!(DataFrame(), Dict('a'=>1, 'b'=>2), cols=:union)
 end
 
 @testset "rename" begin

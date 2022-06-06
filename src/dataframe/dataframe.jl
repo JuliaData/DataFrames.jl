@@ -1322,8 +1322,16 @@ julia> df1
    6 │     6      6
 ```
 """
-function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
-                      promote::Bool=(cols in [:union, :subset]))
+Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
+             promote::Bool=(cols in [:union, :subset])) =
+    _append_or_prepend!(df1, df2, cols=cols, promote=promote, atend=true)
+
+Base.prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
+              promote::Bool=(cols in [:union, :subset])) =
+    _append_or_prepend!(df1, df2, cols=cols, promote=promote, atend=false)
+
+function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol,
+                             promote::Bool, atend::Bool)
     if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
         throw(ArgumentError("`cols` keyword argument must be " *
                             ":orderequal, :setequal, :intersect, :subset or :union)"))
@@ -1371,8 +1379,9 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
         end
     end
 
-    nrows, ncols = size(df1)
-    targetrows = nrows + nrow(df2)
+    nrow1 = nrow(df1)
+    nrow2 = nrow(df2)
+    targetrows = nrow1 + nrow2
     current_col = 0
     # in the code below we use a direct access to _columns because
     # we resize the columns so temporarily the `DataFrame` is internally
@@ -1387,24 +1396,42 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
                 T = eltype(df1_c)
                 if S <: T || !promote || promote_type(S, T) <: T
                     # if S <: T || promote_type(S, T) <: T this should never throw an exception
-                    append!(df1_c, df2_c)
+                    if atend
+                        append!(df1_c, df2_c)
+                    else
+                        prepend!(df1_c, df2_c)
+                    end
                 else
                     newcol = similar(df1_c, promote_type(S, T), targetrows)
-                    copyto!(newcol, 1, df1_c, 1, nrows)
-                    copyto!(newcol, nrows+1, df2_c, 1, targetrows - nrows)
                     firstindex(newcol) != 1 && _onebased_check_error()
+                    if atend
+                        copyto!(newcol, 1, df1_c, 1, nrow1)
+                        copyto!(newcol, nrow1+1, df2_c, 1, nrow2)
+                    else
+                        copyto!(newcol, 1, df2_c, 1, nrow2)
+                        copyto!(newcol, nrow2+1, df1_c, 1, nrow1)
+                    end
                     _columns(df1)[j] = newcol
                 end
             else
                 if Missing <: eltype(df1[!, j])
-                    resize!(df1[!, j], targetrows)
-                    df1[nrows+1:targetrows, j] .= missing
+                    if atend
+                        resize!(df1[!, j], targetrows)
+                        df1[nrow1+1:targetrows, j] .= missing
+                    else
+                        prepend!(df1[!, j], Iterators.repeated(missing, nrow2))
+                    end
                 elseif promote
                     newcol = similar(df1[!, j], Union{Missing, eltype(df1[!, j])},
                                      targetrows)
-                    copyto!(newcol, 1, df1[!, j], 1, nrows)
-                    newcol[nrows+1:targetrows] .= missing
                     firstindex(newcol) != 1 && _onebased_check_error()
+                    if atend
+                        copyto!(newcol, 1, df1[!, j], 1, nrow1)
+                        newcol[nrow1+1:targetrows] .= missing
+                    else
+                        copyto!(newcol, nrow2+1, df1[!, j], 1, nrow1)
+                        newcol[1:nrow2] .= missing
+                    end
                     _columns(df1)[j] = newcol
                 else
                     throw(ArgumentError("promote=false and source data frame does " *
@@ -1422,15 +1449,28 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
             for n in setdiff(_names(df2), _names(df1))
                 newcol = similar(df2[!, n], Union{Missing, eltype(df2[!, n])},
                                  targetrows)
-                @inbounds newcol[1:nrows] .= missing
-                copyto!(newcol, nrows+1, df2[!, n], 1, targetrows - nrows)
+                firstindex(newcol) != 1 && _onebased_check_error()
+                if atend
+                    newcol[1:nrow1] .= missing
+                    copyto!(newcol, nrow1+1, df2[!, n], 1, targetrows - nrow1)
+                else
+                    newcol[nrow2+1:targetrows] .= missing
+                    copyto!(newcol, 1, df2[!, n], 1, nrow2)
+                end
                 df1[!, n] = newcol
             end
         end
     catch err
         # Undo changes in case of error
         for col in _columns(df1)
-            resize!(col, nrows)
+            @assert length(col) >= nrow1
+            if atend
+                resize!(col, nrow1)
+            else
+                if length(col) != nrow1
+                    deleteat!(col, 1:length(col) - nrow1)
+                end
+            end
         end
         @error "Error adding value to column :$(_names(df1)[current_col])."
         rethrow(err)
