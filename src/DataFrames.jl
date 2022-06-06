@@ -105,6 +105,20 @@ else
     export only
 end
 
+if isdefined(Base, :keepat!)  # Introduced in 1.7.0
+    import Base.keepat!
+else
+    import Compat.keepat!
+    export keepat!
+end
+
+if isdefined(Base, :popat!)  # Introduced in 1.5.0
+    import Base.popat!
+else
+    import Compat.popat!
+    export popat!
+end
+
 if VERSION >= v"1.3"
     using Base.Threads: @spawn
 else

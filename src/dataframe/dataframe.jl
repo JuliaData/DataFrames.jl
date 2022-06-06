@@ -793,9 +793,29 @@ julia> deleteat!(df, 2)
    2 │     3      6
 ```
 """
-function Base.deleteat!(df::DataFrame, inds)
-    if !isempty(inds) && size(df, 2) == 0
+Base.deleteat!(df::DataFrame, inds)
+
+Base.deleteat!(df::DataFrame, ::Colon) = empty!(df)
+
+# Bool is accepted here because it is accepted in Base Julia
+function Base.deleteat!(df::DataFrame, inds::Integer)
+    size(df, 2) == 0 && throw(BoundsError(df, (inds, :)))
+    return _deleteat!_helper(df, Int[inds])
+end
+
+function Base.deleteat!(df::DataFrame, inds::AbstractVector)
+    if isempty(inds)
+        return df
+    elseif size(df, 2) == 0
         throw(BoundsError(df, (inds, :)))
+    end
+
+    if Bool <: eltype(inds) && any(x -> x isa Bool, inds)
+        throw(ArgumentError("invalid index of type Bool"))
+    end
+
+    if !(eltype(inds) <: Integer || all(x -> x isa Integer, inds))
+        throw(ArgumentError("unsupported index $inds"))
     end
 
     # workaround https://github.com/JuliaLang/julia/pull/41646
@@ -803,8 +823,10 @@ function Base.deleteat!(df::DataFrame, inds)
         inds = collect(inds)
     end
 
-    # we require ind to be stored and unique like in Base
-    # otherwise an error will be thrown and the data frame will get corrupted
+    if !issorted(inds, lt=<=)
+        throw(ArgumentError("Indices passed to deleteat! must be unique and sorted"))
+    end
+
     return _deleteat!_helper(df, inds)
 end
 
@@ -820,7 +842,8 @@ function Base.deleteat!(df::DataFrame, inds::AbstractVector{Bool})
     return _deleteat!_helper(df, drop)
 end
 
-Base.deleteat!(df::DataFrame, inds::Not) = deleteat!(df, axes(df, 1)[inds])
+Base.deleteat!(df::DataFrame, inds::Not) =
+    _deleteat!_helper(df, axes(df, 1)[inds])
 
 function _deleteat!_helper(df::DataFrame, drop)
     cols = _columns(df)
@@ -833,6 +856,7 @@ function _deleteat!_helper(df::DataFrame, drop)
 
     for i in 2:length(cols)
         col = cols[i]
+        # this check is done to handle column aliases
         if length(col) == n
             deleteat!(col, drop)
         end
@@ -847,13 +871,235 @@ function _deleteat!_helper(df::DataFrame, drop)
 end
 
 """
+    keepat!(df::DataFrame, inds)
+
+Delete rows at all indices not specified by `inds` from a `DataFrame` `df`
+in place and return it.
+
+Internally `deleteat!` is called for all columns so `inds` must be:
+a vector of sorted and unique integers, a boolean vector, an integer,
+or `Not` wrapping any valid selector.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> keepat!(df, [1, 3])
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     3      6
+```
+"""
+keepat!(df::DataFrame, inds)
+
+keepat!(df::DataFrame, ::Colon) = df
+
+function keepat!(df::DataFrame, inds::AbstractVector)
+    isempty(inds) && return empty!(df)
+
+    # this is required because of https://github.com/JuliaData/InvertedIndices.jl/issues/31
+    if !((eltype(inds) <: Integer) || all(x -> x isa Integer, inds))
+        throw(ArgumentError("unsupported index $inds"))
+    end
+
+    if Bool <: eltype(inds) && any(x -> x isa Bool, inds)
+        throw(ArgumentError("invalid index of type Bool"))
+    end
+
+    if !issorted(inds, lt=<=)
+        throw(ArgumentError("Indices passed to keepat! must be unique and sorted"))
+    end
+
+    return deleteat!(df, Not(inds))
+end
+
+function keepat!(df::DataFrame, inds::Integer)
+    inds isa Bool && throw(ArgumentError("Invalid index of type Bool"))
+    return deleteat!(df, Not(Int[inds]))
+end
+
+keepat!(df::DataFrame, inds::AbstractVector{Bool}) = deleteat!(df, .!inds)
+keepat!(df::DataFrame, inds::Not) = deleteat!(df, Not(inds))
+
+"""
     empty!(df::DataFrame)
 
 Remove all rows from `df`, making each of its columns empty.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> empty!(df)
+0×2 DataFrame
+
+julia> df.a, df.b
+(Int64[], Int64[])
+```
+
 """
 function Base.empty!(df::DataFrame)
     foreach(empty!, eachcol(df))
     return df
+end
+
+"""
+    resize!(df::DataFrame, n::Integer)
+
+Resize `df` to have `n` rows by calling `resize!` on all columns of `df`.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> resize!(df, 2)
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+```
+"""
+function Base.resize!(df::DataFrame, n::Integer)
+    if ncol(df) == 0 && n != 0
+        throw(ArgumentError("data frame has no columns and requested number " *
+                            "of rows is not zero"))
+    end
+    foreach(col -> resize!(col, n), eachcol(df))
+    return df
+end
+
+"""
+    pop!(df::DataFrame)
+
+Remove the last row from `df` and return a `NamedTuple` created from this row.
+
+!!! note
+
+    Using this method for very wide data frames may lead to expensive compilation.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> pop!(df)
+(a = 3, b = 6)
+
+julia> df
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+```
+
+"""
+Base.pop!(df::DataFrame) = popat!(df, nrow(df))
+
+"""
+    popfirst!(df::DataFrame)
+
+Remove the first row from `df` and return a `NamedTuple` created from this row.
+
+!!! note
+
+    Using this method for very wide data frames may lead to expensive compilation.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> popfirst!(df)
+(a = 1, b = 4)
+
+julia> df
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      5
+   2 │     3      6
+```
+"""
+Base.popfirst!(df::DataFrame) = popat!(df, 1)
+
+"""
+    popat!(df::DataFrame, i::Integer)
+
+Remove the `i`-th row from `df` and return a `NamedTuple` created from this row.
+
+!!! note
+
+    Using this method for very wide data frames may lead to expensive compilation.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> popat!(df, 2)
+(a = 2, b = 5)
+
+julia> df
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     3      6
+```
+"""
+function popat!(df::DataFrame, i::Integer)
+    i isa Bool && throw(ArgumentError("Invalid index of type Bool"))
+    nt = NamedTuple(df[i, :])
+    deleteat!(df, i)
+    return nt
 end
 
 ##############################################################################

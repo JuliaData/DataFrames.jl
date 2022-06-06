@@ -147,10 +147,15 @@ empty
 empty!
 filter
 filter!
+keepat!
 first
 last
-only
 nonunique
+only
+pop!
+popat!
+popfirst!
+resize!
 subset
 subset!
 unique
