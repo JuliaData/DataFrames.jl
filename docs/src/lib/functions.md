@@ -81,6 +81,7 @@ invpermute!
 mapcols
 mapcols!
 permute!
+prepend!
 push!
 reduce
 repeat
