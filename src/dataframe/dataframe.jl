@@ -797,8 +797,8 @@ Base.deleteat!(df::DataFrame, inds)
 
 Base.deleteat!(df::DataFrame, ::Colon) = empty!(df)
 
-# Bool is accepted here because it is accepted in Base Julia
 function Base.deleteat!(df::DataFrame, inds::Integer)
+    inds isa Bool && throw(ArgumentError("Invalid index of type Bool"))
     size(df, 2) == 0 && throw(BoundsError(df, (inds, :)))
     return _deleteat!_helper(df, Int[inds])
 end

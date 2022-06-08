@@ -669,8 +669,7 @@ end
     @test_throws AssertionError deleteat!(df, 1)
 
     df = DataFrame(a=[1, 2], b=[3, 4])
-    @test deleteat!(df, true) == DataFrame(a=2, b=4)
-    @test_throws BoundsError deleteat!(df, false)
+    @test_throws ArgumentError deleteat!(df, true)
 
     df = DataFrame(a=[1, 2], b=[3.0, 4.0])
     @test isempty(deleteat!(df, :))
