@@ -815,6 +815,17 @@ combine(gd::GroupedDataFrame,
                      keepkeys=keepkeys, ungroup=ungroup,
                      copycols=true, keeprows=false, renamecols=renamecols)
 
+function _dealias_dataframe(df::DataFrame)
+    seen_cols = IdDict{Any, Nothing}()
+    for (i, col) in enumerate(eachcol(df))
+        if !haskey(seen_cols, col)
+            seen_cols[col] = nothing
+        else
+            df[!, i] = df[:, i]
+        end
+    end
+end
+
 function select(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols::Bool=true,
                 keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
     if f isa Colon
@@ -823,12 +834,15 @@ function select(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols:
     return select(gd, f, copycols=copycols, keepkeys=keepkeys, ungroup=ungroup)
 end
 
-select(gd::GroupedDataFrame, @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
-                                                       AbstractVecOrMat}...);
-       copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true) =
-    _combine_prepare(gd, Ref{Any}(map(x -> broadcast_pair(parent(gd), x), args)),
-                     copycols=copycols, keepkeys=keepkeys,
-                     ungroup=ungroup, keeprows=true, renamecols=renamecols)
+function select(gd::GroupedDataFrame, @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex,
+                                                                MultiColumnIndex, AbstractVecOrMat}...);
+                copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)
+    res = _combine_prepare(gd, Ref{Any}(map(x -> broadcast_pair(parent(gd), x), args)),
+                           copycols=copycols, keepkeys=keepkeys,
+                           ungroup=ungroup, keeprows=true, renamecols=renamecols)
+    copycols || _dealias_dataframe(parent(res))
+    return res
+end
 
 function transform(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols::Bool=true,
                 keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true)

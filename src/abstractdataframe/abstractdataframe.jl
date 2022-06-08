@@ -2534,7 +2534,7 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
     end
 
     seen_cols = IdDict{Any, Nothing}()
-    for (i, col) in enumerate(eachcol(df))
+    for col in eachcol(df)
         if !haskey(seen_cols, col)
             seen_cols[col] = nothing
             _cycle_permute!(col, cp)

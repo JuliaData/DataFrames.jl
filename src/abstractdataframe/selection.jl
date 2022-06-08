@@ -705,6 +705,7 @@ function _add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
                 if v === cdf[i]
                     if column_to_copy[i]
                         must_copy = true
+                        break
                     else
                         column_to_copy[i] = true
                     end

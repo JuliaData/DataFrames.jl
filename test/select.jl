@@ -2707,4 +2707,55 @@ end
     @test_throws ArgumentError select(gdf, :a => [:x, :y, :z])
 end
 
+@testset "additional test of handling of operation specfication in select!/transform!" begin
+    df = DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"])
+    select!(df, :b, :c => :d, :a => (x -> 2 * x) => :e)
+    @test df == DataFrame(b='a':'d', d=["p", "q", "r", "s"], e=[2, 4, 6, 8])
+
+    df = DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"])
+    transform!(df, :b, :c => :d, :a => (x -> 2 * x) => :e)
+    @test df == DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"],
+                          d=["p", "q", "r", "s"], e=[2, 4, 6, 8])
+    @test df.c !== df.d
+
+    df = DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"])
+    select!(groupby(df, :c), :b, :c => :d, :a => (x -> 2 * x) => :e)
+    @test df == DataFrame(c=["p", "q", "r", "s"], b='a':'d',
+                          d=["p", "q", "r", "s"], e=[2, 4, 6, 8])
+    @test df.c !== df.d
+
+    df = DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"])
+    transform!(groupby(df, :c), :b, :c => :d, :a => (x -> 2 * x) => :e)
+    @test df == DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"],
+                          d=["p", "q", "r", "s"], e=[2, 4, 6, 8])
+    @test df.c !== df.d
+
+    df = DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"])
+    sdf = @view df[[2, 4], :]
+    select!(sdf, :b, :c => :d, :a => (x -> 2 * x) => :e)
+    @test df ≅ DataFrame(b='a':'d', d=[missing, "q", missing, "s"],
+                         e=[missing, 4, missing, 8])
+
+    df = DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"])
+    sdf = @view df[[2, 4], :]
+    transform!(sdf, :b, :c => :d, :a => (x -> 2 * x) => :e)
+    @test df ≅ DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"],
+                         d=[missing, "q", missing, "s"],
+                         e=[missing, 4, missing, 8])
+
+    df = DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"])
+    sdf = @view df[[2, 4], :]
+    select!(groupby(sdf, :c), :b, :c => :d, :a => (x -> 2 * x) => :e)
+    @test df ≅ DataFrame(c=["p", "q", "r", "s"], b='a':'d',
+                         d=[missing, "q", missing, "s"],
+                         e=[missing, 4, missing, 8])
+
+    df = DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"])
+    sdf = @view df[[2, 4], :]
+    transform!(groupby(sdf, :c), :b, :c => :d, :a => (x -> 2 * x) => :e)
+    @test df ≅ DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"],
+                         d=[missing, "q", missing, "s"],
+                         e=[missing, 4, missing, 8])
+end
+
 end # module
