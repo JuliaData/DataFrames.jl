@@ -883,7 +883,7 @@ function select!(gd::GroupedDataFrame,
     else
         @assert df isa SubDataFrame
         newdf = select(gd, args..., copycols=true, renamecols=renamecols)
-        _replace_columns!(df, newdf, false)
+        _replace_columns!(df, newdf, keep_present=false)
     end
     return ungroup ? df : gd
 end
@@ -909,7 +909,7 @@ function transform!(gd::GroupedDataFrame,
         @assert df isa SubDataFrame
         newdf = select(gd, args..., copycols=true, renamecols=renamecols)
         # here column order of df is retained due to wastransform=true
-        _replace_columns!(df, newdf, true)
+        _replace_columns!(df, newdf, keep_present=true)
     end
     return ungroup ? df : gd
 end

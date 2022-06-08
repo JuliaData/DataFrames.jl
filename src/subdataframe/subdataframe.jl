@@ -316,8 +316,8 @@ function is_column_insertion_allowed(df::AbstractDataFrame)
     throw(ArgumentError("Unsupported data frame type"))
 end
 
-function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame, wastransform::Bool)
-    if wastransform
+function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame; keep_present::Bool)
+    if keep_present
         colsmatch = issubset(_names(newdf), _names(sdf))
     else
         colsmatch = _names(newdf) == _names(sdf)
@@ -344,7 +344,7 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame, wastransform::Bo
     # and that operation was allowed.
     # Therefore we need to update the parent of sdf in place to make sure
     # it holds only the required target columns in a correct order.
-    if !wastransform && !colsmatch
+    if !keep_present && !colsmatch
         pdf = parent(sdf)
         @assert pdf isa DataFrame
         select!(pdf, _names(newdf))
