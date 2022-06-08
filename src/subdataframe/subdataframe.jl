@@ -335,7 +335,7 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame, wastransform::Bo
     # if _replace_columns! was called from transform we are done as we want to
     # keep all columns that were previously present.
     # In this case column order will be correct.
-    # Otherwise If columns did not match this means that we have either:
+    # Otherwise if columns did not match this means that we have either:
     # 1. inserted some columns into newdf
     # or
     # 2. requested to reorder the existing columns

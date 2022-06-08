@@ -815,7 +815,7 @@ combine(gd::GroupedDataFrame,
                      keepkeys=keepkeys, ungroup=ungroup,
                      copycols=true, keeprows=false, renamecols=renamecols)
 
-function _dealias_dataframe(df::DataFrame)
+function _dealias_dataframe!(df::DataFrame)
     seen_cols = IdDict{Any, Nothing}()
     for (i, col) in enumerate(eachcol(df))
         if !haskey(seen_cols, col)
@@ -840,7 +840,9 @@ function select(gd::GroupedDataFrame, @nospecialize(args::Union{Pair, Base.Calla
     res = _combine_prepare(gd, Ref{Any}(map(x -> broadcast_pair(parent(gd), x), args)),
                            copycols=copycols, keepkeys=keepkeys,
                            ungroup=ungroup, keeprows=true, renamecols=renamecols)
-    copycols || _dealias_dataframe(parent(res))
+    # res can be a GroupedDataFrame based on DataFrame or a DataFrame,
+    # so parent always gives a DataFrame
+    copycols || _dealias_dataframe!(parent(res))
     return res
 end
 
@@ -900,7 +902,7 @@ function transform!(gd::GroupedDataFrame,
     df = parent(gd)
     if df isa DataFrame
         newdf = select(gd, :, args..., copycols=false, renamecols=renamecols)
-        # net to recover column order of df in newdf and add new columns at the end
+        # need to recover column order of df in newdf and add new columns at the end
         select!(newdf, propertynames(df), :)
         _replace_columns!(df, newdf)
     else
