@@ -863,11 +863,12 @@ function select!(gd::GroupedDataFrame,
     df = parent(gd)
     if df isa DataFrame
         newdf = select(gd, args..., copycols=false, renamecols=renamecols)
+        _replace_columns!(df, newdf)
     else
         @assert df isa SubDataFrame
         newdf = select(gd, args..., copycols=true, renamecols=renamecols)
+        _replace_columns!(df, newdf, false)
     end
-    _replace_columns!(df, newdf)
     return ungroup ? df : gd
 end
 
@@ -885,11 +886,14 @@ function transform!(gd::GroupedDataFrame,
     df = parent(gd)
     if df isa DataFrame
         newdf = select(gd, :, args..., copycols=false, renamecols=renamecols)
+        # net to recover column order of df in newdf and add new columns at the end
+        select!(newdf, propertynames(df), :)
+        _replace_columns!(df, newdf)
     else
         @assert df isa SubDataFrame
-        newdf = select(gd, :, args..., copycols=true, renamecols=renamecols)
+        newdf = select(gd, args..., copycols=true, renamecols=renamecols)
+        # here column order of df is retained due to wastransform=true
+        _replace_columns!(df, newdf, true)
     end
-    select!(newdf, propertynames(df), :)
-    _replace_columns!(df, newdf)
     return ungroup ? df : gd
 end

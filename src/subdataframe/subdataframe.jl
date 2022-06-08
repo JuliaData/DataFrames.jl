@@ -303,7 +303,7 @@ end
 
 Base.convert(::Type{DataFrame}, sdf::SubDataFrame) = DataFrame(sdf)
 
-# this function tests if it is allowed to add columns to passed SubDataFrame
+# this function tests if it is allowed to add/remove/reorder columns to passed SubDataFrame
 # currently it is only allowed when SubDataFrame was created with : as column selector
 # which results in using Index as its index (as opposed to other columns selectors
 # which result in SubIndex)
@@ -316,9 +316,12 @@ function is_column_insertion_allowed(df::AbstractDataFrame)
     throw(ArgumentError("Unsupported data frame type"))
 end
 
-function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame)
-    colsmatch = _names(sdf) == _names(newdf)
-
+function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame, wastransform::Bool)
+    if wastransform
+        colsmatch = issubset(_names(newdf), _names(sdf))
+    else
+        colsmatch = _names(newdf) == _names(sdf)
+    end
     if !(colsmatch || is_column_insertion_allowed(sdf))
         throw(ArgumentError("changing the sequence of column names in a SubDataFrame " *
                             "that subsets columns of its parent data frame is disallowed"))
@@ -329,14 +332,19 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame)
         sdf[!, colname] = newdf[!, colname]
     end
 
-    # If columns did not match this means that we have either:
-    # 1. inserted some columns into pdf
+    # if ww called _replace_columns! from transform we are done as we want to
+    # keep all columns that were previously present.
+    # In this case column order will be correct.
+    # Otherwise If columns did not match this means that we have either:
+    # 1. inserted some columns into newdf
     # or
     # 2. requested to reorder the existing columns
+    # or
+    # 3. dropped some columns in newdf
     # and that operation was allowed.
     # Therefore we need to update the parent of sdf in place to make sure
     # it holds only the required target columns in a correct order.
-    if !colsmatch
+    if !wastransform && !colsmatch
         pdf = parent(sdf)
         @assert pdf isa DataFrame
         select!(pdf, _names(newdf))

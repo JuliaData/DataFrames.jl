@@ -913,7 +913,7 @@ select!(df::DataFrame, @nospecialize(args...); renamecols::Bool=true) =
     _replace_columns!(df, select(df, args..., copycols=false, renamecols=renamecols))
 
 select!(df::SubDataFrame, @nospecialize(args...); renamecols::Bool=true) =
-    _replace_columns!(df, select(df, args..., copycols=true, renamecols=renamecols))
+    _replace_columns!(df, select(df, args..., copycols=true, renamecols=renamecols), false)
 
 function select!(@nospecialize(arg::Base.Callable), df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
@@ -943,8 +943,11 @@ $TRANSFORMATION_COMMON_RULES
 
 See [`select`](@ref) for examples.
 """
-transform!(df::AbstractDataFrame, @nospecialize(args...); renamecols::Bool=true) =
-    select!(df, :, args..., renamecols=renamecols)
+transform!(df::DataFrame, @nospecialize(args...); renamecols::Bool=true) =
+    _replace_columns!(df, select(df, :, args..., copycols=false, renamecols=renamecols))
+
+transform!(df::SubDataFrame, @nospecialize(args...); renamecols::Bool=true) =
+    _replace_columns!(df, select(df, args..., copycols=true, renamecols=renamecols), true)
 
 function transform!(@nospecialize(arg::Base.Callable), df::AbstractDataFrame; renamecols::Bool=true)
     if arg isa Colon
