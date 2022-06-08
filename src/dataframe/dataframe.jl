@@ -1327,6 +1327,8 @@ Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
              promote::Bool=(cols in [:union, :subset])) =
     _append_or_prepend!(df1, df2, cols=cols, promote=promote, atend=true)
 
+# TODO: add a reference to pushfirst when it is added:
+# [`pushfirst!`](@ref) to add individual rows at the beginning of a data frame,
 """
     prepend!(df::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
              promote::Bool=(cols in [:union, :subset]))
@@ -1368,7 +1370,7 @@ columns that are aliases (equal when compared with `===`).
 
 # See also
 
-Use [`pushfirst!`](@ref) to add individual rows at the beginning of a data frame,
+Use
 [`append!`](@ref) to add a table at the end, and [`vcat`](@ref)
 to vertically concatenate data frames.
 
