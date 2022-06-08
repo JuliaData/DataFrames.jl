@@ -332,7 +332,7 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame, wastransform::Bo
         sdf[!, colname] = newdf[!, colname]
     end
 
-    # if ww called _replace_columns! from transform we are done as we want to
+    # if _replace_columns! was called from transform we are done as we want to
     # keep all columns that were previously present.
     # In this case column order will be correct.
     # Otherwise If columns did not match this means that we have either:
