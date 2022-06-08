@@ -1284,8 +1284,8 @@ columns that are aliases (equal when compared with `===`).
 
 # See also
 
-Use [`prepend!`](@ref) to add a table at the beginning, [`push!`](@ref) to add
-individual rows to a data frame and [`vcat`](@ref) to vertically concatenate
+Use [`push!`](@ref) to add individual rows to a data frame, [`prepend!`](@ref)
+to add a table at the beginning, and [`vcat`](@ref) to vertically concatenate
 data frames.
 
 # Examples
@@ -1368,7 +1368,8 @@ columns that are aliases (equal when compared with `===`).
 
 # See also
 
-Use [`append!`](@ref) to add a table at an end and [`vcat`](@ref)
+Use [`pushfirst!`](@ref) to add individual rows at the beginning of a data frame,
+[`append!`](@ref) to add a table at the end, and [`vcat`](@ref)
 to vertically concatenate data frames.
 
 # Examples
@@ -1546,10 +1547,8 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
             @assert length(col) >= nrow1
             if atend
                 resize!(col, nrow1)
-            else
-                if length(col) != nrow1
-                    deleteat!(col, 1:length(col) - nrow1)
-                end
+            elseif length(col) != nrow1
+                deleteat!(col, 1:length(col) - nrow1)
             end
         end
         @error "Error adding value to column :$(_names(df1)[current_col])."
