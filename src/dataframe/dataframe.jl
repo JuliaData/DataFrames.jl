@@ -1774,67 +1774,74 @@ Please note that `push!`, `pushfirst!` and `insert!` must not be used on a
 
 # Examples
 ```jldoctest
-julia> df = DataFrame(A=1:3, B=1:3);
+julia> df = DataFrame(A='a':'c', B=1:3)
+3×2 DataFrame
+ Row │ A     B
+     │ Char  Int64
+─────┼─────────────
+   1 │ a         1
+   2 │ b         2
+   3 │ c         3
 
-julia> push!(df, (true, false))
+julia> insert!(df, 2, (true, false), promote=true)
 4×2 DataFrame
- Row │ A      B
-     │ Int64  Int64
-─────┼──────────────
-   1 │     1      1
-   2 │     2      2
-   3 │     3      3
-   4 │     1      0
+ Row │ A     B
+     │ Any   Int64
+─────┼─────────────
+   1 │ a         1
+   2 │ true      0
+   3 │ b         2
+   4 │ c         3
 
 julia> push!(df, df[1, :])
 5×2 DataFrame
- Row │ A      B
-     │ Int64  Int64
-─────┼──────────────
-   1 │     1      1
-   2 │     2      2
-   3 │     3      3
-   4 │     1      0
-   5 │     1      1
+ Row │ A     B
+     │ Any   Int64
+─────┼─────────────
+   1 │ a         1
+   2 │ true      0
+   3 │ b         2
+   4 │ c         3
+   5 │ a         1
 
-julia> push!(df, (C="something", A=true, B=false), cols=:intersect)
+julia> pushfirst!(df, (C="something", A=11, B=12), cols=:intersect)
 6×2 DataFrame
- Row │ A      B
-     │ Int64  Int64
-─────┼──────────────
-   1 │     1      1
-   2 │     2      2
-   3 │     3      3
-   4 │     1      0
-   5 │     1      1
-   6 │     1      0
+ Row │ A     B
+     │ Any   Int64
+─────┼─────────────
+   1 │ 11       12
+   2 │ a         1
+   3 │ true      0
+   4 │ b         2
+   5 │ c         3
+   6 │ a         1
 
 julia> push!(df, Dict(:A=>1.0, :C=>1.0), cols=:union)
 7×3 DataFrame
- Row │ A        B        C
-     │ Float64  Int64?   Float64?
-─────┼─────────────────────────────
-   1 │     1.0        1  missing
-   2 │     2.0        2  missing
-   3 │     3.0        3  missing
-   4 │     1.0        0  missing
-   5 │     1.0        1  missing
-   6 │     1.0        0  missing
-   7 │     1.0  missing        1.0
+ Row │ A     B        C
+     │ Any   Int64?   Float64?
+─────┼──────────────────────────
+   1 │ 11         12  missing
+   2 │ a           1  missing
+   3 │ true        0  missing
+   4 │ b           2  missing
+   5 │ c           3  missing
+   6 │ a           1  missing
+   7 │ 1.0   missing        1.0
 
-julia> push!(df, NamedTuple(), cols=:subset)
+julia> insert!(df, 3, NamedTuple(), cols=:subset)
 8×3 DataFrame
- Row │ A          B        C
-     │ Float64?   Int64?   Float64?
-─────┼───────────────────────────────
-   1 │       1.0        1  missing
-   2 │       2.0        2  missing
-   3 │       3.0        3  missing
-   4 │       1.0        0  missing
-   5 │       1.0        1  missing
-   6 │       1.0        0  missing
-   7 │       1.0  missing        1.0
-   8 │ missing    missing  missing
+ Row │ A        B        C
+     │ Any      Int64?   Float64?
+─────┼─────────────────────────────
+   1 │ 11            12  missing
+   2 │ a              1  missing
+   3 │ missing  missing  missing
+   4 │ true           0  missing
+   5 │ b              2  missing
+   6 │ c              3  missing
+   7 │ a              1  missing
+   8 │ 1.0      missing        1.0
 ```
 """
 (push!, pushfirst!, insert!)
