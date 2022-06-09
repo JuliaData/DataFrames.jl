@@ -371,16 +371,22 @@ end
 
 @testset "insert!(df, idx, row)" begin
     @test_throws ArgumentError insert!(DataFrame(), -1, [1, 2])
+    @test_throws ArgumentError insert!(DataFrame(), true, [1, 2])
     @test_throws ArgumentError insert!(DataFrame(), 2, [1, 2])
     @test_throws ArgumentError insert!(DataFrame(), -1, (a=1, b=2))
+    @test_throws ArgumentError insert!(DataFrame(), true, (a=1, b=2))
     @test_throws ArgumentError insert!(DataFrame(), 2, (a=1, b=2))
     @test_throws ArgumentError insert!(DataFrame(), -1, DataFrame(a=1, b=2)[1, :])
+    @test_throws ArgumentError insert!(DataFrame(), true, DataFrame(a=1, b=2)[1, :])
     @test_throws ArgumentError insert!(DataFrame(), 2, DataFrame(a=1, b=2)[1, :])
     @test_throws ArgumentError insert!(DataFrame(a=1, b=2), -1, [1, 2])
+    @test_throws ArgumentError insert!(DataFrame(a=1, b=2), true, [1, 2])
     @test_throws ArgumentError insert!(DataFrame(a=1, b=2), 3, [1, 2])
     @test_throws ArgumentError insert!(DataFrame(a=1, b=2), -1, (a=1, b=2))
+    @test_throws ArgumentError insert!(DataFrame(a=1, b=2), true, (a=1, b=2))
     @test_throws ArgumentError insert!(DataFrame(a=1, b=2), 3, (a=1, b=2))
     @test_throws ArgumentError insert!(DataFrame(a=1, b=2), -1, DataFrame(a=1, b=2)[1, :])
+    @test_throws ArgumentError insert!(DataFrame(a=1, b=2), true, DataFrame(a=1, b=2)[1, :])
     @test_throws ArgumentError insert!(DataFrame(a=1, b=2), 3, DataFrame(a=1, b=2)[1, :])
 
     buf = IOBuffer()
