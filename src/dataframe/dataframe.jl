@@ -1327,8 +1327,6 @@ Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
              promote::Bool=(cols in [:union, :subset])) =
     _append_or_prepend!(df1, df2, cols=cols, promote=promote, atend=true)
 
-# TODO: add a reference to pushfirst when it is added:
-# [`pushfirst!`](@ref) to add individual rows at the beginning of a data frame,
 """
     prepend!(df::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
              promote::Bool=(cols in [:union, :subset]))
@@ -1370,7 +1368,7 @@ columns that are aliases (equal when compared with `===`).
 
 # See also
 
-Use
+Use [`pushfirst!`](@ref) to add individual rows at the beginning of a data frame,
 [`append!`](@ref) to add a table at the end, and [`vcat`](@ref)
 to vertically concatenate data frames.
 
@@ -1559,9 +1557,21 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
     return df1
 end
 
-function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
+Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
+           cols::Symbol=:setequal,
+           promote::Bool=(cols in [:union, :subset])) =
+    insert!(df, nrow(df)+1, row, cols=cols, promote=promote)
+Base.pushfirst!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
+                cols::Symbol=:setequal,
+                promote::Bool=(cols in [:union, :subset])) =
+    insert!(df, 1, row, cols=cols, promote=promote)
+
+function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, NamedTuple};
                     cols::Symbol=:setequal,
                     promote::Bool=(cols in [:union, :subset]))
+    loc isa Bool && throw(ArgumentError("invalid index: $loc of type Bool"))
+    1 <= loc <= nrow(df)+1 || throw(ArgumentError("invalid index: $loc for data " *
+                                                "frame with $(nrow(df)) rows"))
     possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
     if !(cols in possible_cols)
         throw(ArgumentError("`cols` keyword argument must be any of :" *
@@ -1593,6 +1603,13 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
         end
         for (i, colname) in enumerate(_names(df))
             col = _columns(df)[i]
+            if length(col) !== nrows
+                for col2 in _columns(df)
+                    length(col2) == targetrows && deleteat!(col2, loc)
+                    @assert length(col2) == nrows
+                end
+                throw(AssertionError("Error adding value to column :$colname"))
+            end
             if haskey(row, colname)
                 val = row[colname]
             else
@@ -1601,43 +1618,39 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
             S = typeof(val)
             T = eltype(col)
             if S <: T || promote_type(S, T) <: T
-                push!(col, val)
+                insert!(col, loc, val)
             elseif !promote
                 try
-                    push!(col, val)
+                    insert!(col, loc, val)
                 catch err
-                    for col in _columns(df)
-                        resize!(col, nrows)
+                    for col2 in _columns(df)
+                        length(col2) == targetrows && deleteat!(col2, loc)
+                        @assert length(col2) == nrows
                     end
                     @error "Error adding value to column :$colname."
                     rethrow(err)
                 end
             else
                 newcol = similar(col, promote_type(S, T), targetrows)
-                copyto!(newcol, 1, col, 1, nrows)
-                newcol[end] = val
                 firstindex(newcol) != 1 && _onebased_check_error()
+                copyto!(newcol, 1, col, 1, loc-1)
+                copyto!(newcol, loc+1, col, loc, nrows-loc+1)
+                newcol[loc] = val
                 _columns(df)[i] = newcol
-            end
-        end
-        for (colname, col) in zip(_names(df), _columns(df))
-            if length(col) != targetrows
-                for col2 in _columns(df)
-                    resize!(col2, nrows)
-                end
-                throw(AssertionError("Error adding value to column :$colname"))
             end
         end
         for colname in setdiff(keys(row), _names(df))
             val = row[colname]
             S = typeof(val)
             if nrows == 0
-                newcol = [val]
+                @assert loc == 1
+                newcol = Tables.allocatecolumn(S, targetrows)
             else
                 newcol = Tables.allocatecolumn(Union{Missing, S}, targetrows)
                 fill!(newcol, missing)
-                newcol[end] = val
             end
+            firstindex(newcol) != 1 && _onebased_check_error()
+            newcol[loc] = val
             df[!, colname] = newcol
         end
         return df
@@ -1662,10 +1675,12 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
                                 "as the number of columns in `df`."))
         end
     end
+
     current_col = 0
     try
         for (col, nm) in zip(_columns(df), _names(df))
             current_col += 1
+            @assert length(col) == nrows
             if cols === :subset
                 val = get(row, nm, missing)
             else
@@ -1674,12 +1689,13 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
             S = typeof(val)
             T = eltype(col)
             if S <: T || !promote || promote_type(S, T) <: T
-                push!(col, val)
+                insert!(col, loc, val)
             else
                 newcol = similar(col, promote_type(S, T), targetrows)
-                copyto!(newcol, 1, col, 1, nrows)
-                newcol[end] = val
                 firstindex(newcol) != 1 && _onebased_check_error()
+                copyto!(newcol, 1, col, 1, loc-1)
+                copyto!(newcol, loc+1, col, loc, nrows-loc+1)
+                newcol[loc] = val
                 _columns(df)[columnindex(df, nm)] = newcol
             end
         end
@@ -1690,9 +1706,12 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
         end
     catch err
         for col in _columns(df)
-            resize!(col, nrows)
+            length(col) == targetrows && deleteat!(col, loc)
+            @assert length(col) == nrows
         end
-        @error "Error adding value to column :$(_names(df)[current_col])."
+        if current_col > 0
+            @error "Error adding value to column :$(_names(df)[current_col])."
+        end
         rethrow(err)
     end
     return df
@@ -1702,8 +1721,17 @@ end
     push!(df::DataFrame, row::Union{Tuple, AbstractArray}; promote::Bool=false)
     push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
           cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
+    pushfirst!(df::DataFrame, row::Union{Tuple, AbstractArray}; promote::Bool=false)
+    pushfirst!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
+               cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
+    insert!(df::DataFrame, loc::Integer, row::Union{Tuple, AbstractArray}; promote::Bool=false)
+    insert!(df::DataFrame, loc::Integer, row::Union{DataFrameRow, NamedTuple, AbstractDict};
+            cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
-Add in-place one row at the end of `df` taking the values from `row`.
+Add in-place one row to `df` taking the values from `row`. `push!` adds
+the row at the end of `df`. `pushfirst!` adds the row at the beginning of `df`.
+`insert!` adds the row in the location `loc` that can range from `1` to
+`nrow(df)+1`.
 
 Column types of `df` are preserved, and new values are converted if necessary.
 An error is thrown if conversion fails.
@@ -1741,8 +1769,8 @@ As a special case, if `df` has no columns and `row` is a `NamedTuple` or
 `DataFrameRow`, columns are created for all values in `row`, using their names
 and order.
 
-Please note that `push!` must not be used on a `DataFrame` that contains columns
-that are aliases (equal when compared with `===`).
+Please note that `push!`, `pushfirst!` and `insert!` must not be used on a
+`DataFrame` that contains that are aliases (equal when compared with `===`).
 
 # Examples
 ```jldoctest
@@ -1809,10 +1837,21 @@ julia> push!(df, NamedTuple(), cols=:subset)
    8 │ missing    missing  missing
 ```
 """
-function Base.push!(df::DataFrame, row::Any; promote::Bool=false)
+(push!, pushfirst!, insert!)
+
+Base.push!(df::DataFrame, row::Any; promote::Bool=false) =
+    insert!(df, nrow(df) + 1, row, promote=promote)
+
+Base.pushfirst!(df::DataFrame, row::Any; promote::Bool=false) =
+    insert!(df, 1, row, promote=promote)
+
+function Base.insert!(df::DataFrame, loc::Integer, row::Any; promote::Bool=false)
+    loc isa Bool && throw(ArgumentError("invalid index: $loc of type Bool"))
+    1 <= loc <= nrow(df)+1 || throw(ArgumentError("invalid index: $loc for data " *
+                                                "frame with $(nrow(df)) rows"))
     if !(row isa Union{Tuple, AbstractArray})
         # an explicit error is thrown as this was allowed in the past
-        throw(ArgumentError("`push!` does not allow passing collections of type " *
+        throw(ArgumentError("`insert!` does not allow passing collections of type " *
                             "$(typeof(row)) to be pushed into a DataFrame. Only " *
                             "`Tuple`, `AbstractArray`, `AbstractDict`, `DataFrameRow` " *
                             "and `NamedTuple` are allowed."))
@@ -1827,27 +1866,25 @@ function Base.push!(df::DataFrame, row::Any; promote::Bool=false)
     try
         for (i, (col, val)) in enumerate(zip(_columns(df), row))
             current_col += 1
+            @assert length(col) == nrows
             S = typeof(val)
             T = eltype(col)
             if S <: T || !promote || promote_type(S, T) <: T
-                push!(col, val)
+                insert!(col, loc, val)
             else
                 newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
-                copyto!(newcol, 1, col, 1, nrows)
-                newcol[end] = val
                 firstindex(newcol) != 1 && _onebased_check_error()
+                copyto!(newcol, 1, col, 1, loc-1)
+                copyto!(newcol, loc+1, col, loc, nrows-loc+1)
+                newcol[loc] = val
                 _columns(df)[i] = newcol
             end
-        end
-        current_col = 0
-        for col in _columns(df)
-            current_col += 1
-            @assert length(col) == targetrows
         end
     catch err
         #clean up partial row
         for col in _columns(df)
-            resize!(col, nrows)
+            length(col) == targetrows && deleteat!(col, loc)
+            @assert length(col) == nrows
         end
         @error "Error adding value to column :$(_names(df)[current_col])."
         rethrow(err)

@@ -496,10 +496,22 @@ function DataFrame(dfr::DataFrameRow)
     parent(dfr)[row:row, cols]
 end
 
-@noinline pushhelper!(x, r) = push!(x, x[r])
+Base.push!(df::DataFrame, row::DataFrameRow;
+           cols::Symbol=:setequal,
+           promote::Bool=(cols in [:union, :subset])) =
+    insert!(df, nrow(df)+1, row, cols=cols, promote=promote)
+Base.pushfirst!(df::DataFrame, row::DataFrameRow;
+                cols::Symbol=:setequal,
+                promote::Bool=(cols in [:union, :subset])) =
+    insert!(df, 1, row, cols=cols, promote=promote)
 
-function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
-                    promote::Bool=(cols in [:union, :subset]))
+@noinline pushhelper!(x, loc, r) = insert!(x, loc, x[r])
+
+function Base.insert!(df::DataFrame, loc::Integer, dfr::DataFrameRow;
+                      cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
+    loc isa Bool && throw(ArgumentError("invalid index: $loc of type Bool"))
+    1 <= loc <= nrow(df)+1 || throw(ArgumentError("invalid index: $loc for data " *
+                                                "frame with $(nrow(df)) rows"))
     possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
     if !(cols in possible_cols)
         throw(ArgumentError("`cols` keyword argument must be any of :" *
@@ -512,17 +524,17 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
     if parent(dfr) === df && index(dfr) isa Index
         # in this case we are sure that all we do is safe
         r = row(dfr)
-        for col in _columns(df)
-            # use a barrier function to improve performance
-            pushhelper!(col, r)
-        end
-        for (colname, col) in zip(_names(df), _columns(df))
-            if length(col) != targetrows
+        for (col_num, col) in enumerate(_columns(df))
+            if length(col) != nrows
                 for col2 in _columns(df)
-                    resize!(col2, nrows)
+                    length(col2) == targetrows && deleteat!(col2, loc)
+                    @assert length(col2) == nrows
                 end
+                colname = _names(df)[col_num]
                 throw(AssertionError("Error adding value to column :$colname"))
             end
+            # use a barrier function to improve performance
+            pushhelper!(col, loc, r)
         end
         return df
     end
@@ -537,6 +549,13 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
     if cols == :union
         for (i, colname) in enumerate(_names(df))
             col = _columns(df)[i]
+            if length(col) != nrows
+                for col2 in _columns(df)
+                    length(col2) == targetrows && deleteat!(col2, loc)
+                    @assert length(col2) == nrows
+                end
+                throw(AssertionError("Error adding value to column :$colname"))
+            end
             if hasproperty(dfr, colname)
                 val = dfr[colname]
             else
@@ -545,43 +564,39 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
             S = typeof(val)
             T = eltype(col)
             if S <: T || promote_type(S, T) <: T
-                push!(col, val)
+                insert!(col, loc, val)
             elseif !promote
                 try
-                    push!(col, val)
+                    insert!(col, loc, val)
                 catch err
-                    for col in _columns(df)
-                        resize!(col, nrows)
+                    for col2 in _columns(df)
+                        length(col2) == targetrows && deleteat!(col2, loc)
+                        @assert length(col2) == nrows
                     end
                     @error "Error adding value to column :$colname."
                     rethrow(err)
                 end
             else
                 newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
-                copyto!(newcol, 1, col, 1, nrows)
-                newcol[end] = val
                 firstindex(newcol) != 1 && _onebased_check_error()
+                copyto!(newcol, 1, col, 1, loc-1)
+                copyto!(newcol, loc+1, col, loc, nrows-loc+1)
+                newcol[loc] = val
                 _columns(df)[i] = newcol
-            end
-        end
-        for (colname, col) in zip(_names(df), _columns(df))
-            if length(col) != targetrows
-                for col2 in _columns(df)
-                    resize!(col2, nrows)
-                end
-                throw(AssertionError("Error adding value to column :$colname"))
             end
         end
         for colname in setdiff(_names(dfr), _names(df))
             val = dfr[colname]
             S = typeof(val)
             if nrows == 0
-                newcol = [val]
+                @assert loc == 1
+                newcol = Tables.allocatecolumn(S, targetrows)
             else
                 newcol = Tables.allocatecolumn(Union{Missing, S}, targetrows)
                 fill!(newcol, missing)
-                newcol[end] = val
             end
+            firstindex(newcol) != 1 && _onebased_check_error()
+            newcol[loc] = val
             df[!, colname] = newcol
         end
         return df
@@ -602,6 +617,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
         end
         for (col, nm) in zip(_columns(df), _names(df))
             current_col += 1
+            @assert length(col) == nrows
             if cols === :subset
                 val = get(dfr, nm, missing)
             else
@@ -610,21 +626,20 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; cols::Symbol=:setequal,
             S = typeof(val)
             T = eltype(col)
             if S <: T || !promote || promote_type(S, T) <: T
-                push!(col, val)
+                insert!(col, loc, val)
             else
                 newcol = similar(col, promote_type(S, T), targetrows)
-                copyto!(newcol, 1, col, 1, nrows)
-                newcol[end] = val
                 firstindex(newcol) != 1 && _onebased_check_error()
+                copyto!(newcol, 1, col, 1, loc-1)
+                copyto!(newcol, loc+1, col, loc, nrows-loc+1)
+                newcol[loc] = val
                 _columns(df)[columnindex(df, nm)] = newcol
             end
         end
-        for col in _columns(df)
-            @assert length(col) == targetrows
-        end
     catch err
         for col in _columns(df)
-            resize!(col, nrows)
+            length(col) == targetrows && deleteat!(col, loc)
+            @assert length(col) == nrows
         end
         if current_col > 0
             @error "Error adding value to column :$(_names(df)[current_col])."
