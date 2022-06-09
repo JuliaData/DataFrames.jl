@@ -1284,8 +1284,9 @@ columns that are aliases (equal when compared with `===`).
 
 # See also
 
-Use [`push!`](@ref) to add individual rows to a data frame and [`vcat`](@ref)
-to vertically concatenate data frames.
+Use [`push!`](@ref) to add individual rows to a data frame, [`prepend!`](@ref)
+to add a table at the beginning, and [`vcat`](@ref) to vertically concatenate
+data frames.
 
 # Examples
 ```jldoctest
@@ -1322,8 +1323,98 @@ julia> df1
    6 │     6      6
 ```
 """
-function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
-                      promote::Bool=(cols in [:union, :subset]))
+Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
+             promote::Bool=(cols in [:union, :subset])) =
+    _append_or_prepend!(df1, df2, cols=cols, promote=promote, atend=true)
+
+# TODO: add a reference to pushfirst when it is added:
+# [`pushfirst!`](@ref) to add individual rows at the beginning of a data frame,
+"""
+    prepend!(df::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
+             promote::Bool=(cols in [:union, :subset]))
+    prepend!(df::DataFrame, table; cols::Symbol=:setequal,
+             promote::Bool=(cols in [:union, :subset]))
+
+Add the rows of `df2` to the beginning of `df`. If the second argument `table`
+is not an `AbstractDataFrame` then it is converted using
+`DataFrame(table, copycols=false)` before being prepended.
+
+The exact behavior of `prepend!` depends on the `cols` argument:
+* If `cols == :setequal` (this is the default)
+  then `df2` must contain exactly the same columns as `df` (but possibly in a
+  different order).
+* If `cols == :orderequal` then `df2` must contain the same columns in the same
+  order (for `AbstractDict` this option requires that `keys(row)` matches
+  `propertynames(df)` to allow for support of ordered dicts; however, if `df2`
+  is a `Dict` an error is thrown as it is an unordered collection).
+* If `cols == :intersect` then `df2` may contain more columns than `df`, but all
+  column names that are present in `df` must be present in `df2` and only these
+  are used.
+* If `cols == :subset` then `append!` behaves like for `:intersect` but if some
+  column is missing in `df2` then a `missing` value is pushed to `df`.
+* If `cols == :union` then `append!` adds columns missing in `df` that are present
+  in `df2`, for columns present in `df` but missing in `df2` a `missing` value
+  is pushed.
+
+If `promote=true` and element type of a column present in `df` does not allow
+the type of a pushed argument then a new column with a promoted element type
+allowing it is freshly allocated and stored in `df`. If `promote=false` an error
+is thrown.
+
+The above rule has the following exceptions:
+* If `df` has no columns then copies of columns from `df2` are added to it.
+* If `df2` has no columns then calling `prepend!` leaves `df` unchanged.
+
+Please note that `prepend!` must not be used on a `DataFrame` that contains
+columns that are aliases (equal when compared with `===`).
+
+# See also
+
+Use
+[`append!`](@ref) to add a table at the end, and [`vcat`](@ref)
+to vertically concatenate data frames.
+
+# Examples
+```jldoctest
+julia> df1 = DataFrame(A=1:3, B=1:3)
+3×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
+
+julia> df2 = DataFrame(A=4.0:6.0, B=4:6)
+3×2 DataFrame
+ Row │ A        B
+     │ Float64  Int64
+─────┼────────────────
+   1 │     4.0      4
+   2 │     5.0      5
+   3 │     6.0      6
+
+julia> prepend!(df1, df2);
+
+julia> df1
+6×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     4      4
+   2 │     5      5
+   3 │     6      6
+   4 │     1      1
+   5 │     2      2
+   6 │     3      3
+```
+"""
+Base.prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
+              promote::Bool=(cols in [:union, :subset])) =
+    _append_or_prepend!(df1, df2, cols=cols, promote=promote, atend=false)
+
+function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol,
+                             promote::Bool, atend::Bool)
     if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
         throw(ArgumentError("`cols` keyword argument must be " *
                             ":orderequal, :setequal, :intersect, :subset or :union)"))
@@ -1371,8 +1462,9 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
         end
     end
 
-    nrows, ncols = size(df1)
-    targetrows = nrows + nrow(df2)
+    nrow1 = nrow(df1)
+    nrow2 = nrow(df2)
+    targetrows = nrow1 + nrow2
     current_col = 0
     # in the code below we use a direct access to _columns because
     # we resize the columns so temporarily the `DataFrame` is internally
@@ -1387,24 +1479,42 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
                 T = eltype(df1_c)
                 if S <: T || !promote || promote_type(S, T) <: T
                     # if S <: T || promote_type(S, T) <: T this should never throw an exception
-                    append!(df1_c, df2_c)
+                    if atend
+                        append!(df1_c, df2_c)
+                    else
+                        prepend!(df1_c, df2_c)
+                    end
                 else
                     newcol = similar(df1_c, promote_type(S, T), targetrows)
-                    copyto!(newcol, 1, df1_c, 1, nrows)
-                    copyto!(newcol, nrows+1, df2_c, 1, targetrows - nrows)
                     firstindex(newcol) != 1 && _onebased_check_error()
+                    if atend
+                        copyto!(newcol, 1, df1_c, 1, nrow1)
+                        copyto!(newcol, nrow1+1, df2_c, 1, nrow2)
+                    else
+                        copyto!(newcol, 1, df2_c, 1, nrow2)
+                        copyto!(newcol, nrow2+1, df1_c, 1, nrow1)
+                    end
                     _columns(df1)[j] = newcol
                 end
             else
                 if Missing <: eltype(df1[!, j])
-                    resize!(df1[!, j], targetrows)
-                    df1[nrows+1:targetrows, j] .= missing
+                    if atend
+                        resize!(df1[!, j], targetrows)
+                        df1[nrow1+1:targetrows, j] .= missing
+                    else
+                        prepend!(df1[!, j], Iterators.repeated(missing, nrow2))
+                    end
                 elseif promote
                     newcol = similar(df1[!, j], Union{Missing, eltype(df1[!, j])},
                                      targetrows)
-                    copyto!(newcol, 1, df1[!, j], 1, nrows)
-                    newcol[nrows+1:targetrows] .= missing
                     firstindex(newcol) != 1 && _onebased_check_error()
+                    if atend
+                        copyto!(newcol, 1, df1[!, j], 1, nrow1)
+                        newcol[nrow1+1:targetrows] .= missing
+                    else
+                        copyto!(newcol, nrow2+1, df1[!, j], 1, nrow1)
+                        newcol[1:nrow2] .= missing
+                    end
                     _columns(df1)[j] = newcol
                 else
                     throw(ArgumentError("promote=false and source data frame does " *
@@ -1422,15 +1532,26 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:sete
             for n in setdiff(_names(df2), _names(df1))
                 newcol = similar(df2[!, n], Union{Missing, eltype(df2[!, n])},
                                  targetrows)
-                @inbounds newcol[1:nrows] .= missing
-                copyto!(newcol, nrows+1, df2[!, n], 1, targetrows - nrows)
+                firstindex(newcol) != 1 && _onebased_check_error()
+                if atend
+                    newcol[1:nrow1] .= missing
+                    copyto!(newcol, nrow1+1, df2[!, n], 1, targetrows - nrow1)
+                else
+                    newcol[nrow2+1:targetrows] .= missing
+                    copyto!(newcol, 1, df2[!, n], 1, nrow2)
+                end
                 df1[!, n] = newcol
             end
         end
     catch err
         # Undo changes in case of error
         for col in _columns(df1)
-            resize!(col, nrows)
+            @assert length(col) >= nrow1
+            if atend
+                resize!(col, nrow1)
+            elseif length(col) != nrow1
+                deleteat!(col, 1:length(col) - nrow1)
+            end
         end
         @error "Error adding value to column :$(_names(df1)[current_col])."
         rethrow(err)
