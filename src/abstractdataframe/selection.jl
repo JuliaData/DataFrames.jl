@@ -971,7 +971,7 @@ See [`select`](@ref) for examples.
 """
 transform!(df::DataFrame, @nospecialize(args...);
            renamecols::Bool=true, threads::Bool=true) =
-    _replace_columns!(df, select(df, :, args..., copycols=false, renamecols=renamecols, threads=threads))
+    select!(df, :, args..., renamecols=renamecols, threads=threads)
 
 transform!(df::SubDataFrame, @nospecialize(args...); renamecols::Bool=true, threads::Bool=true) =
     _replace_columns!(df, select(df, args..., copycols=true, renamecols=renamecols, threads=threads),
