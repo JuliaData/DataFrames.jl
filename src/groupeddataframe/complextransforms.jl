@@ -5,7 +5,7 @@ _ncol(df::AbstractDataFrame) = ncol(df)
 _ncol(x::Union{NamedTuple, DataFrameRow}) = length(x)
 
 function _combine_multicol((firstres,)::Ref{Any}, wfun::Ref{Any}, gd::GroupedDataFrame,
-                           wincols::Ref{Any}, multithreaded::Bool)
+                           wincols::Ref{Any}, threads::Bool)
     @assert only(wfun) isa Base.Callable
     @assert only(wincols) isa Union{Nothing, AbstractVector, Tuple, NamedTuple}
     firstmulticol = firstres isa MULTI_COLS_TYPE
@@ -17,14 +17,14 @@ function _combine_multicol((firstres,)::Ref{Any}, wfun::Ref{Any}, gd::GroupedDat
         idx_agg = NOTHING_IDX_AGG
     end
     return _combine_with_first(Ref{Any}(wrap(firstres)), wfun, gd, wincols,
-                               firstmulticol, idx_agg, multithreaded)
+                               firstmulticol, idx_agg, threads)
 end
 
 function _combine_with_first((first,)::Ref{Any},
                              (f,)::Ref{Any}, gd::GroupedDataFrame,
                              (incols,)::Ref{Any},
                              firstmulticol::Bool, idx_agg::Vector{Int},
-                             multithreaded::Bool)
+                             threads::Bool)
     @assert first isa Union{NamedTuple, DataFrameRow, AbstractDataFrame}
     @assert f isa Base.Callable
     @assert incols isa Union{Nothing, AbstractVector, Tuple, NamedTuple}
@@ -78,7 +78,7 @@ function _combine_with_first((first,)::Ref{Any},
                                                            Ref{Any}(incols),
                                                            Ref{Any}(targetcolnames),
                                                            firstmulticol,
-                                                           multithreaded)
+                                                           threads)
     end
     return idx, outcols, collect(Symbol, finalcolnames)
 end
@@ -241,7 +241,7 @@ function _combine_rows_with_first!((firstrow,)::Ref{Any},
                                    (incols,)::Ref{Any},
                                    (colnames,)::Ref{Any},
                                    firstmulticol::Bool,
-                                   multithreaded::Bool)
+                                   threads::Bool)
     @assert firstrow isa Union{NamedTuple, DataFrameRow}
     @assert outcols isa NTuple{N, AbstractVector} where N
     @assert f isa Base.Callable
@@ -264,7 +264,7 @@ function _combine_rows_with_first!((firstrow,)::Ref{Any},
     # Create up to one task per thread
     # This has lower overhead than creating one task per group,
     # but is optimal only if operations take roughly the same time for all groups
-    if VERSION >= v"1.4" && multithreaded && isthreadsafe(outcols, incols)
+    if VERSION >= v"1.4" && threads && isthreadsafe(outcols, incols)
         basesize = max(1, cld(len - 1, Threads.nthreads()))
         partitions = Iterators.partition(2:len, basesize)
     else
@@ -276,7 +276,7 @@ function _combine_rows_with_first!((firstrow,)::Ref{Any},
     tasks = Vector{Task}(undef, length(partitions))
     for (tid, idx) in enumerate(partitions)
         tasks[tid] =
-            @spawn_or_run_task multithreaded _combine_rows_with_first_task!(tid, first(idx), last(idx), first(idx),
+            @spawn_or_run_task threads _combine_rows_with_first_task!(tid, first(idx), last(idx), first(idx),
                                                                             outcols, outcolsref,
                                                                             type_widened, widen_type_lock,
                                                                             f, gd, starts, ends, incols, colnames,

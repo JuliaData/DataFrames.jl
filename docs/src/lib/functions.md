@@ -9,7 +9,7 @@ CurrentModule = DataFrames
 By default, selected operations in DataFrames.jl automatically use multiple threads
 when available. It is task-based and implemented using the `@spawn` macro from Julia Base.
 Functions that take user-defined functions and may run it in parallel
-accept a `multithreaded` keyword argument which allows disabling multithreading
+accept a `threads` keyword argument which allows disabling multithreading
 when the provided function requires serial execution or is not thread-safe.
 
 This is a list of operations that currently make use of multi-threading:

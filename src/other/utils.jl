@@ -232,30 +232,30 @@ macro spawn_for_chunks(basesize, ex)
 end
 
 """
-    @spawn_or_run_task multithreaded expr
+    @spawn_or_run_task threads expr
 
-Equivalent to `Threads.@spawn` if `multithreaded === true`,
+Equivalent to `Threads.@spawn` if `threads === true`,
 otherwise run `expr` and return a `Task` that returns its value.
 """
 macro spawn_or_run_task end
 
 """
-    @spawn_or_run multithreaded expr
+    @spawn_or_run threads expr
 
-Equivalent to `Threads.@spawn` if `multithreaded === true`,
+Equivalent to `Threads.@spawn` if `threads === true`,
 otherwise run `expr`.
 """
 macro spawn_or_run end
 
 if VERSION >= v"1.4"
-    macro spawn_or_run_task(multithreaded, expr)
+    macro spawn_or_run_task(threads, expr)
         letargs = Base._lift_one_interp!(expr)
 
         thunk = esc(:(()->($expr)))
         var = esc(Base.sync_varname)
         quote
             let $(letargs...)
-                if $(esc(multithreaded))
+                if $(esc(threads))
                     local task = Task($thunk)
                     task.sticky = false
                 else
@@ -278,14 +278,14 @@ if VERSION >= v"1.4"
         end
     end
 
-    macro spawn_or_run(multithreaded, expr)
+    macro spawn_or_run(threads, expr)
         letargs = Base._lift_one_interp!(expr)
 
         thunk = esc(:(()->($expr)))
         var = esc(Base.sync_varname)
         quote
             let $(letargs...)
-                if $(esc(multithreaded))
+                if $(esc(threads))
                     local task = Task($thunk)
                     task.sticky = false
                     if $(Expr(:islocal, var))
@@ -305,7 +305,7 @@ if VERSION >= v"1.4"
     end
 else
     # Based on the definition of @async in Base
-    macro spawn_or_run_task(multithreaded, expr)
+    macro spawn_or_run_task(threads, expr)
         thunk = esc(:(()->($expr)))
         var = esc(Base.sync_varname)
         quote
@@ -320,7 +320,7 @@ else
         end
     end
 
-    macro spawn_or_run(multithreaded, expr)
+    macro spawn_or_run(threads, expr)
         esc(:($expr; nothing))
     end
 end

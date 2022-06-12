@@ -876,13 +876,13 @@ end
 
 """
     select!(df::AbstractDataFrame, args...;
-            renamecols::Bool=true, multithreaded::Bool=true)
+            renamecols::Bool=true, threads::Bool=true)
     select!(args::Base.Callable, df::DataFrame;
-            renamecols::Bool=true, multithreaded::Bool=true)
+            renamecols::Bool=true, threads::Bool=true)
     select!(gd::GroupedDataFrame, args...; ungroup::Bool=true,
-            renamecols::Bool=true, multithreaded::Bool=true)
+            renamecols::Bool=true, threads::Bool=true)
     select!(f::Base.Callable, gd::GroupedDataFrame; ungroup::Bool=true,
-            renamecols::Bool=true, multithreaded::Bool=true)
+            renamecols::Bool=true, threads::Bool=true)
 
 Mutate `df` or `gd` in place to retain only columns or transformations specified by `args...` and
 return it. The result is guaranteed to have the same number of rows as `df` or
@@ -910,7 +910,7 @@ $TRANSFORMATION_COMMON_RULES
   column names should include the name of transformation functions or not.
 - `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
-- `multithreaded::Bool=true` : whether transformations may be run in separate tasks which
+- `threads::Bool=true` : whether transformations may be run in separate tasks which
   can execute in parallel (possibly being applied to multiple rows or groups at the same time).
   Whether or not tasks are actually spawned and their number are determined automatically.
   Set to `false` if some transformations require serial execution or are not thread-safe.
@@ -918,32 +918,32 @@ $TRANSFORMATION_COMMON_RULES
 See [`select`](@ref) for examples.
 """
 select!(df::DataFrame, @nospecialize(args...);
-        renamecols::Bool=true, multithreaded::Bool=true) =
+        renamecols::Bool=true, threads::Bool=true) =
     _replace_columns!(df, select(df, args..., copycols=false,
-                                 renamecols=renamecols, multithreaded=multithreaded))
+                                 renamecols=renamecols, threads=threads))
 
 select!(df::SubDataFrame, @nospecialize(args...);
-        renamecols::Bool=true, multithreaded::Bool=true) =
+        renamecols::Bool=true, threads::Bool=true) =
     _replace_columns!(df, select(df, args..., copycols=true,
-                                 renamecols=renamecols, multithreaded=multithreaded))
+                                 renamecols=renamecols, threads=threads))
 
 function select!(@nospecialize(arg::Base.Callable), df::AbstractDataFrame;
-                 renamecols::Bool=true, multithreaded::Bool=true)
+                 renamecols::Bool=true, threads::Bool=true)
     if arg isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a data frame"))
     end
-    return select!(df, arg, multithreaded=multithreaded)
+    return select!(df, arg, threads=threads)
 end
 
 """
     transform!(df::AbstractDataFrame, args...;
-               renamecols::Bool=true, multithreaded::Bool=true)
+               renamecols::Bool=true, threads::Bool=true)
     transform!(args::Callable, df::AbstractDataFrame;
-               renamecols::Bool=true, multithreaded::Bool=true)
+               renamecols::Bool=true, threads::Bool=true)
     transform!(gd::GroupedDataFrame, args...;
-               ungroup::Bool=true, renamecols::Bool=true, multithreaded::Bool=true)
+               ungroup::Bool=true, renamecols::Bool=true, threads::Bool=true)
     transform!(f::Base.Callable, gd::GroupedDataFrame;
-               ungroup::Bool=true, renamecols::Bool=true, multithreaded::Bool=true)
+               ungroup::Bool=true, renamecols::Bool=true, threads::Bool=true)
 
 Mutate `df` or `gd` in place to add columns specified by `args...` and return it.
 The result is guaranteed to have the same number of rows as `df`.
@@ -957,7 +957,7 @@ $TRANSFORMATION_COMMON_RULES
   column names should include the name of transformation functions or not.
 - `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
-- `multithreaded::Bool=true` : whether transformations may be run in separate tasks which
+- `threads::Bool=true` : whether transformations may be run in separate tasks which
   can execute in parallel (possibly being applied to multiple rows or groups at the same time).
   Whether or not tasks are actually spawned and their number are determined automatically.
   Set to `false` if some transformations require serial execution or are not thread-safe.
@@ -965,28 +965,28 @@ $TRANSFORMATION_COMMON_RULES
 See [`select`](@ref) for examples.
 """
 transform!(df::AbstractDataFrame, @nospecialize(args...);
-           renamecols::Bool=true, multithreaded::Bool=true) =
-    select!(df, :, args..., renamecols=renamecols, multithreaded=multithreaded)
+           renamecols::Bool=true, threads::Bool=true) =
+    select!(df, :, args..., renamecols=renamecols, threads=threads)
 
 function transform!(@nospecialize(arg::Base.Callable), df::AbstractDataFrame;
-                    renamecols::Bool=true, multithreaded::Bool=true)
+                    renamecols::Bool=true, threads::Bool=true)
     if arg isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a data frame"))
     end
-    return transform!(df, arg, multithreaded=multithreaded)
+    return transform!(df, arg, threads=threads)
 end
 
 """
     select(df::AbstractDataFrame, args...;
-           copycols::Bool=true, renamecols::Bool=true, multithreaded::Bool=true)
+           copycols::Bool=true, renamecols::Bool=true, threads::Bool=true)
     select(args::Callable, df::DataFrame;
-           renamecols::Bool=true, multithreaded::Bool=true)
+           renamecols::Bool=true, threads::Bool=true)
     select(gd::GroupedDataFrame, args...;
            copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true,
-           renamecols::Bool=true, multithreaded::Bool=true)
+           renamecols::Bool=true, threads::Bool=true)
     select(f::Base.Callable, gd::GroupedDataFrame;
            copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true,
-           renamecols::Bool=true, multithreaded::Bool=true)
+           renamecols::Bool=true, threads::Bool=true)
 
 Create a new data frame that contains columns from `df` or `gd` specified by
 `args` and return it. The result is guaranteed to have the same number of rows
@@ -1004,7 +1004,7 @@ $TRANSFORMATION_COMMON_RULES
   data frame.
 - `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
-- `multithreaded::Bool=true` : whether transformations may be run in separate tasks which
+- `threads::Bool=true` : whether transformations may be run in separate tasks which
   can execute in parallel (possibly being applied to multiple rows or groups at the same time).
   Whether or not tasks are actually spawned and their number are determined automatically.
   Set to `false` if some transformations require serial execution or are not thread-safe.
@@ -1263,29 +1263,29 @@ julia> select(gd, nrow, proprow, groupindices, eachindex)
 ```
 """
 select(df::AbstractDataFrame, @nospecialize(args...);
-       copycols::Bool=true, renamecols::Bool=true, multithreaded::Bool=true) =
+       copycols::Bool=true, renamecols::Bool=true, threads::Bool=true) =
     manipulate(df, map(x -> broadcast_pair(df, x), args)...,
                copycols=copycols, keeprows=true, renamecols=renamecols)
 
 function select(@nospecialize(arg::Base.Callable), df::AbstractDataFrame;
-                renamecols::Bool=true, multithreaded::Bool=true)
+                renamecols::Bool=true, threads::Bool=true)
     if arg isa Colon
         throw(ArgumentError("First argument must be a transformation if the second argument is a data frame"))
     end
-    return select(df, arg, multithreaded=multithreaded)
+    return select(df, arg, threads=threads)
 end
 
 """
     transform(df::AbstractDataFrame, args...;
-              copycols::Bool=true, renamecols::Bool=true, multithreaded::Bool=true)
+              copycols::Bool=true, renamecols::Bool=true, threads::Bool=true)
     transform(f::Callable, df::DataFrame;
-              renamecols::Bool=true, multithreaded::Bool=true)
+              renamecols::Bool=true, threads::Bool=true)
     transform(gd::GroupedDataFrame, args...;
               copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true,
-              renamecols::Bool=true, multithreaded::Bool=true)
+              renamecols::Bool=true, threads::Bool=true)
     transform(f::Base.Callable, gd::GroupedDataFrame;
               copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true,
-              renamecols::Bool=true, multithreaded::Bool=true)
+              renamecols::Bool=true, threads::Bool=true)
 
 Create a new data frame that contains columns from `df` or `gd` plus columns
 specified by `args` and return it. The result is guaranteed to have the same
@@ -1302,7 +1302,7 @@ $TRANSFORMATION_COMMON_RULES
   data frame.
 - `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
-- `multithreaded::Bool=true` : whether transformations may be run in separate tasks which
+- `threads::Bool=true` : whether transformations may be run in separate tasks which
   can execute in parallel (possibly being applied to multiple rows or groups at the same time).
   Whether or not tasks are actually spawned and their number are determined automatically.
   Set to `false` if some transformations require serial execution or are not thread-safe.
@@ -1341,29 +1341,29 @@ ERROR: ArgumentError: column :x in returned data frame is not equal to grouping 
 See [`select`](@ref) for more examples.
 """
 transform(df::AbstractDataFrame, @nospecialize(args...);
-          copycols::Bool=true, renamecols::Bool=true, multithreaded::Bool=true) =
+          copycols::Bool=true, renamecols::Bool=true, threads::Bool=true) =
     select(df, :, args..., copycols=copycols,
-           renamecols=renamecols, multithreaded=multithreaded)
+           renamecols=renamecols, threads=threads)
 
 function transform(@nospecialize(arg::Base.Callable), df::AbstractDataFrame;
-                   renamecols::Bool=true, multithreaded::Bool=true)
+                   renamecols::Bool=true, threads::Bool=true)
     if arg isa Colon
         throw(ArgumentError("First argument to must be a transformation if the second argument is a data frame"))
     end
-    return transform(df, arg, multithreaded=multithreaded)
+    return transform(df, arg, threads=threads)
 end
 
 """
     combine(df::AbstractDataFrame, args...;
-            renamecols::Bool=true, multithreaded::Bool=true)
+            renamecols::Bool=true, threads::Bool=true)
     combine(f::Callable, df::AbstractDataFrame;
-            renamecols::Bool=true, multithreaded::Bool=true)
+            renamecols::Bool=true, threads::Bool=true)
     combine(gd::GroupedDataFrame, args...;
             keepkeys::Bool=true, ungroup::Bool=true,
-            renamecols::Bool=true, multithreaded::Bool=true)
+            renamecols::Bool=true, threads::Bool=true)
     combine(f::Base.Callable, gd::GroupedDataFrame;
             keepkeys::Bool=true, ungroup::Bool=true,
-            renamecols::Bool=true, multithreaded::Bool=true)
+            renamecols::Bool=true, threads::Bool=true)
 
 Create a new data frame that contains columns from `df` or `gd` specified by
 `args` and return it. The result can have any number of rows that is determined
@@ -1378,7 +1378,7 @@ $TRANSFORMATION_COMMON_RULES
   data frame.
 - `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
-- `multithreaded::Bool=true` : whether transformations may be run in separate tasks which
+- `threads::Bool=true` : whether transformations may be run in separate tasks which
   can execute in parallel (possibly being applied to multiple rows or groups at the same time).
   Whether or not tasks are actually spawned and their number are determined automatically.
   Set to `false` if some transformations require serial execution or are not thread-safe.
@@ -1631,20 +1631,20 @@ julia> combine(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
 ```
 """
 combine(df::AbstractDataFrame, @nospecialize(args...);
-        renamecols::Bool=true, multithreaded::Bool=true) =
+        renamecols::Bool=true, threads::Bool=true) =
     manipulate(df, map(x -> broadcast_pair(df, x), args)...,
                copycols=true, keeprows=false, renamecols=renamecols)
 
 function combine(@nospecialize(arg::Base.Callable), df::AbstractDataFrame;
-                 renamecols::Bool=true, multithreaded::Bool=true)
+                 renamecols::Bool=true, threads::Bool=true)
     if arg isa Colon
         throw(ArgumentError("First argument to select! must be a transformation if the second argument is a data frame"))
     end
-    return combine(df, arg, multithreaded=multithreaded)
+    return combine(df, arg, threads=threads)
 end
 
 combine(@nospecialize(f::Pair), gd::AbstractDataFrame;
-        renamecols::Bool=true, multithreaded::Bool=true) =
+        renamecols::Bool=true, threads::Bool=true) =
     throw(ArgumentError("First argument must be a transformation if the second argument is a data frame. " *
                         "You can pass a `Pair` as the second argument of the transformation. If you want the return " *
                         "value to be processed as having multiple columns add `=> AsTable` suffix to the pair."))

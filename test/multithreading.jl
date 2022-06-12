@@ -60,13 +60,13 @@ end
 end
 
 @testset "@spawn_or_run_task and @spawn_or_run" begin
-    for multithreaded in (true, false)
-        t = DataFrames.@spawn_or_run_task multithreaded 1
+    for threads in (true, false)
+        t = DataFrames.@spawn_or_run_task threads 1
         @test fetch(t) === 1
 
         x = Ref(false)
         @sync begin
-            t = DataFrames.@spawn_or_run_task multithreaded begin
+            t = DataFrames.@spawn_or_run_task threads begin
                 sleep(0.1)
                 x[] = true
             end
@@ -75,7 +75,7 @@ end
 
         x = Ref(false)
         @sync begin
-            res = DataFrames.@spawn_or_run multithreaded begin
+            res = DataFrames.@spawn_or_run threads begin
                 sleep(0.1)
                 x[] = true
             end
@@ -93,12 +93,12 @@ end
     n = Ref(0)
     @test combine(df, [] => (() -> n[] += 1) => :n1,
                   [] => (() -> n[] += 1) => :n2,
-                  multithreaded=false) ==
+                  threads=false) ==
         DataFrame(n1=1, n2=2)
     n = Ref(0)
     @test combine(df, [] => ByRow(() -> n[] += 1) => :n1,
                   [] => ByRow(() -> n[] += 1) => :n2,
-                  multithreaded=false) ==
+                  threads=false) ==
         DataFrame(n1=1:1000, n2=1001:2000)
 
     df = copy(refdf)
@@ -106,20 +106,20 @@ end
     n = Ref(0)
     @test select(df, [] => (() -> m[] += 1) => :n1,
                   [] => (() -> m[] += 1) => :n2,
-                  multithreaded=false) ==
+                  threads=false) ==
         select!(df, [] => (() -> n[] += 1) => :n1,
                   [] => (() -> n[] += 1) => :n2,
-                  multithreaded=false) ==
+                  threads=false) ==
         DataFrame(n1=fill(1, 1000), n2=fill(2, 1000))
     df = copy(refdf)
     m = Ref(0)
     n = Ref(0)
     @test select(df, [] => ByRow(() -> m[] += 1) => :n1,
                   [] => ByRow(() -> m[] += 1) => :n2,
-                  multithreaded=false) ==
+                  threads=false) ==
         select!(df, [] => ByRow(() -> n[] += 1) => :n1,
                   [] => ByRow(() -> n[] += 1) => :n2,
-                  multithreaded=false) ==
+                  threads=false) ==
         DataFrame(n1=1:1000, n2=1001:2000)
 
     df = copy(refdf)
@@ -127,20 +127,20 @@ end
     n = Ref(0)
     @test transform(df, [] => (() -> m[] += 1) => :n1,
                     [] => (() -> m[] += 1) => :n2,
-                    multithreaded=false) ==
+                    threads=false) ==
         transform!(df, [] => (() -> n[] += 1) => :n1,
                    [] => (() -> n[] += 1) => :n2,
-                   multithreaded=false) ==
+                   threads=false) ==
         [refdf DataFrame(n1=fill(1, 1000), n2=fill(2, 1000))]
     df = copy(refdf)
     m = Ref(0)
     n = Ref(0)
     @test transform(df, [] => ByRow(() -> m[] += 1) => :n1,
                     [] => ByRow(() -> m[] += 1) => :n2,
-                    multithreaded=false) ==
+                    threads=false) ==
         transform(df, [] => ByRow(() -> n[] += 1) => :n1,
                   [] => ByRow(() -> n[] += 1) => :n2,
-                  multithreaded=false) ==
+                  threads=false) ==
         [refdf DataFrame(n1=1:1000, n2=1001:2000)]
 
     df = copy(refdf)
@@ -149,10 +149,10 @@ end
     @test df[1:100,:] ==
         subset(df, [] => ByRow(() -> (m[] += 1; m[] <= 100)),
                  [] => ByRow(() -> (m[] += 1; m[] <= 1100)),
-                 multithreaded=false) ==
+                 threads=false) ==
         subset(df, [] => ByRow(() -> (n[] += 1; n[] <= 100)),
                  [] => ByRow(() -> (n[] += 1; n[] <= 1100)),
-                 multithreaded=false)
+                 threads=false)
 
     # On GroupedDataFrame
     df = copy(refdf)
@@ -160,12 +160,12 @@ end
     n = Ref(0)
     @test combine(gd, [] => (() -> n[] += 1) => :n1,
                   [] => (() -> n[] += 1) => :n2,
-                  multithreaded=false) ==
+                  threads=false) ==
         DataFrame(y=1:4, n1=1:4, n2=5:8)
     if VERSION >= v"1.4" && Threads.nthreads() > 1
         @test combine(gd, [] => (() -> Threads.threadid()) => :id1,
                       [] => (() -> Threads.threadid()) => :id2,
-                      multithreaded=true) !=
+                      threads=true) !=
             DataFrame(y=1:4, id1=1, id2=1)
     end
 
@@ -175,21 +175,21 @@ end
     n = Ref(0)
     @test select(gd, [] => (() -> m[] += 1) => :n1,
                  [] => (() -> m[] += 1) => :n2,
-                 multithreaded=false) ==
+                 threads=false) ==
         select!(gd, [] => (() -> n[] += 1) => :n1,
                 [] => (() -> n[] += 1) => :n2,
-                multithreaded=false) ==
+                threads=false) ==
         select(leftjoin(refdf, DataFrame(y=1:4, n1=1:4, n2=5:8), on=:y), :y, :n1, :n2)
     if VERSION >= v"1.4" && Threads.nthreads() > 1
         df = copy(refdf)
         gd = groupby(df, :y)
         @test select(gd, [] => (() -> Threads.threadid()) => :id1,
                      [] => (() -> Threads.threadid()) => :id2,
-                     multithreaded=true) !=
+                     threads=true) !=
             DataFrame(y=refdf.y, id1=1, id2=1)
         @test select!(gd, [] => (() -> Threads.threadid()) => :id1,
                       [] => (() -> Threads.threadid()) => :id2,
-                      multithreaded=true) !=
+                      threads=true) !=
             DataFrame(y=refdf.y, id1=1, id2=1)
     end
 
@@ -199,21 +199,21 @@ end
     n = Ref(0)
     @test transform(gd, [] => (() -> m[] += 1) => :n1,
                     [] => (() -> m[] += 1) => :n2,
-                    multithreaded=false) ==
+                    threads=false) ==
         transform!(gd, [] => (() -> n[] += 1) => :n1,
                 [] => (() -> n[] += 1) => :n2,
-                    multithreaded=false) ==
+                    threads=false) ==
         leftjoin(refdf, DataFrame(y=1:4, n1=1:4, n2=5:8), on=:y)
     if VERSION >= v"1.4" && Threads.nthreads() > 1
         df = copy(refdf)
         gd = groupby(df, :y)
         @test transform(gd, [] => (() -> Threads.threadid()) => :id1,
                         [] => (() -> Threads.threadid()) => :id2,
-                        multithreaded=true) !=
+                        threads=true) !=
             [refdf DataFrame(id1=fill(1, nrow(refdf)), id2=1)]
         @test transform!(gd, [] => (() -> Threads.threadid()) => :id1,
                          [] => (() -> Threads.threadid()) => :id2,
-                         multithreaded=true) !=
+                         threads=true) !=
             [refdf DataFrame(id1=fill(1, nrow(refdf)), id2=1)]
     end
 
@@ -224,10 +224,10 @@ end
     @test df[in.(df.y, Ref((keys(gd)[1].y, keys(gd)[2].y))),:] ==
         subset(gd, [:y] => (y -> (m[] += 1; fill(m[] <= 2, length(y)))),
                [:y] => (y -> (m[] += 1; fill(m[] <= 6, length(y)))),
-               multithreaded=false) ==
+               threads=false) ==
         subset!(gd, [:y] => (y -> (n[] += 1; fill(n[] <= 2, length(y)))),
                 [:y] => (y -> (n[] += 1; fill(n[] <= 6, length(y)))),
-                multithreaded=false)
+                threads=false)
 
     # unstack
     df = DataFrame(id=[1, 1, 1, 2, 2, 3, 3],
@@ -238,15 +238,15 @@ end
     n = Ref(0)
     unstack(df,
             allowduplicates=true, valuestransform=x -> (l[] += 1),
-            multithreaded=false) ==
+            threads=false) ==
             DataFrame(id=1:3, a=[1, 3, 5], b=[2, 4, 6]) ==
     unstack(df, :variable, :value,
             allowduplicates=true, valuestransform=x -> (m[] += 1),
-            multithreaded=false) ==
+            threads=false) ==
             DataFrame(id=1:3, a=[1, 3, 5], b=[2, 4, 6]) ==
     unstack(df, :id, :variable, :value,
             allowduplicates=true, valuestransform=x -> (n[] += 1),
-            multithreaded=false) ==
+            threads=false) ==
             DataFrame(id=1:3, a=[1, 3, 5], b=[2, 4, 6])
 
     # describe
