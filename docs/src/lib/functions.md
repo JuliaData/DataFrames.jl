@@ -4,10 +4,13 @@ CurrentModule = DataFrames
 
 # Functions
 
-## Multi-threading support
+## Multithreading support
 
-Selected operations in DataFrames.jl automatically use multiple threads when available.
-It is task-based and implemented using the `@spawn` macro from Julia Base.
+By default, selected operations in DataFrames.jl automatically use multiple threads
+when available. It is task-based and implemented using the `@spawn` macro from Julia Base.
+Functions that take user-defined functions and may run it in parallel
+accept a `threads` keyword argument which allows disabling multithreading
+when the provided function requires serial execution or is not thread-safe.
 
 This is a list of operations that currently make use of multi-threading:
 - `DataFrame` constructor with `copycols=true`; also recursively all functions
@@ -81,6 +84,7 @@ invpermute!
 mapcols
 mapcols!
 permute!
+prepend!
 push!
 reduce
 repeat
