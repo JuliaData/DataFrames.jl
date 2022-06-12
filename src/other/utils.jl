@@ -217,7 +217,7 @@ Parallelize a `for` loop by spawning separate tasks
 iterating each over a chunk of at least `basesize` elements
 in `range`.
 
-A number of task higher than `Threads.nthreads()` may be spawned,
+A number of tasks higher than `Threads.nthreads()` may be spawned,
 since that can allow for a more efficient load balancing in case
 some threads are busy (nested parallelism).
 """
@@ -229,6 +229,100 @@ macro spawn_for_chunks(basesize, ex)
         throw(ArgumentError("nested outer loops are not currently supported by @spawn_for_chunks"))
     end
     return _spawn_for_chunks_helper(ex.args[1], ex.args[2], basesize)
+end
+
+"""
+    @spawn_or_run_task threads expr
+
+Equivalent to `Threads.@spawn` if `threads === true`,
+otherwise run `expr` and return a `Task` that returns its value.
+"""
+macro spawn_or_run_task end
+
+"""
+    @spawn_or_run threads expr
+
+Equivalent to `Threads.@spawn` if `threads === true`,
+otherwise run `expr`.
+"""
+macro spawn_or_run end
+
+if VERSION >= v"1.4"
+    macro spawn_or_run_task(threads, expr)
+        letargs = Base._lift_one_interp!(expr)
+
+        thunk = esc(:(()->($expr)))
+        var = esc(Base.sync_varname)
+        quote
+            let $(letargs...)
+                if $(esc(threads))
+                    local task = Task($thunk)
+                    task.sticky = false
+                else
+                    # Run expr immediately
+                    res = $thunk()
+                    # Return a Task that returns the value of expr
+                    local task = Task(() -> res)
+                    task.sticky = true
+                end
+                if $(Expr(:islocal, var))
+                    @static if VERSION >= v"1.5.0"
+                        put!($var, task)
+                    else
+                        push!($var, task)
+                    end
+                end
+                schedule(task)
+                task
+            end
+        end
+    end
+
+    macro spawn_or_run(threads, expr)
+        letargs = Base._lift_one_interp!(expr)
+
+        thunk = esc(:(()->($expr)))
+        var = esc(Base.sync_varname)
+        quote
+            let $(letargs...)
+                if $(esc(threads))
+                    local task = Task($thunk)
+                    task.sticky = false
+                    if $(Expr(:islocal, var))
+                        @static if VERSION >= v"1.5.0"
+                            put!($var, task)
+                        else
+                            push!($var, task)
+                        end
+                    end
+                    schedule(task)
+                else
+                    $thunk()
+                end
+                nothing
+            end
+        end
+    end
+else
+    # Based on the definition of @async in Base
+    macro spawn_or_run_task(threads, expr)
+        thunk = esc(:(()->($expr)))
+        var = esc(Base.sync_varname)
+        quote
+            # Run expr immediately
+            res = $thunk()
+            # Return a Task that returns the value of expr
+            local task = Task(() -> res)
+            if $(Expr(:isdefined, var))
+                push!($var, task)
+            end
+            schedule(task)
+        end
+    end
+
+    macro spawn_or_run(threads, expr)
+        esc(:($expr; nothing))
+    end
 end
 
 function _nt_like_hash(v, h::UInt)
