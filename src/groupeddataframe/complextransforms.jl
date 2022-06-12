@@ -277,10 +277,10 @@ function _combine_rows_with_first!((firstrow,)::Ref{Any},
     for (tid, idx) in enumerate(partitions)
         tasks[tid] =
             @spawn_or_run_task threads _combine_rows_with_first_task!(tid, first(idx), last(idx), first(idx),
-                                                                            outcols, outcolsref,
-                                                                            type_widened, widen_type_lock,
-                                                                            f, gd, starts, ends, incols, colnames,
-                                                                            firstcoltype(firstmulticol))
+                                                                      outcols, outcolsref,
+                                                                      type_widened, widen_type_lock,
+                                                                      f, gd, starts, ends, incols, colnames,
+                                                                      firstcoltype(firstmulticol))
     end
 
     # Workaround JuliaLang/julia#38931:
