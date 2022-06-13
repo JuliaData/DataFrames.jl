@@ -2732,6 +2732,7 @@ end
 
     df = DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"])
     sdf = @view df[[2, 4], :]
+    # note that in this test a column from parent of sdf is dropped
     select!(sdf, :b, :c => :d, :a => (x -> 2 * x) => :e)
     @test df ≅ DataFrame(b='a':'d', d=[missing, "q", missing, "s"],
                          e=[missing, 4, missing, 8])
@@ -2745,6 +2746,7 @@ end
 
     df = DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"])
     sdf = @view df[[2, 4], :]
+    # note that in this test a column from parent of sdf is dropped
     select!(groupby(sdf, :c), :b, :c => :d, :a => (x -> 2 * x) => :e)
     @test df ≅ DataFrame(c=["p", "q", "r", "s"], b='a':'d',
                          d=[missing, "q", missing, "s"],
