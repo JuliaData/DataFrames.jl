@@ -2707,7 +2707,7 @@ end
     @test_throws ArgumentError select(gdf, :a => [:x, :y, :z])
 end
 
-@testset "additional test of handling of operation specfication in select!/transform!" begin
+@testset "handling of operation specification in select!/transform!" begin
     df = DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"])
     select!(df, :b, :c => :d, :a => (x -> 2 * x) => :e)
     @test df == DataFrame(b='a':'d', d=["p", "q", "r", "s"], e=[2, 4, 6, 8])

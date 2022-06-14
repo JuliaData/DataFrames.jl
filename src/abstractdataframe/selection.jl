@@ -34,7 +34,7 @@ const TRANSFORMATION_COMMON_RULES =
       are kept they are put as first columns in the result;
     * `transform`: return a data frame with the number and order of rows exactly the same
       as the source data frame, including all columns from the source and new calculated columns;
-      `transform!` is an in-place version of `transform`. For `GroupedDataFrame`
+      `transform!` is an in-place version of `transform`; for `GroupedDataFrame`
       existing columns in the source data frame are put as first columns in the result;
 
     All these functions take a specification of one or more functions to apply to

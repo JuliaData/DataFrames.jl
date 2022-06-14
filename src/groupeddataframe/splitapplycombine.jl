@@ -937,7 +937,7 @@ function transform!(gd::GroupedDataFrame,
         @assert df isa SubDataFrame
         newdf = select(gd, args..., copycols=true, renamecols=renamecols,
                        threads=threads)
-        # here column order of df is retained due to wastransform=true
+        # here column order of df is retained due to keep_present=true
         _replace_columns!(df, newdf, keep_present=true)
     end
     return ungroup ? df : gd
