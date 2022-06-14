@@ -181,14 +181,16 @@ const TRANSFORMATION_COMMON_RULES =
     `copycols=false`, a `SubDataFrame` is returned without copying columns and
     in this case transforming or renaming columns is not allowed.
 
-    If a `GroupedDataFrame` is passed, a separate task is spawned for each
-    specified transformation; each transformation then spawns as many tasks
+    If a `GroupedDataFrame` is passed and `threads=true` (the default),
+    a separate task is spawned for each specified transformation;
+    each transformation then spawns as many tasks
     as Julia threads, and splits processing of groups across them
     (however, currently transformations with optimized implementations like `sum`
     and transformations that return multiple rows use a single task for all groups).
     This allows for parallel operation when Julia was started with more than one
-    thread. Passed transformation functions should therefore not modify global
-    variables (i.e. they should be pure), or use locks to control parallel accesses.
+    thread. Passed transformation functions must therefore not modify global
+    variables (i.e. they must be pure), use locks to control parallel accesses,
+    or `threads=false` must be passed to disable multithreading.
     In the future, parallelism may be extended to other cases, so this requirement
     also holds for `DataFrame` inputs.
 

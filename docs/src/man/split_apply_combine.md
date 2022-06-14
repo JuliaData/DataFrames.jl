@@ -145,13 +145,15 @@ It is allowed to mix single values and vectors if multiple transformations
 are requested. In this case single value will be repeated to match the length
 of columns specified by returned vectors.
 
-A separate task is spawned for each specified transformation; each transformation
-then spawns as many tasks as Julia threads, and splits processing of groups across
-them (however, currently transformations with optimized implementations like `sum`
+By default (`threads=true`) a separate task is spawned for each
+specified transformation; each transformation then spawns as many tasks
+as Julia threads, and splits processing of groups across them
+(however, currently transformations with optimized implementations like `sum`
 and transformations that return multiple rows use a single task for all groups).
 This allows for parallel operation when Julia was started with more than one
-thread. Passed transformation functions should therefore not modify global variables
-(i.e. they should be pure), or use locks to control parallel accesses.
+thread. Passed transformation functions must therefore not modify global variables
+(i.e. they must be pure), use locks to control parallel accesses,
+or `threads=false` must be passed to disable multithreading.
 
 To apply `function` to each row instead of whole columns, it can be wrapped in a
 `ByRow` struct. `cols` can be any column indexing syntax, in which case
@@ -172,6 +174,8 @@ for details):
   transformation is applied to them.
 - `renamecols` : whether in the `cols => function` form automatically generated
   column names should include the name of transformation functions or not.
+- `threads` : whether transformations may be run in separate tasks which can execute
+  in parallel
 
 We show several examples of these functions applied to the `iris` dataset below:
 
