@@ -65,7 +65,8 @@ function assert_bool_vec(@nospecialize(fun))
     return function(x...)
         val = fun(x...)
         if !(val isa AbstractVector)
-            throw(ArgumentError("functions passed to `subset`/`subset!` must return " *
+            throw(ArgumentError("function passed to `subset`/`subset!` returned " *
+                                "value of type `$(typeof(val))` while they must return " *
                                 "an `AbstractVector` when subsetting a data frame " *
                                 "to ensure common mistakes in code are caught. Please " *
                                 "report an issue if you find this restriction inconvenient."))
