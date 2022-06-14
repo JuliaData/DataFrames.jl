@@ -26,13 +26,16 @@ const TRANSFORMATION_COMMON_RULES =
     Operations can then be applied on each group using one of the following functions:
     * `combine`: does not put restrictions on number of rows returned, the order of rows
       is specified by the order of groups in `GroupedDataFrame`; it is typically used
-      to compute summary statistics by group;
+      to compute summary statistics by group; for `GroupedDataFrame` if grouping columns
+      are kept they are put as first columns in the result;
     * `select`: return a data frame with the number and order of rows exactly the same
       as the source data frame, including only new calculated columns;
-      `select!` is an in-place version of `select`;
+      `select!` is an in-place version of `select`; for `GroupedDataFrame` if grouping columns
+      are kept they are put as first columns in the result;
     * `transform`: return a data frame with the number and order of rows exactly the same
       as the source data frame, including all columns from the source and new calculated columns;
-      `transform!` is an in-place version of `transform`.
+      `transform!` is an in-place version of `transform`; for `GroupedDataFrame`
+      existing columns in the source data frame are put as first columns in the result;
 
     All these functions take a specification of one or more functions to apply to
     each subset of the `DataFrame`. This specification can be of the following forms:
@@ -707,6 +710,7 @@ function _add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
                 if v === cdf[i]
                     if column_to_copy[i]
                         must_copy = true
+                        break
                     else
                         column_to_copy[i] = true
                     end
@@ -927,7 +931,8 @@ select!(df::DataFrame, @nospecialize(args...);
 select!(df::SubDataFrame, @nospecialize(args...);
         renamecols::Bool=true, threads::Bool=true) =
     _replace_columns!(df, select(df, args..., copycols=true,
-                                 renamecols=renamecols, threads=threads))
+                                 renamecols=renamecols, threads=threads),
+                      keep_present=false)
 
 function select!(@nospecialize(arg::Base.Callable), df::AbstractDataFrame;
                  renamecols::Bool=true, threads::Bool=true)
@@ -966,9 +971,13 @@ $TRANSFORMATION_COMMON_RULES
 
 See [`select`](@ref) for examples.
 """
-transform!(df::AbstractDataFrame, @nospecialize(args...);
+transform!(df::DataFrame, @nospecialize(args...);
            renamecols::Bool=true, threads::Bool=true) =
     select!(df, :, args..., renamecols=renamecols, threads=threads)
+
+transform!(df::SubDataFrame, @nospecialize(args...); renamecols::Bool=true, threads::Bool=true) =
+    _replace_columns!(df, select(df, args..., copycols=true, renamecols=renamecols, threads=threads),
+                      keep_present=true)
 
 function transform!(@nospecialize(arg::Base.Callable), df::AbstractDataFrame;
                     renamecols::Bool=true, threads::Bool=true)

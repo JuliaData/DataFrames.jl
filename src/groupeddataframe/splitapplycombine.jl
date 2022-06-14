@@ -830,6 +830,17 @@ combine(gd::GroupedDataFrame,
                      copycols=true, keeprows=false, renamecols=renamecols,
                      threads=threads)
 
+function _dealias_dataframe!(df::DataFrame)
+    seen_cols = IdDict{Any, Nothing}()
+    for (i, col) in enumerate(eachcol(df))
+        if !haskey(seen_cols, col)
+            seen_cols[col] = nothing
+        else
+            df[!, i] = df[:, i]
+        end
+    end
+end
+
 function select(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols::Bool=true,
                 keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
                 threads::Bool=true)
@@ -840,14 +851,19 @@ function select(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols:
                   threads=threads)
 end
 
-select(gd::GroupedDataFrame, @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex, MultiColumnIndex,
-                                                       AbstractVecOrMat}...);
-       copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
-       threads::Bool=true) =
-    _combine_prepare(gd, Ref{Any}(map(x -> broadcast_pair(parent(gd), x), args)),
-                     copycols=copycols, keepkeys=keepkeys,
-                     ungroup=ungroup, keeprows=true, renamecols=renamecols,
-                     threads=threads)
+function select(gd::GroupedDataFrame, @nospecialize(args::Union{Pair, Base.Callable, ColumnIndex,
+                                                                MultiColumnIndex, AbstractVecOrMat}...);
+                copycols::Bool=true, keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
+                threads::Bool=true)
+    res = _combine_prepare(gd, Ref{Any}(map(x -> broadcast_pair(parent(gd), x), args)),
+                           copycols=copycols, keepkeys=keepkeys,
+                           ungroup=ungroup, keeprows=true, renamecols=renamecols,
+                           threads=threads)
+    # res can be a GroupedDataFrame based on DataFrame or a DataFrame,
+    # so parent always gives a DataFrame
+    copycols || _dealias_dataframe!(parent(res))
+    return res
+end
 
 function transform(@nospecialize(f::Base.Callable), gd::GroupedDataFrame; copycols::Bool=true,
                    keepkeys::Bool=true, ungroup::Bool=true, renamecols::Bool=true,
@@ -888,12 +904,13 @@ function select!(gd::GroupedDataFrame,
     if df isa DataFrame
         newdf = select(gd, args..., copycols=false, renamecols=renamecols,
                        threads=threads)
+        _replace_columns!(df, newdf)
     else
         @assert df isa SubDataFrame
         newdf = select(gd, args..., copycols=true, renamecols=renamecols,
                        threads=threads)
+        _replace_columns!(df, newdf, keep_present=false)
     end
-    _replace_columns!(df, newdf)
     return ungroup ? df : gd
 end
 
@@ -913,12 +930,15 @@ function transform!(gd::GroupedDataFrame,
     if df isa DataFrame
         newdf = select(gd, :, args..., copycols=false, renamecols=renamecols,
                        threads=threads)
+        # need to recover column order of df in newdf and add new columns at the end
+        select!(newdf, propertynames(df), :, threads=threads)
+        _replace_columns!(df, newdf)
     else
         @assert df isa SubDataFrame
-        newdf = select(gd, :, args..., copycols=true, renamecols=renamecols,
+        newdf = select(gd, args..., copycols=true, renamecols=renamecols,
                        threads=threads)
+        # here column order of df is retained due to keep_present=true
+        _replace_columns!(df, newdf, keep_present=true)
     end
-    select!(newdf, propertynames(df), :, threads=threads)
-    _replace_columns!(df, newdf)
     return ungroup ? df : gd
 end

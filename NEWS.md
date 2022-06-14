@@ -54,6 +54,9 @@
 
 * Make sure that `AsTable` accepts only valid argument
   ([#3064](https://github.com/JuliaData/DataFrames.jl/pull/3064))
+* Make sure we avoid aliasing when repeating the same column
+  in `select[!]` and `transform[!]` on `GroupedDataFrame`
+  ([#3070](https://github.com/JuliaData/DataFrames.jl/pull/3070))
 
 ## Performance
 
@@ -63,6 +66,8 @@
 * Make one-dimensional multi-element indexing of `DataFrameRows` return
   `DataFrameRows`
   ([#3037](https://github.com/JuliaData/DataFrames.jl/pull/3037))
+* Make `transform!` on `SubDataFrame` faster
+  ([#3070](https://github.com/JuliaData/DataFrames.jl/pull/3070))
 
 # DataFrames.jl v1.3.4 Patch Release Notes
 
