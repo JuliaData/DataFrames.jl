@@ -1678,11 +1678,6 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
                 _columns(df)[columnindex(df, nm)] = newcol
             end
         end
-        current_col = 0
-        for col in _columns(df)
-            current_col += 1
-            @assert length(col) == targetrows
-        end
     catch err
         for col in _columns(df)
             resize!(col, nrows)
@@ -1821,11 +1816,6 @@ function Base.pushfirst!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
                 copyto!(newcol, 2, col, 1, nrows)
                 _columns(df)[columnindex(df, nm)] = newcol
             end
-        end
-        current_col = 0
-        for col in _columns(df)
-            current_col += 1
-            @assert length(col) == targetrows
         end
     catch err
         for col in _columns(df)
@@ -1972,11 +1962,6 @@ function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, Name
                 copyto!(newcol, loc+1, col, loc, nrows-loc+1)
                 _columns(df)[columnindex(df, nm)] = newcol
             end
-        end
-        current_col = 0
-        for col in _columns(df)
-            current_col += 1
-            @assert length(col) == targetrows
         end
     catch err
         for col in _columns(df)
