@@ -1236,4 +1236,18 @@ end
     @test df == DataFrame(a=1:3, b=2:4, c=1:3)
 end
 
+@testset "multicolumn aliasing" begin
+    df = DataFrame(a1=1:3, b1=11:13)
+    df.a2 = df.a1
+    df.a3 = df.a1
+    df.b2 = df.b1
+    df.b3 = df.b1
+    df.a4 = df.a1
+    refdf = copy(df)
+    @test_throws AssertionError push!(df, 1:7)
+    @test_throws AssertionError pushfirst!(df, 1:7)
+    @test_throws AssertionError insert!(df, 2, 1:7)
+    @test df == refdf
+end
+
 end # module
