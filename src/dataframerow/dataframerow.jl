@@ -510,8 +510,8 @@ Base.pushfirst!(df::DataFrame, row::DataFrameRow;
 function Base.insert!(df::DataFrame, loc::Integer, dfr::DataFrameRow;
                       cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
     loc isa Bool && throw(ArgumentError("invalid index: $loc of type Bool"))
-    1 <= loc <= nrow(df)+1 || throw(ArgumentError("invalid index: $loc for data " *
-                                                "frame with $(nrow(df)) rows"))
+    1 <= loc <= nrow(df)+1 ||
+        throw(ArgumentError("invalid index: $loc for data frame with $(nrow(df)) rows"))
     possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
     if !(cols in possible_cols)
         throw(ArgumentError("`cols` keyword argument must be any of :" *

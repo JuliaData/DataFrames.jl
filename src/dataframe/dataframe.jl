@@ -1567,11 +1567,11 @@ Base.pushfirst!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
     insert!(df, 1, row, cols=cols, promote=promote)
 
 function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, NamedTuple};
-                    cols::Symbol=:setequal,
-                    promote::Bool=(cols in [:union, :subset]))
+                      cols::Symbol=:setequal,
+                      promote::Bool=(cols in [:union, :subset]))
     loc isa Bool && throw(ArgumentError("invalid index: $loc of type Bool"))
-    1 <= loc <= nrow(df)+1 || throw(ArgumentError("invalid index: $loc for data " *
-                                                "frame with $(nrow(df)) rows"))
+    1 <= loc <= nrow(df)+1 ||
+        throw(ArgumentError("invalid index: $loc for data frame with $(nrow(df)) rows"))
     possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
     if !(cols in possible_cols)
         throw(ArgumentError("`cols` keyword argument must be any of :" *
@@ -1603,7 +1603,7 @@ function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, Name
         end
         for (i, colname) in enumerate(_names(df))
             col = _columns(df)[i]
-            if length(col) !== nrows
+            if length(col) != nrows
                 for col2 in _columns(df)
                     length(col2) == targetrows && deleteat!(col2, loc)
                     @assert length(col2) == nrows
@@ -1694,8 +1694,8 @@ function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, Name
                 newcol = similar(col, promote_type(S, T), targetrows)
                 firstindex(newcol) != 1 && _onebased_check_error()
                 copyto!(newcol, 1, col, 1, loc-1)
-                copyto!(newcol, loc+1, col, loc, nrows-loc+1)
                 newcol[loc] = val
+                copyto!(newcol, loc+1, col, loc, nrows-loc+1)
                 _columns(df)[columnindex(df, nm)] = newcol
             end
         end
@@ -1770,7 +1770,7 @@ As a special case, if `df` has no columns and `row` is a `NamedTuple` or
 and order.
 
 Please note that `push!`, `pushfirst!` and `insert!` must not be used on a
-`DataFrame` that contains that are aliases (equal when compared with `===`).
+`DataFrame` that contains columns that are aliases (equal when compared with `===`).
 
 # Examples
 ```jldoctest
@@ -1854,12 +1854,12 @@ Base.pushfirst!(df::DataFrame, row::Any; promote::Bool=false) =
 
 function Base.insert!(df::DataFrame, loc::Integer, row::Any; promote::Bool=false)
     loc isa Bool && throw(ArgumentError("invalid index: $loc of type Bool"))
-    1 <= loc <= nrow(df)+1 || throw(ArgumentError("invalid index: $loc for data " *
-                                                "frame with $(nrow(df)) rows"))
+    1 <= loc <= nrow(df)+1 ||
+        throw(ArgumentError("invalid index: $loc for data frame with $(nrow(df)) rows"))
     if !(row isa Union{Tuple, AbstractArray})
         # an explicit error is thrown as this was allowed in the past
-        throw(ArgumentError("`insert!` does not allow passing collections of type " *
-                            "$(typeof(row)) to be pushed into a DataFrame. Only " *
+        throw(ArgumentError("it is not allowed to insert collections of type " *
+                            "$(typeof(row)) into a DataFrame. Only " *
                             "`Tuple`, `AbstractArray`, `AbstractDict`, `DataFrameRow` " *
                             "and `NamedTuple` are allowed."))
     end
