@@ -1995,7 +1995,7 @@ function Base.pushfirst!(df::DataFrame, row::Any; promote::Bool=false)
                 newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
                 firstindex(newcol) != 1 && _onebased_check_error()
                 newcol[1] = val
-                copyto!(newcol, 1, col, 1, nrows)
+                copyto!(newcol, 2, col, 1, nrows)
                 _columns(df)[i] = newcol
             end
         end
