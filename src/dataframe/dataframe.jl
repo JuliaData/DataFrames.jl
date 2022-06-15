@@ -1777,6 +1777,16 @@ julia> df = DataFrame(A='a':'c', B=1:3)
    2 │ b         2
    3 │ c         3
 
+julia> push!(df, (true, false), promote=true)
+4×2 DataFrame
+ Row │ A     B
+     │ Any   Int64
+─────┼─────────────
+   1 │ a         1
+   2 │ b         2
+   3 │ c         3
+   4 │ true      0
+
 julia> push!(df, df[1, :])
 5×2 DataFrame
  Row │ A     B
@@ -1830,8 +1840,47 @@ julia> push!(df, NamedTuple(), cols=:subset)
 """
 push!
 
-Base.push!(df::DataFrame, row::Any; promote::Bool=false) =
-    insert!(df, nrow(df) + 1, row, promote=promote)
+function Base.push!(df::DataFrame, row::Any; promote::Bool=false)
+    if !(row isa Union{Tuple, AbstractArray})
+        # an explicit error is thrown as this was allowed in the past
+        throw(ArgumentError("it is not allowed to insert collections of type " *
+                            "$(typeof(row)) into a DataFrame. Only " *
+                            "`Tuple`, `AbstractArray`, `AbstractDict`, `DataFrameRow` " *
+                            "and `NamedTuple` are allowed."))
+    end
+    nrows, ncols = size(df)
+    targetrows = nrows + 1
+    if length(row) != ncols
+        msg = "Length of `row` does not match `DataFrame` column count."
+        throw(DimensionMismatch(msg))
+    end
+    current_col = 0
+    try
+        for (i, (col, val)) in enumerate(zip(_columns(df), row))
+            current_col += 1
+            @assert length(col) == nrows
+            S = typeof(val)
+            T = eltype(col)
+            if S <: T || !promote || promote_type(S, T) <: T
+                push!(col, val)
+            else
+                newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
+                firstindex(newcol) != 1 && _onebased_check_error()
+                copyto!(newcol, 1, col, 1, nrows)
+                newcol[end] = val
+                _columns(df)[i] = newcol
+            end
+        end
+    catch err
+        #clean up partial row
+        for col in _columns(df)
+            resize!(col, nrows)
+        end
+        @error "Error adding value to column :$(_names(df)[current_col])."
+        rethrow(err)
+    end
+    df
+end
 
 """
     pushfirst!(df::DataFrame, row::Union{Tuple, AbstractArray}; promote::Bool=false)
@@ -1919,8 +1968,48 @@ julia> pushfirst!(df, NamedTuple(), cols=:subset)
 """
 pushfirst!
 
-Base.pushfirst!(df::DataFrame, row::Any; promote::Bool=false) =
-    insert!(df, 1, row, promote=promote)
+function Base.pushfirst!(df::DataFrame, row::Any; promote::Bool=false)
+    if !(row isa Union{Tuple, AbstractArray})
+        # an explicit error is thrown as this was allowed in the past
+        throw(ArgumentError("it is not allowed to insert collections of type " *
+                            "$(typeof(row)) into a DataFrame. Only " *
+                            "`Tuple`, `AbstractArray`, `AbstractDict`, `DataFrameRow` " *
+                            "and `NamedTuple` are allowed."))
+    end
+    nrows, ncols = size(df)
+    targetrows = nrows + 1
+    if length(row) != ncols
+        msg = "Length of `row` does not match `DataFrame` column count."
+        throw(DimensionMismatch(msg))
+    end
+    current_col = 0
+    try
+        for (i, (col, val)) in enumerate(zip(_columns(df), row))
+            current_col += 1
+            @assert length(col) == nrows
+            S = typeof(val)
+            T = eltype(col)
+            if S <: T || !promote || promote_type(S, T) <: T
+                pushfirst!(col, val)
+            else
+                newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
+                firstindex(newcol) != 1 && _onebased_check_error()
+                newcol[1] = val
+                copyto!(newcol, 1, col, loc, nrows)
+                _columns(df)[i] = newcol
+            end
+        end
+    catch err
+        #clean up partial row
+        for col in _columns(df)
+            length(col) == targetrows && deleteat!(col, loc)
+            @assert length(col) == nrows
+        end
+        @error "Error adding value to column :$(_names(df)[current_col])."
+        rethrow(err)
+    end
+    df
+end
 
 """
     insert!(df::DataFrame, loc::Integer, row::Union{Tuple, AbstractArray}; promote::Bool=false)
