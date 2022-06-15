@@ -1768,6 +1768,14 @@ See also: [`pushfirst!`](@ref), [`insert!`](@ref)
 
 # Examples
 ```jldoctest
+julia> df = DataFrame(A='a':'c', B=1:3)
+3×2 DataFrame
+ Row │ A     B
+     │ Char  Int64
+─────┼─────────────
+   1 │ a         1
+   2 │ b         2
+   3 │ c         3
 
 julia> push!(df, df[1, :])
 5×2 DataFrame
