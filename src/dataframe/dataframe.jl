@@ -1553,14 +1553,292 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
     return df1
 end
 
-Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
-           cols::Symbol=:setequal,
-           promote::Bool=(cols in [:union, :subset])) =
-    insert!(df, nrow(df)+1, row, cols=cols, promote=promote)
-Base.pushfirst!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
-                cols::Symbol=:setequal,
-                promote::Bool=(cols in [:union, :subset])) =
-    insert!(df, 1, row, cols=cols, promote=promote)
+function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
+                    cols::Symbol=:setequal,
+                    promote::Bool=(cols in [:union, :subset]))
+    possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
+    if !(cols in possible_cols)
+        throw(ArgumentError("`cols` keyword argument must be any of :" *
+                            join(possible_cols, ", :")))
+    end
+
+    nrows, ncols = size(df)
+    targetrows = nrows + 1
+
+    if ncols == 0 && row isa NamedTuple
+        for (n, v) in pairs(row)
+            setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
+        end
+        return df
+    end
+
+    old_row_type = typeof(row)
+    if row isa AbstractDict && keytype(row) !== Symbol &&
+        (keytype(row) <: AbstractString || all(x -> x isa AbstractString, keys(row)))
+        row = (;(Symbol.(keys(row)) .=> values(row))...)
+    end
+
+    # in the code below we use a direct access to _columns because
+    # we resize the columns so temporarily the `DataFrame` is internally
+    # inconsistent and normal data frame indexing would error.
+    if cols == :union
+        if row isa AbstractDict && keytype(row) !== Symbol && !all(x -> x isa Symbol, keys(row))
+            throw(ArgumentError("when `cols == :union` all keys of row must be Symbol"))
+        end
+        for (i, colname) in enumerate(_names(df))
+            col = _columns(df)[i]
+            if length(col) != nrows
+                for col2 in _columns(df)
+                    resize!(col2, nrows)
+                end
+                throw(AssertionError("Error adding value to column :$colname"))
+            end
+            if haskey(row, colname)
+                val = row[colname]
+            else
+                val = missing
+            end
+            S = typeof(val)
+            T = eltype(col)
+            if S <: T || promote_type(S, T) <: T
+                push!(col, val)
+            elseif !promote
+                try
+                    push!(col, val)
+                catch err
+                    for col2 in _columns(df)
+                        resize!(col2, nrows)
+                    end
+                    @error "Error adding value to column :$colname."
+                    rethrow(err)
+                end
+            else
+                newcol = similar(col, promote_type(S, T), targetrows)
+                firstindex(newcol) != 1 && _onebased_check_error()
+                copyto!(newcol, 1, col, 1, nrows)
+                newcol[end] = val
+                _columns(df)[i] = newcol
+            end
+        end
+        for colname in setdiff(keys(row), _names(df))
+            val = row[colname]
+            S = typeof(val)
+            if nrows == 0
+                newcol = Tables.allocatecolumn(S, targetrows)
+            else
+                newcol = Tables.allocatecolumn(Union{Missing, S}, targetrows)
+                fill!(newcol, missing)
+            end
+            firstindex(newcol) != 1 && _onebased_check_error()
+            newcol[end] = val
+            df[!, colname] = newcol
+        end
+        return df
+    end
+
+    if cols == :orderequal
+        if old_row_type <: Dict
+            throw(ArgumentError("passing `Dict` as `row` when `cols == :orderequal` " *
+                                "is not allowed as it is unordered"))
+        elseif length(row) != ncol(df) || any(x -> x[1] != x[2], zip(keys(row), _names(df)))
+            throw(ArgumentError("when `cols == :orderequal` pushed row must " *
+                                "have the same column names and in the " *
+                                "same order as the target data frame"))
+        end
+    elseif cols === :setequal
+        # Only check for equal lengths if :setequal is selected,
+        # as an error will be thrown below if some names don't match
+        if length(row) != ncols
+            # an explicit error is thrown as this was allowed in the past
+            throw(ArgumentError("`push!` with `cols` equal to `:setequal` " *
+                                "requires `row` to have the same number of elements " *
+                                "as the number of columns in `df`."))
+        end
+    end
+
+    current_col = 0
+    try
+        for (col, nm) in zip(_columns(df), _names(df))
+            current_col += 1
+            @assert length(col) == nrows
+            if cols === :subset
+                val = get(row, nm, missing)
+            else
+                val = row[nm]
+            end
+            S = typeof(val)
+            T = eltype(col)
+            if S <: T || !promote || promote_type(S, T) <: T
+                push!(col, val)
+            else
+                newcol = similar(col, promote_type(S, T), targetrows)
+                firstindex(newcol) != 1 && _onebased_check_error()
+                copyto!(newcol, 1, col, 1, nrows)
+                newcol[end] = val
+                _columns(df)[columnindex(df, nm)] = newcol
+            end
+        end
+        current_col = 0
+        for col in _columns(df)
+            current_col += 1
+            @assert length(col) == targetrows
+        end
+    catch err
+        for col in _columns(df)
+            resize!(col, nrows)
+        end
+        if current_col > 0
+            @error "Error adding value to column :$(_names(df)[current_col])."
+        end
+        rethrow(err)
+    end
+    return df
+end
+
+function Base.pushfirst!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
+                        cols::Symbol=:setequal,
+                        promote::Bool=(cols in [:union, :subset]))
+    possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
+    if !(cols in possible_cols)
+        throw(ArgumentError("`cols` keyword argument must be any of :" *
+                            join(possible_cols, ", :")))
+    end
+
+    nrows, ncols = size(df)
+    targetrows = nrows + 1
+
+    if ncols == 0 && row isa NamedTuple
+        for (n, v) in pairs(row)
+            setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
+        end
+        return df
+    end
+
+    old_row_type = typeof(row)
+    if row isa AbstractDict && keytype(row) !== Symbol &&
+        (keytype(row) <: AbstractString || all(x -> x isa AbstractString, keys(row)))
+        row = (;(Symbol.(keys(row)) .=> values(row))...)
+    end
+
+    # in the code below we use a direct access to _columns because
+    # we resize the columns so temporarily the `DataFrame` is internally
+    # inconsistent and normal data frame indexing would error.
+    if cols == :union
+        if row isa AbstractDict && keytype(row) !== Symbol && !all(x -> x isa Symbol, keys(row))
+            throw(ArgumentError("when `cols == :union` all keys of row must be Symbol"))
+        end
+        for (i, colname) in enumerate(_names(df))
+            col = _columns(df)[i]
+            if length(col) != nrows
+                for col2 in _columns(df)
+                    length(col2) == targetrows && popfirst!(col2)
+                    @assert length(col2) == nrows
+                end
+                throw(AssertionError("Error adding value to column :$colname"))
+            end
+            if haskey(row, colname)
+                val = row[colname]
+            else
+                val = missing
+            end
+            S = typeof(val)
+            T = eltype(col)
+            if S <: T || promote_type(S, T) <: T
+                pushfirst!(col, val)
+            elseif !promote
+                try
+                    pushfirst!(col, val)
+                catch err
+                    for col2 in _columns(df)
+                        length(col2) == targetrows && popfirst!(col2)
+                        @assert length(col2) == nrows
+                    end
+                    @error "Error adding value to column :$colname."
+                    rethrow(err)
+                end
+            else
+                newcol = similar(col, promote_type(S, T), targetrows)
+                firstindex(newcol) != 1 && _onebased_check_error()
+                newcol[1] = val
+                copyto!(newcol, 2, col, 1, nrows)
+                _columns(df)[i] = newcol
+            end
+        end
+        for colname in setdiff(keys(row), _names(df))
+            val = row[colname]
+            S = typeof(val)
+            if nrows == 0
+                newcol = Tables.allocatecolumn(S, targetrows)
+            else
+                newcol = Tables.allocatecolumn(Union{Missing, S}, targetrows)
+                fill!(newcol, missing)
+            end
+            firstindex(newcol) != 1 && _onebased_check_error()
+            newcol[1] = val
+            df[!, colname] = newcol
+        end
+        return df
+    end
+
+    if cols == :orderequal
+        if old_row_type <: Dict
+            throw(ArgumentError("passing `Dict` as `row` when `cols == :orderequal` " *
+                                "is not allowed as it is unordered"))
+        elseif length(row) != ncol(df) || any(x -> x[1] != x[2], zip(keys(row), _names(df)))
+            throw(ArgumentError("when `cols == :orderequal` pushed row must " *
+                                "have the same column names and in the " *
+                                "same order as the target data frame"))
+        end
+    elseif cols === :setequal
+        # Only check for equal lengths if :setequal is selected,
+        # as an error will be thrown below if some names don't match
+        if length(row) != ncols
+            # an explicit error is thrown as this was allowed in the past
+            throw(ArgumentError("`push!` with `cols` equal to `:setequal` " *
+                                "requires `row` to have the same number of elements " *
+                                "as the number of columns in `df`."))
+        end
+    end
+
+    current_col = 0
+    try
+        for (col, nm) in zip(_columns(df), _names(df))
+            current_col += 1
+            @assert length(col) == nrows
+            if cols === :subset
+                val = get(row, nm, missing)
+            else
+                val = row[nm]
+            end
+            S = typeof(val)
+            T = eltype(col)
+            if S <: T || !promote || promote_type(S, T) <: T
+                pushfirst!(col, val)
+            else
+                newcol = similar(col, promote_type(S, T), targetrows)
+                firstindex(newcol) != 1 && _onebased_check_error()
+                newcol[1] = val
+                copyto!(newcol, 2, col, 1, nrows)
+                _columns(df)[columnindex(df, nm)] = newcol
+            end
+        end
+        current_col = 0
+        for col in _columns(df)
+            current_col += 1
+            @assert length(col) == targetrows
+        end
+    catch err
+        for col in _columns(df)
+            length(col) == targetrows && popfirst!(col)
+            @assert length(col) == nrows
+        end
+        if current_col > 0
+            @error "Error adding value to column :$(_names(df)[current_col])."
+        end
+        rethrow(err)
+    end
+    return df
+end
 
 function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, NamedTuple};
                       cols::Symbol=:setequal,

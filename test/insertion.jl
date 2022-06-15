@@ -1,9 +1,7 @@
 module TestPush
 
 using DataFrames, Test, Logging, DataStructures
-
 const ≅ = isequal
-
 
 @testset "push!(df, row)" begin
     buf = IOBuffer()
@@ -1244,9 +1242,44 @@ end
     df.b3 = df.b1
     df.a4 = df.a1
     refdf = copy(df)
-    @test_throws AssertionError push!(df, 1:7)
-    @test_throws AssertionError pushfirst!(df, 1:7)
-    @test_throws AssertionError insert!(df, 2, 1:7)
+
+    buf = IOBuffer()
+    sl = SimpleLogger(buf)
+
+    with_logger(sl) do
+        @test_throws AssertionError push!(df, 1:7)
+    end
+    @test occursin("Error adding value to column :a2", String(take!(buf)))
+    @test df == refdf
+
+    with_logger(sl) do
+        @test_throws AssertionError pushfirst!(df, 1:7)
+    end
+    @test occursin("Error adding value to column :a2", String(take!(buf)))
+    @test df == refdf
+
+    with_logger(sl) do
+        @test_throws AssertionError insert!(df, 2, 1:7)
+    end
+    @test occursin("Error adding value to column :a2", String(take!(buf)))
+    @test df == refdf
+
+    with_logger(sl) do
+        @test_throws AssertionError push!(df, (a1=1, b1=2, a2=3, a3=4, b2=5, b3=6, a4=7))
+    end
+    @test occursin("Error adding value to column :a2", String(take!(buf)))
+    @test df == refdf
+
+    with_logger(sl) do
+        @test_throws AssertionError pushfirst!(df, (a1=1, b1=2, a2=3, a3=4, b2=5, b3=6, a4=7))
+    end
+    @test occursin("Error adding value to column :a2", String(take!(buf)))
+    @test df == refdf
+
+    with_logger(sl) do
+        @test_throws AssertionError insert!(df, 2, (a1=1, b1=2, a2=3, a3=4, b2=5, b3=6, a4=7))
+    end
+    @test occursin("Error adding value to column :a2", String(take!(buf)))
     @test df == refdf
 end
 
