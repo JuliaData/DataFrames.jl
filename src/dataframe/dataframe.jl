@@ -1634,8 +1634,8 @@ function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, Name
                 newcol = similar(col, promote_type(S, T), targetrows)
                 firstindex(newcol) != 1 && _onebased_check_error()
                 copyto!(newcol, 1, col, 1, loc-1)
-                copyto!(newcol, loc+1, col, loc, nrows-loc+1)
                 newcol[loc] = val
+                copyto!(newcol, loc+1, col, loc, nrows-loc+1)
                 _columns(df)[i] = newcol
             end
         end
@@ -1882,8 +1882,8 @@ function Base.insert!(df::DataFrame, loc::Integer, row::Any; promote::Bool=false
                 newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
                 firstindex(newcol) != 1 && _onebased_check_error()
                 copyto!(newcol, 1, col, 1, loc-1)
-                copyto!(newcol, loc+1, col, loc, nrows-loc+1)
                 newcol[loc] = val
+                copyto!(newcol, loc+1, col, loc, nrows-loc+1)
                 _columns(df)[i] = newcol
             end
         end
