@@ -1995,14 +1995,14 @@ function Base.pushfirst!(df::DataFrame, row::Any; promote::Bool=false)
                 newcol = Tables.allocatecolumn(promote_type(S, T), targetrows)
                 firstindex(newcol) != 1 && _onebased_check_error()
                 newcol[1] = val
-                copyto!(newcol, 1, col, loc, nrows)
+                copyto!(newcol, 1, col, 1, nrows)
                 _columns(df)[i] = newcol
             end
         end
     catch err
         #clean up partial row
         for col in _columns(df)
-            length(col) == targetrows && deleteat!(col, loc)
+            length(col) == targetrows && popfirst!(col)
             @assert length(col) == nrows
         end
         @error "Error adding value to column :$(_names(df)[current_col])."
