@@ -1282,9 +1282,7 @@ The above rule has the following exceptions:
 Please note that `append!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
-# See also
-
-Use [`push!`](@ref) to add individual rows to a data frame, [`prepend!`](@ref)
+See also: use [`push!`](@ref) to add individual rows to a data frame, [`prepend!`](@ref)
 to add a table at the beginning, and [`vcat`](@ref) to vertically concatenate
 data frames.
 
@@ -1366,9 +1364,7 @@ The above rule has the following exceptions:
 Please note that `prepend!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
-# See also
-
-Use [`pushfirst!`](@ref) to add individual rows at the beginning of a data frame,
+See also: use [`pushfirst!`](@ref) to add individual rows at the beginning of a data frame,
 [`append!`](@ref) to add a table at the end, and [`vcat`](@ref)
 to vertically concatenate data frames.
 
@@ -1717,22 +1713,7 @@ function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, Name
     return df
 end
 
-"""
-    push!(df::DataFrame, row::Union{Tuple, AbstractArray}; promote::Bool=false)
-    push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
-          cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
-    pushfirst!(df::DataFrame, row::Union{Tuple, AbstractArray}; promote::Bool=false)
-    pushfirst!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
-               cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
-    insert!(df::DataFrame, loc::Integer, row::Union{Tuple, AbstractArray}; promote::Bool=false)
-    insert!(df::DataFrame, loc::Integer, row::Union{DataFrameRow, NamedTuple, AbstractDict};
-            cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
-
-Add in-place one row to `df` taking the values from `row`. `push!` adds
-the row at the end of `df`. `pushfirst!` adds the row at the beginning of `df`.
-`insert!` adds the row in the location `loc` that can range from `1` to
-`nrow(df)+1`.
-
+const INSERTION_COMMON = """
 Column types of `df` are preserved, and new values are converted if necessary.
 An error is thrown if conversion fails.
 
@@ -1754,7 +1735,7 @@ depends on the `cols` argument value in the following way:
 * If `cols == :intersect` then `row` may contain more columns than `df`,
   but all column names that are present in `df` must be present in `row` and only
   they are used to populate a new row in `df`.
-* If `cols == :subset` then `push!` behaves like for `:intersect` but if some
+* If `cols == :subset` then the behavior is like for `:intersect` but if some
   column is missing in `row` then a `missing` value is pushed to `df`.
 * If `cols == :union` then columns missing in `df` that are present in `row` are
   added to `df` (using `missing` for existing rows) and a `missing` value is
@@ -1769,8 +1750,182 @@ As a special case, if `df` has no columns and `row` is a `NamedTuple` or
 `DataFrameRow`, columns are created for all values in `row`, using their names
 and order.
 
-Please note that `push!`, `pushfirst!` and `insert!` must not be used on a
+Please note that this function must not be used on a
 `DataFrame` that contains columns that are aliases (equal when compared with `===`).
+"""
+
+"""
+    push!(df::DataFrame, row::Union{Tuple, AbstractArray}; promote::Bool=false)
+    push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
+          cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
+
+Add in-place one row to `df` taking the values from `row`. `push!` adds
+the row at the end of `df`.
+
+$INSERTION_COMMON
+
+See also: [`pushfirst!`](@ref), [`insert!`](@ref)
+
+# Examples
+```jldoctest
+
+julia> push!(df, df[1, :])
+5×2 DataFrame
+ Row │ A     B
+     │ Any   Int64
+─────┼─────────────
+   1 │ a         1
+   2 │ b         2
+   3 │ c         3
+   4 │ true      0
+   5 │ a         1
+
+julia> push!(df, (C="something", A=11, B=12), cols=:intersect)
+6×2 DataFrame
+ Row │ A     B
+     │ Any   Int64
+─────┼─────────────
+   1 │ a         1
+   2 │ b         2
+   3 │ c         3
+   4 │ true      0
+   5 │ a         1
+   6 │ 11       12
+
+julia> push!(df, Dict(:A=>1.0, :C=>1.0), cols=:union)
+7×3 DataFrame
+ Row │ A     B        C
+     │ Any   Int64?   Float64?
+─────┼──────────────────────────
+   1 │ a           1  missing
+   2 │ b           2  missing
+   3 │ c           3  missing
+   4 │ true        0  missing
+   5 │ a           1  missing
+   6 │ 11         12  missing
+   7 │ 1.0   missing        1.0
+
+julia> push!(df, NamedTuple(), cols=:subset)
+8×3 DataFrame
+ Row │ A        B        C
+     │ Any      Int64?   Float64?
+─────┼─────────────────────────────
+   1 │ a              1  missing
+   2 │ b              2  missing
+   3 │ c              3  missing
+   4 │ true           0  missing
+   5 │ a              1  missing
+   6 │ 11            12  missing
+   7 │ 1.0      missing        1.0
+   8 │ missing  missing  missing
+```
+"""
+push!
+
+Base.push!(df::DataFrame, row::Any; promote::Bool=false) =
+    insert!(df, nrow(df) + 1, row, promote=promote)
+
+"""
+    pushfirst!(df::DataFrame, row::Union{Tuple, AbstractArray}; promote::Bool=false)
+    pushfirst!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
+               cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
+
+Add in-place one row to `df` taking the values from `row`.
+`pushfirst!` adds the row at the beginning of `df`.
+
+$INSERTION_COMMON
+
+See also: [`push!`](@ref), [`insert!`](@ref)
+
+# Examples
+```jldoctest
+julia> df = DataFrame(A='a':'c', B=1:3)
+3×2 DataFrame
+ Row │ A     B
+     │ Char  Int64
+─────┼─────────────
+   1 │ a         1
+   2 │ b         2
+   3 │ c         3
+
+julia> pushfirst!(df, (true, false), promote=true)
+4×2 DataFrame
+ Row │ A     B
+     │ Any   Int64
+─────┼─────────────
+   1 │ true      0
+   2 │ a         1
+   3 │ b         2
+   4 │ c         3
+
+julia> pushfirst!(df, df[1, :])
+5×2 DataFrame
+ Row │ A     B
+     │ Any   Int64
+─────┼─────────────
+   1 │ true      0
+   2 │ true      0
+   3 │ a         1
+   4 │ b         2
+   5 │ c         3
+
+julia> pushfirst!(df, (C="something", A=11, B=12), cols=:intersect)
+6×2 DataFrame
+ Row │ A     B
+     │ Any   Int64
+─────┼─────────────
+   1 │ 11       12
+   2 │ true      0
+   3 │ true      0
+   4 │ a         1
+   5 │ b         2
+   6 │ c         3
+
+julia> pushfirst!(df, Dict(:A=>1.0, :C=>1.0), cols=:union)
+7×3 DataFrame
+ Row │ A     B        C
+     │ Any   Int64?   Float64?
+─────┼──────────────────────────
+   1 │ 1.0   missing        1.0
+   2 │ 11         12  missing
+   3 │ true        0  missing
+   4 │ true        0  missing
+   5 │ a           1  missing
+   6 │ b           2  missing
+   7 │ c           3  missing
+
+julia> pushfirst!(df, NamedTuple(), cols=:subset)
+8×3 DataFrame
+ Row │ A        B        C
+     │ Any      Int64?   Float64?
+─────┼─────────────────────────────
+   1 │ missing  missing  missing
+   2 │ 1.0      missing        1.0
+   3 │ 11            12  missing
+   4 │ true           0  missing
+   5 │ true           0  missing
+   6 │ a              1  missing
+   7 │ b              2  missing
+   8 │ c              3  missing
+```
+"""
+pushfirst!
+
+Base.pushfirst!(df::DataFrame, row::Any; promote::Bool=false) =
+    insert!(df, 1, row, promote=promote)
+
+"""
+    insert!(df::DataFrame, loc::Integer, row::Union{Tuple, AbstractArray}; promote::Bool=false)
+    insert!(df::DataFrame, loc::Integer, row::Union{DataFrameRow, NamedTuple, AbstractDict};
+            cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
+
+Add in-place one row to `df` taking the values from `row`.
+`insert!` adds the row in the location `loc` that can range from `1` to
+`nrow(df)+1`.
+
+$INSERTION_COMMON
+
+See also: [`push!`](@ref), [`pushfirst!`](@ref)
 
 # Examples
 ```jldoctest
@@ -1793,7 +1948,7 @@ julia> insert!(df, 2, (true, false), promote=true)
    3 │ b         2
    4 │ c         3
 
-julia> push!(df, df[1, :])
+julia> insert!(df, 5, df[1, :])
 5×2 DataFrame
  Row │ A     B
      │ Any   Int64
@@ -1804,7 +1959,7 @@ julia> push!(df, df[1, :])
    4 │ c         3
    5 │ a         1
 
-julia> pushfirst!(df, (C="something", A=11, B=12), cols=:intersect)
+julia> insert!(df, 1, (C="something", A=11, B=12), cols=:intersect)
 6×2 DataFrame
  Row │ A     B
      │ Any   Int64
@@ -1816,7 +1971,7 @@ julia> pushfirst!(df, (C="something", A=11, B=12), cols=:intersect)
    5 │ c         3
    6 │ a         1
 
-julia> push!(df, Dict(:A=>1.0, :C=>1.0), cols=:union)
+julia> insert!(df, 7, Dict(:A=>1.0, :C=>1.0), cols=:union)
 7×3 DataFrame
  Row │ A     B        C
      │ Any   Int64?   Float64?
@@ -1844,13 +1999,7 @@ julia> insert!(df, 3, NamedTuple(), cols=:subset)
    8 │ 1.0      missing        1.0
 ```
 """
-(push!, pushfirst!, insert!)
-
-Base.push!(df::DataFrame, row::Any; promote::Bool=false) =
-    insert!(df, nrow(df) + 1, row, promote=promote)
-
-Base.pushfirst!(df::DataFrame, row::Any; promote::Bool=false) =
-    insert!(df, 1, row, promote=promote)
+insert!
 
 function Base.insert!(df::DataFrame, loc::Integer, row::Any; promote::Bool=false)
     loc isa Bool && throw(ArgumentError("invalid index: $loc of type Bool"))

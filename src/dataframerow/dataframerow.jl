@@ -505,7 +505,8 @@ Base.pushfirst!(df::DataFrame, row::DataFrameRow;
                 promote::Bool=(cols in [:union, :subset])) =
     insert!(df, 1, row, cols=cols, promote=promote)
 
-@noinline pushhelper!(x, loc, r) = insert!(x, loc, x[r])
+@noinline inserthelper!(x::AbstractVector, loc::Integer, r::Any) =
+    insert!(x, loc, x[r])
 
 function Base.insert!(df::DataFrame, loc::Integer, dfr::DataFrameRow;
                       cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
@@ -534,7 +535,7 @@ function Base.insert!(df::DataFrame, loc::Integer, dfr::DataFrameRow;
                 throw(AssertionError("Error adding value to column :$colname"))
             end
             # use a barrier function to improve performance
-            pushhelper!(col, loc, r)
+            inserthelper!(col, loc, r)
         end
         return df
     end
