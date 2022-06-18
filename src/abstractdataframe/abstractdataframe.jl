@@ -357,7 +357,12 @@ function Base.size(df::AbstractDataFrame, i::Integer)
     end
 end
 
-Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
+"""
+    isempty(::AbstractDataFrame)
+
+Return `true` if data frame has zero rows.
+"""
+Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0
 
 if VERSION < v"1.6"
     Base.firstindex(df::AbstractDataFrame, i::Integer) = first(axes(df, i))
@@ -1373,8 +1378,6 @@ end
 """
     unique(df::AbstractDataFrame; view::Bool=false)
     unique(df::AbstractDataFrame, cols; view::Bool=false)
-    unique!(df::AbstractDataFrame)
-    unique!(df::AbstractDataFrame, cols)
 
 Return a data frame containing only the first occurrence of unique rows in `df`.
 When `cols` is specified, the returned `DataFrame` contains complete rows,
@@ -1382,13 +1385,10 @@ retaining in each case the first occurrence of a given combination of values
 in selected columns or their transformations. `cols` can be any column
 selector or transformation accepted by [`select`](@ref).
 
-
-For `unique`, if `view=false` a freshly allocated `DataFrame` is returned,
+If `view=false` a freshly allocated `DataFrame` is returned,
 and if `view=true` then a `SubDataFrame` view into `df` is returned.
 
-`unique!` updates `df` in-place and does not support the `view` keyword argument.
-
-See also [`nonunique`](@ref).
+See also: [`unique!`](@ref) [`nonunique`](@ref).
 
 # Arguments
 - `df` : the AbstractDataFrame
@@ -1438,6 +1438,52 @@ julia> unique(df, 2)
 ─────┼──────────────
    1 │     1      1
    2 │     2      2
+```
+"""
+unique
+
+"""
+    unique!(df::AbstractDataFrame)
+    unique!(df::AbstractDataFrame, cols)
+
+Update `df` in-place to contain only the first occurrence of unique rows in `df`.
+When `cols` is specified, the returned `DataFrame` contains complete rows,
+retaining in each case the first occurrence of a given combination of values
+in selected columns or their transformations. `cols` can be any column
+selector or transformation accepted by [`select`](@ref).
+
+See also: [`unique`](@ref) [`nonunique`](@ref).
+
+# Arguments
+- `df` : the AbstractDataFrame
+- `cols` :  column indicator (Symbol, Int, Vector{Symbol}, Regex, etc.)
+specifying the column(s) to compare.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(i=1:4, x=[1, 2, 1, 2])
+4×2 DataFrame
+ Row │ i      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      1
+   4 │     4      2
+
+julia> df = vcat(df, df)
+8×2 DataFrame
+ Row │ i      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      1
+   4 │     4      2
+   5 │     1      1
+   6 │     2      2
+   7 │     3      1
+   8 │     4      2
 
 julia> unique!(df)  # modifies df
 4×2 DataFrame
@@ -1450,7 +1496,7 @@ julia> unique!(df)  # modifies df
    4 │     4      2
 ```
 """
-(unique, unique!)
+unique!
 
 """
     fillcombinations(df::AbstractDataFrame, indexcols;
@@ -2120,34 +2166,43 @@ Base.parentindices(adf::AbstractDataFrame) = axes(adf)
 
 ## Documentation for methods defined elsewhere
 
-function nrow end
-function ncol end
-
 """
     nrow(df::AbstractDataFrame)
-    ncol(df::AbstractDataFrame)
 
-Return the number of rows or columns in an `AbstractDataFrame` `df`.
+Return the number of rows in an `AbstractDataFrame` `df`.
 
-See also [`size`](@ref).
+See also: [`ncol`](@ref), [`size`](@ref).
 
-**Examples**
+# Examples
 
 ```jldoctest
 julia> df = DataFrame(i=1:10, x=rand(10), y=rand(["a", "b", "c"], 10));
 
-julia> size(df)
-(10, 3)
-
 julia> nrow(df)
 10
+```
+
+"""
+function nrow end
+
+"""
+    ncol(df::AbstractDataFrame)
+
+Return the number of columns in an `AbstractDataFrame` `df`.
+
+See also [`nrow`](@ref), [`size`](@ref).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(i=1:10, x=rand(10), y=rand(["a", "b", "c"], 10));
 
 julia> ncol(df)
 3
 ```
 
 """
-(nrow, ncol)
+function ncol end
 
 """
     disallowmissing(df::AbstractDataFrame, cols=:; error::Bool=true)
@@ -2162,7 +2217,7 @@ If `cols` is omitted all columns in the data frame are converted.
 If `error=false` then columns containing a `missing` value will be skipped instead
 of throwing an error.
 
-**Examples**
+# Examples
 
 ```jldoctest
 julia> df = DataFrame(a=Union{Int, Missing}[1, 2])
@@ -2241,7 +2296,7 @@ to element type `Union{T, Missing}` from `T` to allow support for missing values
 
 If `cols` is omitted all columns in the data frame are converted.
 
-**Examples**
+# Examples
 
 ```jldoctest
 julia> df = DataFrame(a=[1, 2])
