@@ -362,7 +362,7 @@ end
 
 Return `true` if data frame has zero rows.
 """
-Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0
+Base.isempty(df::AbstractDataFrame) = nrow(df) == 0
 
 if VERSION < v"1.6"
     Base.firstindex(df::AbstractDataFrame, i::Integer) = first(axes(df, i))
