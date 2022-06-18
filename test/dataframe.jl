@@ -2052,7 +2052,7 @@ end
                                     cols=:orderequal)
 end
 
-@testset "vcat with source and reduce" begin
+@testset "vcat with source and reduce(vcat, ...)" begin
     df1 = DataFrame(A=1:3, B=1:3)
     df2 = DataFrame(A=4:6, B=4:6)
     df3 = DataFrame(A=7:9, C=7:9)
