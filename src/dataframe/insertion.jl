@@ -752,12 +752,12 @@ end
 Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
            cols::Symbol=:setequal,
            promote::Bool=(cols in [:union, :subset])) =
-    _row_inserter!(df, -1, row, Val{:push}(), cols, promote)
+    _row_inserter!(df, -1, row, Val{:push}(), cols, promote, -1)
 
 Base.pushfirst!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
                 cols::Symbol=:setequal,
                 promote::Bool=(cols in [:union, :subset])) =
-    _row_inserter!(df, -1, row, Val{:pushfirst}(), cols, promote)
+    _row_inserter!(df, -1, row, Val{:pushfirst}(), cols, promote, -1)
 
 function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, NamedTuple};
                       cols::Symbol=:setequal,
@@ -765,13 +765,13 @@ function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, Name
     loc isa Bool && throw(ArgumentError("invalid index: $loc of type Bool"))
     1 <= loc <= nrow(df)+1 ||
         throw(ArgumentError("invalid index: $loc for data frame with $(nrow(df)) rows"))
-    return _row_inserter!(df, loc, row, Val{:insert}(), cols, promote)
+    return _row_inserter!(df, loc, row, Val{:insert}(), cols, promote, -1)
 end
 
 function _row_inserter!(df::DataFrame, loc::Integer,
                         row::Union{AbstractDict, NamedTuple, DataFrameRow},
                         mode::Union{Val{:push}, Val{:pushfirst}, Val{:insert}},
-                        cols::Symbol, promote::Bool, nrows::Int=-1)
+                        cols::Symbol, promote::Bool, nrows::Int)
     if nrows == -1
         @assert row isa Union{AbstractDict, NamedTuple}
         possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
