@@ -2105,6 +2105,11 @@ end
                            DataFrame(a=1:2, b=missing))
     @test isequal_coltyped(reduce(vcat, (DataFrame(a=1:2), DataFrame()), cols=[:a, :b]),
                            DataFrame(a=1:2, b=missing))
+    @test vcat(DataFrame(a=1), DataFrame(b=2), cols=[:a]) ≅ DataFrame(a=[1, missing])
+    @test vcat(DataFrame(a=1), DataFrame(b=2), cols=[:b]) ≅ DataFrame(b=[missing, 2])
+    @test vcat(DataFrame(a=1), DataFrame(b=2), cols=Symbol[]) == DataFrame()
+    @test isequal_coltyped(vcat(DataFrame(a=1), DataFrame(b=2), cols=[:c]),
+                           DataFrame(c=[missing, missing]))
 end
 
 @testset "push! with :subset" begin
