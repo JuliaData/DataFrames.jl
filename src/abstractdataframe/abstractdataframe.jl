@@ -1945,7 +1945,7 @@ end
 function _vcat(dfs::AbstractVector{AbstractDataFrame};
                cols::Union{Symbol, AbstractVector{Symbol},
                            AbstractVector{<:AbstractString}}=:setequal)
-
+    # note that DataFrame() objects are dropped from dfs before we call _vcat
     if isempty(dfs)
         cols isa Symbol && return DataFrame()
         return DataFrame([col => Missing[] for col in cols])

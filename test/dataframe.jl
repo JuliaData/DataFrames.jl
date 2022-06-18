@@ -2067,16 +2067,14 @@ end
                         C=[fill(missing, 6); 7:9],
                         source=[1, 1, 1, 2, 2, 2, 3, 3, 3])
         res = vcat(df1, df2, df3, df4, cols=:union, source=col => categorical(-4:-1))
-        @test res ≅ DataFrame(A=1:9, B=[1:6; fill(missing, 3)],
-                              C=[fill(missing, 6); 7:9],
-                              source=[-4, -4, -4, -3, -3, -3, -2, -2, -2])
-        @test res.source isa CategoricalVector
+        @test isequal_coltyped(res, DataFrame(A=1:9, B=[1:6; fill(missing, 3)],
+                                              C=[fill(missing, 6); 7:9],
+                                              source=categorical([-4, -4, -4, -3, -3, -3, -2, -2, -2])))
 
         res = reduce(vcat, [df1, df2, df3, df4], cols=:union, source=col => categorical(-4:-1))
-        @test res ≅ DataFrame(A=1:9, B=[1:6; fill(missing, 3)],
-                              C=[fill(missing, 6); 7:9],
-                              source=[-4, -4, -4, -3, -3, -3, -2, -2, -2])
-        @test res.source isa CategoricalVector
+        @test isequal_coltyped(res, DataFrame(A=1:9, B=[1:6; fill(missing, 3)],
+                                              C=[fill(missing, 6); 7:9],
+                                              source=categorical([-4, -4, -4, -3, -3, -3, -2, -2, -2])))
 
         @test reduce(vcat, DataFrame[]) == DataFrame()
         @test isequal_coltyped(reduce(vcat, DataFrame[], source=:src),
@@ -2095,6 +2093,18 @@ end
     @test_throws TypeError reduce(vcat, [df1, df2, df3, df4], cols=:union, source=:a => 1)
     @test_throws ArgumentError reduce(vcat, [df1, df2, df3, df4], cols=:union, source=:C)
     @test_throws ArgumentError reduce(vcat, [df1, df2, df3, df4], cols=:union, source=:a => [1])
+
+    @test vcat(DataFrame(), DataFrame()) ==
+          reduce(vcat, [DataFrame(), DataFrame()]) ==
+          DataFrame()
+    @test isequal_coltyped(vcat(DataFrame(), DataFrame(), cols=[:a, :b]),
+                           DataFrame(a=Missing[], b=Missing[]))
+    @test isequal_coltyped(reduce(vcat, (DataFrame(), DataFrame()), cols=[:a, :b]),
+                           DataFrame(a=Missing[], b=Missing[]))
+    @test isequal_coltyped(vcat(DataFrame(a=1:2), DataFrame(), cols=[:a, :b]),
+                           DataFrame(a=1:2, b=missing))
+    @test isequal_coltyped(reduce(vcat, (DataFrame(a=1:2), DataFrame()), cols=[:a, :b]),
+                           DataFrame(a=1:2, b=missing))
 end
 
 @testset "push! with :subset" begin
