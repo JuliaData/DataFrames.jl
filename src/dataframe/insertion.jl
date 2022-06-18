@@ -354,8 +354,7 @@ Please note that this function must not be used on a
     push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
           cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
-Add in-place one row to `df` taking the values from `row`. `push!` adds
-the row at the end of `df`.
+Add one row at the end of `df` in-place, taking the values from `row`.
 
 $INSERTION_COMMON
 
@@ -433,8 +432,6 @@ julia> push!(df, NamedTuple(), cols=:subset)
    8 │ missing  missing  missing
 ```
 """
-push!
-
 Base.push!(df::DataFrame, row::Any; promote::Bool=false) =
     _row_inserter!(df, -1, row, Val{:push}(), promote)
 
@@ -443,8 +440,7 @@ Base.push!(df::DataFrame, row::Any; promote::Bool=false) =
     pushfirst!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
                cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
-Add in-place one row to `df` taking the values from `row`.
-`pushfirst!` adds the row at the beginning of `df`.
+Add one row at the beginning of `df` in-place, taking the values from `row`.
 
 $INSERTION_COMMON
 
@@ -522,8 +518,6 @@ julia> pushfirst!(df, NamedTuple(), cols=:subset)
    8 │ c              3  missing
 ```
 """
-pushfirst!
-
 Base.pushfirst!(df::DataFrame, row::Any; promote::Bool=false) =
     _row_inserter!(df, -1, row, Val{:pushfirst}(), promote)
 
@@ -532,9 +526,8 @@ Base.pushfirst!(df::DataFrame, row::Any; promote::Bool=false) =
     insert!(df::DataFrame, loc::Integer, row::Union{DataFrameRow, NamedTuple, AbstractDict};
             cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
-Add in-place one row to `df` taking the values from `row`.
-`insert!` adds the row in the location `loc` that can range from `1` to
-`nrow(df)+1`.
+Add one row to `df` at position `loc` in-place, taking the values from `row`.
+`loc` must be a integer between `1` and `nrow(df)+1`.
 
 $INSERTION_COMMON
 
@@ -612,8 +605,6 @@ julia> insert!(df, 3, NamedTuple(), cols=:subset)
    8 │ 1.0      missing        1.0
 ```
 """
-insert!
-
 function Base.insert!(df::DataFrame, loc::Integer, row::Any; promote::Bool=false)
     loc isa Bool && throw(ArgumentError("invalid index: $loc of type Bool"))
     1 <= loc <= nrow(df)+1 ||
@@ -654,12 +645,10 @@ function _row_inserter!(df::DataFrame, loc::Integer, row::Any,
                 if mode isa Val{:push}
                     copyto!(newcol, 1, col, 1, nrows)
                     newcol[end] = val
-                end
-                if mode isa Val{:pushfirst}
+                elseif mode isa Val{:pushfirst}
                     newcol[1] = val
                     copyto!(newcol, 2, col, 1, nrows)
-                end
-                if mode isa Val{:insert}
+                elseif mode isa Val{:insert}
                     copyto!(newcol, 1, col, 1, loc-1)
                     newcol[loc] = val
                     copyto!(newcol, loc+1, col, loc, nrows-loc+1)
@@ -668,8 +657,9 @@ function _row_inserter!(df::DataFrame, loc::Integer, row::Any,
             end
         end
     catch err
-        #clean up partial row
-        for col2 in _columns(df)[1:current_col]
+        # clean up partial row
+        for i in 1:current_col
+            col2 = _columns(df)[i]
             if length(col2) == targetrows
                 mode isa Val{:push} && pop!(col2)
                 mode isa Val{:pushfirst} && popfirst!(col2)
@@ -689,8 +679,8 @@ Base.push!(df::DataFrame, row::DataFrameRow;
     _dfr_row_inserter!(df, -1, row, Val{:push}(), cols, promote)
 
 Base.pushfirst!(df::DataFrame, row::DataFrameRow;
-                         cols::Symbol=:setequal,
-                         promote::Bool=(cols in [:union, :subset])) =
+                cols::Symbol=:setequal,
+                promote::Bool=(cols in [:union, :subset])) =
     _dfr_row_inserter!(df, -1, row, Val{:pushfirst}(), cols, promote)
 
 function Base.insert!(df::DataFrame, loc::Integer, row::DataFrameRow;
@@ -711,8 +701,8 @@ end
     insert!(x, loc, x[r])
 
 function _dfr_row_inserter!(df::DataFrame, loc::Integer, dfr::DataFrameRow,
-                        mode::Union{Val{:push}, Val{:pushfirst}, Val{:insert}},
-                        cols::Symbol, promote::Bool)
+                            mode::Union{Val{:push}, Val{:pushfirst}, Val{:insert}},
+                            cols::Symbol, promote::Bool)
     possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
     if !(cols in possible_cols)
         throw(ArgumentError("`cols` keyword argument must be any of :" *
@@ -738,7 +728,7 @@ function _dfr_row_inserter!(df::DataFrame, loc::Integer, dfr::DataFrameRow,
                 colname = _names(df)[col_num]
                 throw(AssertionError("Error adding value to column :$colname"))
             end
-            # use a barrier function to improve performance
+            # use a function barrier to improve performance
             mode isa Val{:push} && pushhelper!(col, r)
             mode isa Val{:pushfirst} && pushfirsthelper!(col, r)
             mode isa Val{:insert} && inserthelper!(col, loc, r)
@@ -854,12 +844,10 @@ function _row_inserter!(df::DataFrame, loc::Integer,
                 if mode isa Val{:push}
                     copyto!(newcol, 1, col, 1, nrows)
                     newcol[end] = val
-                end
-                if mode isa Val{:pushfirst}
+                elseif mode isa Val{:pushfirst}
                     newcol[1] = val
                     copyto!(newcol, 2, col, 1, nrows)
-                end
-                if mode isa Val{:insert}
+                elseif mode isa Val{:insert}
                     copyto!(newcol, 1, col, 1, loc-1)
                     newcol[loc] = val
                     copyto!(newcol, loc+1, col, loc, nrows-loc+1)
@@ -928,12 +916,10 @@ function _row_inserter!(df::DataFrame, loc::Integer,
                 if mode isa Val{:push}
                     copyto!(newcol, 1, col, 1, nrows)
                     newcol[end] = val
-                end
-                if mode isa Val{:pushfirst}
+                elseif mode isa Val{:pushfirst}
                     newcol[1] = val
                     copyto!(newcol, 2, col, 1, nrows)
-                end
-                if mode isa Val{:insert}
+                elseif mode isa Val{:insert}
                     copyto!(newcol, 1, col, 1, loc-1)
                     newcol[loc] = val
                     copyto!(newcol, loc+1, col, loc, nrows-loc+1)

@@ -39,7 +39,7 @@
 * Add `resize!`, `keepat!`, `pop!`, `popfirst!`, and `popat!`,
   make `deleteat!` signature more precise
    ([#3047](https://github.com/JuliaData/DataFrames.jl/pull/3047))
-* Add `pushfirst!`, `insert!`
+* Add `pushfirst!` and `insert!`
    ([#3072](https://github.com/JuliaData/DataFrames.jl/pull/3072))
 * New `threads` argument allows disabling multithreading in
   `combine`, `select`, `select!`, `transform`, `transform!`, `subset` and `subset!`
