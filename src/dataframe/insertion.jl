@@ -522,12 +522,12 @@ Base.pushfirst!(df::DataFrame, row::Any; promote::Bool=false) =
     _row_inserter!(df, -1, row, Val{:pushfirst}(), promote)
 
 """
-    insert!(df::DataFrame, loc::Integer, row::Union{Tuple, AbstractArray}; promote::Bool=false)
-    insert!(df::DataFrame, loc::Integer, row::Union{DataFrameRow, NamedTuple, AbstractDict};
+    insert!(df::DataFrame, index::Integer, row::Union{Tuple, AbstractArray}; promote::Bool=false)
+    insert!(df::DataFrame, index::Integer, row::Union{DataFrameRow, NamedTuple, AbstractDict};
             cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
-Add one row to `df` at position `loc` in-place, taking the values from `row`.
-`loc` must be a integer between `1` and `nrow(df)+1`.
+Add one row to `df` at position `index` in-place, taking the values from `row`.
+`index` must be a integer between `1` and `nrow(df)+1`.
 
 $INSERTION_COMMON
 
@@ -605,11 +605,11 @@ julia> insert!(df, 3, NamedTuple(), cols=:subset)
    8 │ 1.0      missing        1.0
 ```
 """
-function Base.insert!(df::DataFrame, loc::Integer, row::Any; promote::Bool=false)
-    loc isa Bool && throw(ArgumentError("invalid index: $loc of type Bool"))
-    1 <= loc <= nrow(df)+1 ||
-        throw(ArgumentError("invalid index: $loc for data frame with $(nrow(df)) rows"))
-    return _row_inserter!(df, loc, row, Val{:insert}(), promote)
+function Base.insert!(df::DataFrame, index::Integer, row::Any; promote::Bool=false)
+    index isa Bool && throw(ArgumentError("invalid index: $index of type Bool"))
+    1 <= index <= nrow(df)+1 ||
+        throw(ArgumentError("invalid index: $index for data frame with $(nrow(df)) rows"))
+    return _row_inserter!(df, index, row, Val{:insert}(), promote)
 end
 
 function _row_inserter!(df::DataFrame, loc::Integer, row::Any,
@@ -658,8 +658,8 @@ function _row_inserter!(df::DataFrame, loc::Integer, row::Any,
         end
     catch err
         # clean up partial row
-        for i in 1:current_col
-            col2 = _columns(df)[i]
+        for j in 1:current_col
+            col2 = _columns(df)[j]
             if length(col2) == targetrows
                 mode isa Val{:push} && pop!(col2)
                 mode isa Val{:pushfirst} && popfirst!(col2)
@@ -683,12 +683,12 @@ Base.pushfirst!(df::DataFrame, row::DataFrameRow;
                 promote::Bool=(cols in [:union, :subset])) =
     _dfr_row_inserter!(df, -1, row, Val{:pushfirst}(), cols, promote)
 
-function Base.insert!(df::DataFrame, loc::Integer, row::DataFrameRow;
+function Base.insert!(df::DataFrame, index::Integer, row::DataFrameRow;
                       cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
-    loc isa Bool && throw(ArgumentError("invalid index: $loc of type Bool"))
-    1 <= loc <= nrow(df)+1 ||
-        throw(ArgumentError("invalid index: $loc for data frame with $(nrow(df)) rows"))
-    _dfr_row_inserter!(df, loc, row, Val{:insert}(), cols, promote)
+    index isa Bool && throw(ArgumentError("invalid index: $index of type Bool"))
+    1 <= index <= nrow(df)+1 ||
+        throw(ArgumentError("invalid index: $index for data frame with $(nrow(df)) rows"))
+    _dfr_row_inserter!(df, index, row, Val{:insert}(), cols, promote)
 end
 
 @noinline pushhelper!(x::AbstractVector, r::Any) =
@@ -717,7 +717,8 @@ function _dfr_row_inserter!(df::DataFrame, loc::Integer, dfr::DataFrameRow,
         r = row(dfr)
         for (col_num, col) in enumerate(_columns(df))
             if length(col) != nrows
-                for col2 in _columns(df)[1:col_num]
+                for j in 1:col_num
+                    col2 = _columns(df)[j]
                     if length(col2) == targetrows
                         mode isa Val{:push} && pop!(col2)
                         mode isa Val{:pushfirst} && popfirst!(col2)
@@ -800,7 +801,8 @@ function _row_inserter!(df::DataFrame, loc::Integer,
         for (i, colname) in enumerate(_names(df))
             col = _columns(df)[i]
             if length(col) != nrows
-                for col2 in _columns(df)[1:i]
+                for j in 1:i
+                    col2 in _columns(df)[j]
                     if length(col2) == targetrows
                         mode isa Val{:push} && pop!(col2)
                         mode isa Val{:pushfirst} && popfirst!(col2)
@@ -827,7 +829,8 @@ function _row_inserter!(df::DataFrame, loc::Integer,
                     mode isa Val{:pushfirst} && pushfirst!(col, val)
                     mode isa Val{:insert} && insert!(col, loc, val)
                 catch err
-                    for col2 in _columns(df)[1:i]
+                    for j in 1:i
+                        col2 = _columns(df)[j]
                         if length(col2) == targetrows
                             mode isa Val{:push} && pop!(col2)
                             mode isa Val{:pushfirst} && popfirst!(col2)
@@ -929,7 +932,8 @@ function _row_inserter!(df::DataFrame, loc::Integer,
         end
     catch err
         @assert current_col > 0
-        for col2 in _columns(df)[1:current_col]
+        for j in 1:current_col
+            col2 = _columns(df)[j]
             if length(col2) == targetrows
                 mode isa Val{:push} && pop!(col2)
                 mode isa Val{:pushfirst} && popfirst!(col2)
