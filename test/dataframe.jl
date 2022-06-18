@@ -7,6 +7,9 @@ using OffsetArrays: OffsetArray
 const ≅ = isequal
 const ≇ = !isequal
 
+isequal_coltyped(df1::AbstractDataFrame, df2::AbstractDataFrame) =
+    isequal(df1, df2) && typeof.(eachcol(df1)) == typeof.(eachcol(df2))
+
 # randomized test from https://github.com/JuliaData/DataFrames.jl/pull/1974
 @testset "randomized tests for rename!" begin
     n = Symbol.('a':'z')
@@ -2049,7 +2052,7 @@ end
                                     cols=:orderequal)
 end
 
-@testset "vcat with source" begin
+@testset "vcat with source and reduce" begin
     df1 = DataFrame(A=1:3, B=1:3)
     df2 = DataFrame(A=4:6, B=4:6)
     df3 = DataFrame(A=7:9, C=7:9)
@@ -2058,6 +2061,8 @@ end
     for col in [:source, "source"]
         @test vcat(df1, df2, df3, df4, cols=:union, source=col) ≅
               vcat(df1, df2, df3, df4, cols=:union, source=col => [1, 2, 3, 4]) ≅
+              reduce(vcat, [df1, df2, df3, df4], cols=:union, source=col) ≅
+              reduce(vcat, [df1, df2, df3, df4], cols=:union, source=col => [1, 2, 3, 4]) ≅
               DataFrame(A=1:9, B=[1:6; fill(missing, 3)],
                         C=[fill(missing, 6); 7:9],
                         source=[1, 1, 1, 2, 2, 2, 3, 3, 3])
@@ -2066,12 +2071,30 @@ end
                               C=[fill(missing, 6); 7:9],
                               source=[-4, -4, -4, -3, -3, -3, -2, -2, -2])
         @test res.source isa CategoricalVector
+
+        res = reduce(vcat, [df1, df2, df3, df4], cols=:union, source=col => categorical(-4:-1))
+        @test res ≅ DataFrame(A=1:9, B=[1:6; fill(missing, 3)],
+                              C=[fill(missing, 6); 7:9],
+                              source=[-4, -4, -4, -3, -3, -3, -2, -2, -2])
+        @test res.source isa CategoricalVector
+
+        @test reduce(vcat, DataFrame[]) == DataFrame()
+        @test isequal_coltyped(reduce(vcat, DataFrame[], source=:src),
+                               DataFrame(src=Int[]))
+        @test isequal_coltyped(reduce(vcat, DataFrame[], cols=[:a, :b]),
+                               DataFrame(a=Missing[], b=Missing[]))
+        @test isequal_coltyped(reduce(vcat, DataFrame[], cols=[:a, :b], source=:src),
+                               DataFrame(a=Missing[], b=Missing[], src=Int[]))
     end
 
     @test_throws TypeError vcat(df1, df2, df3, df4, cols=:union, source=1)
     @test_throws TypeError vcat(df1, df2, df3, df4, cols=:union, source=:a => 1)
     @test_throws ArgumentError vcat(df1, df2, df3, df4, cols=:union, source=:C)
     @test_throws ArgumentError vcat(df1, df2, df3, df4, cols=:union, source=:a => [1])
+    @test_throws TypeError reduce(vcat, [df1, df2, df3, df4], cols=:union, source=1)
+    @test_throws TypeError reduce(vcat, [df1, df2, df3, df4], cols=:union, source=:a => 1)
+    @test_throws ArgumentError reduce(vcat, [df1, df2, df3, df4], cols=:union, source=:C)
+    @test_throws ArgumentError reduce(vcat, [df1, df2, df3, df4], cols=:union, source=:a => [1])
 end
 
 @testset "push! with :subset" begin
