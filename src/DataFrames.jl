@@ -149,6 +149,8 @@ include("abstractdataframe/abstractdataframe.jl")
 include("dataframe/dataframe.jl")
 include("subdataframe/subdataframe.jl")
 include("dataframerow/dataframerow.jl")
+include("dataframe/insertion.jl")
+
 include("groupeddataframe/groupeddataframe.jl")
 include("groupeddataframe/utils.jl")
 

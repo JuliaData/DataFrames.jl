@@ -225,7 +225,8 @@ julia> df = DataFrame(A=Int[], B=String[])
 0×2 DataFrame
 ```
 
-Rows can then be added as tuples or vectors, where the order of elements matches that of columns:
+Rows can then be added as tuples or vectors, where the order of elements matches that of columns.
+To add new rows at the end of a data frame use [`push!`](@ref):
 
 ```jldoctest dataframe
 julia> push!(df, (1, "M"))
@@ -260,6 +261,12 @@ julia> push!(df, Dict(:B => "F", :A => 3))
 Note that constructing a `DataFrame` row by row is significantly less performant than
 constructing it all at once, or column by column. For many use-cases this will not matter,
 but for very large `DataFrame`s  this may be a consideration.
+
+If you want to add rows at the beginning of a data frame use [`pushfirst!`](@ref)
+and to insert a row in an arbitrary location use [`insert!`]((@ref)).
+
+You can also add whole tables to a data frame using the [`append!`](@ref)
+and [`prepend!`](@ref) functions.
 
 ### Constructing from another table type
 

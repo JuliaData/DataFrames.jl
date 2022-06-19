@@ -78,6 +78,7 @@ combine
 fillcombinations
 flatten
 hcat
+insert!
 insertcols
 insertcols!
 invpermute!
@@ -86,6 +87,7 @@ mapcols!
 permute!
 prepend!
 push!
+pushfirst!
 reduce
 repeat
 repeat!
