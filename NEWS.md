@@ -57,6 +57,9 @@
 * Make sure we avoid aliasing when repeating the same column
   in `select[!]` and `transform[!]` on `GroupedDataFrame`
   ([#3070](https://github.com/JuliaData/DataFrames.jl/pull/3070))
+* Make `vcat` correctly handle `cols` keyword argument if only
+  data frames having no columns are passed
+  ([#3081](https://github.com/JuliaData/DataFrames.jl/pull/3081))
 
 ## Performance
 
