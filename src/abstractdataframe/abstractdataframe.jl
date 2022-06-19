@@ -358,9 +358,9 @@ function Base.size(df::AbstractDataFrame, i::Integer)
 end
 
 """
-    isempty(::AbstractDataFrame)
+    isempty(df::AbstractDataFrame)
 
-Return `true` if data frame has zero rows.
+Return `true` if data frame `df` has zero rows, and `false` otherwise.
 """
 Base.isempty(df::AbstractDataFrame) = nrow(df) == 0
 
