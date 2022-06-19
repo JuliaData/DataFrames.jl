@@ -442,8 +442,7 @@ julia> df = DataFrame(i=1:10, x=rand(10), y=rand(["a", "b", "c"], 10));
 julia> nrow(df)
 10
 ```
-"""
-# note: these type assertions are required to pass tests
+""" # note: these type assertions are required to pass tests
 nrow(df::DataFrame) = ncol(df) > 0 ? length(_columns(df)[1])::Int : 0
 
 ##############################################################################
