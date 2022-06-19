@@ -802,7 +802,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
             col = _columns(df)[i]
             if length(col) != nrows
                 for j in 1:i
-                    col2 in _columns(df)[j]
+                    col2 = _columns(df)[j]
                     if length(col2) == targetrows
                         mode isa Val{:push} && pop!(col2)
                         mode isa Val{:pushfirst} && popfirst!(col2)
