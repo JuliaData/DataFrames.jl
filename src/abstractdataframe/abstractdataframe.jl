@@ -358,6 +358,24 @@ function Base.size(df::AbstractDataFrame, i::Integer)
 end
 
 """
+    ncol(df::AbstractDataFrame)
+
+Return the number of columns in an `AbstractDataFrame` `df`.
+
+See also [`nrow`](@ref), [`size`](@ref).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(i=1:10, x=rand(10), y=rand(["a", "b", "c"], 10));
+
+julia> ncol(df)
+3
+```
+"""
+ncol(df::AbstractDataFrame) = length(index(df))
+
+"""
     isempty(df::AbstractDataFrame)
 
 Return `true` if data frame `df` has zero rows, and `false` otherwise.
@@ -1358,23 +1376,6 @@ end
 
 nonunique(df::AbstractDataFrame, cols) = nonunique(select(df, cols, copycols=false))
 
-Base.unique!(df::AbstractDataFrame) = deleteat!(df, _findall(nonunique(df)))
-Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
-    deleteat!(df, _findall(nonunique(df, cols)))
-Base.unique!(df::AbstractDataFrame, cols) =
-    deleteat!(df, _findall(nonunique(df, cols)))
-
-# Unique rows of an AbstractDataFrame.
-@inline function Base.unique(df::AbstractDataFrame; view::Bool=false)
-    rowidxs = (!).(nonunique(df))
-    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
-end
-
-@inline function Base.unique(df::AbstractDataFrame, cols; view::Bool=false)
-    rowidxs = (!).(nonunique(df, cols))
-    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
-end
-
 """
     unique(df::AbstractDataFrame; view::Bool=false)
     unique(df::AbstractDataFrame, cols; view::Bool=false)
@@ -1392,7 +1393,7 @@ See also: [`unique!`](@ref) [`nonunique`](@ref).
 
 # Arguments
 - `df` : the AbstractDataFrame
-- `cols` :  column indicator (Symbol, Int, Vector{Symbol}, Regex, etc.)
+- `cols` :  column indicator (`Symbol`, `Int`, `Vector{Symbol}`, `Regex`, etc.)
 specifying the column(s) to compare.
 
 # Examples
@@ -1440,7 +1441,15 @@ julia> unique(df, 2)
    2 │     2      2
 ```
 """
-unique
+@inline function Base.unique(df::AbstractDataFrame; view::Bool=false)
+    rowidxs = (!).(nonunique(df))
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
+end
+
+@inline function Base.unique(df::AbstractDataFrame, cols; view::Bool=false)
+    rowidxs = (!).(nonunique(df, cols))
+    return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
+end
 
 """
     unique!(df::AbstractDataFrame)
@@ -1456,7 +1465,7 @@ See also: [`unique`](@ref) [`nonunique`](@ref).
 
 # Arguments
 - `df` : the AbstractDataFrame
-- `cols` :  column indicator (Symbol, Int, Vector{Symbol}, Regex, etc.)
+- `cols` :  column indicator (`Symbol`, `Int`, `Vector{Symbol}`, `Regex`, etc.)
 specifying the column(s) to compare.
 
 # Examples
@@ -1496,7 +1505,9 @@ julia> unique!(df)  # modifies df
    4 │     4      2
 ```
 """
-unique!
+Base.unique!(df::AbstractDataFrame) = deleteat!(df, _findall(nonunique(df)))
+Base.unique!(df::AbstractDataFrame, cols) =
+    deleteat!(df, _findall(nonunique(df, cols)))
 
 """
     fillcombinations(df::AbstractDataFrame, indexcols;
@@ -2163,46 +2174,6 @@ end
 
 Base.parent(adf::AbstractDataFrame) = adf
 Base.parentindices(adf::AbstractDataFrame) = axes(adf)
-
-## Documentation for methods defined elsewhere
-
-"""
-    nrow(df::AbstractDataFrame)
-
-Return the number of rows in an `AbstractDataFrame` `df`.
-
-See also: [`ncol`](@ref), [`size`](@ref).
-
-# Examples
-
-```jldoctest
-julia> df = DataFrame(i=1:10, x=rand(10), y=rand(["a", "b", "c"], 10));
-
-julia> nrow(df)
-10
-```
-
-"""
-function nrow end
-
-"""
-    ncol(df::AbstractDataFrame)
-
-Return the number of columns in an `AbstractDataFrame` `df`.
-
-See also [`nrow`](@ref), [`size`](@ref).
-
-# Examples
-
-```jldoctest
-julia> df = DataFrame(i=1:10, x=rand(10), y=rand(["a", "b", "c"], 10));
-
-julia> ncol(df)
-3
-```
-
-"""
-function ncol end
 
 """
     disallowmissing(df::AbstractDataFrame, cols=:; error::Bool=true)

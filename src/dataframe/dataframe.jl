@@ -427,9 +427,24 @@ _onebased_check_error(i, col) =
                         "columns that use 1-based indexing, but " *
                         "column $i has starting index equal to $(firstindex(col))"))
 
+"""
+    nrow(df::AbstractDataFrame)
+
+Return the number of rows in an `AbstractDataFrame` `df`.
+
+See also: [`ncol`](@ref), [`size`](@ref).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(i=1:10, x=rand(10), y=rand(["a", "b", "c"], 10));
+
+julia> nrow(df)
+10
+```
+"""
 # note: these type assertions are required to pass tests
 nrow(df::DataFrame) = ncol(df) > 0 ? length(_columns(df)[1])::Int : 0
-ncol(df::DataFrame) = length(index(df))
 
 ##############################################################################
 ##
