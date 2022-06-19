@@ -1506,6 +1506,8 @@ julia> unique!(df)  # modifies df
 ```
 """
 Base.unique!(df::AbstractDataFrame) = deleteat!(df, _findall(nonunique(df)))
+Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
+    deleteat!(df, _findall(nonunique(df, cols)))
 Base.unique!(df::AbstractDataFrame, cols) =
     deleteat!(df, _findall(nonunique(df, cols)))
 
