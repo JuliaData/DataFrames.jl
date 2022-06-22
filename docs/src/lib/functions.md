@@ -54,6 +54,7 @@ similar
 ## Summary information
 ```@docs
 describe
+isempty
 length
 ncol
 ndims

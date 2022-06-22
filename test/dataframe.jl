@@ -2240,4 +2240,10 @@ end
     end
 end
 
+@testset "isempty" begin
+    @test isempty(DataFrame())
+    @test isempty(DataFrame(a=[]))
+    @test !isempty(DataFrame(a=1))
+end
+
 end # module

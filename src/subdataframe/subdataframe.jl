@@ -151,7 +151,6 @@ Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowinds::Not,
 index(sdf::SubDataFrame) = getfield(sdf, :colindex)
 
 nrow(sdf::SubDataFrame) = ncol(sdf) > 0 ? length(rows(sdf))::Int : 0
-ncol(sdf::SubDataFrame) = length(index(sdf))
 
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex) =
     parent(sdf)[rows(sdf)[rowind], parentcols(index(sdf), colind)]
