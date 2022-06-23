@@ -51,13 +51,19 @@ function DataFrame(x::T; copycols::Union{Nothing, Bool}=nothing) where {T}
         # to other DataFrames constructors taking vector of `Pair`s
         if all(v -> v isa Pair{Symbol, <:AbstractVector}, x) ||
             all(v -> v isa Pair{<:AbstractString, <:AbstractVector}, x)
-            return DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],
-                             copycols=something(copycols, true))
+            df = DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],
+                           copycols=something(copycols, true))
         end
+    else
+        cols = Tables.columns(x)
+        names = collect(Symbol, Tables.columnnames(cols))
+        df = fromcolumns(cols, names, copycols=copycols)
     end
-    cols = Tables.columns(x)
-    names = collect(Symbol, Tables.columnnames(cols))
-    return fromcolumns(cols, names, copycols=copycols)
+    _copy_metadata!(df, x)
+    for col in _names(df)
+        _copy_colmetadata!(df, col, x, col)
+    end
+    return df
 end
 
 function Base.append!(df::DataFrame, table; cols::Symbol=:setequal,

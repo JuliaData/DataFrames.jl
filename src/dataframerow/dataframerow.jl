@@ -495,3 +495,11 @@ function DataFrame(dfr::DataFrameRow)
     row, cols = parentindices(dfr)
     parent(dfr)[row:row, cols]
 end
+
+metadata(dfr::DataFrameRow) = metadata(parent(dfr))
+hasmetadata(dfr::DataFrameRow) = hasmetadata(parent(dfr))
+
+metadata(dfr::DataFrameRow, col::ColumnIndex) =
+    metadata(parent(dfr), _names(dfr)[index(dfr)[col]])
+hasmetadata(dfr::DataFrameRow, col::ColumnIndex) =
+    hasmetadata(parent(dfr), _names(dfr)[index(dfr)[col]])

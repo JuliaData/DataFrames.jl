@@ -294,9 +294,14 @@ Base.deleteat!(df::SubDataFrame, ind) =
 
 function DataFrame(sdf::SubDataFrame; copycols::Bool=true)
     if copycols
-        sdf[:, :]
+        return sdf[:, :]
     else
-        DataFrame(collect(eachcol(sdf)), _names(sdf), copycols=false)
+        new_df = DataFrame(collect(eachcol(sdf)), _names(sdf), copycols=false)
+        _copy_metadata!(new_df, sdf)
+        for col in _names(new_df)
+            _copy_colmetadata!(newdf, col, sdf, col)
+        end
+        return new_df
     end
 end
 
@@ -343,11 +348,23 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame; keep_present::Bo
     # and that operation was allowed.
     # Therefore we need to update the parent of sdf in place to make sure
     # it holds only the required target columns in a correct order.
+    pdf = parent(sdf)
     if !keep_present && !colsmatch
         pdf = parent(sdf)
         @assert pdf isa DataFrame
         select!(pdf, _names(newdf))
     end
 
+    for colname in _names(newdf)
+        _copy_colmetadata!(pdf, colname, newdf, colname)
+    end
+
     return sdf
 end
+
+metadata(sdf::SubDataFrame) = metadata(parent(sdf))
+hasmetadata(sdf::SubDataFrame) = hasmetadata(parent(sdf))
+colmetadata(sdf::SubDataFrame, col::ColumnIndex) =
+    metadata(parent(sdf), _names(sdf)[index(sdf)[col]])
+hascolmetadata(sdf::SubDataFrame, col::ColumnIndex) =
+    hasmetadata(parent(sdf), _names(sdf)[index(dfr)[col]])

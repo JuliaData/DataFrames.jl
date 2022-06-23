@@ -38,6 +38,7 @@ makedocs(
             "Types" => "lib/types.md",
             "Functions" => "lib/functions.md",
             "Indexing" => "lib/indexing.md",
+            "Metadata" => "man/metadata.md",
             hide("Internals" => "lib/internals.md"),
         ]
     ],

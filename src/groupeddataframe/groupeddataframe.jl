@@ -1212,3 +1212,11 @@ end
 
 Base.map(f, gdf::GroupedDataFrame) =
     throw(ArgumentError("using map over `GroupedDataFrame`s is reserved"))
+
+metadata(gdf::GroupedDataFrame) = metadata(parent(gdf))
+hasmetadata(gdf::GroupedDataFrame) = hasmetadata(parent(gdf))
+
+metadata(gdf::GroupedDataFrame, col::ColumnIndex) =
+    metadata(parent(gdf), col)
+hasmetadata(gdf::GroupedDataFrame, col::ColumnIndex) =
+    hasmetadata(parent(gdf), col)

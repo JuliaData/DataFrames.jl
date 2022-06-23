@@ -83,6 +83,7 @@ function _combine_prepare_norm(gd::GroupedDataFrame,
     # if optional_transform[i] is true then the transformation will be skipped
     # if earlier column with a column with the same name was created
 
+    # TODO: make sure valscat properly keeps table level and column level metadata
     idx, valscat = _combine(gd, cs_norm, optional_transform, copycols, keeprows,
                             renamecols, threads)
 

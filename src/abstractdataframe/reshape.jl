@@ -39,6 +39,7 @@ that return views into the original data frame.
   as long as it supports conversion from `String`.
   When `view=true`, a `RepeatedVector{T}` is produced.
 
+Metadata: `stack` keeps table metadata and drops column metadata.
 
 # Examples
 ```jldoctest
@@ -167,10 +168,12 @@ function stack(df::AbstractDataFrame,
         catnms = simnms isa Vector ? PooledArray(simnms) : simnms
         copyto!(catnms, nms)
     end
-    return DataFrame(AbstractVector[[repeat(df[!, c], outer=N) for c in ints_id_vars]..., # id_var columns
-                                    repeat(catnms, inner=nrow(df)),                       # variable
-                                    vcat([df[!, c] for c in ints_measure_vars]...)],      # value
-                     cnames, copycols=false)
+    out_df =  DataFrame(AbstractVector[[repeat(df[!, c], outer=N) for c in ints_id_vars]..., # id_var columns
+                                       repeat(catnms, inner=nrow(df)),                       # variable
+                                       vcat([df[!, c] for c in ints_measure_vars]...)],      # value
+                        cnames, copycols=false)
+    _copy_metadata!(out_df, df)
+    return out_df
 end
 
 function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
@@ -190,10 +193,12 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
         nms = names(df, measure_vars)
         catnms = copyto!(similar(nms, variable_eltype), nms)
     end
-    return DataFrame(AbstractVector[[RepeatedVector(df[!, c], 1, N) for c in id_vars]..., # id_var columns
-                                    RepeatedVector(catnms, nrow(df), 1),                  # variable
-                                    StackedVector(Any[df[!, c] for c in measure_vars])],  # value
-                     cnames, copycols=false)
+    out_df = DataFrame(AbstractVector[[RepeatedVector(df[!, c], 1, N) for c in id_vars]..., # id_var columns
+                                      RepeatedVector(catnms, nrow(df), 1),                  # variable
+                                      StackedVector(Any[df[!, c] for c in measure_vars])],  # value
+                       cnames, copycols=false)
+    _copy_metadata!(out_df, df)
+    return out_df
 end
 
 """
@@ -248,6 +253,8 @@ Row and column keys will be ordered in the order of their first appearance.
     can execute in parallel (possibly being applied to multiple groups at the same time).
     Whether or not tasks are actually spawned and their number are determined automatically.
     Set to `false` if `valuestransform` requires serial execution or is not thread-safe.
+
+Metadata: `ustack` keeps table metadata and drops column metadata.
 
 # Examples
 
@@ -451,8 +458,11 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
     g_rowkey = groupby(df_op, rowkeys)
     g_colkey = groupby(df_op, colkey)
     valuecol = df_op[!, values_out]
-    return _unstack(df_op, index(df_op)[rowkeys], index(df_op)[colkey], g_colkey,
-                    valuecol, g_rowkey, renamecols, allowmissing, allowduplicates, fill)
+    out_df = _unstack(df_op, rowkey_ints, index(df_op)[colkey], g_colkey,
+                      valuecol, g_rowkey, renamecols,
+                      allowmissing, allowduplicates, fill)
+    _copy_metadata!(out_df, df)
+    return out_df
 end
 
 function unstack(df::AbstractDataFrame, colkey::ColumnIndex, values::ColumnIndex;
@@ -701,6 +711,8 @@ That is, if the source data frame contains `Int` and `Float64` columns,
 resulting columns will have element type `Float64`. If the source has
 `Int` and `String` columns, resulting columns will have element type `Any`.
 
+Metadata: `permutedims` keeps table metadata and drops column metadata.
+
 # Examples
 
 ```jldoctest
@@ -777,7 +789,9 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
         m = permutedims(Matrix(df_notsrc))
         df_tmp = rename!(DataFrame(Tables.table(m)), new_col_names, makeunique=makeunique)
     end
-    return hcat!(df_permuted, df_tmp, makeunique=makeunique, copycols=false)
+    out_df = hcat!(df_permuted, df_tmp, makeunique=makeunique, copycols=false)
+    _copy_metadata!(out_df, df)
+    return out_df
 end
 
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;

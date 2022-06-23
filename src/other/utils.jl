@@ -527,3 +527,40 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
     end
     @assert false "should not be reached"
 end
+
+function _drop_metadata!(df::DataFrame)
+    setfield!(df, :metadata, nothing)
+    return nothing
+end
+
+function _drop_colmetadata!(df::DataFrame)
+    setfield!(df, :colmetadata, nothing)
+    return nothing
+end
+
+function _drop_colmetadata!(df::DataFrame, col::ColumnIndex)
+    colmetadata = getfield(df, :colmetadata)
+    if colmetadata !== nothing
+        delete!(colmetadata, index(df)[col])
+    end
+    return nothing
+end
+
+function _copy_metadata!(dst::DataFrame, src)
+    if hasmetadata(src) === true
+        copy!(metadata(dst), metadata(src))
+    else
+        _drop_metadata!(df)
+    end
+    return nothing
+end
+
+function _copy_colmetadata!(dst::DataFrame, dstcol::ColumnIndex,
+                            src, srccol::ColumnIndex)
+    if hascolmetadata(src, srccol) === true
+        copy!(metadata(dst, dstcol), metadata(src, srccol))
+    else
+        _drop_colmetadata!(dst, col)
+    end
+    return nothing
+end

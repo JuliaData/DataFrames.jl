@@ -202,6 +202,8 @@ If a `GroupedDataFrame` is passed then it must include all groups present in the
     which is implemented in DataFrames.jl to ensure support for the
     standard Julia API for collections.
 
+$METADATA_FIXED
+
 See also: [`subset!`](@ref), [`filter`](@ref), [`select`](@ref)
 
 # Examples
@@ -347,6 +349,8 @@ updated.
     different set of rules for specifying transformations than [`filter!`](@ref)
     which is implemented in DataFrames.jl to ensure support for the
     standard Julia API for collections.
+
+$METADATA_FIXED
 
 See also: [`subset`](@ref), [`filter!`](@ref), [`select!`](@ref)
 

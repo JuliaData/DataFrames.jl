@@ -44,6 +44,9 @@
 * New `threads` argument allows disabling multithreading in
   `combine`, `select`, `select!`, `transform`, `transform!`, `subset` and `subset!`
   ([#3030](https://github.com/JuliaData/DataFrames.jl/pull/3030))
+* Add support for global and per-column metadata using
+  `metadata` and `hasmetadata` from DataAPI.jl
+  ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
 
 ## Previously announced breaking changes
 
@@ -51,6 +54,13 @@
   into an existing column of a data frame replaces it. Under Julia 1.6
   or older it is an in place operation.
   ([#3022](https://github.com/JuliaData/DataFrames.jl/pull/3022))
+
+## Internal changes
+* `DataFrame` is now a `mutable struct` and has two new fields
+  `metadata` and `colmetadata`; this change makes `DataFrame` objects
+  serialized under earlier versions of DataFrames.jl incompatible with
+  version 1.4
+  ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
 
 ## Bug fixes
 

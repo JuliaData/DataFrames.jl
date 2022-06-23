@@ -40,6 +40,8 @@ imaginary part of the number. If you need to perform a join on such values use
 CategoricalArrays.jl and transform a column containing such values into a
 `CategoricalVector`.
 
+$JOIN_METADATA
+
 See also: [`leftjoin`](@ref).
 
 # Examples
@@ -130,6 +132,9 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
         # if df1 isa SubDataFrame we must copy columns
         insertcols!(df1, colname => rcol_joined, makeunique=makeunique,
                     copycols=!(df1 isa DataFrame))
+        if hascolmetadata(joiner.dfr, colname)
+            _copy_colmetadata!(df1, ncol(df1), joiner.dfr, colname)
+        end
     end
 
     if source !== nothing
@@ -156,6 +161,35 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
         end
         df1[!, unique_indicator] = indicatorcol
     end
+
+    for i in eachindex(joiner.left_on, joiner.right_on)
+        l = joiner.left_on[i]
+        r = joiner.right_on[i]
+        if hasmetadata(df1, l)
+            if hasmetadata(df2, r)
+                meta1 = colmetadata(df1, l)
+                meta2 = colmetadata(df2, r)
+                for (k, v) in pairs(meta1)
+                    if !haskey(meta2, k) || !isequal(meta2[k], v)
+                        delete!(meta1, k)
+                    end
+                end
+            else
+                _drop_colmetadata!(df1, l)
+            end
+        end
+    end
+
+    if hasmetadata(df1) === true && hasmetadata(df2) === true
+        meta1 = metadata(df1)
+        meta2 = metadata(df2)
+        for (k, v) in pairs(meta1)
+            if !(haskey(meta2, k) && isequal(meta2, v))
+                delete!(meta1, k)
+            end
+        end
+    end
+
     return df1
 end
 

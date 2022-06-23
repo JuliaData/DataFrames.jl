@@ -92,6 +92,12 @@ Compat.hasproperty(itr::DataFrameRows, s::AbstractString) = haskey(index(parent(
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(parent(itr))
 
+metadata(dfr::DataFrameRows) = metadata(parent(dfr))
+hasmetadata(dfr::DataFrameRows) = hasmetadata(parent(dfr))
+
+metadata(dfr::DataFrameRows, col::ColumnIndex) = metadata(parent(dfr), col)
+hasmetadata(dfr::DataFrameRows, col::ColumnIndex) = hasmetadata(parent(dfr), col)
+
 # Iteration by columns
 
 const DATAFRAMECOLUMNS_DOCSTR = """
@@ -337,6 +343,12 @@ Base.show(dfcs::DataFrameColumns;
     show(stdout, dfcs; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
          summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 
+metadata(dfc::DataFrameColumns) = metadata(parent(dfc))
+hasmetadata(dfc::DataFrameColumns) = hasmetadata(parent(dfc))
+
+metadata(dfc::DataFrameColumns, col::ColumnIndex) = metadata(parent(dfc), col)
+hasmetadata(dfc::DataFrameColumns, col::ColumnIndex) = hasmetadata(parent(dfc), col)
+
 """
     mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
 
@@ -346,6 +358,9 @@ Return a `DataFrame` where each column of `df` is transformed using function `f`
 
 Note that `mapcols` guarantees not to reuse the columns from `df` in the returned
 `DataFrame`. If `f` returns its argument then it gets copied before being stored.
+
+Metadata: `mapcols` propagates table metadata and
+propagates column metadata only if `f` is `identity` or `copy`.
 
 # Examples
 ```jldoctest
@@ -391,7 +406,17 @@ function mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
             push!(vs, [fv])
         end
     end
-    return DataFrame(vs, _names(df), copycols=false)
+    new_df = DataFrame(vs, _names(df), copycols=false)
+
+    _copy_metadata!(new_df, df)
+
+    # in DataFrames.jl parent always returns source DataFrame
+    if getfield(parent(df), :colmetadata) !== nothing && (f === identity || f === copy)
+        for i in 1:ncol(df)
+            _copy_colmetadata!(new_df, i, df, i)
+        end
+    end
+    return new_df
 end
 
 """
@@ -402,6 +427,9 @@ Update a `DataFrame` in-place where each column of `df` is transformed using fun
 (all values other than `AbstractVector` are considered to be a scalar).
 
 Note that `mapcols!` reuses the columns from `df` if they are returned by `f`.
+
+Metadat: `mapcols!` preserves table metadata and
+preserves column metadata only if `f` is `identity` or `copy`.
 
 # Examples
 ```jldoctest
@@ -466,6 +494,8 @@ function mapcols!(f::Union{Function, Type}, df::DataFrame)
     for i in 1:ncol(df)
         raw_columns[i] = vs[i]
     end
+
+    (f === identity || f === copy) || _drop_colmetadata!(df)
 
     return df
 end

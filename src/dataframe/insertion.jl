@@ -37,6 +37,12 @@ The above rule has the following exceptions:
 Please note that `append!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
+Metadata: `append!` retains table level metadata if some key is present
+in `df1` and `df2` data frames and value associated with it is identical in them.
+For matching columns `append!` retains column level metadata if some key is present
+in that column and value associated with it is identical in them. For non-matching
+columns metadata is retained from the source data frame.
+
 See also: use [`push!`](@ref) to add individual rows to a data frame, [`prepend!`](@ref)
 to add a table at the beginning, and [`vcat`](@ref) to vertically concatenate
 data frames.
@@ -118,6 +124,12 @@ The above rule has the following exceptions:
 
 Please note that `prepend!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
+
+Metadata: `prepend` retains table level metadata if some key is present
+in `df1` and `df2` data frames and value associated with it is identical in them.
+For matching columns `prepend` retains column level metadata if some key is present
+in that column and value associated with it is identical in them. For non-matching
+columns metadata is retained from the source data frame.
 
 See also: use [`pushfirst!`](@ref) to add individual rows at the beginning of a data frame,
 [`append!`](@ref) to add a table at the end, and [`vcat`](@ref)
@@ -277,21 +289,6 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
             current_col += 1
             @assert length(col) == targetrows
         end
-        if cols == :union
-            for n in setdiff(_names(df2), _names(df1))
-                newcol = similar(df2[!, n], Union{Missing, eltype(df2[!, n])},
-                                 targetrows)
-                firstindex(newcol) != 1 && _onebased_check_error()
-                if atend
-                    newcol[1:nrow1] .= missing
-                    copyto!(newcol, nrow1+1, df2[!, n], 1, targetrows - nrow1)
-                else
-                    newcol[nrow2+1:targetrows] .= missing
-                    copyto!(newcol, 1, df2[!, n], 1, nrow2)
-                end
-                df1[!, n] = newcol
-            end
-        end
     catch err
         # Undo changes in case of error
         for col in _columns(df1)
@@ -305,6 +302,44 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
         @error "Error adding value to column :$(_names(df1)[current_col])."
         rethrow(err)
     end
+
+    for n in _names(df1)
+        if hascolmetadata(df1, n) && hasproperty(df2, n) && hascolmetadata(df2, n)
+            meta1 = colmetadata(df1, n)
+            meta2 = colmetadata(df2, n)
+
+            for (k, v) in pairs(meta1)
+                if !haskey(meta2, k) || !isequal(meta2[k], v)
+                    delete!(meta1, k)
+                end
+            end
+        end
+    end
+
+    ncol1 = ncol(df1)
+    # if we have error here (it is extremely unlikely) we remove added columns
+    # in cleanup phase
+    try
+        if cols == :union
+            for n in setdiff(_names(df2), _names(df1))
+                newcol = similar(df2[!, n], Union{Missing, eltype(df2[!, n])},
+                                 targetrows)
+                firstindex(newcol) != 1 && _onebased_check_error()
+                if atend
+                    newcol[1:nrow1] .= missing
+                    copyto!(newcol, nrow1+1, df2[!, n], 1, targetrows - nrow1)
+                else
+                    newcol[nrow2+1:targetrows] .= missing
+                    copyto!(newcol, 1, df2[!, n], 1, nrow2)
+                end
+                df1[!, n] = newcol
+                _copy_colmetadata!(df1, n, df2, n)
+            end
+        end
+    catch
+        select!(df1, ncol1)
+    end
+
     return df1
 end
 
@@ -347,6 +382,8 @@ and order.
 
 Please note that this function must not be used on a
 `DataFrame` that contains columns that are aliases (equal when compared with `===`).
+
+$METADATA_FIXED
 """
 
 """

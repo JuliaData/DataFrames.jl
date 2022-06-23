@@ -25,6 +25,8 @@ import DataAPI,
        DataAPI.crossjoin,
        DataAPI.nrow,
        DataAPI.ncol,
+       DataAPI.metadata,
+       DataAPI.hasmetadata,
        Tables,
        Tables.columnindex,
        Future.copy!
@@ -43,6 +45,7 @@ export AbstractDataFrame,
        allcombinations,
        allowmissing!,
        antijoin,
+       colmetadata,
        columnindex,
        combine,
        completecases,
@@ -56,6 +59,8 @@ export AbstractDataFrame,
        groupby,
        groupindices,
        groupcols,
+       hascolmetadata,
+       hasmetadata,
        innerjoin,
        insertcols,
        insertcols!,
@@ -63,6 +68,7 @@ export AbstractDataFrame,
        leftjoin!,
        mapcols,
        mapcols!,
+       metadata,
        ncol,
        nonunique,
        nrow,
@@ -141,6 +147,10 @@ if isdefined(Base, :ComposedFunction) # Julia >= 1.6.0-DEV.85
 else
     using Compat: ComposedFunction
 end
+
+const METADATA_FIXED = """
+Metadata: this function preserves table level and column level metadata.
+"""
 
 include("other/utils.jl")
 include("other/index.jl")
