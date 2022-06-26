@@ -297,10 +297,7 @@ function DataFrame(sdf::SubDataFrame; copycols::Bool=true)
         return sdf[:, :]
     else
         new_df = DataFrame(collect(eachcol(sdf)), _names(sdf), copycols=false)
-        _copy_metadata!(new_df, sdf)
-        for col in _names(new_df)
-            _copy_colmetadata!(newdf, col, sdf, col)
-        end
+        _unsafe_copy_all_metadata!(new_df, sdf)
         return new_df
     end
 end
@@ -355,8 +352,10 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame; keep_present::Bo
         select!(pdf, _names(newdf))
     end
 
-    for colname in _names(newdf)
-        _copy_colmetadata!(pdf, colname, newdf, colname)
+    if getfield(newdf, :colmetadata) !== nothing || getfield(pdf, :colmetadata) !== nothing
+        for colname in _names(newdf)
+            _copy_colmetadata!(pdf, colname, newdf, colname)
+        end
     end
 
     return sdf

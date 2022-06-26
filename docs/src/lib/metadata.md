@@ -168,10 +168,10 @@ The concrete functions listed below follow these general principles.
 
 TODO: the list below is not finished do not read it yet
 
-* `mapcols!` (column level only if passed function is `identity` or `copy`)
+* `mapcols!`
 * `rename!`
 * `only`
-* `mapcols` (column level only if passed function is `identity` or `copy`)
+* `mapcols`
 * `rename`
 * `first`
 * `last`
@@ -188,7 +188,7 @@ TODO: the list below is not finished do not read it yet
 * `disallowmissing!`
 * `allowmissing`
 * `allowmissing!`
-* `flatten` (column level metatada is dropped for flattened columns, for which it is dropped)
+* `flatten`
 * `reverse`
 * `reverse!`
 * `permute!`

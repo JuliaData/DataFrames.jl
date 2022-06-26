@@ -292,9 +292,9 @@ function DataFrame(d::AbstractDict; copycols::Bool=true)
         select!(df, sort!(propertynames(df)))
     else
         # AbstractDict can potentially implement Tables.jl table interface
-        _copy_metadata!(df, x)
+        _copy_metadata!(df, d)
         for col in _names(df)
-            _copy_colmetadata!(df, col, x, col)
+            _copy_colmetadata!(df, col, d, col)
         end
     end
     return df
@@ -596,10 +596,9 @@ end
         selected_rows = T === Bool ? _findall(row_inds) : row_inds
         new_df = _threaded_getindex(selected_rows, selected_columns, _columns(df), idx)
     end
-    _copy_metadata!(new_df, df)
-    for col in _names(new_df)
-        _copy_colmetadata!(new_df, col, df, col)
-    end
+
+    _unsafe_copy_all_metadata!(new_df, df)
+
     return new_df
 end
 
@@ -617,10 +616,7 @@ end
         new_df = _threaded_getindex(selected_rows, 1:ncol(df), _columns(df), idx)
     end
 
-    _copy_metadata!(new_df, df)
-    for col in _names(new_df)
-        _copy_colmetadata!(new_df, col, df, col)
-    end
+    _unsafe_copy_all_metadata!(new_df, df)
     return new_df
 end
 
@@ -809,10 +805,7 @@ $MEDATADA_FIXED
 """
 function Base.copy(df::DataFrame; copycols::Bool=true)
     cdf = DataFrame(copy(_columns(df)), copy(index(df)), copycols=copycols)
-    _copy_metadata!(cdf, df)
-    for col in _names(cdf)
-        _copy_colmetadata!(cdf, col, df, col)
-    end
+    _unsafe_copy_all_metadata_similar!(cdf, df)
     return cdf
 end
 

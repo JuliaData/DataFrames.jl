@@ -359,8 +359,7 @@ Return a `DataFrame` where each column of `df` is transformed using function `f`
 Note that `mapcols` guarantees not to reuse the columns from `df` in the returned
 `DataFrame`. If `f` returns its argument then it gets copied before being stored.
 
-Metadata: `mapcols` propagates table metadata and
-propagates column metadata only if `f` is `identity` or `copy`.
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -408,14 +407,8 @@ function mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
     end
     new_df = DataFrame(vs, _names(df), copycols=false)
 
-    _copy_metadata!(new_df, df)
+    _unsafe_copy_all_metadata_similar!(new_df, df)
 
-    # in DataFrames.jl parent always returns source DataFrame
-    if getfield(parent(df), :colmetadata) !== nothing && (f === identity || f === copy)
-        for i in 1:ncol(df)
-            _copy_colmetadata!(new_df, i, df, i)
-        end
-    end
     return new_df
 end
 
@@ -428,8 +421,7 @@ Update a `DataFrame` in-place where each column of `df` is transformed using fun
 
 Note that `mapcols!` reuses the columns from `df` if they are returned by `f`.
 
-Metadat: `mapcols!` preserves table metadata and
-preserves column metadata only if `f` is `identity` or `copy`.
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -494,8 +486,6 @@ function mapcols!(f::Union{Function, Type}, df::DataFrame)
     for i in 1:ncol(df)
         raw_columns[i] = vs[i]
     end
-
-    (f === identity || f === copy) || _drop_colmetadata!(df)
 
     return df
 end

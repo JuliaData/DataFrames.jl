@@ -434,10 +434,7 @@ function Base.similar(df::AbstractDataFrame, rows::Integer = size(df, 1))
     rows < 0 && throw(ArgumentError("the number of rows must be non-negative"))
     out_df = DataFrame(AbstractVector[similar(x, rows) for x in eachcol(df)], copy(index(df)),
                        copycols=false)
-    _copy_metadata!(out_df, df)
-    for i in 1:ncol(df)
-        _copy_colmetadata!(out_df, i, df, i)
-    end
+    _unsafe_copy_all_metadata_similar!(out_df, df)
     return out_df
 end
 
@@ -1696,11 +1693,7 @@ function fillcombinations(df::AbstractDataFrame, indexcols;
 
     # keep only columns from the source in their original order
     select!(out_df, _names(df))
-
-    _copy_metadata!(out_df, df)
-    for i in 1:ncol(out_df)
-        _copy_colmetadata!(out_df, i, df, i)
-    end
+    _unsafe_copy_all_metadata_similar!(out_df, df)
 
     return out_df
 end
@@ -2240,13 +2233,7 @@ julia> repeat(df, inner=2, outer=3)
 function Base.repeat(df::AbstractDataFrame; inner::Integer=1, outer::Integer=1)
     inner < 0 && throw(ArgumentError("inner keyword argument must be non-negative"))
     outer < 0 && throw(ArgumentError("outer keyword argument must be non-negative"))
-    out_df = mapcols(x -> repeat(x, inner = Int(inner), outer = Int(outer)), df)
-
-    for i in 1:ncol(df)
-        _copy_colmetadata!(out_df, i, df, i)
-    end
-
-    return out_df
+    return mapcols(x -> repeat(x, inner = Int(inner), outer = Int(outer)), df)
 end
 
 """
@@ -2280,13 +2267,7 @@ julia> repeat(df, 2)
 """
 function Base.repeat(df::AbstractDataFrame, count::Integer)
     count < 0 && throw(ArgumentError("count must be non-negative"))
-    out_df = mapcols(x -> repeat(x, Int(count)), df)
-
-    for i in 1:ncol(df)
-        _copy_colmetadata!(out_df, i, df, i)
-    end
-
-    return out_df
+    return mapcols(x -> repeat(x, Int(count)), df)
 end
 
 ##############################################################################
@@ -2392,10 +2373,7 @@ function Missings.disallowmissing(df::AbstractDataFrame,
     end
 
     new_df = DataFrame(newcols, _names(df), copycols=false)
-    _copy_metadata!(new_df, df)
-    for i in 1:ncol(df)
-        _copy_colmetadata!(newdf, i, df, i)
-    end
+    _unsafe_copy_all_metadata_similar!(new_df, df)
 
     return new_df
 end
@@ -2447,10 +2425,7 @@ function Missings.allowmissing(df::AbstractDataFrame,
     end
 
     new_df = DataFrame(newcols, _names(df), copycols=false)
-    _copy_metadata!(new_df, df)
-    for i in 1:ncol(df)
-        _copy_colmetadata!(newdf, i, df, i)
-    end
+    _unsafe_copy_all_metadata_similar!(new_df, df)
 
     return new_df
 end
@@ -2470,8 +2445,7 @@ returned `DataFrame` will affect `df`.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
-Metadata: `flatten` preserves table level and column level metadata, except for
-flattened columns for which column metadata is dropped.
+$METADATA_FIXED
 
 # Examples
 
@@ -2566,10 +2540,7 @@ function flatten(df::AbstractDataFrame,
         insertcols!(new_df, col, _names(df)[col] => flattened_col)
     end
 
-    _copy_colmetadata!(new_df, df)
-    for i in setdiff(1:ncol(df), idxcols)
-        _copy_colmetadata(new_df, i, df, i)
-    end
+    _unsafe_copy_all_metadata_similar!(new_df, df)
 
     return new_df
 end
@@ -2637,13 +2608,8 @@ julia> reverse(df, 2, 3)
    5 │     5     10     15
 ```
 """
-function Base.reverse(df::AbstractDataFrame, start::Integer=1, stop::Integer=nrow(df))
-    new_df = mapcols(x -> reverse(x, start, stop), df)
-    for i in 1:ncol(df)
-        _copy_colmetadata!(new_df, i, df, i)
-    end
-    return new_df
-end
+Base.reverse(df::AbstractDataFrame, start::Integer=1, stop::Integer=nrow(df)) =
+    mapcols(x -> reverse(x, start, stop), df)
 
 """
     reverse!(df::AbstractDataFrame, start=1, stop=nrow(df))

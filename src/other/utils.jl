@@ -564,3 +564,38 @@ function _copy_colmetadata!(dst::DataFrame, dstcol::ColumnIndex,
     end
     return nothing
 end
+
+# this is a function used to copy metadata
+# to a freshly allocated dst without metadata that is `similar` to src
+function _unsafe_copy_all_metadata_similar!(dst::DataFrame, src::AbstractDataFrame)
+    _copy_metadata(dst, src)
+    # parent(src) is guaranteed to be DataFrame
+    src_colmetadata = getfield(parent(src), :colmetadata)
+    if isnothing(src_colmetadata)
+        _drop_colmetadata!(dst)
+    else
+        dst_colmetadata = Dict{Int, Dict{String, Any}}()
+        for (k, v) in pairs(src_colmetadata)
+            dst_colmetadata[k] = copy(v)
+        end
+        setfield!(dst, :colmetadata, dst_colmetadata)
+    end
+    return nothing
+end
+
+# this is a function used to copy metadata
+# to a freshly allocated dst without metadata where column names
+# in dst is a subset of column names in src
+function _unsafe_copy_all_metadata!(dst::DataFrame, src::AbstractDataFrame)
+    _copy_metadata(dst, src)
+    # parent(src) is guaranteed to be DataFrame
+    src_colmetadata = getfield(parent(src), :colmetadata)
+    if isnothing(src_colmetadata)
+        _drop_colmetadata!(dst)
+    else
+        for col in _names(dst)
+            _copy_colmetadata!(dst, col, src, col)
+        end
+    end
+    return nothing
+end
