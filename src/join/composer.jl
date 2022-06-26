@@ -49,6 +49,17 @@ struct DataFrameJoiner
             end
         end
 
+        for col in left_on
+            if !hasproperty(dfl, col)
+                throw(ArgumentError("column :$col not found in the left data frame"))
+            end
+        end
+        for col in right_on
+            if !hasproperty(dfr, col)
+                throw(ArgumentError("column :$col not found in the right data frame"))
+            end
+        end
+
         if matchmissing === :notequal
             if kind in (:left, :semi, :anti)
                 dfr = dropmissing(dfr, right_on, view=true)
