@@ -27,8 +27,11 @@ anti = left[Bool[ismissing(x) for x in left.Job], [:ID, :Name]]
 
 @testset "join types" begin
     # Join on symbols or vectors of symbols
-    innerjoin(name, job, on=:ID)
-    innerjoin(name, job, on=[:ID])
+    @test innerjoin(name, job, on=:ID) == inner
+    @test innerjoin(name, job, on=[:ID]) == inner
+    @test_throws ArgumentError innerjoin(name, job, on=:ID1)
+    @test_throws ArgumentError innerjoin(name, job, on=:Name)
+    @test_throws ArgumentError innerjoin(name, job, on=:Job)
 
     @test_throws ArgumentError innerjoin(name, job)
     @test_throws ArgumentError innerjoin(name, job, on=:ID, matchmissing=:errors)
