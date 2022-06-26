@@ -553,7 +553,7 @@ julia> select(df, :x2, :x2 => ByRow(sqrt)) # transform columns by row
    1 │     3  1.73205
    2 │     4  2.0
 
-julia> select(df, :x1, :x2, [:x1, :x2] => ((x1, x2) -> x1 ./ x2) => :z) # transformation of multiple columns
+julia> select(df, :x1, :x2, [:x1, :x2] => ((x1, x2) -> x1 ./ x2) => :z) # transform multiple columns
 2×3 DataFrame
  Row │ x1     x2     z
      │ Int64  Int64  Float64
@@ -561,7 +561,7 @@ julia> select(df, :x1, :x2, [:x1, :x2] => ((x1, x2) -> x1 ./ x2) => :z) # transf
    1 │     1      3  0.333333
    2 │     2      4  0.5
 
-julia> select(df, :x1, :x2, [:x1, :x2] => ByRow((x1, x2) -> x1 / x2) => :z)  # transformation of multiple columns by row
+julia> select(df, :x1, :x2, [:x1, :x2] => ByRow((x1, x2) -> x1 / x2) => :z)  # transform multiple columns by row
 2×3 DataFrame
  Row │ x1     x2     z
      │ Int64  Int64  Float64
