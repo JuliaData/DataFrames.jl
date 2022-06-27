@@ -39,7 +39,7 @@ that return views into the original data frame.
   as long as it supports conversion from `String`.
   When `view=true`, a `RepeatedVector{T}` is produced.
 
-Metadata: `stack` keeps table metadata and drops column metadata.
+Metadata: TODO: FIX ME `stack` keeps table metadata and drops column metadata.
 
 # Examples
 ```jldoctest
@@ -254,7 +254,7 @@ Row and column keys will be ordered in the order of their first appearance.
     Whether or not tasks are actually spawned and their number are determined automatically.
     Set to `false` if `valuestransform` requires serial execution or is not thread-safe.
 
-Metadata: `ustack` keeps table metadata and drops column metadata.
+Metadata: TODO: FIX ME `ustack` keeps table metadata and drops column metadata.
 
 # Examples
 
