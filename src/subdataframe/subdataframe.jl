@@ -367,3 +367,5 @@ colmetadata(sdf::SubDataFrame, col::ColumnIndex) =
     metadata(parent(sdf), _names(sdf)[index(sdf)[col]])
 hascolmetadata(sdf::SubDataFrame, col::ColumnIndex) =
     hasmetadata(parent(sdf), _names(sdf)[index(dfr)[col]])
+hascolmetadata(sdf::SubDataFrame) =
+    any(hascolmetadata(sdf, col), _names(sdf))

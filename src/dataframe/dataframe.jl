@@ -1602,3 +1602,22 @@ function hascolmetadata(df::DataFrame, col::ColumnIndex)
     meta = getfield(df, :colmetadata)
     return meta !== nothing && haskey(meta, idx) && !isempty(meta[idx])
 end
+
+"""
+    hascolmetadata(df::AbstractDataFrame)
+    hascolmetadata(dfr::DataFrameRow)
+    hascolmetadata(dfc::DataFrameColumns)
+    hascolmetadata(dfr::DataFrameRows)
+    hascolmetadata(gdf::GroupedDataFrame)
+
+Return `Bool`. If `true` is returned it means that for at least one column
+`:col` of the data frame `hasmetadata(df, :col)` returns `true`.
+`:col` column some metadata is defined. Otherwise `false` is returned.
+
+If `col` is not present in `df` an error is thrown.
+"""
+function hascolmetadata(df::DataFrame)
+    meta = getfield(df, :colmetadata)
+    meta === nothing && return false
+    return any(!isempty, values(meta))
+end

@@ -34,6 +34,9 @@ have any column level metadata defined. If `true` is returned it means that for
 
 If `:col` is not present in `df` an error is thrown.
 
+Additionally `hascolmetadata(df)` returns `true` if for any column `col` of `df`
+`hascolmetadata(df, col)` returns `true`. Otherwise `false` is returned.
+
 Although `hascolmetadata` is guaranteed to return `Bool` value in DataFrames.jl
 in generic code it is recommended to check its return value against `true` and
 `false` explicitly using the `===` operator. The reason is that, in code

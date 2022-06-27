@@ -1216,7 +1216,9 @@ Base.map(f, gdf::GroupedDataFrame) =
 metadata(gdf::GroupedDataFrame) = metadata(parent(gdf))
 hasmetadata(gdf::GroupedDataFrame) = hasmetadata(parent(gdf))
 
-metadata(gdf::GroupedDataFrame, col::ColumnIndex) =
-    metadata(parent(gdf), col)
-hasmetadata(gdf::GroupedDataFrame, col::ColumnIndex) =
-    hasmetadata(parent(gdf), col)
+colmetadata(gdf::GroupedDataFrame, col::ColumnIndex) =
+    colmetadata(parent(gdf), col)
+hascolmetadata(gdf::GroupedDataFrame, col::ColumnIndex) =
+    hascolmetadata(parent(gdf), col)
+hascolmetadata(gdf::GroupedDataFrame) =
+    hascolmetadata(parent(gdf))

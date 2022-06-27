@@ -95,8 +95,9 @@ Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(pare
 metadata(dfr::DataFrameRows) = metadata(parent(dfr))
 hasmetadata(dfr::DataFrameRows) = hasmetadata(parent(dfr))
 
-metadata(dfr::DataFrameRows, col::ColumnIndex) = metadata(parent(dfr), col)
-hasmetadata(dfr::DataFrameRows, col::ColumnIndex) = hasmetadata(parent(dfr), col)
+colmetadata(dfr::DataFrameRows, col::ColumnIndex) = colmetadata(parent(dfr), col)
+hascolmetadata(dfr::DataFrameRows, col::ColumnIndex) = hascolmetadata(parent(dfr), col)
+hascolmetadata(dfr::DataFrameRows) = hascolmetadata(parent(dfr))
 
 # Iteration by columns
 
@@ -346,8 +347,9 @@ Base.show(dfcs::DataFrameColumns;
 metadata(dfc::DataFrameColumns) = metadata(parent(dfc))
 hasmetadata(dfc::DataFrameColumns) = hasmetadata(parent(dfc))
 
-metadata(dfc::DataFrameColumns, col::ColumnIndex) = metadata(parent(dfc), col)
-hasmetadata(dfc::DataFrameColumns, col::ColumnIndex) = hasmetadata(parent(dfc), col)
+colmetadata(dfc::DataFrameColumns, col::ColumnIndex) = colmetadata(parent(dfc), col)
+hascolmetadata(dfc::DataFrameColumns, col::ColumnIndex) = hascolmetadata(parent(dfc), col)
+hascolmetadata(dfc::DataFrameColumns) = hascolmetadata(parent(dfc))
 
 """
     mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
