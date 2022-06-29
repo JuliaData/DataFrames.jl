@@ -1177,13 +1177,9 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame;
     end
 
     if hasmetadata(df1) === true && hasmetadata(df2) === true
-        meta1 = metadata(df1)
-        meta2 = metadata(df2)
-        for (k, v) in pairs(meta1)
-            if !(haskey(meta2, k) && isequal(meta2, v))
-                delete!(meta1, k)
-            end
-        end
+        _intersect_dicts!(metadata(df1), metadata(df2))
+    else
+        _drop_metadata!(df1)
     end
 
     return df1
@@ -1422,11 +1418,11 @@ function _replace_columns!(df::DataFrame, newdf::DataFrame)
 
     meta = getfiled(newdf, :metadata)
     if meta !== nothing
-        setfield(df, :metadata, copy(meta))
+        setfield!(df, :metadata, copy(meta))
     end
     colmeta = getfiled(newdf, :colmetadata)
     if colmeta !== nothing
-        setfield(df, :colmetadata, copy(colmeta))
+        setfield!(df, :colmetadata, copy(colmeta))
     end
 
     return df

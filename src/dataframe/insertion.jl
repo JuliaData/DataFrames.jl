@@ -304,16 +304,19 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
     end
 
     for n in _names(df1)
-        if hascolmetadata(df1, n) && hasproperty(df2, n) && hascolmetadata(df2, n)
-            meta1 = colmetadata(df1, n)
-            meta2 = colmetadata(df2, n)
-
-            for (k, v) in pairs(meta1)
-                if !haskey(meta2, k) || !isequal(meta2[k], v)
-                    delete!(meta1, k)
-                end
+        if hasproperty(df2, n)
+            if hascolmetadata(df1, n) && hascolmetadata(df2, n)
+                _intersect_dicts!(colmetadata(df1, n), colmetadata(df2, n))
+            else
+                _drop_colmetadata!(df1, n)
             end
         end
+    end
+
+    if hasmetadata(df1) && hasmetadata(df2)
+        _intersect_dicts!(metadata(df1), metadata(df2))
+    else
+        _drop_metadata!(df1)
     end
 
     ncol1 = ncol(df1)

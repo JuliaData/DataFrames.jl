@@ -599,3 +599,23 @@ function _unsafe_copy_all_metadata!(dst::DataFrame, src::AbstractDataFrame)
     end
     return nothing
 end
+
+function _intersect_dicts(d1::Dict{String, Any}, d2::Dict{String, Any})
+    length(d1) > length(d2) && return _intersect_dicts(d2, d1)
+    d_out = Dict{String,Any}()
+    for (k, v) in pairs(d1)
+        if haskey(d2, k) && isequal(v, d2[k])
+            d_out[k] = v
+        end
+    end
+    return d_out
+end
+
+function _intersect_dicts!(d1::Dict{String, Any}, d2::Dict{String, Any})
+    for (k, v) in pairs(d1)
+        if !haskey(d2, k) || !isequal(v, d2[k])
+            delete!(d1, k)
+        end
+    end
+    return d1
+end

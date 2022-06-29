@@ -167,13 +167,7 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
         r = joiner.right_on[i]
         if hasmetadata(df1, l)
             if hasmetadata(df2, r)
-                meta1 = colmetadata(df1, l)
-                meta2 = colmetadata(df2, r)
-                for (k, v) in pairs(meta1)
-                    if !haskey(meta2, k) || !isequal(meta2[k], v)
-                        delete!(meta1, k)
-                    end
-                end
+                _intersect_dicts!(colmetadata(df1, l), colmetadata(df2, r))
             else
                 _drop_colmetadata!(df1, l)
             end
@@ -181,13 +175,9 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
     end
 
     if hasmetadata(df1) === true && hasmetadata(df2) === true
-        meta1 = metadata(df1)
-        meta2 = metadata(df2)
-        for (k, v) in pairs(meta1)
-            if !(haskey(meta2, k) && isequal(meta2, v))
-                delete!(meta1, k)
-            end
-        end
+        _intersect_dicts!(metadata(df1), metadata(df2))
+    else
+        _drop_metadata!(df1)
     end
 
     return df1

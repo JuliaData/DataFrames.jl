@@ -100,7 +100,7 @@ _rename_cols(old_names::AbstractVector{Symbol},
            for n in old_names]
 
 function _propagate_join_metadata(joiner::DataFrameJoiner, dfr_noon::AbstractDataFrame,
-                                  res:AbstractDataFrame)
+                                  res::DataFrame)
     for i in 1:ncol(joiner.dfl)
         _copy_colmetadata!(res, i, joiner.dfl, i)
     end
@@ -108,18 +108,10 @@ function _propagate_join_metadata(joiner::DataFrameJoiner, dfr_noon::AbstractDat
     for i in eachindex(joiner.left_on, joiner.right_on)
         l = joiner.left_on[i]
         r = joiner.right_on[i]
-        if hasmetadata(res, l)
-            if hasmetadata(joiner.dfr, r)
-                meta1 = colmetadata(res, l)
-                meta2 = colmetadata(joiner.dfr, r)
-                for (k, v) in pairs(meta1)
-                    if !haskey(meta2, k) || !isequal(meta2[k], v)
-                        delete!(meta1, k)
-                    end
-                end
-            else
-                _drop_colmetadata!(res, l)
-            end
+        if hascolmetadata(res, l) && hascolmetadata(joiner.dfr, r)
+            _intersect_dicts!(colmetadata(res, l), colmetadata(joiner.dfr, r))
+        else
+            _drop_colmetadata!(res, l)
         end
     end
 
@@ -128,14 +120,9 @@ function _propagate_join_metadata(joiner::DataFrameJoiner, dfr_noon::AbstractDat
     end
 
     if hasmetadata(joiner.dfl) === true && hasmetadata(joiner.dfr) === true
-        meta1 = metadata(joiner.dfl)
-        meta2 = metadata(joiner.dfr)
-        res_meta = metadata(res)
-        for (k, v) in pairs(meta1)
-            if haskey(meta2, k) && isequal(meta2[k], v)
-                res_meta[k] = v
-            end
-        end
+        setfield!(res, :metadata, _intersect_dicts(metadata(joiner.dfl), metadata(joiner.dfr)))
+    else
+        _drop_metadata(res)
     end
 
     return nothing
@@ -176,7 +163,7 @@ function compose_inner_table(joiner::DataFrameJoiner,
                      _rename_cols(_names(dfr_noon), right_rename))
     res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
 
-    _propagate_join_metadata!(joiner, dfr_noon)
+    _propagate_join_metadata!(joiner, dfr_noon, res)
     return res
 end
 
@@ -1404,14 +1391,7 @@ function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::B
     end
 
     if hasmetadata(df1) === true && hasmetadata(df2) === true
-        meta1 = metadata(df1)
-        meta2 = metadata(df2)
-        res_meta = metadata(res)
-        for (k, v) in pairs(meta1)
-            if haskey(meta2, k) && isequal(meta2[k], v)
-                res_meta[k] = v
-            end
-        end
+        setfield!(res, :metadata, _intersect_dicts(metadata(df1), metadata(df2)))
     end
 
     return res

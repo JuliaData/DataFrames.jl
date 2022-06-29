@@ -140,35 +140,40 @@ data frames.
 
 The general design rules for propagation of table metadata is as follows.
 
-For table level metadata:
-* for all operations that take a single data frame like object
-  and return a data frame like object table level metadata is propagated to the
-  returned data frame object; similarly operations that mutate a single data
-  frame object do not affect table level metadata;
-* for all operations that take more than one data frame like object and return a
-  data frame like object (e.g. `hcat` or joins) table level metadata is
-  preserved only if for some key for all passed tables there is the same value
-  of the metadata (e.g., for all tables there is a `"source"` key and the
-  value of metadata for this key is the same).
+For operations that take a single data frame as an input:
+* Table level metadata is propagated to the returned data frame object.
+* For column level metadata:
+  - in all cases when a single column from a source data frame is transformed to
+    a single column in a destination data frame and the name of the column does
+    not change (or is automatically changed to de-duplicate column names)
+    column level metadata is preserved (example operations of this kind are
+    `getindex`, `subset`, joins, `mapcols`).
+  - in all cases when a single column from a source data frame is transformed
+    with `identity` or `copy` to a single column in a destination data frame
+    column level metadata is preserved even if column name is changed (example
+    operations of this kind are `rename` function call or `:x => :y` or
+    `:x => copy => :y` operation specification in `select`).
 
-For column level metadata:
-* in all cases when a single column from a source data frame is transformed to a
-  single column in a destination data frame and the name of the column does not
-  change (or is automatically changed e.g. to de-duplicate column names) column
-  level metadata is preserved (example operations of this kind are `getindex`,
-  `subset`, joins, `mapcols`).
-* in all cases when a single column from a source data frame is transformed with
-  `identity` or `copy` to a single column in a destination data frame column
-  level metadata is preserved even if column name is changed (example operations
-  of this kind are `rename` function call or `:x => :y` or `:x => copy => :y`
-  operation specification in `select`).
-* for all operations that take more than one data frame like object and return a
-  data frame like object where a single column in destination data frame is
-  created from multiple columns from a source data frames (e.g. `vcat` or joins)
-  column level metadata is preserved only if for some key for source column in
-  all source passed tables there is the same value of the metadata (e.g., for
-  all tables there is a `"source"` key for source column and the value of
-  metadata for this key is the same).
+For operations that take a multiple data data frames as an input two cases are
+defined.
+Case 1 is when there is a natural main table in the operation (`append!`, `prepend!`,
+`leftjoin`, `leftjoin!`, `rightjoin`, `semijoin`, `antijoin`, `setindex!`).
+Case 2 is when all tables are equivalent (`hcat`, `vcat`, `innerjoin`, `outerjoin`).
+
+In the situation when there is a main table:
+* Table level metadata is kept from the main table.
+* Column level metadata for columns from the main table is taken from main table.
+  Column level metadata for columns from the non-main table is taken only for
+  columns not present in the main table.
+
+In the situation when all tables are equivalent:
+* Table level metadata is preserved only if for some key for all passed tables
+  there is the same value of the metadata (e.g., for all tables there is a `"source"`
+  key and the value of metadata for this key is the same).
+* Column level metadata is preserved only if for some key for source column in all
+  passed tables that contain this column there is the same value of the metadata
+  (e.g., for all tables there is a `"source"` key for source column and the value
+  of metadata for this key is the same).
 
 !!! note
 
@@ -180,45 +185,6 @@ For column level metadata:
     invalidate metadata if it contained unit of measure of a variable. In such
     cases user must manually drop or update such matadata from the `:x` column
     after the transformation.
-
-TODO: a decision needs to be made how we propagate metadata in the following case:
-  ```
-  julia> df = DataFrame(a=1:3, b=11:13, c=111:113)
-3×3 DataFrame
- Row │ a      b      c
-     │ Int64  Int64  Int64
-─────┼─────────────────────
-   1 │     1     11    111
-   2 │     2     12    112
-   3 │     3     13    113
-
-julia> df2 = DataFrame(a=1111:1112, b=11111:11112)
-2×2 DataFrame
- Row │ a      b
-     │ Int64  Int64
-─────┼──────────────
-   1 │  1111  11111
-   2 │  1112  11112
-
-julia> df[1:2, 1:2] = df2
-2×2 DataFrame
- Row │ a      b
-     │ Int64  Int64
-─────┼──────────────
-   1 │  1111  11111
-   2 │  1112  11112
-
-julia> df
-3×3 DataFrame
- Row │ a      b      c
-     │ Int64  Int64  Int64
-─────┼─────────────────────
-   1 │  1111  11111    111
-   2 │  1112  11112    112
-   3 │     3     13    113
-  ```
-(following the rules above we should use intersection of both table level
-and column level metadata since `setindex!` in this case took two source data frames)
 
 The concrete functions listed below follow these general principles.
 
