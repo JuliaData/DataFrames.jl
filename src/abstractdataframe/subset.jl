@@ -305,7 +305,7 @@ function subset(gdf::GroupedDataFrame, @nospecialize(args...);
 
     newgroups = groups[row_selector]
     @assert length(newgroups) == nrow(res)
-    if nrow(res) <= length(groups) # we have not removed rows
+    if nrow(res) <= length(groups) # we have removed some rows
         # TODO: add threading support
         seen = fill(false, ngroups)
         @inbounds for gix in newgroups
@@ -313,7 +313,7 @@ function subset(gdf::GroupedDataFrame, @nospecialize(args...);
             seen[gix] = true
         end
 
-        if sum(seen) < ngroups # subset! has dropped some groups
+        if sum(seen) < ngroups # subset has dropped some groups
             remap = cumsum(seen)
             @inbounds for i in eachindex(newgroups)
                 newgroups[i] = remap[newgroups[i]]
@@ -324,7 +324,6 @@ function subset(gdf::GroupedDataFrame, @nospecialize(args...);
 
     return GroupedDataFrame(res, groupcols(gdf), newgroups, nothing, nothing, nothing,
                             ngroups, nothing, Threads.ReentrantLock())
-
 end
 
 """

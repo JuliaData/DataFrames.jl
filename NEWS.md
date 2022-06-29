@@ -62,7 +62,7 @@
 * Make `vcat` correctly handle `cols` keyword argument if only
   data frames having no columns are passed
   ([#3081](https://github.com/JuliaData/DataFrames.jl/pull/3081))
-* Make sure that `subset` and `subset!` are consistent when `ungroup=false`
+* Make `subset` preserves group ordering when `ungroup=false` like `subset!` already does
   ([#3094](https://github.com/JuliaData/DataFrames.jl/pull/3094))
 
 ## Performance
