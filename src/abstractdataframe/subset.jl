@@ -183,7 +183,8 @@ described for [`select`](@ref) with the restriction that:
 If `view=true` a `SubDataFrame` view  is returned instead of a `DataFrame`.
 
 If `ungroup=false` the resulting data frame is re-grouped based on the same
-grouping columns as `gdf` and a `GroupedDataFrame` is returned.
+grouping columns as `gdf` and a `GroupedDataFrame` is returned (preserving
+the order of groups from `gdf`).
 
 If `threads=true` (the default) transformations may be run in separate tasks which
 can execute in parallel (possibly being applied to multiple rows or groups at the same time).
@@ -296,8 +297,34 @@ function subset(gdf::GroupedDataFrame, @nospecialize(args...);
                                               skipmissing, threads)
     end
     res = view ? Base.view(df, row_selector, :) : df[row_selector, :]
-    # TODO: in some cases it might be faster to groupby gdf.groups[row_selector]
-    return ungroup ? res : groupby(res, groupcols(gdf))
+
+    ungroup && return res
+
+    ngroups = length(gdf)
+    groups = gdf.groups
+
+    newgroups = groups[row_selector]
+    @assert length(newgroups) == nrow(res)
+    if nrow(res) <= length(groups) # we have not removed rows
+        # TODO: add threading support
+        seen = fill(false, ngroups)
+        @inbounds for gix in newgroups
+            @assert gix > 0 # having dropped groups in gdf is not allowed here
+            seen[gix] = true
+        end
+
+        if sum(seen) < ngroups # subset! has dropped some groups
+            remap = cumsum(seen)
+            @inbounds for i in eachindex(newgroups)
+                newgroups[i] = remap[newgroups[i]]
+            end
+            ngroups = remap[end]
+        end
+    end
+
+    return GroupedDataFrame(res, groupcols(gdf), newgroups, nothing, nothing, nothing,
+                            ngroups, nothing, Threads.ReentrantLock())
+
 end
 
 """

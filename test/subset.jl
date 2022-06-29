@@ -45,18 +45,36 @@ const ≅ = isequal
     end
 
     for df in (copy(refdf), @view copy(refdf)[1:end-1, :]),
-        gdf in (groupby(df, :z), groupby(df, :z)[[3, 2, 1]])
+        ord in (true, false)
+        if ord
+            gdf = groupby(df, :z)
+        else
+            gdf = groupby(df, :z)[[3, 2, 1]]
+        end
         df2 = copy(df)
         @test subset(gdf, :x) ≅ filter(:x => identity, df)
         @test df ≅ df2
         @test subset(gdf, :x) isa DataFrame
-        @test subset(gdf, :x, ungroup=false) ≅
-              groupby(filter(:x => identity, df), :z)
+        if ord
+            @test subset(gdf, :x, ungroup=false) ≅
+                  groupby(filter(:x => identity, df), :z)
+        else
+            tmp = groupby(filter(:x => identity, df), :z)
+            tmp = tmp[length(tmp):-1:1]
+            @test subset(gdf, :x, ungroup=false) ≅ tmp
+
+        end
         @test subset(gdf, :x, ungroup=false) isa GroupedDataFrame{DataFrame}
         @test subset(gdf, :x, view=true) ≅ filter(:x => identity, df)
         @test subset(gdf, :x, view=true) isa SubDataFrame
-        @test subset(gdf, :x, view=true, ungroup=false) ≅
-              groupby(filter(:x => identity, df), :z)
+        if ord
+            @test subset(gdf, :x, view=true, ungroup=false) ≅
+                  groupby(filter(:x => identity, df), :z)
+        else
+            tmp = groupby(filter(:x => identity, df), :z)
+            tmp = tmp[length(tmp):-1:1]
+            @test subset(gdf, :x, view=true, ungroup=false) ≅ tmp
+        end
         @test subset(gdf, :x, view=true, ungroup=false) isa GroupedDataFrame{<:SubDataFrame}
         @test_throws ArgumentError subset(gdf, :y)
         @test_throws ArgumentError subset(gdf, :y, :x)
@@ -369,8 +387,7 @@ end
     gdf = groupby(df, :a)[[4, 2, 1, 3]]
     @test subset(gdf, :c) == DataFrame(a=1:4, b=1:4, c=true)
     res = subset(gdf, :c, ungroup=false)
-    @test res == groupby(DataFrame(a=1:4, b=1:4, c=true), :a)
-    @test getproperty.(keys(res), :a) == 1:4
+    @test getproperty.(keys(res), :a) == [4, 2, 1, 3]
 
     df = DataFrame(a=repeat(1:4, 2), b=1:8, c=repeat([true, false], inner=4))
     gdf = groupby(df, :a)[[4, 2, 1, 3]]
@@ -382,6 +399,52 @@ end
     @test subset!(gdf, :c, ungroup=false) === gdf
     @test df == DataFrame(a=1:4, b=1:4, c=true)
     @test getproperty.(keys(gdf), :a) == [4, 2, 1, 3]
+
+    Random.seed!(1234)
+    for _ in 1:100
+        df = DataFrame(x=rand(1:5, 100), y=rand(Bool, 100))
+        gdf = groupby(df, :x, sort=true)
+        @assert length(gdf) == 5
+        perm = randperm(5) # no groups dropped
+        gdf_p = gdf[perm]
+        df2 = subset(df, :y)
+        gdf2 = groupby(df2, :x)
+        @assert length(gdf2) == 5 # no groups dropped
+        gdf2_p = gdf2[perm]
+        @test subset(gdf, :y) == df2
+        @test subset(gdf, :y, ungroup=false) == gdf2
+        @test subset(gdf_p, :y, ungroup=false) == gdf2_p
+        @test subset!(gdf_p, :y, ungroup=false) == gdf2_p
+        @test df == df2
+    end
+    for _ in 1:100
+        df = DataFrame(x=rand(1:50, 100), y=rand(Bool, 100))
+        gdf = groupby(df, :x, sort=true)
+        @assert length(gdf) < 50 # groups dropped
+        gdf_p = gdf[randperm(length(gdf))]
+        df2 = subset(df, :y)
+        gdf2 = groupby(df2, :x)
+        length(gdf2) < length(gdf) # more groups dropped
+        perm2 = intersect([first(sdf.x) for sdf in gdf_p], df2.x)
+        for i in 1:50
+            i > maximum(perm2) && break
+            while !(i in perm2)
+                for j in eachindex(perm2)
+                    if perm2[j] > i
+                        perm2[j] -= 1
+                    end
+                end
+            end
+        end
+        @assert sort(perm2) == 1:length(gdf2)
+        gdf2_p = gdf2[perm2]
+        @test subset(gdf, :y) == df2
+        @test subset(gdf, :y, ungroup=false) == gdf2
+        @test subset(gdf_p, :y, ungroup=false) == gdf2_p
+        @test subset!(gdf_p, :y, ungroup=false) == gdf2_p
+        @test df == df2
+    end
+
 end
 
 @testset "empty args" begin
@@ -401,8 +464,8 @@ end
     gdf = groupby(df, :a)[[4, 2, 1, 3]]
     @test subset(gdf) == df
     res = subset(gdf, ungroup=false)
-    @test res == groupby(df, :a)
-    @test getproperty.(keys(res), :a) == 1:4
+    @test res == groupby(df, :a)[[4, 2, 1, 3]]
+    @test getproperty.(keys(res), :a) == [4, 2, 1, 3]
 
     df = DataFrame(a=repeat(1:4, 2), b=1:8)
     @test subset!(df) === df
