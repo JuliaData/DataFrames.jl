@@ -49,8 +49,10 @@ function validate_gdf(ogd::GroupedDataFrame)
     if length(gd) > 0
         @assert 0 <= g[1] <= 1
         @assert g == g[1]:g[end]
+        @assert gd.ngroups == g[end]
         @assert length(gd.starts) == length(gd.ends) == g[end]
     else
+        @assert gd.ngroups == 0
         @assert length(gd.starts) == length(gd.ends) == 0
     end
     @assert isperm(gd.idx)

@@ -4,6 +4,65 @@ using Test, DataFrames, Statistics, Random
 
 const ≅ = isequal
 
+function validate_gdf_subset(ogd::GroupedDataFrame)
+    # To return original object to test when indices have not been computed
+    gd = deepcopy(ogd)
+
+    @assert allunique(gd.cols)
+    @assert issubset(gd.cols, propertynames(parent(gd)))
+
+    g = sort!(unique(gd.groups))
+    if length(gd) > 0
+        @assert g[1] == 1 # group dropping in subset is not allowed
+        @assert g == g[1]:g[end]
+        @assert gd.ngroups == g[end]
+        @assert length(gd.starts) == length(gd.ends) == g[end]
+    else
+        @assert gd.ngroups == 0
+        @assert length(gd.starts) == length(gd.ends) == 0
+    end
+    @assert isperm(gd.idx)
+    @assert length(gd.idx) == length(gd.groups) == nrow(parent(gd))
+
+    # checking that groups field is consistent with other fields
+    # (since == and isequal do not use it)
+    # and that idx is increasing per group
+    new_groups = zeros(Int, length(gd.groups))
+    for idx in eachindex(gd.starts)
+        subidx = gd.idx[gd.starts[idx]:gd.ends[idx]]
+        @assert issorted(subidx)
+        new_groups[subidx] .= idx
+    end
+    @assert new_groups == gd.groups
+
+    if length(gd) > 0
+        se = sort!(collect(zip(gd.starts, gd.ends)))
+
+        # correct start-end range
+        @assert se[1][1] > 0
+        @assert se[end][2] == length(gd.idx)
+
+        # correct start-end relations
+        for i in eachindex(se)
+            @assert se[i][1] <= se[i][2]
+            if i > 1
+                # the blocks returned by groupby must be continuous
+                @assert se[i-1][2] + 1 == se[i][1]
+            end
+        end
+
+        # all grouping keys must be equal within a group
+        for (s, e) in zip(gd.starts, gd.ends)
+            firstkeys = gd.parent[gd.idx[s], gd.cols]
+            @assert all(j -> gd.parent[gd.idx[j], gd.cols] ≅ firstkeys, s:e)
+        end
+        # all groups have different grouping keys
+        @test allunique(eachrow(gd.parent[gd.idx[gd.starts], gd.cols]))
+    end
+    return ogd
+end
+
+
 @testset "subset and subset!" begin
     refdf = DataFrame(x=repeat(Any[true, false], 4),
                       y=repeat([true, false, missing, missing], 2),
@@ -55,26 +114,23 @@ const ≅ = isequal
         @test subset(gdf, :x) ≅ filter(:x => identity, df)
         @test df ≅ df2
         @test subset(gdf, :x) isa DataFrame
-        if ord
-            @test subset(gdf, :x, ungroup=false) ≅
-                  groupby(filter(:x => identity, df), :z)
-        else
-            tmp = groupby(filter(:x => identity, df), :z)
-            tmp = tmp[length(tmp):-1:1]
-            @test subset(gdf, :x, ungroup=false) ≅ tmp
-
+        out_gdf = subset(gdf, :x, ungroup=false)
+        validate_gdf_subset(out_gdf)
+        cmp_gdf = groupby(filter(:x => identity, df), :z)
+        if !ord
+            cmp_gdf = cmp_gdf[length(cmp_gdf):-1:1]
         end
+        @test out_gdf ≅ cmp_gdf
         @test subset(gdf, :x, ungroup=false) isa GroupedDataFrame{DataFrame}
         @test subset(gdf, :x, view=true) ≅ filter(:x => identity, df)
         @test subset(gdf, :x, view=true) isa SubDataFrame
-        if ord
-            @test subset(gdf, :x, view=true, ungroup=false) ≅
-                  groupby(filter(:x => identity, df), :z)
-        else
-            tmp = groupby(filter(:x => identity, df), :z)
-            tmp = tmp[length(tmp):-1:1]
-            @test subset(gdf, :x, view=true, ungroup=false) ≅ tmp
+        out_gdf = subset(gdf, :x, view=true, ungroup=false)
+        validate_gdf_subset(out_gdf)
+        cmp_gdf = groupby(filter(:x => identity, df), :z)
+        if !ord
+            cmp_gdf = cmp_gdf[length(cmp_gdf):-1:1]
         end
+        @test out_gdf ≅ cmp_gdf
         @test subset(gdf, :x, view=true, ungroup=false) isa GroupedDataFrame{<:SubDataFrame}
         @test_throws ArgumentError subset(gdf, :y)
         @test_throws ArgumentError subset(gdf, :y, :x)
@@ -140,6 +196,7 @@ const ≅ = isequal
     df = copy(refdf)
     gdf = groupby(df, :z)
     gdf2 = subset!(gdf, :x, ungroup=false)
+    validate_gdf_subset(gdf2)
     @test gdf2 isa GroupedDataFrame{DataFrame}
     @test parent(gdf2) === df
     @test gdf2 ≅ groupby(df, :z) ≅ groupby(filter(:x => identity, refdf), :z)
@@ -296,8 +353,8 @@ end
                                       skipmissing=true)
     @test_throws ArgumentError subset(DataFrame(x=1:3), :x => x -> (true for i in 1:3))
     @test subset(groupby(DataFrame(x=1:5), :x), :x => x -> sum(x) > (2.5)) == DataFrame(x=3:5)
-    @test subset(groupby(DataFrame(x=1:5), :x), :x => x -> sum(x) > (2.5), ungroup=false) ==
-          groupby(DataFrame(x=3:5), :x)
+    @test out_gdf == groupby(DataFrame(x=3:5), :x)
+    validate_gdf_subset(out_gdf)
 end
 
 @testset "multicolumn selectors" begin
@@ -387,6 +444,7 @@ end
     gdf = groupby(df, :a)[[4, 2, 1, 3]]
     @test subset(gdf, :c) == DataFrame(a=1:4, b=1:4, c=true)
     res = subset(gdf, :c, ungroup=false)
+    validate_gdf_subset(res)
     @test getproperty.(keys(res), :a) == [4, 2, 1, 3]
 
     df = DataFrame(a=repeat(1:4, 2), b=1:8, c=repeat([true, false], inner=4))
@@ -396,7 +454,8 @@ end
 
     df = DataFrame(a=repeat(1:4, 2), b=1:8, c=repeat([true, false], inner=4))
     gdf = groupby(df, :a)[[4, 2, 1, 3]]
-    @test subset!(gdf, :c, ungroup=false) === gdf
+    @test res === gdf
+    validate_gdf_subset(res)
     @test df == DataFrame(a=1:4, b=1:4, c=true)
     @test getproperty.(keys(gdf), :a) == [4, 2, 1, 3]
 
@@ -412,9 +471,15 @@ end
         @assert length(gdf2) == 5 # no groups dropped
         gdf2_p = gdf2[perm]
         @test subset(gdf, :y) == df2
-        @test subset(gdf, :y, ungroup=false) == gdf2
-        @test subset(gdf_p, :y, ungroup=false) == gdf2_p
-        @test subset!(gdf_p, :y, ungroup=false) == gdf2_p
+        res = subset(gdf, :y, ungroup=false)
+        @test res == gdf2
+        validate_gdf_subset(res)
+        res = subset(gdf_p, :y, ungroup=false)
+        @test res == gdf2_p
+        validate_gdf_subset(res)
+        res = subset!(gdf_p, :y, ungroup=false)
+        @test res == gdf2_p
+        validate_gdf_subset(res)
         @test df == df2
     end
     for _ in 1:100
@@ -439,9 +504,15 @@ end
         @assert sort(perm2) == 1:length(gdf2)
         gdf2_p = gdf2[perm2]
         @test subset(gdf, :y) == df2
-        @test subset(gdf, :y, ungroup=false) == gdf2
-        @test subset(gdf_p, :y, ungroup=false) == gdf2_p
-        @test subset!(gdf_p, :y, ungroup=false) == gdf2_p
+        res = subset(gdf, :y, ungroup=false)
+        @test res == gdf2
+        validate_gdf_subset(res)
+        res = subset(gdf_p, :y, ungroup=false)
+        @test res == gdf2_p
+        validate_gdf_subset(res)
+        res = subset!(gdf_p, :y, ungroup=false)
+        @test res == gdf2_p
+        validate_gdf_subset(res)
         @test df == df2
     end
 
@@ -455,9 +526,13 @@ end
 
     gdf = groupby(df, [])
     @test subset(gdf) == DataFrame()
-    @test subset(gdf, ungroup=false) == groupby(DataFrame(), [])
+    res = subset(gdf, ungroup=false)
+    @test res == groupby(DataFrame(), [])
+    validate_gdf_subset(res)
     @test subset!(gdf) === df
-    @test subset!(gdf, ungroup=false) === gdf
+    res = subset!(gdf, ungroup=false)
+    @test res === gdf
+    validate_gdf_subset(res)
 
     df = DataFrame(a=repeat(1:4, 2), b=1:8)
     @test subset(df) == df
@@ -466,6 +541,7 @@ end
     res = subset(gdf, ungroup=false)
     @test res == groupby(df, :a)[[4, 2, 1, 3]]
     @test getproperty.(keys(res), :a) == [4, 2, 1, 3]
+    validate_gdf_subset(res)
 
     df = DataFrame(a=repeat(1:4, 2), b=1:8)
     @test subset!(df) === df
@@ -476,9 +552,11 @@ end
 
     df = DataFrame(a=repeat(1:4, 2), b=1:8)
     gdf = groupby(df, :a)[[4, 2, 1, 3]]
-    @test subset!(gdf, ungroup=false) === gdf
+    res = subset!(gdf, ungroup=false)
+    @test res === gdf
     @test df == DataFrame(a=repeat(1:4, 2), b=1:8)
     @test getproperty.(keys(gdf), :a) == [4, 2, 1, 3]
+    validate_gdf_subset(res)
 
     df = DataFrame(a=Int[])
     gdf = groupby(df, :a)
@@ -486,7 +564,9 @@ end
     @test nrow(res) == 0
     @test names(res) == ["a"]
     @test eltype(res.a) === Int
-    @test gdf == subset(gdf, ungroup=false)
+    res = subset(gdf, ungroup=false)
+    @test res = gdf
+    validate_gdf_subset(res)
 
     df = DataFrame(a=Int[])
     gdf = groupby(df, :a)
@@ -495,7 +575,9 @@ end
     @test nrow(res) == 0
     @test names(res) == ["a"]
     @test eltype(res.a) === Int
-    @test subset!(gdf, ungroup=false) == groupby(DataFrame(a=Int[]), :a)
+    res = subset!(gdf, ungroup=false)
+    @test res == groupby(DataFrame(a=Int[]), :a)
+    validate_gdf_subset(res)
 
     df = DataFrame(a=1:3)
     gdf = groupby(df, :a)[[3, 1]]
