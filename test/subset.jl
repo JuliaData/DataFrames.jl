@@ -455,6 +455,7 @@ end
 
     df = DataFrame(a=repeat(1:4, 2), b=1:8, c=repeat([true, false], inner=4))
     gdf = groupby(df, :a)[[4, 2, 1, 3]]
+    res = subset!(gdf, :c, ungroup=false)
     @test res === gdf
     validate_gdf_subset(res)
     @test df == DataFrame(a=1:4, b=1:4, c=true)
@@ -566,7 +567,7 @@ end
     @test names(res) == ["a"]
     @test eltype(res.a) === Int
     res = subset(gdf, ungroup=false)
-    @test res = gdf
+    @test res == gdf
     validate_gdf_subset(res)
 
     df = DataFrame(a=Int[])
