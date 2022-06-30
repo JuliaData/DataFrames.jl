@@ -353,6 +353,7 @@ end
                                       skipmissing=true)
     @test_throws ArgumentError subset(DataFrame(x=1:3), :x => x -> (true for i in 1:3))
     @test subset(groupby(DataFrame(x=1:5), :x), :x => x -> sum(x) > (2.5)) == DataFrame(x=3:5)
+    out_gdf = subset(groupby(DataFrame(x=1:5), :x), :x => x -> sum(x) > (2.5), ungroup=false)
     @test out_gdf == groupby(DataFrame(x=3:5), :x)
     validate_gdf_subset(out_gdf)
 end
