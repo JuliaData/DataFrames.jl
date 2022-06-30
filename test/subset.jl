@@ -103,8 +103,7 @@ end
         @test_throws ArgumentError subset(df, :x => x -> true, :x => x -> 2)
     end
 
-    for df in (copy(refdf), @view copy(refdf)[1:end-1, :]),
-        ord in (true, false)
+    for df in (copy(refdf), @view copy(refdf)[1:end-1, :]), ord in (true, false)
         if ord
             gdf = groupby(df, :z)
         else
