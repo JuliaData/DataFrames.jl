@@ -1646,9 +1646,9 @@ end
 function _copy_colmetadata!(dst::DataFrame, dstcol::ColumnIndex,
                             src, srccol::ColumnIndex)
     if hascolmetadata(src, srccol) === true
-        copy!(metadata(dst, dstcol), metadata(src, srccol))
+        copy!(colmetadata(dst, dstcol), colmetadata(src, srccol))
     else
-        _drop_colmetadata!(dst, col)
+        _drop_colmetadata!(dst, dstcol)
     end
     return nothing
 end
@@ -1656,7 +1656,7 @@ end
 # this is a function used to copy metadata
 # to a freshly allocated dst without metadata that is `similar` to src
 function _unsafe_copy_all_metadata_similar!(dst::DataFrame, src::AbstractDataFrame)
-    _copy_metadata(dst, src)
+    _copy_metadata!(dst, src)
     # parent(src) is guaranteed to be DataFrame
     src_colmetadata = getfield(parent(src), :colmetadata)
     if isnothing(src_colmetadata)

@@ -183,8 +183,8 @@ some new object you can use:
 
 ## Propagation of metadata
 
-An important design feature of metatada is how it is handled when you transform
-data frames.
+An important design feature of metatada is how it is handled when
+data frames are  transformed.
 
 !!! note
 
@@ -232,6 +232,9 @@ In the situation when all tables are equivalent:
   (e.g., for all tables there is a `"source"` key for source column and the value
   of metadata for this key is the same).
 
+In all these operations when metadata is preserved the values in the key-value
+pairs are not copied (this is relevant in case of mutable values).
+
 !!! note
 
     The rules for column level metadata propagation are designed to make
@@ -247,13 +250,17 @@ The concrete functions listed below follow these general principles.
 
 ### Operations that preserve metadata
 
-* `mapcols!`
-* `mapcols`
 * `rename!`
-* `only`
 * `rename`
+* `empty`
+* `empty!`
+* `similar`
+* `only`
 * `first`
 * `last`
+
+* `mapcols!`
+* `mapcols`
 * `describe` (column level metadata is dropped)
 * `dropmissing`
 * `dropmissing!`
@@ -304,9 +311,6 @@ The concrete functions listed below follow these general principles.
 * `semijoin`(for table level metadata only if it is present and identical for all passed data frames)
 * `antijoin`(for table level metadata only if it is present and identical for all passed data frames)
 * `crossjoin`(for table level metadata only if it is present and identical for all passed data frames)
-* `empty`
-* `empty!`
-* `similar`
 * `keepat!`
 * `resize!`
 * `pop!`

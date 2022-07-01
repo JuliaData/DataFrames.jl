@@ -23,7 +23,6 @@ A detailed description of `getindex`, `setindex!`, `getproperty`, `setproperty!`
 broadcasting and broadcasting assignment for data frames is given in the
 ["Indexing" section](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/)
 of the manual.
-
 """
 abstract type AbstractDataFrame end
 
@@ -235,6 +234,7 @@ function rename!(df::AbstractDataFrame,
     return df
 end
 
+rename!(df::AbstractDataFrame) = df # needed because of dispach ambiguity
 rename!(df::AbstractDataFrame, args::Pair...) = rename!(df, collect(args))
 
 function rename!(f::Function, df::AbstractDataFrame)
