@@ -27,6 +27,8 @@ import DataAPI,
        DataAPI.ncol,
        DataAPI.metadata,
        DataAPI.hasmetadata,
+       DataAPI.colmetadata,
+       DataAPI.hascolmetadata,
        Tables,
        Tables.columnindex,
        Future.copy!

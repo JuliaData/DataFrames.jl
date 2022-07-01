@@ -98,7 +98,7 @@ use the functionality provided by `select`/`transform`/`combine` functions, use
 functions, or provide type assertions to the variables that hold columns
 extracted from a `DataFrame`.
 
-$MEDATADA_FIXED
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -177,7 +177,7 @@ mutable struct DataFrame <: AbstractDataFrame
     function DataFrame(columns::Union{Vector{Any}, Vector{AbstractVector}},
                        colindex::Index; copycols::Bool=true)
         if length(columns) == length(colindex) == 0
-            return new(AbstractVector[], Index())
+            return new(AbstractVector[], Index(), nothing, nothing)
         elseif length(columns) != length(colindex)
             throw(DimensionMismatch("Number of columns ($(length(columns))) and number of " *
                                     "column names ($(length(colindex))) are not equal"))
@@ -222,7 +222,7 @@ mutable struct DataFrame <: AbstractDataFrame
             firstindex(col) != 1 && _onebased_check_error(i, col)
         end
 
-        new(convert(Vector{AbstractVector}, columns), colindex, nothing, nothing)
+        return new(convert(Vector{AbstractVector}, columns), colindex, nothing, nothing)
     end
 end
 
@@ -801,7 +801,7 @@ If `copycols=true` (the default), return a new  `DataFrame` holding
 copies of column vectors in `df`.
 If `copycols=false`, return a new `DataFrame` sharing column vectors with `df`.
 
-$MEDATADA_FIXED
+$METADATA_FIXED
 """
 function Base.copy(df::DataFrame; copycols::Bool=true)
     cdf = DataFrame(copy(_columns(df)), copy(index(df)), copycols=copycols)
@@ -818,7 +818,7 @@ Internally `deleteat!` is called for all columns so `inds` must be:
 a vector of sorted and unique integers, a boolean vector, an integer,
 or `Not` wrapping any valid selector.
 
-$MEDATADA_FIXED
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -927,7 +927,7 @@ Internally `deleteat!` is called for all columns so `inds` must be:
 a vector of sorted and unique integers, a boolean vector, an integer,
 or `Not` wrapping any valid selector.
 
-$MEDATADA_FIXED
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -985,7 +985,7 @@ keepat!(df::DataFrame, inds::Not) = deleteat!(df, Not(inds))
 
 Remove all rows from `df`, making each of its columns empty.
 
-$MEDATADA_FIXED
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -1016,7 +1016,7 @@ end
 
 Resize `df` to have `n` rows by calling `resize!` on all columns of `df`.
 
-$MEDATADA_FIXED
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -1056,7 +1056,7 @@ Remove the last row from `df` and return a `NamedTuple` created from this row.
 
     Using this method for very wide data frames may lead to expensive compilation.
 
-$MEDATADA_FIXED
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -1093,7 +1093,7 @@ Remove the first row from `df` and return a `NamedTuple` created from this row.
 
     Using this method for very wide data frames may lead to expensive compilation.
 
-$MEDATADA_FIXED
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -1129,7 +1129,7 @@ Remove the `i`-th row from `df` and return a `NamedTuple` created from this row.
 
     Using this method for very wide data frames may lead to expensive compilation.
 
-$MEDATADA_FIXED
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -1224,7 +1224,7 @@ Convert columns `cols` of data frame `df` from element type `T` to
 
 If `cols` is omitted all columns in the data frame are converted.
 
-$MEDATADA_FIXED
+$METADATA_FIXED
 """
 function allowmissing! end
 
@@ -1267,7 +1267,7 @@ If `cols` is omitted all columns in the data frame are converted.
 If `error=false` then columns containing a `missing` value will be skipped instead
 of throwing an error.
 
-$MEDATADA_FIXED
+$METADATA_FIXED
 """
 function disallowmissing! end
 
@@ -1321,7 +1321,7 @@ Update a data frame `df` in-place by repeating its rows. `inner` specifies how m
 times each row is repeated, and `outer` specifies how many times the full set
 of rows is repeated. Columns of `df` are freshly allocated.
 
-$MEDATADA_FIXED
+$METADATA_FIXED
 
 # Example
 ```jldoctest
@@ -1373,7 +1373,7 @@ end
 Update a data frame `df` in-place by repeating its rows the number of times
 specified by `count`. Columns of `df` are freshly allocated.
 
-$MEDATADA_FIXED
+$METADATA_FIXED
 
 # Example
 ```jldoctest
@@ -1408,6 +1408,8 @@ function repeat!(df::DataFrame, count::Integer)
 end
 
 # This is not exactly copy! as in general we allow axes to be different
+# Also no table metadata is needed to be copied as we use _replace_columns!
+# only in situations when table metadata is kept
 function _replace_columns!(df::DataFrame, newdf::DataFrame)
     # for DataFrame object here we do not support keep_present keyword argument
     # like for SubDataFrame because here transform! always falls back to select!
@@ -1416,10 +1418,6 @@ function _replace_columns!(df::DataFrame, newdf::DataFrame)
     copy!(_names(index(df)), _names(newdf))
     copy!(index(df).lookup, index(newdf).lookup)
 
-    meta = getfiled(newdf, :metadata)
-    if meta !== nothing
-        setfield!(df, :metadata, copy(meta))
-    end
     colmeta = getfiled(newdf, :colmetadata)
     if colmeta !== nothing
         setfield!(df, :colmetadata, copy(colmeta))
@@ -1616,4 +1614,76 @@ function hascolmetadata(df::DataFrame)
     meta = getfield(df, :colmetadata)
     meta === nothing && return false
     return any(!isempty, values(meta))
+end
+
+function _drop_metadata!(df::DataFrame)
+    setfield!(df, :metadata, nothing)
+    return nothing
+end
+
+function _drop_colmetadata!(df::DataFrame)
+    setfield!(df, :colmetadata, nothing)
+    return nothing
+end
+
+function _drop_colmetadata!(df::DataFrame, col::ColumnIndex)
+    colmetadata = getfield(df, :colmetadata)
+    if colmetadata !== nothing
+        delete!(colmetadata, index(df)[col])
+    end
+    return nothing
+end
+
+function _copy_metadata!(dst::DataFrame, src)
+    if hasmetadata(src) === true
+        copy!(metadata(dst), metadata(src))
+    else
+        _drop_metadata!(dst)
+    end
+    return nothing
+end
+
+function _copy_colmetadata!(dst::DataFrame, dstcol::ColumnIndex,
+                            src, srccol::ColumnIndex)
+    if hascolmetadata(src, srccol) === true
+        copy!(metadata(dst, dstcol), metadata(src, srccol))
+    else
+        _drop_colmetadata!(dst, col)
+    end
+    return nothing
+end
+
+# this is a function used to copy metadata
+# to a freshly allocated dst without metadata that is `similar` to src
+function _unsafe_copy_all_metadata_similar!(dst::DataFrame, src::AbstractDataFrame)
+    _copy_metadata(dst, src)
+    # parent(src) is guaranteed to be DataFrame
+    src_colmetadata = getfield(parent(src), :colmetadata)
+    if isnothing(src_colmetadata)
+        _drop_colmetadata!(dst)
+    else
+        dst_colmetadata = Dict{Int, Dict{String, Any}}()
+        for (k, v) in pairs(src_colmetadata)
+            dst_colmetadata[k] = copy(v)
+        end
+        setfield!(dst, :colmetadata, dst_colmetadata)
+    end
+    return nothing
+end
+
+# this is a function used to copy metadata
+# to a freshly allocated dst without metadata where column names
+# in dst is a subset of column names in src
+function _unsafe_copy_all_metadata!(dst::DataFrame, src::AbstractDataFrame)
+    _copy_metadata!(dst, src)
+    # parent(src) is guaranteed to be DataFrame
+    src_colmetadata = getfield(parent(src), :colmetadata)
+    if isnothing(src_colmetadata)
+        _drop_colmetadata!(dst)
+    else
+        for col in _names(dst)
+            _copy_colmetadata!(dst, col, src, col)
+        end
+    end
+    return nothing
 end

@@ -83,9 +83,26 @@ function _combine_prepare_norm(gd::GroupedDataFrame,
     # if optional_transform[i] is true then the transformation will be skipped
     # if earlier column with a column with the same name was created
 
-    # TODO: make sure valscat properly keeps table level and column level metadata
     idx, valscat = _combine(gd, cs_norm, optional_transform, copycols, keeprows,
                             renamecols, threads)
+
+    pgd = parent(gd)
+    _copy_metadata!(valscat, pgd)
+    @assert length(cs_norm) == length(optional_transform)
+    for (nc, opt) in zip(cs_norm, optional_transform)
+        # in all other cases we do not propagate metadata
+        if nc isa Pair{Int}
+            in_col_idx, fun, out_col_name = nc
+            if hascolmetadata(pgd, in_col_idx) && out_col_name isa Symbol
+                in_col_name = _names(pgd)[in_col_idx]
+                if fun === identity || fun === copy || in_col_name == out_col_name
+                    if !(opt && hascolmetadata(valscat, out_col_name))
+                        _copy_colmetadata!(valscat, out_col_name, pdf, in_col_idx)
+                    end
+                end
+            end
+        end
+    end
 
     !keepkeys && ungroup && return valscat
 

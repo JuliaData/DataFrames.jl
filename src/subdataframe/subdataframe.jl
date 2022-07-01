@@ -352,6 +352,8 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame; keep_present::Bo
         select!(pdf, _names(newdf))
     end
 
+    # No table metadata is needed to be copied as we use _replace_columns!
+    # only in situations when table metadata is kept
     if getfield(newdf, :colmetadata) !== nothing || getfield(pdf, :colmetadata) !== nothing
         for colname in _names(newdf)
             _copy_colmetadata!(pdf, colname, newdf, colname)
@@ -364,8 +366,8 @@ end
 metadata(sdf::SubDataFrame) = metadata(parent(sdf))
 hasmetadata(sdf::SubDataFrame) = hasmetadata(parent(sdf))
 colmetadata(sdf::SubDataFrame, col::ColumnIndex) =
-    metadata(parent(sdf), _names(sdf)[index(sdf)[col]])
+    colmetadata(parent(sdf), _names(sdf)[index(sdf)[col]])
 hascolmetadata(sdf::SubDataFrame, col::ColumnIndex) =
-    hasmetadata(parent(sdf), _names(sdf)[index(dfr)[col]])
+    hascolmetadata(parent(sdf), _names(sdf)[index(sdf)[col]])
 hascolmetadata(sdf::SubDataFrame) =
-    any(hascolmetadata(sdf, col), _names(sdf))
+    any(col -> hascolmetadata(sdf, col), _names(sdf))

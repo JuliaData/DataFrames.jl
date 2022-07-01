@@ -92,29 +92,85 @@ apply to `hascolmetadata` and `colmetadata`). There are two reasons for this:
 Here is a simple example how you can work with metadata in DataFrames.jl:
 
 ```jldoctest dataframe
-julia> df = DataFame(name=["Jan Krzysztof Duda", "Jan Krzysztof Duda",
-                           "Radosław Wojtaszek", "Radosław Wojtaszek"],
-                     date=["2022-Jun", "2021-Jun", "2022-Jun", "2021-Jun"],
-                     rating=[2750, 2729, 2708, 2687])
+julia> df = DataFrame(name=["Jan Krzysztof Duda", "Jan Krzysztof Duda",
+                            "Radosław Wojtaszek", "Radosław Wojtaszek"],
+                      date=["2022-Jun", "2021-Jun", "2022-Jun", "2021-Jun"],
+                                     rating=[2750, 2729, 2708, 2687])
+4×3 DataFrame
+ Row │ name                date      rating
+     │ String              String    Int64
+─────┼──────────────────────────────────────
+   1 │ Jan Krzysztof Duda  2022-Jun    2750
+   2 │ Jan Krzysztof Duda  2021-Jun    2729
+   3 │ Radosław Wojtaszek  2022-Jun    2708
+   4 │ Radosław Wojtaszek  2021-Jun    2687
+
 julia> hasmetadata(df)
+false
+
 julia> df_meta = metadata(df)
-julia> df_meta["name"] = "ELO ratings of chess players"
+Dict{String, Any}()
+
+julia> df_meta["caption"] = "ELO ratings of chess players"
+"ELO ratings of chess players"
+
 julia> hasmetadata(df)
+true
+
 julia> metadata(df)
+Dict{String, Any} with 1 entry:
+  "caption" => "ELO ratings of chess players"
+
 julia> empty!(df_meta)
+Dict{String, Any}()
+
 julia> hasmetadata(df)
+false
+
 julia> metadata(df)
+Dict{String, Any}()
+
+julia> hascolmetadata(df)
+false
+
 julia> hascolmetadata(df, :rating)
-julia> rating_meta = colmetadata(df, :rating)
-julia> rating_meta["name"] = "First and last name of a player"
-julia> rating_meta["rating"] = "ELO rating in classical time control"
-julia> rating_meta["date"] = "Rating date in yyyy-u format for \"english\" locale"
+false
+
+julia> colmetadata(df, :name)["label"] = "First and last name of a player"
+"First and last name of a player"
+
+julia> colmetadata(df, :date)["label"] = "Rating date in yyyy-u format"
+"Rating date in yyyy-u format"
+
+julia> colmetadata(df, :rating)["label"] = "ELO rating in classical time control"
+"ELO rating in classical time control"
+
+julia> hascolmetadata(df)
+true
+
 julia> hascolmetadata(df, :rating)
+true
+
 julia> colmetadata(df, :rating)
+Dict{String, Any} with 1 entry:
+  "label" => "ELO rating in classical time control"
+
 julia> colmetadata.(Ref(df), names(df))
-julia> empty!(rating_meta)
+3-element Vector{Dict{String, Any}}:
+ Dict("label" => "First and last name of a player")
+ Dict("label" => "Rating date in yyyy-u format as string")
+ Dict("label" => "ELO rating in classical time control")
+
+julia> foreach(col -> empty!(colmetadata(df, col)), names(df))
+
+julia> hascolmetadata(df)
+false
+
 julia> hascolmetadata(df, :rating)
+false
+
 julia> colmetadata(df, :rating)
+Dict{String, Any}()
 ```
 
 As a practical tip if you have metadata attached to some object
@@ -145,7 +201,8 @@ For operations that take a single data frame as an input:
 * For column level metadata:
   - in all cases when a single column from a source data frame is transformed to
     a single column in a destination data frame and the name of the column does
-    not change (or is automatically changed to de-duplicate column names)
+    not change (or is automatically changed e.g. to de-duplicate column names or
+    via column renaming in joins)
     column level metadata is preserved (example operations of this kind are
     `getindex`, `subset`, joins, `mapcols`).
   - in all cases when a single column from a source data frame is transformed
@@ -190,12 +247,10 @@ The concrete functions listed below follow these general principles.
 
 ### Operations that preserve metadata
 
-TODO: the list below is not finished do not read it yet
-
 * `mapcols!`
+* `mapcols`
 * `rename!`
 * `only`
-* `mapcols`
 * `rename`
 * `first`
 * `last`
@@ -262,8 +317,7 @@ TODO: the list below is not finished do not read it yet
 * `insert!`
 * `append!`
 * `prepend!`
-
-TODO: `select[!]`, `transform[!]`, `combine`
+* `select[!]`, `transform[!]`, `combine`
 
 # Operations that drop table and column level metadata
 

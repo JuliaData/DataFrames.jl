@@ -500,8 +500,8 @@ metadata(dfr::DataFrameRow) = metadata(parent(dfr))
 hasmetadata(dfr::DataFrameRow) = hasmetadata(parent(dfr))
 
 colmetadata(dfr::DataFrameRow, col::ColumnIndex) =
-    metadata(parent(dfr), _names(dfr)[index(dfr)[col]])
+    colmetadata(parent(dfr), _names(dfr)[index(dfr)[col]])
 hascolmetadata(dfr::DataFrameRow, col::ColumnIndex) =
     hascolmetadata(parent(dfr), _names(dfr)[index(dfr)[col]])
 hascolmetadata(dfr::DataFrameRow) =
-    any(hascolmetadata(dfr, col), _names(dfr))
+    any(col -> hascolmetadata(dfr, col), _names(dfr))
