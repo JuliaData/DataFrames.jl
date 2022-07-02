@@ -1390,10 +1390,7 @@ julia> nonunique(df, 2)
 ```
 """
 function nonunique(df::AbstractDataFrame)
-    if ncol(df) == 0
-        throw(ArgumentError("finding duplicate rows in data frame with no " *
-                            "columns is not allowed"))
-    end
+    ncol(df) == 0 && return Bool[]
     gslots = row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(true), nothing, false, nothing)[3]
     # unique rows are the first encountered group representatives,
     # nonunique are everything else
@@ -1404,7 +1401,17 @@ function nonunique(df::AbstractDataFrame)
     return res
 end
 
-nonunique(df::AbstractDataFrame, cols) = nonunique(select(df, cols, copycols=false))
+function nonunique(df::AbstractDataFrame, cols)
+    udf = select(df, cols, copycols=false)
+    if ncol(udf) == 0
+        res = fill(true, nrow(df))
+        if !isempty(res)
+            res[1] = false
+        end
+        return res
+    end
+    return nonunique(udf)
+end
 
 """
     unique(df::AbstractDataFrame; view::Bool=false)

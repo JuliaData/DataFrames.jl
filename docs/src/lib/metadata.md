@@ -261,7 +261,7 @@ described above) is applied:
   from a data frame; note that removing metadata can speed up certain operations.
 * [`describe`](@ref) preserves only table level metadata;
   column level metadata is dropped.
-* [`setindex!`] does not affect table level and column level metadata
+* `setindex!` does not affect table level and column level metadata
 
 
 * `rename!`
@@ -274,13 +274,13 @@ described above) is applied:
 * `last`
 * `dropmissing`
 * `dropmissing!`
-
-* `mapcols!`
-* `mapcols`
 * `filter`
 * `filter!`
 * `unique`
 * `unique!`
+
+* `mapcols!`
+* `mapcols`
 * `fillcombinations`
 * `repeat`
 * `disallowmissing`
@@ -304,9 +304,8 @@ described above) is applied:
 * `subset`
 * `subset!`
 * `DataFrame`
-* `getindex` (if multiple column selector is used)
-* `setindex!` (if a column is replaced then its column metadata is dropped unless,
-               a source is another data frame, in which case metadata is copied)
+* `getindex`
+* `setindex!`
 * `copy`
 * `deleteat!`
 * `allowmissing!`

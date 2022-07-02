@@ -247,9 +247,12 @@ end
     @test getfield(x, :colmetadata) === nothing
 end
 
-@testset "dropmissing & dropmissing!" begin
+@testset "dropmissing, dropmissing!, filter, filter!, unique, unique!" begin
     for fun in (dropmissing,
-                x -> dropmissing(x, disallowmissing=false))
+                x -> dropmissing(x, disallowmissing=false),
+                x -> filter(v -> true, x),
+                x -> filter(v -> false, x),
+                unique)
         df = DataFrame()
         x = fun(df)
         @test getfield(x, :metadata) === nothing
@@ -286,7 +289,17 @@ end
 
     for fun in (dropmissing!,
                 x -> dropmissing!(x, disallowmissing=false),
-                x -> dropmissing(x, view=true))
+                x -> dropmissing(x, view=true),
+                x -> filter!(v -> true, x),
+                x -> filter!(v -> false, x),
+                x -> filter(v -> true, x, view=true),
+                x -> filter(v -> false, x, view=true),
+                x -> filter(v -> true, groupby(x, ncol(x) == 0 ? [] : 1), ungroup=true),
+                x -> filter(v -> true, groupby(x, ncol(x) == 0 ? [] : 1), ungroup=false),
+                x -> filter(v -> false, groupby(x, ncol(x) == 0 ? [] : 1), ungroup=true),
+                x -> filter(v -> false, groupby(x, ncol(x) == 0 ? [] : 1), ungroup=false),
+                unique!,
+                x -> unique(x, view=true))
         df = DataFrame()
         x = fun(df)
         @test getfield(parent(x), :metadata) === nothing

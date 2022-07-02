@@ -264,8 +264,10 @@ end
     @test unique(df, :a) == df1[1:2, :]
     @test unique(df, "a") == df1[1:2, :]
     @test unique(df, :a => x -> 1) == df[1:1, :]
-    @test_throws ArgumentError unique(DataFrame())
-    @test_throws ArgumentError nonunique(DataFrame())
+    @test unique(DataFrame()) == DataFrame()
+    @test isempty(nonunique(DataFrame())) && nonunique(DataFrame()) isa Vector{Bool}
+    @test nonunique(DataFrame(a=1:3), []) == [false, true, true]
+    @test unique(DataFrame(a=1:3), []) == DataFrame(a=1)
 
     @test unique(copy(df1), "a") == unique(copy(df1), :a) == unique(copy(df1), 1) ==
           df1[1:2, :]
