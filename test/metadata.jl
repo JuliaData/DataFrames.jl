@@ -75,6 +75,23 @@ end
     end
 end
 
+@testset "dropallmetadata!" begin
+    for fun in (identity, eachcol, eachrow, x -> groupby(x, :a),
+                x -> x[1, :], x -> @view x[:, :])
+        df = DataFrame(b=2, a=1)
+        metadata(df)["name"] = "empty"
+        colmetadata(df, :a)["name"] = "a"
+        x = fun(df)
+        @test hasmetadata(x)
+        @test hascolmetadata(x)
+        dropallmetadata!(x)
+        @test !hasmetadata(x)
+        @test !hascolmetadata(x)
+        @test getfield(df, :metadata) === nothing
+        @test getfield(df, :colmetadata) === nothing
+    end
+end
+
 @testset "rename & rename!" begin
     df = DataFrame()
     df2 = rename(df)
@@ -209,4 +226,91 @@ end
     end
 end
 
+@testset "describe" begin
+    df = DataFrame()
+    x = describe(df)
+    @test getfield(x, :metadata) === nothing
+    @test getfield(x, :colmetadata) === nothing
+
+    metadata(df)["name"] = "empty"
+    x = describe(df)
+    @test metadata(x) == Dict("name" => "empty")
+    @test metadata(x) !== metadata(df)
+    @test getfield(x, :colmetadata) === nothing
+
+    df = DataFrame(a=1, b="x")
+    metadata(df)["name"] = "empty"
+    colmetadata(df, :a)["name"] = "a"
+    x = describe(df)
+    @test metadata(x) == Dict("name" => "empty")
+    @test metadata(x) !== metadata(df)
+    @test getfield(x, :colmetadata) === nothing
 end
+
+@testset "dropmissing & dropmissing!" begin
+    for fun in (dropmissing,
+                x -> dropmissing(x, disallowmissing=false))
+        df = DataFrame()
+        x = fun(df)
+        @test getfield(x, :metadata) === nothing
+        @test getfield(x, :colmetadata) === nothing
+
+        metadata(df)["name"] = "empty"
+        x = fun(df)
+        @test metadata(x) == Dict("name" => "empty")
+        @test metadata(x) !== metadata(df)
+        @test getfield(x, :colmetadata) === nothing
+
+        df = DataFrame(a=1, b="x")
+        metadata(df)["name"] = "empty"
+        colmetadata(df, :a)["name"] = "a"
+        x = fun(df)
+        @test metadata(x) == Dict("name" => "empty")
+        @test metadata(x) !== metadata(df)
+        @test getfield(x, :colmetadata) == getfield(df, :colmetadata)
+        @test getfield(x, :colmetadata) !== getfield(df, :colmetadata)
+        @test colmetadata(x, :a) == colmetadata(df, :a) == Dict("name" => "a")
+        @test colmetadata(x, :a) !== colmetadata(df, :a)
+
+        df = DataFrame(a=[1, missing], b=["x", "y"])
+        metadata(df)["name"] = "empty"
+        colmetadata(df, :a)["name"] = "a"
+        x = fun(df)
+        @test metadata(x) == Dict("name" => "empty")
+        @test metadata(x) !== metadata(df)
+        @test getfield(x, :colmetadata) == getfield(df, :colmetadata)
+        @test getfield(x, :colmetadata) !== getfield(df, :colmetadata)
+        @test colmetadata(x, :a) == colmetadata(df, :a) == Dict("name" => "a")
+        @test colmetadata(x, :a) !== colmetadata(df, :a)
+    end
+
+    for fun in (dropmissing!,
+                x -> dropmissing!(x, disallowmissing=false),
+                x -> dropmissing(x, view=true))
+        df = DataFrame()
+        x = fun(df)
+        @test getfield(parent(x), :metadata) === nothing
+        @test getfield(parent(x), :colmetadata) === nothing
+
+        metadata(df)["name"] = "empty"
+        x = fun(df)
+        @test metadata(x) == Dict("name" => "empty")
+        @test getfield(parent(x), :colmetadata) === nothing
+
+        df = DataFrame(a=1, b="x")
+        metadata(df)["name"] = "empty"
+        colmetadata(df, :a)["name"] = "a"
+        x = fun(df)
+        @test metadata(x) == Dict("name" => "empty")
+        @test colmetadata(x, :a) == Dict("name" => "a")
+
+        df = DataFrame(a=[1, missing], b=["x", "y"])
+        metadata(df)["name"] = "empty"
+        colmetadata(df, :a)["name"] = "a"
+        x = fun(df)
+        @test metadata(x) == Dict("name" => "empty")
+        @test colmetadata(x, :a) == Dict("name" => "a")
+    end
+end
+
+end # module

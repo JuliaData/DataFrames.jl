@@ -4,10 +4,15 @@
 
 DataFrames.jl allows you to store and retrieve metadata on table and column
 level. This is supported using the functions defined by DataAPI.jl interface:
-`hasmetadata`, `hascolmetadata`, `metadata` and `colmetadata`.
-These functions work with `DataFrame`, `SubDataFrame`, `DataFrameRow`,
-`GroupedDataFrame`, `DataFrameRows`, and `DataFrameColumns` objects. In this
+[`hasmetadata`](@ref), [`hascolmetadata`](@ref),
+[`metadata`](@ref) and [`colmetadata`](@ref).
+These functions work with [`DataFrame`](@ref),
+[`SubDataFrame`](@ref), [`DataFrameRow`](@ref), [`GroupedDataFrame`](@ref),
+[`DataFrameRows`](@ref), and [`DataFrameColumns`](@ref) objects. In this
 section collectively these objects will be called *data frame like*.
+
+Additionally DataFrames.jl defines [`dropallmetadata!`](@ref) function that
+removes both table level and column level metadata from a data frame.
 
 Assume that we work with a data frame `df` that has a column `:col`.
 
@@ -246,9 +251,18 @@ pairs are not copied (this is relevant in case of mutable values).
     cases user must manually drop or update such matadata from the `:x` column
     after the transformation.
 
-The concrete functions listed below follow these general principles.
-
 ### Operations that preserve metadata
+
+Most of the functions in DataFrames.jl just preserve table and column metadata.
+Below is a list of cases where a more complex logic (following the rules
+described above) is applied:
+
+* [`dropallmetadata!](@ref) removes both table level and column level metadata
+  from a data frame; note that removing metadata can speed up certain operations.
+* [`describe`](@ref) preserves only table level metadata;
+  column level metadata is dropped.
+* [`setindex!`] does not affect table level and column level metadata
+
 
 * `rename!`
 * `rename`
@@ -258,12 +272,11 @@ The concrete functions listed below follow these general principles.
 * `only`
 * `first`
 * `last`
+* `dropmissing`
+* `dropmissing!`
 
 * `mapcols!`
 * `mapcols`
-* `describe` (column level metadata is dropped)
-* `dropmissing`
-* `dropmissing!`
 * `filter`
 * `filter!`
 * `unique`

@@ -165,8 +165,8 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
     for i in eachindex(joiner.left_on, joiner.right_on)
         l = joiner.left_on[i]
         r = joiner.right_on[i]
-        if hasmetadata(df1, l)
-            if hasmetadata(df2, r)
+        if hascolmetadata(df1, l)
+            if hascolmetadata(df2, r)
                 _intersect_dicts!(colmetadata(df1, l), colmetadata(df2, r))
             else
                 _drop_colmetadata!(df1, l)

@@ -648,8 +648,6 @@ function insert_single_column!(df::DataFrame, v::AbstractVector, col_ind::Column
     if haskey(index(df), col_ind)
         j = index(df)[col_ind]
         _columns(df)[j] = dv
-        # drop metadata if replacing a column
-        _drop_colmetadata!(df, j)
     else
         if col_ind isa SymbolOrString
             push!(index(df), Symbol(col_ind))
@@ -745,8 +743,6 @@ for T1 in (:AbstractVector, :Not, :Colon),
         end
         for (j, col) in enumerate(idxs)
             df[row_inds, col] = new_df[!, j]
-            # copy column metadata from source to target data frame
-            _copy_colmetadata!(df, col, new_df, j)
         end
         return df
     end
@@ -1418,7 +1414,7 @@ function _replace_columns!(df::DataFrame, newdf::DataFrame)
     copy!(_names(index(df)), _names(newdf))
     copy!(index(df).lookup, index(newdf).lookup)
 
-    colmeta = getfiled(newdf, :colmetadata)
+    colmeta = getfield(newdf, :colmetadata)
     if colmeta !== nothing
         setfield!(df, :colmetadata, copy(colmeta))
     end
@@ -1614,6 +1610,21 @@ function hascolmetadata(df::DataFrame)
     meta = getfield(df, :colmetadata)
     meta === nothing && return false
     return any(!isempty, values(meta))
+end
+
+"""
+    dropallmetadata!(df::AbstractDataFrame)
+    dropallmetadata!(dfr::DataFrameRow)
+    dropallmetadata!(dfc::DataFrameColumns)
+    dropallmetadata!(dfr::DataFrameRows)
+    dropallmetadata!(gdf::GroupedDataFrame)
+
+Remove all table level and column level metadata from `df`.
+"""
+function dropallmetadata!(df::DataFrame)
+    _drop_metadata!(df)
+    _drop_colmetadata!(df)
+    return nothing
 end
 
 function _drop_metadata!(df::DataFrame)

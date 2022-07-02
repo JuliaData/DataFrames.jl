@@ -1729,7 +1729,7 @@ function manipulate(df::DataFrame, @nospecialize(cs...); copycols::Bool, keeprow
     end
     normalized_cs = Any[normalize_selection(index(df), make_pair_concrete(c), renamecols) for c in cs_vec]
     out_df = _manipulate(df, normalized_cs, copycols, keeprows)
-    _add_metadata_selection!(out_df, in_df, normalized_cs)
+    _add_metadata_selection!(out_df, df, normalized_cs)
     return out_df
 end
 

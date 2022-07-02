@@ -47,6 +47,9 @@
 * Add support for global and per-column metadata using
   `metadata` and `hasmetadata` from DataAPI.jl
   ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
+* make `completecases` return result when data frame with no columns
+  or a selector producing no columns is passed
+  ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
 
 ## Previously announced breaking changes
 
@@ -64,6 +67,9 @@
 
 ## Bug fixes
 
+* fix dispatch ambiguity in `rename` and `rename!` when only
+  source data frame is passed
+  ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
 * Make sure that `AsTable` accepts only valid argument
   ([#3064](https://github.com/JuliaData/DataFrames.jl/pull/3064))
 * Make sure we avoid aliasing when repeating the same column

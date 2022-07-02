@@ -99,6 +99,8 @@ colmetadata(dfr::DataFrameRows, col::ColumnIndex) = colmetadata(parent(dfr), col
 hascolmetadata(dfr::DataFrameRows, col::ColumnIndex) = hascolmetadata(parent(dfr), col)
 hascolmetadata(dfr::DataFrameRows) = hascolmetadata(parent(dfr))
 
+dropallmetadata!(dfr::DataFrameRows) = dropallmetadata!(parent(dfr))
+
 # Iteration by columns
 
 const DATAFRAMECOLUMNS_DOCSTR = """
@@ -350,6 +352,8 @@ hasmetadata(dfc::DataFrameColumns) = hasmetadata(parent(dfc))
 colmetadata(dfc::DataFrameColumns, col::ColumnIndex) = colmetadata(parent(dfc), col)
 hascolmetadata(dfc::DataFrameColumns, col::ColumnIndex) = hascolmetadata(parent(dfc), col)
 hascolmetadata(dfc::DataFrameColumns) = hascolmetadata(parent(dfc))
+
+dropallmetadata!(dfc::DataFrameColumns) = dropallmetadata!(parent(dfc))
 
 """
     mapcols(f::Union{Function, Type}, df::AbstractDataFrame)

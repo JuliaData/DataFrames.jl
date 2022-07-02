@@ -727,7 +727,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         data[!, stat] = [d[stat] for d in col_stats_dicts]
     end
 
-    _copy_metadata!(data, d)
+    _copy_metadata!(data, df)
 
     return data
 end
@@ -807,7 +807,7 @@ end
 Return a Boolean vector with `true` entries indicating rows without missing values
 (complete cases) in data frame `df`.
 
-If `cols` is provided, only missing values in the corresponding columns areconsidered.
+If `cols` is provided, only missing values in the corresponding columns are considered.
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 See also: [`dropmissing`](@ref) and [`dropmissing!`](@ref).
@@ -854,14 +854,13 @@ julia> completecases(df, [:x, :y])
  1
 ```
 """
-function completecases(df::AbstractDataFrame, col::Colon=:)
-    if ncol(df) == 0
-        throw(ArgumentError("Unable to compute complete cases of a " *
-                            "data frame with no columns"))
-    end
+function completecases(df::AbstractDataFrame, cols::MultiColumnIndex=:)
+    colsidx = index(df)[cols]
+    length(colsidx) == 1 && return completecases(df, only(colsidx))
     res = trues(size(df, 1))
+    isempty(colsidx) && return res
     aux = BitVector(undef, size(df, 1))
-    for i in 1:size(df, 2)
+    for i in colsidx
         v = df[!, i]
         if Missing <: eltype(v)
             # Disable fused broadcasting as it happens to be much slower
@@ -882,9 +881,6 @@ function completecases(df::AbstractDataFrame, col::ColumnIndex)
         return trues(size(df, 1))
     end
 end
-
-completecases(df::AbstractDataFrame, cols::MultiColumnIndex) =
-    completecases(df[!, cols])
 
 """
     dropmissing(df::AbstractDataFrame, cols=:; view::Bool=false, disallowmissing::Bool=!view)
@@ -2164,12 +2160,12 @@ function _vcat(dfs::AbstractVector{AbstractDataFrame};
             end
         end
     end
-    for colname in _names(new_df)
+    for colname in _names(out_df)
         if length(dfs) == 1
             _copy_colmetadata!(new_df, only(dfs))
         else
             if all(dfs) do df
-                hasproperty(df, colname) && hasmetadata(df, colname) === true
+                hasproperty(df, colname) && hascolmetadata(df, colname) === true
             end
                 all_meta = [colmetadata(df, colname) for df in dfs]
                 if length(all_meta) == 1

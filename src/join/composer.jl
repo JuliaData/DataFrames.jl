@@ -99,7 +99,7 @@ _rename_cols(old_names::AbstractVector{Symbol},
            (renamecols isa Function ? Symbol(renamecols(string(n))) : Symbol(n, renamecols))
            for n in old_names]
 
-function _propagate_join_metadata(joiner::DataFrameJoiner, dfr_noon::AbstractDataFrame,
+function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDataFrame,
                                   res::DataFrame)
     for i in 1:ncol(joiner.dfl)
         _copy_colmetadata!(res, i, joiner.dfl, i)
@@ -122,7 +122,7 @@ function _propagate_join_metadata(joiner::DataFrameJoiner, dfr_noon::AbstractDat
     if hasmetadata(joiner.dfl) === true && hasmetadata(joiner.dfr) === true
         setfield!(res, :metadata, _intersect_dicts(metadata(joiner.dfl), metadata(joiner.dfr)))
     else
-        _drop_metadata(res)
+        _drop_metadata!(res)
     end
 
     return nothing

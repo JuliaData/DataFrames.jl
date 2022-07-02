@@ -371,3 +371,5 @@ hascolmetadata(sdf::SubDataFrame, col::ColumnIndex) =
     hascolmetadata(parent(sdf), _names(sdf)[index(sdf)[col]])
 hascolmetadata(sdf::SubDataFrame) =
     any(col -> hascolmetadata(sdf, col), _names(sdf))
+
+dropallmetadata!(sdf::SubDataFrame) = dropallmetadata!(parent(sdf))

@@ -505,3 +505,5 @@ hascolmetadata(dfr::DataFrameRow, col::ColumnIndex) =
     hascolmetadata(parent(dfr), _names(dfr)[index(dfr)[col]])
 hascolmetadata(dfr::DataFrameRow) =
     any(col -> hascolmetadata(dfr, col), _names(dfr))
+
+dropallmetadata!(dfr::DataFrameRow) = dropallmetadata!(parent(dfr))

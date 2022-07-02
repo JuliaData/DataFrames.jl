@@ -139,8 +139,10 @@ end
     @test dropmissing!(df1b) === df1b
     @test df1b == df1
 
-    @test_throws ArgumentError completecases(DataFrame())
-    @test_throws ArgumentError completecases(DataFrame(x=1:3), Cols())
+    @test completecases(DataFrame(x=1:3, y=1:3), [:x]) == trues(3)
+    @test completecases(DataFrame(x=[1, missing, 3], y=1:3), [:x]) == [true, false, true]
+    @test completecases(DataFrame()) == trues(0)
+    @test completecases(DataFrame(x=1:3), Cols()) == trues(3)
     @test_throws MethodError completecases(DataFrame(x=1), true)
     @test_throws ArgumentError completecases(df3, :a)
 
