@@ -92,7 +92,7 @@ function _combine_prepare_norm(gd::GroupedDataFrame,
     for (nc, opt) in zip(cs_norm, optional_transform)
         # in all other cases we do not propagate metadata
         if nc isa Pair{Int}
-            in_col_idx, fun, out_col_name = nc
+            in_col_idx, (fun, out_col_name) = nc
             if hascolmetadata(pgd, in_col_idx) && out_col_name isa Symbol
                 in_col_name = _names(pgd)[in_col_idx]
                 if fun === identity || fun === copy || in_col_name == out_col_name

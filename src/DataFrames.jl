@@ -155,6 +155,11 @@ const METADATA_FIXED = """
 Metadata: this function preserves table level and column level metadata.
 """
 
+# TODO: remove when DataAPI.jl is bumped
+hasmetadata(::Any) = nothing
+hascolmetadata(::Any) = nothing
+hascolmetadata(::Any, ::Any) = nothing
+
 include("other/utils.jl")
 include("other/index.jl")
 

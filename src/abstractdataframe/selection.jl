@@ -1706,7 +1706,7 @@ function _add_metadata_selection!(out_df::DataFrame, in_df::AbstractDataFrame, n
         if nc isa AbstractVector{Int}
             _add_metadata_selection_vec_helper!(out_df, in_df, nc)
         elseif nc isa Pair{Int}
-            in_col_idx, fun, out_col_name = nc
+            in_col_idx, (fun, out_col_name) = nc
             if hascolmetadata(in_df, in_col_idx) && out_col_name isa Symbol
                 in_col_name = _names(in_df)[in_col_idx]
                 if fun === identity || fun === copy || in_col_name == out_col_name
@@ -1829,7 +1829,7 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
         end
         normalized_cs = Any[normalize_selection(index(dfv), make_pair_concrete(c), renamecols) for c in cs_vec]
         out_df = _manipulate(dfv, normalized_cs, true, keeprows)
-        _add_metadata_selection!(out_df, in_df, normalized_cs)
+        _add_metadata_selection!(out_df, dfv, normalized_cs)
         return out_df
     else
         # we do not support transformations here

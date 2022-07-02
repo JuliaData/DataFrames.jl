@@ -780,10 +780,6 @@ for T1 in (:AbstractVector, :Not, :Colon, :(typeof(!))),
         end
         for (j, col) in enumerate(idxs)
             df[row_inds, col] = (row_inds === !) ? mx[:, j] : view(mx, :, j)
-            # drop column metadata if columns are replaced
-            if row_ind isa typeof(!)
-                _drop_colmetadata!(df, col)
-            end
         end
         return df
     end

@@ -458,7 +458,7 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
     g_rowkey = groupby(df_op, rowkeys)
     g_colkey = groupby(df_op, colkey)
     valuecol = df_op[!, values_out]
-    out_df = _unstack(df_op, rowkey_ints, index(df_op)[colkey], g_colkey,
+    out_df = _unstack(df_op, index(df_op)[rowkeys], index(df_op)[colkey], g_colkey,
                       valuecol, g_rowkey, renamecols,
                       allowmissing, allowduplicates, fill)
     _copy_metadata!(out_df, df)
