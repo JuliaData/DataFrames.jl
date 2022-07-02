@@ -233,9 +233,9 @@ In the situation when all tables are equivalent:
   there is the same value of the metadata (e.g., for all tables there is a `"source"`
   key and the value of metadata for this key is the same).
 * Column level metadata is preserved only if for some key for source column in all
-  passed tables that contain this column there is the same value of the metadata
-  (e.g., for all tables there is a `"source"` key for source column and the value
-  of metadata for this key is the same).
+  passed tables that contain this column there is the same value of the column
+  metadata (e.g., for all tables there is a `"source"` key for source column and
+  the value of metadata for this key is the same).
 
 In all these operations when metadata is preserved the values in the key-value
 pairs are not copied (this is relevant in case of mutable values).
@@ -261,6 +261,15 @@ described above) is applied:
   from a data frame; note that removing metadata can speed up certain operations.
 * [`describe`](@ref) preserves only table level metadata;
   column level metadata is dropped.
+* [`hcat`](@ref): propagates table level metadata if some key is present
+  in all passed data frames and value associated with it is identical in all
+  passed data frames; propagates all column level metadata.
+* [`vcat`](@ref): propagates table level metadata if some key is present
+  in all passed data frames and value associated with it is identical in all
+  passed data frames; column level metadata is propagated for columns if some
+  key for a given column is present in all passed data frames that contain this
+  column and value associated with it is identical in all passed data frames.
+
 * `setindex!` does not affect table level and column level metadata
 
 
@@ -278,10 +287,10 @@ described above) is applied:
 * `filter!`
 * `unique`
 * `unique!`
+* `fillcombinations`
 
 * `mapcols!`
 * `mapcols`
-* `fillcombinations`
 * `repeat`
 * `disallowmissing`
 * `disallowmissing!`
@@ -313,8 +322,6 @@ described above) is applied:
 * `repeat!`
 * `view` (if `DataFrameRow` or `SubDataFrame` is produced)
 * `groupby`
-* `vcat` (for table level and column level metadata only if it is present and identical for all passed data frames)
-* `hcat`(for table level metadata only if it is present and identical for all passed data frames)
 * `innerjoin`(for table level metadata only if it is present and identical for all passed data frames)
 * `leftjoin`(for table level metadata only if it is present and identical for all passed data frames)
 * `leftjoin!`(for table level metadata only if it is present and identical for all passed data frames)

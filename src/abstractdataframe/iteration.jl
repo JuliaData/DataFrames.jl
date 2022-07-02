@@ -413,7 +413,7 @@ function mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
     end
     new_df = DataFrame(vs, _names(df), copycols=false)
 
-    _unsafe_copy_all_metadata_similar!(new_df, df)
+    _unsafe_copy_all_metadata!(new_df, df)
 
     return new_df
 end

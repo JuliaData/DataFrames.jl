@@ -26,12 +26,6 @@ of the manual.
 """
 abstract type AbstractDataFrame end
 
-##############################################################################
-##
-## Basic properties of a DataFrame
-##
-##############################################################################
-
 """
     names(df::AbstractDataFrame, cols=:)
     names(df::DataFrameRow, cols=:)
@@ -434,7 +428,7 @@ function Base.similar(df::AbstractDataFrame, rows::Integer = size(df, 1))
     rows < 0 && throw(ArgumentError("the number of rows must be non-negative"))
     out_df = DataFrame(AbstractVector[similar(x, rows) for x in eachcol(df)], copy(index(df)),
                        copycols=false)
-    _unsafe_copy_all_metadata_similar!(out_df, df)
+    _unsafe_copy_all_metadata!(out_df, df)
     return out_df
 end
 
@@ -447,12 +441,6 @@ as `df` but with zero rows.
 $METADATA_FIXED
 """
 Base.empty(df::AbstractDataFrame) = similar(df, 0)
-
-##############################################################################
-##
-## Equality
-##
-##############################################################################
 
 function Base.:(==)(df1::AbstractDataFrame, df2::AbstractDataFrame)
     size(df1, 2) == size(df2, 2) || return false
@@ -497,11 +485,6 @@ function Base.isapprox(df1::AbstractDataFrame, df2::AbstractDataFrame;
     end
     return all(isapprox.(eachcol(df1), eachcol(df2), atol=atol, rtol=rtol, nans=nans, norm=norm))
 end
-##############################################################################
-##
-## Description
-##
-##############################################################################
 
 """
     only(df::AbstractDataFrame)
@@ -793,13 +776,6 @@ function get_stats!(d::Dict, @nospecialize(col::Union{AbstractVector, Base.SkipM
         d[stat[2]] = try stat[1](col) catch end
     end
 end
-
-
-##############################################################################
-##
-## Miscellaneous
-##
-##############################################################################
 
 """
     completecases(df::AbstractDataFrame, cols=:)
@@ -1696,7 +1672,7 @@ function fillcombinations(df::AbstractDataFrame, indexcols;
 
     # keep only columns from the source in their original order
     select!(out_df, _names(df))
-    _unsafe_copy_all_metadata_similar!(out_df, df)
+    _unsafe_copy_all_metadata!(out_df, df)
 
     return out_df
 end
@@ -1822,9 +1798,9 @@ data frame at the beginning of a loop and `vcat` onto it.
 Metadata: `vcat` propagates table level metadata if some key is present
 in all passed data frames and value associated with it is identical in all
 passed data frames.
-`vcat` propagates column level metadata for columns that are present in all
-passed data frames if some key for a given column is present in all passed data
-frames and value associated with it is identical in all passed data frames.
+`vcat` propagates column level metadata for columns if some key for a given
+column is present in all passed data frames that contain this column and value
+associated with it is identical in all passed data frames.
 
 # Example
 ```jldoctest
@@ -2070,6 +2046,7 @@ function _vcat(dfs::AbstractVector{AbstractDataFrame};
                            AbstractVector{<:AbstractString}}=:setequal)
     # note that empty DataFrame() objects are dropped from dfs before we call _vcat
     if isempty(dfs)
+        # no metadata in this case
         cols isa Symbol && return DataFrame()
         return DataFrame([col => Missing[] for col in cols])
     end
@@ -2127,66 +2104,68 @@ function _vcat(dfs::AbstractVector{AbstractDataFrame};
         header = Symbol.(cols)
     end
 
-    length(header) == 0 && return DataFrame()
-    all_cols = Vector{AbstractVector}(undef, length(header))
-    for (i, name) in enumerate(header)
-        newcols = map(dfs) do df
-            if hasproperty(df, name)
-                return df[!, name]
-            else
-                Iterators.repeated(missing, nrow(df))
+    if isempty(header)
+        out_df = DataFrame()
+    else
+        all_cols = Vector{AbstractVector}(undef, length(header))
+        for (i, name) in enumerate(header)
+            newcols = map(dfs) do df
+                if hasproperty(df, name)
+                    return df[!, name]
+                else
+                    Iterators.repeated(missing, nrow(df))
+                end
+            end
+
+            lens = map(length, newcols)
+            T = mapreduce(eltype, promote_type, newcols)
+            all_cols[i] = Tables.allocatecolumn(T, sum(lens))
+            offset = 1
+            for j in 1:length(newcols)
+                copyto!(all_cols[i], offset, newcols[j])
+                offset += lens[j]
             end
         end
 
-        lens = map(length, newcols)
-        T = mapreduce(eltype, promote_type, newcols)
-        all_cols[i] = Tables.allocatecolumn(T, sum(lens))
-        offset = 1
-        for j in 1:length(newcols)
-            copyto!(all_cols[i], offset, newcols[j])
-            offset += lens[j]
-        end
+        out_df = DataFrame(all_cols, header, copycols=false)
     end
-
-    out_df = DataFrame(all_cols, header, copycols=false)
 
     # here we know that dfs has at least 1 element
     if all(x -> hasmetadata(x) === true, dfs)
         all_meta = [metadata(df) for df in dfs]
         if length(all_meta) == 1
-            _copy_metadata!(new_df, only(dfs))
+            _copy_metadata!(out_df, only(dfs))
         else
-            new_meta = metadata(new_df)
+            new_meta = Dict{String, Any}()
             for (k, v) in pairs(all_meta[1])
-                if all(@view all_meta[2:end]) do df
-                    this_meta = metadata(df)
+                if all(@view all_meta[2:end]) do this_meta
                     return haskey(this_meta, k) && isequal(this_meta[k], v)
                 end
                     new_meta[k] = v
                 end
             end
+            if !isempty(new_meta)
+                copy!(metadata(out_df), new_meta)
+            end
         end
     end
     for colname in _names(out_df)
         if length(dfs) == 1
-            _copy_colmetadata!(new_df, only(dfs))
+            _copy_colmetadata!(out_df, colname, only(dfs), colname)
         else
-            if all(dfs) do df
-                hasproperty(df, colname) && hascolmetadata(df, colname) === true
-            end
-                all_meta = [colmetadata(df, colname) for df in dfs]
-                if length(all_meta) == 1
-                    _copy_colmetadata!(new_df, colname, only(dfs), colname)
-                else
-                    new_meta = colmetadata(new_df, colname)
-                    for (k, v) in pairs(all_meta[1])
-                        if all(@view all_meta[2:end]) do df
-                            this_meta = colmetadata(df)
-                            return haskey(this_meta, k) && isequal(this_meta[k], v)
-                        end
-                            new_meta[k] = v
-                        end
+            all_meta_df = [df for df in dfs if hasproperty(df, colname)]
+            if !isempty(all_meta_df) && all(x -> hascolmetadata(x, colname), all_meta_df)
+                new_meta = Dict{String, Any}()
+                for (k, v) in pairs(colmetadata(all_meta_df[1], colname))
+                    if all(@view all_meta_df[2:end]) do df
+                        this_meta = colmetadata(df, colname)
+                        return haskey(this_meta, k) && isequal(this_meta[k], v)
                     end
+                        new_meta[k] = v
+                    end
+                end
+                if !isempty(new_meta)
+                    copy!(colmetadata(out_df, colname), new_meta)
                 end
             end
         end
@@ -2376,7 +2355,7 @@ function Missings.disallowmissing(df::AbstractDataFrame,
     end
 
     new_df = DataFrame(newcols, _names(df), copycols=false)
-    _unsafe_copy_all_metadata_similar!(new_df, df)
+    _unsafe_copy_all_metadata!(new_df, df)
 
     return new_df
 end
@@ -2428,7 +2407,7 @@ function Missings.allowmissing(df::AbstractDataFrame,
     end
 
     new_df = DataFrame(newcols, _names(df), copycols=false)
-    _unsafe_copy_all_metadata_similar!(new_df, df)
+    _unsafe_copy_all_metadata!(new_df, df)
 
     return new_df
 end
@@ -2543,7 +2522,7 @@ function flatten(df::AbstractDataFrame,
         insertcols!(new_df, col, _names(df)[col] => flattened_col)
     end
 
-    _unsafe_copy_all_metadata_similar!(new_df, df)
+    _unsafe_copy_all_metadata!(new_df, df)
 
     return new_df
 end

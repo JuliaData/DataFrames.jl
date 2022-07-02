@@ -326,4 +326,159 @@ end
     end
 end
 
+@testset "fillcombinations" begin
+    for df in (DataFrame(x=1:2, y='a':'b', z=["x", "y"]), DataFrame(x=[], y=[], z=[]))
+        df2 = fillcombinations(df, [:x, :y])
+        @test getfield(df2, :metadata) === nothing
+        @test getfield(df2, :colmetadata) === nothing
+        metadata(df)["name"] = "something"
+        colmetadata(df, "z")["name"] = "z"
+        df2 = fillcombinations(df, [:x, :y])
+        @test metadata(df2) == Dict("name" => "something")
+        @test metadata(df2) !== metadata(df)
+        @test getfield(df2, :colmetadata) == getfield(df, :colmetadata)
+        @test getfield(df2, :colmetadata) !== getfield(df, :colmetadata)
+    end
+end
+
+@testset "hcat" begin
+    df1 = DataFrame(a=1:3, b=11:13)
+    df2 = DataFrame(c=111:113, d=1111:1113)
+
+    res = hcat(df1, df2)
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+
+    res = hcat(df1)
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+
+    metadata(df2)["name"] = "some"
+    res = hcat(df1, df2)
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+
+    metadata(df1)["type"] = "other"
+    res = hcat(df1, df2)
+    @test getfield(res, :metadata) == Dict()
+    @test getfield(res, :colmetadata) === nothing
+
+    res = hcat(df1)
+    @test getfield(res, :metadata) == Dict("type" => "other")
+    @test getfield(res, :colmetadata) === nothing
+
+    metadata(df1)["name"] = "some2"
+    res = hcat(df1, df2)
+    @test getfield(res, :metadata) == Dict()
+    @test getfield(res, :colmetadata) === nothing
+
+    metadata(df1)["name"] = "some"
+    res = hcat(df1, df2)
+    @test getfield(res, :metadata) == Dict("name" => "some")
+    @test getfield(res, :colmetadata) === nothing
+
+    colmetadata(df1, :b)["m1"] = "val1"
+    colmetadata(df2, :d)["m2"] = "val2"
+    res = hcat(df1, df2)
+    @test getfield(res, :metadata) == Dict("name" => "some")
+    @test getfield(res, :colmetadata) == Dict(2 => Dict("m1" => "val1"),
+                                              4 => Dict("m2" => "val2"))
+    res = hcat(df1)
+    @test getfield(res, :metadata) == Dict("type" => "other", "name" => "some")
+    @test getfield(res, :colmetadata) == Dict(2 => Dict("m1" => "val1"))
+
+    res = hcat(df1, df1, df1, makeunique=true)
+    @test getfield(res, :metadata) == Dict("type" => "other", "name" => "some")
+    @test getfield(res, :colmetadata) == Dict(2 => Dict("m1" => "val1"),
+                                              4 => Dict("m1" => "val1"),
+                                              6 => Dict("m1" => "val1"))
+    @test colmetadata(res, :b) !== colmetadata(res, :b_1)
+    @test colmetadata(res, :b) !== colmetadata(res, :b_2)
+    @test colmetadata(res, :b_1) !== colmetadata(res, :b_2)
+end
+
+@testset "vcat" begin
+    df1 = DataFrame(a=1)
+    df2 = DataFrame(b=2)
+    df3 = DataFrame(a=11, c=3)
+    df4 = DataFrame(a=111, c=33, d=4)
+
+    res = vcat(df1, df2, df3, df4, cols=Symbol[])
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+    res = vcat(df1)
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+    res = vcat(df1, df2, df3, df4, cols=[:a, :b, :c, :d, :e])
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+
+    metadata(df1)["a"] = 1
+    res = vcat(df1, df2, df3, df4, cols=[:a, :b, :c, :d, :e])
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+
+    metadata(df2)["a"] = 1
+    metadata(df3)["a"] = 1
+    metadata(df4)["a"] = 2
+    res = vcat(df1, df2, df3, df4, cols=[:a, :b, :c, :d, :e])
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+
+    metadata(df4)["a"] = 1
+    res = vcat(df1, df2, df3, df4, cols=[:a, :b, :c, :d, :e])
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) === nothing
+    res = vcat(df1, df2, df3, df4, cols=Symbol[])
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) === nothing
+    res = vcat(df1)
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) === nothing
+
+    colmetadata(df1, :a)["x"] = "y"
+    res = vcat(df1, df2, df3, df4, cols=[:a, :b, :c, :d, :e])
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) === nothing
+    res = vcat(df1, df2, df3, df4, cols=Symbol[])
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) === nothing
+    res = vcat(df1)
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) == Dict(1 => Dict("x" => "y"))
+
+    colmetadata(df3, :a)["x"] = "y"
+    res = vcat(df1, df2, df3, df4, cols=[:a, :b, :c, :d, :e])
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) === nothing
+
+    colmetadata(df4, :a)["x"] = "z"
+    res = vcat(df1, df2, df3, df4, cols=[:a, :b, :c, :d, :e])
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) === nothing
+
+    colmetadata(df4, :a)["x"] = "y"
+    colmetadata(df4, :c)["a"] = "b"
+    colmetadata(df4, :d)["p"] = "q"
+    res = vcat(df1, df2, df3, df4, cols=[:a, :b, :c, :d, :e])
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) == Dict(1 => Dict("x" => "y"),
+                                              4 => Dict("p" => "q"))
+
+    colmetadata(df3, :c)["a"] = "b"
+    res = vcat(df1, df2, df3, df4, cols=[:a, :b, :c, :d, :e])
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) == Dict(1 => Dict("x" => "y"),
+                                              3 => Dict("a" => "b"),
+                                              4 => Dict("p" => "q"))
+    res = vcat(df1, df2, df3, df4, cols=:union)
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) == Dict(1 => Dict("x" => "y"),
+                                              3 => Dict("a" => "b"),
+                                              4 => Dict("p" => "q"))
+    res = vcat(df1, df2, df3, df4, cols=:intersect)
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) === nothing
+end
+
 end # module

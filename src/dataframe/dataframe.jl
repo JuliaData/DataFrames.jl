@@ -797,7 +797,19 @@ $METADATA_FIXED
 """
 function Base.copy(df::DataFrame; copycols::Bool=true)
     cdf = DataFrame(copy(_columns(df)), copy(index(df)), copycols=copycols)
-    _unsafe_copy_all_metadata_similar!(cdf, df)
+
+    _copy_metadata!(cdf, df)
+    df_colmetadata = getfield(df, :colmetadata)
+    if isnothing(df_colmetadata)
+        _drop_colmetadata!(cdf)
+    else
+        cdf_colmetadata = Dict{Int, Dict{String, Any}}()
+        for (k, v) in pairs(df_colmetadata)
+            cdf_colmetadata[k] = copy(v)
+        end
+        setfield!(cdf, :colmetadata, cdf_colmetadata)
+    end
+
     return cdf
 end
 
@@ -1351,7 +1363,7 @@ function repeat!(df::DataFrame; inner::Integer=1, outer::Integer=1)
     outer < 0 && throw(ArgumentError("outer keyword argument must be non-negative"))
     cols = _columns(df)
     for (i, col) in enumerate(cols)
-        col_new = repeat(col, inner = Int(inner), outer = Int(outer))
+        col_new = repeat(col, inner=Int(inner), outer=Int(outer))
         firstindex(col_new) != 1 && _onebased_check_error(i, col_new)
         cols[i] = col_new
     end
@@ -1392,7 +1404,7 @@ function repeat!(df::DataFrame, count::Integer)
     count < 0 && throw(ArgumentError("count must be non-negative"))
     cols = _columns(df)
     for (i, col) in enumerate(cols)
-        col_new = repeat(col, inner = Int(inner), outer = Int(outer))
+        col_new = repeat(col, count)
         firstindex(col_new) != 1 && _onebased_check_error(i, col_new)
         cols[i] = col_new
     end
@@ -1656,24 +1668,6 @@ function _copy_colmetadata!(dst::DataFrame, dstcol::ColumnIndex,
         copy!(colmetadata(dst, dstcol), colmetadata(src, srccol))
     else
         _drop_colmetadata!(dst, dstcol)
-    end
-    return nothing
-end
-
-# this is a function used to copy metadata
-# to a freshly allocated dst without metadata that is `similar` to src
-function _unsafe_copy_all_metadata_similar!(dst::DataFrame, src::AbstractDataFrame)
-    _copy_metadata!(dst, src)
-    # parent(src) is guaranteed to be DataFrame
-    src_colmetadata = getfield(parent(src), :colmetadata)
-    if isnothing(src_colmetadata)
-        _drop_colmetadata!(dst)
-    else
-        dst_colmetadata = Dict{Int, Dict{String, Any}}()
-        for (k, v) in pairs(src_colmetadata)
-            dst_colmetadata[k] = copy(v)
-        end
-        setfield!(dst, :colmetadata, dst_colmetadata)
     end
     return nothing
 end
