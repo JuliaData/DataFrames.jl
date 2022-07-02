@@ -28,6 +28,9 @@ end
 const _PRETTY_TABLES_HIGHLIGHTER = Highlighter(_pretty_tables_highlighter_func,
                                                Crayon(foreground = :dark_gray))
 
+const _PRETTY_TABLES_HTML_HIGHLIGHTER = HtmlHighlighter(_pretty_tables_highlighter_func,
+                                                        HtmlDecoration(font_style = "italic"))
+
 # Default DataFrames formatter for text backend.
 #
 # This formatter changes how the following types are presented when rendering
