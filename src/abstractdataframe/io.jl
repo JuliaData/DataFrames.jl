@@ -265,9 +265,12 @@ function _show(io::IO,
                  show_omitted_cell_summary = true,
                  show_row_number           = show_row_number,
                  standalone                = false,
+                 table_class               = "data-frame",
+                 table_div_class           = "data-frame",
                  top_left_str              = title,
                  top_right_str_decoration  = HtmlDecoration(font_style = "italic"),
                  vcrop_mode                = :middle,
+                 wrap_table_in_div         = true,
                  kwargs...)
 
     return nothing
