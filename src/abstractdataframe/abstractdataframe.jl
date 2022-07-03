@@ -1792,8 +1792,9 @@ etc.
 The element types of columns are determined using `promote_type`,
 as with `vcat` for `AbstractVector`s.
 
-`vcat` ignores empty data frames, making it possible to initialize an empty
-data frame at the beginning of a loop and `vcat` onto it.
+`vcat` ignores empty data frames when composing the result (except for metadata),
+making it possible to initialize an empty data frame at the beginning of a loop
+and `vcat` onto it.
 
 Metadata: `vcat` propagates table level metadata if some key is present
 in all passed data frames and value associated with it is identical in all
@@ -2004,6 +2005,27 @@ function Base.reduce(::typeof(vcat),
                      source::Union{Nothing, SymbolOrString,
                                    Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
     res = _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
+
+    # only handle table level metadata, as column level metadata was done in _vcat
+    if !isempty(dfs) && all(x -> hasmetadata(x) === true, dfs)
+        all_meta = [metadata(df) for df in dfs]
+        if length(all_meta) == 1
+            _copy_metadata!(res, only(dfs))
+        else
+            new_meta = Dict{String, Any}()
+            for (k, v) in pairs(all_meta[1])
+                if all(@view all_meta[2:end]) do this_meta
+                    return haskey(this_meta, k) && isequal(this_meta[k], v)
+                end
+                    new_meta[k] = v
+                end
+            end
+            if !isempty(new_meta)
+                copy!(metadata(res), new_meta)
+            end
+        end
+    end
+
     if source !== nothing
         len = length(dfs)
         if source isa SymbolOrString
@@ -2046,7 +2068,6 @@ function _vcat(dfs::AbstractVector{AbstractDataFrame};
                            AbstractVector{<:AbstractString}}=:setequal)
     # note that empty DataFrame() objects are dropped from dfs before we call _vcat
     if isempty(dfs)
-        # no metadata in this case
         cols isa Symbol && return DataFrame()
         return DataFrame([col => Missing[] for col in cols])
     end
@@ -2130,28 +2151,11 @@ function _vcat(dfs::AbstractVector{AbstractDataFrame};
         out_df = DataFrame(all_cols, header, copycols=false)
     end
 
-    # here we know that dfs has at least 1 element
-    if all(x -> hasmetadata(x) === true, dfs)
-        all_meta = [metadata(df) for df in dfs]
-        if length(all_meta) == 1
-            _copy_metadata!(out_df, only(dfs))
-        else
-            new_meta = Dict{String, Any}()
-            for (k, v) in pairs(all_meta[1])
-                if all(@view all_meta[2:end]) do this_meta
-                    return haskey(this_meta, k) && isequal(this_meta[k], v)
-                end
-                    new_meta[k] = v
-                end
-            end
-            if !isempty(new_meta)
-                copy!(metadata(out_df), new_meta)
-            end
-        end
-    end
+    # here we process column metadata, table metadata is processed in reduce
     for colname in _names(out_df)
         if length(dfs) == 1
-            _copy_colmetadata!(out_df, colname, only(dfs), colname)
+            df1 = only(dfs)
+            hasproperty(df1, colname) && _copy_colmetadata!(out_df, colname, df1, colname)
         else
             all_meta_df = [df for df in dfs if hasproperty(df, colname)]
             if !isempty(all_meta_df) && all(x -> hascolmetadata(x, colname), all_meta_df)
@@ -2537,7 +2541,7 @@ function repeat_lengths!(longnew::AbstractVector, shortold::AbstractVector,
     end
 end
 
-# Disallowed operations that are a common mistake
+# Disallowed getindex and setindex! operations that are a common mistake
 
 Base.getindex(::AbstractDataFrame, ::Union{Symbol, Integer, AbstractString}) =
     throw(ArgumentError("syntax df[column] is not supported use df[!, column] instead"))

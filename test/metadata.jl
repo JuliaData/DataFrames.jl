@@ -247,12 +247,27 @@ end
     @test getfield(x, :colmetadata) === nothing
 end
 
-@testset "dropmissing, dropmissing!, filter, filter!, unique, unique!" begin
+@testset "functions that keep all metadata" begin
+    # Tested functions:
+    #   dropmissing, dropmissing!, filter, filter!, unique, unique!, repeat, repeat!,
+    #   disallowmissing, allowmissing, disallowmissing!, allowmissing!, flatten,
+    #   reverse, reverse!, permute!, invpermute!, shuffle, shuffle!,
+    #   insertcols, insertcols!, mapcols, mapcols!
+
     for fun in (dropmissing,
                 x -> dropmissing(x, disallowmissing=false),
                 x -> filter(v -> true, x),
                 x -> filter(v -> false, x),
-                unique)
+                unique,
+                x -> repeat(x, 3),
+                x -> repeat(x, inner=2, outer=2),
+                x -> disallowmissing(x, error=false),
+                allowmissing,
+                x -> flatten(x, []),
+                reverse,
+                shuffle,
+                x -> insertcols(x, :newcol => 1),
+                x -> mapcols(v -> copy(v), x))
         df = DataFrame()
         x = fun(df)
         @test getfield(x, :metadata) === nothing
@@ -285,7 +300,40 @@ end
         @test getfield(x, :colmetadata) !== getfield(df, :colmetadata)
         @test colmetadata(x, :a) == colmetadata(df, :a) == Dict("name" => "a")
         @test colmetadata(x, :a) !== colmetadata(df, :a)
+        x = fun(view(df, :, 1:1))
+        @test metadata(x) == Dict("name" => "empty")
+        @test metadata(x) !== metadata(df)
+        @test getfield(x, :colmetadata) == getfield(df, :colmetadata)
+        @test getfield(x, :colmetadata) !== getfield(df, :colmetadata)
+        @test colmetadata(x, :a) == colmetadata(df, :a) == Dict("name" => "a")
+        @test colmetadata(x, :a) !== colmetadata(df, :a)
+        x = fun(view(df, :, 2:2))
+        @test metadata(x) == Dict("name" => "empty")
+        @test metadata(x) !== metadata(df)
+        @test getfield(x, :colmetadata) === nothing
     end
+
+    df = DataFrame(a=[1, 2], b=["x", "y"])
+    metadata(df)["name"] = "empty"
+    colmetadata(df, :a)["name"] = "a"
+    x = flatten(df, 1)
+    @test metadata(x) == Dict("name" => "empty")
+    @test metadata(x) !== metadata(df)
+    @test getfield(x, :colmetadata) == getfield(df, :colmetadata)
+    @test getfield(x, :colmetadata) !== getfield(df, :colmetadata)
+    @test colmetadata(x, :a) == colmetadata(df, :a) == Dict("name" => "a")
+    @test colmetadata(x, :a) !== colmetadata(df, :a)
+    x = flatten(view(df, :, 1:1), 1)
+    @test metadata(x) == Dict("name" => "empty")
+    @test metadata(x) !== metadata(df)
+    @test getfield(x, :colmetadata) == getfield(df, :colmetadata)
+    @test getfield(x, :colmetadata) !== getfield(df, :colmetadata)
+    @test colmetadata(x, :a) == colmetadata(df, :a) == Dict("name" => "a")
+    @test colmetadata(x, :a) !== colmetadata(df, :a)
+    x = flatten(view(df, :, 2:2), 1)
+    @test metadata(x) == Dict("name" => "empty")
+    @test metadata(x) !== metadata(df)
+    @test getfield(x, :colmetadata) === nothing
 
     for fun in (dropmissing!,
                 x -> dropmissing!(x, disallowmissing=false),
@@ -299,7 +347,17 @@ end
                 x -> filter(v -> false, groupby(x, ncol(x) == 0 ? [] : 1), ungroup=true),
                 x -> filter(v -> false, groupby(x, ncol(x) == 0 ? [] : 1), ungroup=false),
                 unique!,
-                x -> unique(x, view=true))
+                x -> unique(x, view=true),
+                x -> repeat!(x, 3),
+                x -> repeat!(x, inner=2, outer=2),
+                x -> disallowmissing!(x, error=false),
+                allowmissing!,
+                reverse!,
+                x -> permute!(x, 1:nrow(x),),
+                x -> invpermute!(x, 1:nrow(x),),
+                shuffle!,
+                x -> insertcols!(x, :newcol => 1, makeunique=true),
+                x -> mapcols!(v -> copy(v), x))
         df = DataFrame()
         x = fun(df)
         @test getfield(parent(x), :metadata) === nothing
@@ -417,6 +475,9 @@ end
     res = vcat(df1, df2, df3, df4, cols=[:a, :b, :c, :d, :e])
     @test getfield(res, :metadata) === nothing
     @test getfield(res, :colmetadata) === nothing
+    res = vcat(DataFrame(), df1, cols=[:a, :b, :c, :d, :e])
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
 
     metadata(df2)["a"] = 1
     metadata(df3)["a"] = 1
@@ -446,6 +507,12 @@ end
     res = vcat(df1)
     @test getfield(res, :metadata) == Dict("a" => 1)
     @test getfield(res, :colmetadata) == Dict(1 => Dict("x" => "y"))
+    res = vcat(df1, cols=[:a, :b, :c, :d, :e])
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) == Dict(1 => Dict("x" => "y"))
+    res = vcat(df1, cols=[:c, :b, :a, :d, :e])
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) == Dict(3 => Dict("x" => "y"))
 
     colmetadata(df3, :a)["x"] = "y"
     res = vcat(df1, df2, df3, df4, cols=[:a, :b, :c, :d, :e])
@@ -471,6 +538,11 @@ end
     @test getfield(res, :colmetadata) == Dict(1 => Dict("x" => "y"),
                                               3 => Dict("a" => "b"),
                                               4 => Dict("p" => "q"))
+    res = vcat(df1, df2, df3, df4, cols=[:b, :a, :e, :c, :d])
+    @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) == Dict(2 => Dict("x" => "y"),
+                                              4 => Dict("a" => "b"),
+                                              5 => Dict("p" => "q"))
     res = vcat(df1, df2, df3, df4, cols=:union)
     @test getfield(res, :metadata) == Dict("a" => 1)
     @test getfield(res, :colmetadata) == Dict(1 => Dict("x" => "y"),

@@ -288,13 +288,11 @@ described above) is applied:
 * `unique`
 * `unique!`
 * `fillcombinations`
-
-* `mapcols!`
-* `mapcols`
 * `repeat`
+* `repeat!`
 * `disallowmissing`
-* `disallowmissing!`
 * `allowmissing`
+* `disallowmissing!`
 * `allowmissing!`
 * `flatten`
 * `reverse`
@@ -303,8 +301,11 @@ described above) is applied:
 * `invpermute!`
 * `shuffle`
 * `shuffle!`
-* `insertcols` (column level metadata present for previously existing columns)
-* `insertcols!` (column level metadata present for previously existing columns)
+* `insertcols`
+* `insertcols!`
+* `mapcols!`
+* `mapcols`
+
 * `stack` (column level metadata is dropped)
 * `unstack` (column level metadata is dropped)
 * `permutedims` (column level metadata is dropped)
@@ -319,7 +320,6 @@ described above) is applied:
 * `deleteat!`
 * `allowmissing!`
 * `disallowmissing!`
-* `repeat!`
 * `view` (if `DataFrameRow` or `SubDataFrame` is produced)
 * `groupby`
 * `innerjoin`(for table level metadata only if it is present and identical for all passed data frames)
