@@ -254,6 +254,8 @@ end
     #   reverse, reverse!, permute!, invpermute!, shuffle, shuffle!,
     #   insertcols, insertcols!, mapcols, mapcols!, sort, sort!, subset, subset!,
     #   DataFrame, copy, view, groupby, eachrow, eachcol
+    #   deleteat!, keepat!, resize!, pop!, popfirst!, popat!
+    #   getindex, setindex!, broadcasted assignment
 
     for fun in (dropmissing,
                 x -> dropmissing(x, disallowmissing=false),
@@ -403,6 +405,65 @@ end
         x = fun(df)
         @test metadata(x) == Dict("name" => "empty")
         @test colmetadata(x, :a) == Dict("name" => "a")
+    end
+
+    for fun in (x -> deleteat!(x, 2),
+                x -> keepat!(x, 2),
+                x -> resize!(x, 2),
+                pop!,
+                popfirst!,
+                x -> popat!(x, 2))
+        df = DataFrame(a=1:3, b=["x", "y", "z"])
+        metadata(df)["name"] = "empty"
+        colmetadata(df, :a)["name"] = "a"
+        fun(df)
+        @test metadata(df) == Dict("name" => "empty")
+        @test colmetadata(df, :a) == Dict("name" => "a")
+    end
+
+    for fun in (x -> x[1:2, :],
+                x -> x[1:2, 1:2],
+                x -> x[:, :],
+                x -> x[:, 1:2],
+                x -> x[!, :],
+                x -> x[!, 1:2])
+        df = DataFrame(a=1:3, b=["x", "y", "z"])
+        metadata(df)["name"] = "empty"
+        colmetadata(df, :a)["name"] = "a"
+        x = fun(df)
+        @test metadata(x) == Dict("name" => "empty")
+        @test metadata(x) !== metadata(df)
+        @test colmetadata(x, :a) == Dict("name" => "a")
+        @test colmetadata(x, :a) !== colmetadata(df, :a)
+    end
+
+    for fun in (x -> (x.a = 11:13),
+                x -> (x[:, :a] = 11:13),
+                x -> (x[!, :a] = 11:13),
+                x -> (x.c = 11:13),
+                x -> (x.a .= 11:13),
+                x -> (x.c .= 11:13),
+                x -> (x[:, :a] .= 11:13),
+                x -> (x[!, :a] .= 11:13),
+                x -> (x.c = 11:13),
+                x -> (x[:, :c] = 11:13),
+                x -> (x[!, :c] = 11:13),
+                x -> (x[1, :a] = 1),
+                x -> (x[:, :] = DataFrame(a=1:3, b=["x", "y", "z"])),
+                x -> (x[!, :] = DataFrame(a=1:3, b=["x", "y", "z"])),
+                x -> (x[:, :] = [1 "x"; 2 "y"; 3 "z"]),
+                x -> (x[!, :] = [1 "x"; 2 "y"; 3 "z"]),
+                x -> (x[1:1, :a] .= 1),
+                x -> (x[:, :] .= DataFrame(a=1:3, b=["x", "y", "z"])),
+                x -> (x[!, :] .= DataFrame(a=1:3, b=["x", "y", "z"])),
+                x -> (x[:, :] .= [1 "x"; 2 "y"; 3 "z"]),
+                x -> (x[!, :] .= [1 "x"; 2 "y"; 3 "z"]))
+        df = DataFrame(a=1:3, b=["x", "y", "z"])
+        metadata(df)["name"] = "empty"
+        colmetadata(df, :a)["name"] = "a"
+        fun(df)
+        @test metadata(df) == Dict("name" => "empty")
+        @test colmetadata(df, :a) == Dict("name" => "a")
     end
 end
 

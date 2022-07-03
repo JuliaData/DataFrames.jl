@@ -75,6 +75,8 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
         end
         df[!, colnames[1][i]] = col
     end
+
+    # TODO: add metadata propagation
     return df
 end
 

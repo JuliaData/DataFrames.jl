@@ -275,6 +275,7 @@ described above) is applied:
   for row keys columns.
 * [`permutedims`](@ref): propagates table level metadata and drops column level
    metadata.
+* broadcasted assignment does not change target metadata
 
 * `setindex!` does not affect table level and column level metadata
 
@@ -321,32 +322,27 @@ described above) is applied:
 * `groupby`
 * `eachrow`
 * `eachcol`
-
-* `getindex`
-* `setindex!`
 * `deleteat!`
-* `innerjoin`(for table level metadata only if it is present and identical for all passed data frames)
-* `leftjoin`(for table level metadata only if it is present and identical for all passed data frames)
-* `leftjoin!`(for table level metadata only if it is present and identical for all passed data frames)
-* `rightjoin`(for table level metadata only if it is present and identical for all passed data frames)
-* `outerjoin`(for table level metadata only if it is present and identical for all passed data frames)
-* `semijoin`(for table level metadata only if it is present and identical for all passed data frames)
-* `antijoin`(for table level metadata only if it is present and identical for all passed data frames)
-* `crossjoin`(for table level metadata only if it is present and identical for all passed data frames)
 * `keepat!`
 * `resize!`
 * `pop!`
 * `popfirst!`
 * `popat!`
+* `getindex`
+* `setindex!`
+
+* `innerjoin`
+* `leftjoin`
+* `leftjoin!`
+* `rightjoin`
+* `outerjoin`
+* `semijoin`
+* `antijoin`
+* `crossjoin`
 * `push!`
 * `pushfirst!`
 * `insert!`
 * `append!`
 * `prepend!`
 * `select[!]`, `transform[!]`, `combine`
-
-# Operations that drop table and column level metadata
-
-* TODO (this might change): broadcasting (except for broadcasting assignment into a data frame in which case
-  table level metadata and column level metadata for columns that are not changed
-  is preserved)
+* TODO: broadcasting - add metadata propagation
