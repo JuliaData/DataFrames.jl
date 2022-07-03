@@ -76,7 +76,51 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
         df[!, colnames[1][i]] = col
     end
 
-    # TODO: add metadata propagation
+    dfs = AbstractDataFrame[df for df in bcf.args if df isa AbstractDataFrame]
+    @assert !isempty(dfs)
+
+    if all(x -> hasmetadata(x) === true, dfs)
+        all_meta = [metadata(x) for x in dfs]
+        if length(all_meta) == 1
+            _copy_metadata!(df, only(dfs))
+        else
+            new_meta = Dict{String, Any}()
+            for (k, v) in pairs(all_meta[1])
+                if all(@view all_meta[2:end]) do this_meta
+                    return haskey(this_meta, k) && isequal(this_meta[k], v)
+                end
+                    new_meta[k] = v
+                end
+            end
+            if !isempty(new_meta)
+                copy!(metadata(df), new_meta)
+            end
+        end
+    end
+
+    if all(x -> hascolmetadata(x) === true, dfs)
+        for colname in _names(df)
+            if length(dfs) == 1
+                _copy_colmetadata!(df, colname, only(dfs), colname)
+            else
+                if all(x -> hascolmetadata(x, colname), dfs)
+                    new_meta = Dict{String, Any}()
+                    for (k, v) in pairs(colmetadata(dfs[1], colname))
+                        if all(@view dfs[2:end]) do x
+                            this_meta = colmetadata(x, colname)
+                            return haskey(this_meta, k) && isequal(this_meta[k], v)
+                        end
+                            new_meta[k] = v
+                        end
+                    end
+                    if !isempty(new_meta)
+                        copy!(colmetadata(df, colname), new_meta)
+                    end
+                end
+            end
+        end
+    end
+
     return df
 end
 

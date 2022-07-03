@@ -437,12 +437,21 @@ end
         @test colmetadata(x, :a) !== colmetadata(df, :a)
     end
 
+    df = DataFrame(a=1:3, b=["x", "y", "z"])
+    metadata(df)["name"] = "empty"
+    colmetadata(df, :a)["name"] = "a"
+    df2 = df[:, 2:2]
+    @test metadata(df2) == Dict("name" => "empty")
+    @test getfield(df2, :colmetadata) === nothing
+    df2 = df[!, 2:2]
+    @test metadata(df2) == Dict("name" => "empty")
+    @test getfield(df2, :colmetadata) === nothing
+
     for fun in (x -> (x.a = 11:13),
                 x -> (x[:, :a] = 11:13),
                 x -> (x[!, :a] = 11:13),
                 x -> (x.c = 11:13),
                 x -> (x.a .= 11:13),
-                x -> (x.c .= 11:13),
                 x -> (x[:, :a] .= 11:13),
                 x -> (x[!, :a] .= 11:13),
                 x -> (x.c = 11:13),
@@ -743,6 +752,57 @@ end
     @test metadata(res) == metadata(df)
     @test metadata(res) !== metadata(df)
     @test getfield(res, :colmetadata) === nothing
+end
+
+@testset "broadcasting" begin
+    df1 = DataFrame(a=1:3, b=11:13)
+    df2 = DataFrame(a=-1:-1:-3, b=-11:-1:-13)
+
+    res = log.(df1)
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+
+    metadata(df1)["name"] = "some"
+    colmetadata(df1, "b")["x"] = "y"
+    res = log.(df1)
+    @test metadata(res) == metadata(df1)
+    @test metadata(res) !== metadata(df1)
+    @test getfield(res, :colmetadata) == Dict(2 => Dict("x" => "y"))
+    @test colmetadata(res, :b) == colmetadata(df1, :b)
+    @test colmetadata(res, :b) !== colmetadata(df1, :b)
+
+    res = log.(df1) .+ df2
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+
+    metadata(df2)["name"] = "some1"
+    colmetadata(df2, "b")["x"] = "y1"
+    res = log.(df1) .+ df2
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+
+    metadata(df2)["name"] = "some"
+    metadata(df2)["name1"] = "some1"
+    res = log.(df1) .+ df2
+    @test metadata(res) == metadata(df1)
+    @test metadata(res) !== metadata(df1)
+    @test getfield(res, :colmetadata) === nothing
+
+    colmetadata(df2, "b")["x"] = "y"
+    colmetadata(df2, "b")["x1"] = "y1"
+    res = log.(df1) .+ df2
+    @test metadata(res) == metadata(df1)
+    @test metadata(res) !== metadata(df1)
+    @test getfield(res, :colmetadata) == Dict(2 => Dict("x" => "y"))
+    @test colmetadata(res, :b) == colmetadata(df1, :b)
+    @test colmetadata(res, :b) !== colmetadata(df1, :b)
+
+    metadata(df1)["caption"] = "other"
+    res = log.(df1) .+ df2
+    @test metadata(res) == Dict("name" => "some")
+    @test getfield(res, :colmetadata) == Dict(2 => Dict("x" => "y"))
+    @test colmetadata(res, :b) == colmetadata(df1, :b)
+    @test colmetadata(res, :b) !== colmetadata(df1, :b)
 end
 
 end # module

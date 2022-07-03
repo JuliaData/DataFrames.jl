@@ -97,6 +97,8 @@ apply to `hascolmetadata` and `colmetadata`). There are two reasons for this:
 Here is a simple example how you can work with metadata in DataFrames.jl:
 
 ```jldoctest dataframe
+julia> using DataFrames
+
 julia> df = DataFrame(name=["Jan Krzysztof Duda", "Jan Krzysztof Duda",
                             "Radosław Wojtaszek", "Radosław Wojtaszek"],
                       date=["2022-Jun", "2021-Jun", "2022-Jun", "2021-Jun"],
@@ -276,7 +278,13 @@ described above) is applied:
 * [`permutedims`](@ref): propagates table level metadata and drops column level
    metadata.
 * broadcasted assignment does not change target metadata
-
+* broadcasting propagates table level metadata if some key is present
+  in all passed data frames and value associated with it is identical in all
+  passed data frames; column level metadata is propagated for columns if some
+  key for a given column is present in all passed data frames and value
+  associated with it is identical in all passed data frames.
+* `getindex` does not affect table level and keeps column level metadata
+  for kept columns
 * `setindex!` does not affect table level and column level metadata
 
 
@@ -345,4 +353,3 @@ described above) is applied:
 * `append!`
 * `prepend!`
 * `select[!]`, `transform[!]`, `combine`
-* TODO: broadcasting - add metadata propagation

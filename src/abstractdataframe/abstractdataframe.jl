@@ -2157,7 +2157,7 @@ function _vcat(dfs::AbstractVector{AbstractDataFrame};
             df1 = only(dfs)
             hasproperty(df1, colname) && _copy_colmetadata!(out_df, colname, df1, colname)
         else
-            all_meta_df = [df for df in dfs if hasproperty(df, colname)]
+            all_meta_df = AbstractDataFrame[df for df in dfs if hasproperty(df, colname)]
             if !isempty(all_meta_df) && all(x -> hascolmetadata(x, colname), all_meta_df)
                 new_meta = Dict{String, Any}()
                 for (k, v) in pairs(colmetadata(all_meta_df[1], colname))
