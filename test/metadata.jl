@@ -1,6 +1,6 @@
 module TestMetadata
 
-using Test, DataFrames
+using Test, DataFrames, Random
 
 @testset "hasmetadata & metadata" begin
     for x in (DataFrame(), DataFrame(a=1))
@@ -550,6 +550,115 @@ end
                                               4 => Dict("p" => "q"))
     res = vcat(df1, df2, df3, df4, cols=:intersect)
     @test getfield(res, :metadata) == Dict("a" => 1)
+    @test getfield(res, :colmetadata) === nothing
+end
+
+@testset "stack" begin
+    df = DataFrame(a=repeat(1:3, inner=2),
+                   b=repeat(1:2, inner=3),
+                   c=repeat(1:1, inner=6),
+                   d=repeat(1:6, inner=1),
+                   e=string.('a':'f'))
+    res = stack(df, [:c, :d])
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+    res = stack(df, [:c, :d], view=true)
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+
+    metadata(df)["name"] = "empty"
+    res = stack(df, [:c, :d])
+    @test metadata(res) == Dict("name" => "empty")
+    @test metadata(res) !== metadata(df)
+    @test getfield(res, :colmetadata) === nothing
+    res = stack(df, [:c, :d], view=true)
+    @test metadata(res) == Dict("name" => "empty")
+    @test metadata(res) !== metadata(df)
+    @test getfield(res, :colmetadata) === nothing
+
+    colmetadata(df, :e)["name"] = "e"
+    colmetadata(df, :d)["name"] = "d"
+    res = stack(df, [:c, :d])
+    @test metadata(res) == Dict("name" => "empty")
+    @test metadata(res) !== metadata(df)
+    @test getfield(res, :colmetadata) == Dict(3 => Dict("name" => "e"))
+    @test colmetadata(res, :e) == colmetadata(df, :e)
+    @test colmetadata(res, :e) !== colmetadata(df, :e)
+    res = stack(df, [:c, :d], view=true)
+    @test metadata(res) == Dict("name" => "empty")
+    @test metadata(res) !== metadata(df)
+    @test getfield(res, :colmetadata) == Dict(3 => Dict("name" => "e"))
+    @test colmetadata(res, :e) == colmetadata(df, :e)
+    @test colmetadata(res, :e) !== colmetadata(df, :e)
+end
+
+@testset "unstack" begin
+    wide = DataFrame(id=1:6,
+                     a=repeat(1:3, inner=2),
+                     b=repeat(1.0:2.0, inner=3),
+                     c=repeat(1.0:1.0, inner=6),
+                     d=repeat(1.0:3.0, inner=2))
+    long = stack(wide)
+
+    res = unstack(long)
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+    res = unstack(long, :id, :variable, :value)
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+    res = unstack(long, :a, :variable, :value, valuestransform=copy)
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+
+    metadata(long)["name"] = "some"
+    colmetadata(long, :variable)["name"] = "var"
+    colmetadata(long, :value)["name"] = "val"
+    res = unstack(long)
+    @test metadata(res) == metadata(long)
+    @test metadata(res) !== metadata(long)
+    @test getfield(res, :colmetadata) === nothing
+    res = unstack(long, :id, :variable, :value)
+    @test metadata(res) == metadata(long)
+    @test metadata(res) !== metadata(long)
+    @test getfield(res, :colmetadata) === nothing
+    res = unstack(long, :a, :variable, :value, valuestransform=copy)
+    @test metadata(res) == metadata(long)
+    @test metadata(res) !== metadata(long)
+    @test getfield(res, :colmetadata) === nothing
+
+    colmetadata(long, :a)["name"] = "a"
+    res = unstack(long)
+    @test metadata(res) == metadata(long)
+    @test metadata(res) !== metadata(long)
+    @test getfield(res, :colmetadata) == Dict(2 => Dict("name" => "a"))
+    @test colmetadata(res, :a) == colmetadata(long, :a)
+    @test colmetadata(res, :a) !== colmetadata(long, :a)
+    res = unstack(long, :id, :variable, :value)
+    @test metadata(res) == metadata(long)
+    @test metadata(res) !== metadata(long)
+    @test getfield(res, :colmetadata) === nothing
+    res = unstack(long, :a, :variable, :value, valuestransform=copy)
+    @test metadata(res) == metadata(long)
+    @test metadata(res) !== metadata(long)
+    @test getfield(res, :colmetadata) == Dict(1 => Dict("name" => "a"))
+    @test colmetadata(res, :a) == colmetadata(long, :a)
+    @test colmetadata(res, :a) !== colmetadata(long, :a)
+end
+
+@testset "permutedims" begin
+    df = DataFrame(a=["x", "y"], b=[1.0, 2.0], c=[3, 4], d=[true, false])
+    res = permutedims(df, 1)
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+
+    metadata(df)["name"] = "df"
+    colmetadata(df, :a)["name"] = "a"
+    colmetadata(df, :b)["name"] = "b"
+    colmetadata(df, :c)["name"] = "c"
+    colmetadata(df, :d)["name"] = "d"
+    res = permutedims(df, 1)
+    @test metadata(res) == metadata(df)
+    @test metadata(res) !== metadata(df)
     @test getfield(res, :colmetadata) === nothing
 end
 

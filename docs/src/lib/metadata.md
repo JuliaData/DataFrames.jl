@@ -269,6 +269,12 @@ described above) is applied:
   passed data frames; column level metadata is propagated for columns if some
   key for a given column is present in all passed data frames that contain this
   column and value associated with it is identical in all passed data frames.
+* [`stack`](@ref): propagates table level metadata and column level metadata
+  for identifier columns.
+* [`stack`](@ref): propagates table level metadata and column level metadata
+  for row keys columns.
+* [`permutedims`](@ref): propagates table level metadata and drops column level
+   metadata.
 
 * `setindex!` does not affect table level and column level metadata
 
@@ -306,9 +312,6 @@ described above) is applied:
 * `mapcols!`
 * `mapcols`
 
-* `stack` (column level metadata is dropped)
-* `unstack` (column level metadata is dropped)
-* `permutedims` (column level metadata is dropped)
 * `sort`
 * `sort!`
 * `subset`

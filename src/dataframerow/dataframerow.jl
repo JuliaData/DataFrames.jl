@@ -503,7 +503,10 @@ colmetadata(dfr::DataFrameRow, col::ColumnIndex) =
     colmetadata(parent(dfr), _names(dfr)[index(dfr)[col]])
 hascolmetadata(dfr::DataFrameRow, col::ColumnIndex) =
     hascolmetadata(parent(dfr), _names(dfr)[index(dfr)[col]])
-hascolmetadata(dfr::DataFrameRow) =
-    any(col -> hascolmetadata(dfr, col), _names(dfr))
+
+function hascolmetadata(dfr::DataFrameRow)
+    getfield(parent(dfr), :colmetadata) === nothing && return false
+    return any(col -> hascolmetadata(dfr, col), _names(dfr))
+end
 
 dropallmetadata!(dfr::DataFrameRow) = dropallmetadata!(parent(dfr))

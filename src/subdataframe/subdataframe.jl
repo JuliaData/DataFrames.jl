@@ -369,7 +369,10 @@ colmetadata(sdf::SubDataFrame, col::ColumnIndex) =
     colmetadata(parent(sdf), _names(sdf)[index(sdf)[col]])
 hascolmetadata(sdf::SubDataFrame, col::ColumnIndex) =
     hascolmetadata(parent(sdf), _names(sdf)[index(sdf)[col]])
-hascolmetadata(sdf::SubDataFrame) =
-    any(col -> hascolmetadata(sdf, col), _names(sdf))
+
+function hascolmetadata(sdf::SubDataFrame)
+    getfield(parent(sdf), :colmetadata) === nothing && return false
+    return any(col -> hascolmetadata(sdf, col), _names(sdf))
+end
 
 dropallmetadata!(sdf::SubDataFrame) = dropallmetadata!(parent(sdf))

@@ -39,7 +39,8 @@ that return views into the original data frame.
   as long as it supports conversion from `String`.
   When `view=true`, a `RepeatedVector{T}` is produced.
 
-Metadata: TODO: FIX ME `stack` keeps table metadata and drops column metadata.
+Metadata: `stack` keeps table metadata and column level metadata for identifier
+          columns.
 
 # Examples
 ```jldoctest
@@ -173,14 +174,19 @@ function stack(df::AbstractDataFrame,
                                        vcat([df[!, c] for c in ints_measure_vars]...)],      # value
                         cnames, copycols=false)
     _copy_metadata!(out_df, df)
+    if hascolmetadata(df)
+        for (i_out, i_in) in enumerate(ints_id_vars)
+            _copy_colmetadata!(out_df, i_out, df, i_in)
+        end
+    end
     return out_df
 end
 
 function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
-                    id_vars::AbstractVector{Int}; variable_name::Symbol,
+                    ints_id_vars::AbstractVector{Int}; variable_name::Symbol,
                     value_name::Symbol, variable_eltype::Type)
     N = length(measure_vars)
-    cnames = _names(df)[id_vars]
+    cnames = _names(df)[ints_id_vars]
     push!(cnames, variable_name)
     push!(cnames, value_name)
     if variable_eltype === Symbol
@@ -193,11 +199,16 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
         nms = names(df, measure_vars)
         catnms = copyto!(similar(nms, variable_eltype), nms)
     end
-    out_df = DataFrame(AbstractVector[[RepeatedVector(df[!, c], 1, N) for c in id_vars]..., # id_var columns
+    out_df = DataFrame(AbstractVector[[RepeatedVector(df[!, c], 1, N) for c in ints_id_vars]..., # id_var columns
                                       RepeatedVector(catnms, nrow(df), 1),                  # variable
                                       StackedVector(Any[df[!, c] for c in measure_vars])],  # value
                        cnames, copycols=false)
     _copy_metadata!(out_df, df)
+    if hascolmetadata(df)
+        for (i_out, i_in) in enumerate(ints_id_vars)
+            _copy_colmetadata!(out_df, i_out, df, i_in)
+        end
+    end
     return out_df
 end
 
@@ -254,7 +265,8 @@ Row and column keys will be ordered in the order of their first appearance.
     Whether or not tasks are actually spawned and their number are determined automatically.
     Set to `false` if `valuestransform` requires serial execution or is not thread-safe.
 
-Metadata: TODO: FIX ME `ustack` keeps table metadata and drops column metadata.
+Metadata: `unstack` keeps table metadata and column level metadata for row keys
+          columns.
 
 # Examples
 
@@ -458,10 +470,9 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
     g_rowkey = groupby(df_op, rowkeys)
     g_colkey = groupby(df_op, colkey)
     valuecol = df_op[!, values_out]
-    out_df = _unstack(df_op, index(df_op)[rowkeys], index(df_op)[colkey], g_colkey,
-                      valuecol, g_rowkey, renamecols,
-                      allowmissing, allowduplicates, fill)
-    _copy_metadata!(out_df, df)
+    return _unstack(df_op, index(df_op)[rowkeys], index(df_op)[colkey], g_colkey,
+                    valuecol, g_rowkey, renamecols,
+                    allowmissing, allowduplicates, fill)
     return out_df
 end
 
@@ -572,6 +583,8 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
     if !issorted(row_group_row_idxs)
         res_df = res_df[sortperm(row_group_row_idxs), :]
     end
+
+    _copy_metadata!(res_df, df)
 
     return res_df
 end
