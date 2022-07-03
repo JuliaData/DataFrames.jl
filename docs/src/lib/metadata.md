@@ -311,20 +311,20 @@ described above) is applied:
 * `insertcols!`
 * `mapcols!`
 * `mapcols`
-
 * `sort`
 * `sort!`
 * `subset`
 * `subset!`
 * `DataFrame`
+* `copy`
+* `view`
+* `groupby`
+* `eachrow`
+* `eachcol`
+
 * `getindex`
 * `setindex!`
-* `copy`
 * `deleteat!`
-* `allowmissing!`
-* `disallowmissing!`
-* `view` (if `DataFrameRow` or `SubDataFrame` is produced)
-* `groupby`
 * `innerjoin`(for table level metadata only if it is present and identical for all passed data frames)
 * `leftjoin`(for table level metadata only if it is present and identical for all passed data frames)
 * `leftjoin!`(for table level metadata only if it is present and identical for all passed data frames)

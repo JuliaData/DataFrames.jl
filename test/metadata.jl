@@ -252,7 +252,8 @@ end
     #   dropmissing, dropmissing!, filter, filter!, unique, unique!, repeat, repeat!,
     #   disallowmissing, allowmissing, disallowmissing!, allowmissing!, flatten,
     #   reverse, reverse!, permute!, invpermute!, shuffle, shuffle!,
-    #   insertcols, insertcols!, mapcols, mapcols!
+    #   insertcols, insertcols!, mapcols, mapcols!, sort, sort!, subset, subset!,
+    #   DataFrame, copy, view, groupby, eachrow, eachcol
 
     for fun in (dropmissing,
                 x -> dropmissing(x, disallowmissing=false),
@@ -267,7 +268,16 @@ end
                 reverse,
                 shuffle,
                 x -> insertcols(x, :newcol => 1),
-                x -> mapcols(v -> copy(v), x))
+                x -> mapcols(v -> copy(v), x),
+                sort,
+                x -> subset(x, [] => ByRow(() -> true)),
+                x -> subset(x, [] => ByRow(() -> false)),
+                x -> parent(subset(groupby(x, []), [] => ByRow(() -> true), ungroup=false)),
+                x -> parent(subset(groupby(x, []), [] => ByRow(() -> false), ungroup=false)),
+                copy,
+                DataFrame,
+                x -> DataFrame(x, copycols=false),
+                x -> DataFrame(groupby(x, [])))
         df = DataFrame()
         x = fun(df)
         @test getfield(x, :metadata) === nothing
@@ -357,7 +367,19 @@ end
                 x -> invpermute!(x, 1:nrow(x),),
                 shuffle!,
                 x -> insertcols!(x, :newcol => 1, makeunique=true),
-                x -> mapcols!(v -> copy(v), x))
+                x -> mapcols!(v -> copy(v), x),
+                sort!,
+                x -> subset!(x, [] => ByRow(() -> true)),
+                x -> subset!(x, [] => ByRow(() -> false)),
+                x -> subset(x, [] => ByRow(() -> true), view=true),
+                x -> subset(x, [] => ByRow(() -> false), view=true),
+                x -> parent(subset!(groupby(x, []), [] => ByRow(() -> true), ungroup=false)),
+                x -> parent(subset!(groupby(x, []), [] => ByRow(() -> false), ungroup=false)),
+                x -> view(x, :, :),
+                x -> nrow(x) > 0 ? x[1, :] : view(x, :, :),
+                x -> groupby(x, []),
+                eachrow,
+                eachcol)
         df = DataFrame()
         x = fun(df)
         @test getfield(parent(x), :metadata) === nothing
