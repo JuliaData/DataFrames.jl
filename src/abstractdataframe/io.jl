@@ -187,14 +187,23 @@ function _show(io::IO,
         end
     end
 
-    mxrow, mxcol = num_rows, num_cols
-
     if get(io, :limit, false)
-        buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
-        tty_rows, tty_cols = displaysize(io)
-        mxrow = min(mxrow, tty_rows)
-        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X, nothing, true, buffer, 0) .+ 2
-        mxcol = min(mxcol, searchsortedfirst(cumsum(maxwidths), tty_cols))
+        # Obtain the maximum number of rows and columns that we can print from
+        # environments variables.
+        mxrow = tryparse(Int, get(ENV, "DATAFRAMES_ROWS", "100"))
+
+        if isnothing(mxrow)
+            mxrow = 100
+        end
+
+        mxcol = tryparse(Int, get(ENV, "DATAFRAMES_COLUMNS", "500"))
+
+        if isnothing(mxcol)
+            mxcol = 500
+        end
+    else
+        mxrow = -1
+        mxcol = -1
     end
 
     # Check if the user wants to display a summary about the DataFrame that is
