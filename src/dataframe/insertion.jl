@@ -299,28 +299,21 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
         rethrow(err)
     end
 
-    ncol1 = ncol(df1)
-    # if we have error here (it is extremely unlikely) we remove added columns
-    # in cleanup phase
-    try
-        if cols == :union
-            for n in setdiff(_names(df2), _names(df1))
-                newcol = similar(df2[!, n], Union{Missing, eltype(df2[!, n])},
-                                 targetrows)
-                firstindex(newcol) != 1 && _onebased_check_error()
-                if atend
-                    newcol[1:nrow1] .= missing
-                    copyto!(newcol, nrow1+1, df2[!, n], 1, targetrows - nrow1)
-                else
-                    newcol[nrow2+1:targetrows] .= missing
-                    copyto!(newcol, 1, df2[!, n], 1, nrow2)
-                end
-                df1[!, n] = newcol
-                _copy_colmetadata!(df1, n, df2, n)
+    if cols == :union
+        for n in setdiff(_names(df2), _names(df1))
+            newcol = similar(df2[!, n], Union{Missing, eltype(df2[!, n])},
+                                targetrows)
+            firstindex(newcol) != 1 && _onebased_check_error()
+            if atend
+                newcol[1:nrow1] .= missing
+                copyto!(newcol, nrow1+1, df2[!, n], 1, targetrows - nrow1)
+            else
+                newcol[nrow2+1:targetrows] .= missing
+                copyto!(newcol, 1, df2[!, n], 1, nrow2)
             end
+            df1[!, n] = newcol
+            _copy_colmetadata!(df1, n, df2, n)
         end
-    catch
-        select!(df1, ncol1)
     end
 
     return df1

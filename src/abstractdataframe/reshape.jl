@@ -473,7 +473,6 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
     return _unstack(df_op, index(df_op)[rowkeys], index(df_op)[colkey], g_colkey,
                     valuecol, g_rowkey, renamecols,
                     allowmissing, allowduplicates, fill)
-    return out_df
 end
 
 function unstack(df::AbstractDataFrame, colkey::ColumnIndex, values::ColumnIndex;
