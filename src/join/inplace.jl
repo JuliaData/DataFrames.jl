@@ -40,7 +40,9 @@ imaginary part of the number. If you need to perform a join on such values use
 CategoricalArrays.jl and transform a column containing such values into a
 `CategoricalVector`.
 
-$JOIN_METADATA
+Metadata: table level and column level metadata is preserved from `df1`, except
+for columns added to it from `df2`, in which case their column level metadata
+is taken from df2.
 
 See also: [`leftjoin`](@ref).
 
@@ -132,9 +134,7 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
         # if df1 isa SubDataFrame we must copy columns
         insertcols!(df1, colname => rcol_joined, makeunique=makeunique,
                     copycols=!(df1 isa DataFrame))
-        if hascolmetadata(joiner.dfr, colname)
-            _copy_colmetadata!(df1, ncol(df1), joiner.dfr, colname)
-        end
+        _copy_colmetadata!(df1, ncol(df1), joiner.dfr, colname)
     end
 
     if source !== nothing

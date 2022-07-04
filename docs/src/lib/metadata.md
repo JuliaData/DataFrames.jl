@@ -293,10 +293,12 @@ described above) is applied:
   metadata of the destination data frame, except that if new columns are added
   and these columns have metadata in the apppended/prepended table then this
   metadata is preserved.
+* `leftjoin!`: table and column level metadata is kept from the left table
+  except for non-key columns from right table for which metadata is preserved
+  from right table;
 
 * `innerjoin`
 * `leftjoin`
-* `leftjoin!`
 * `rightjoin`
 * `outerjoin`
 * `semijoin`

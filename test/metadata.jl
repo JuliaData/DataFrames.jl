@@ -855,7 +855,7 @@ end
         fun(df, df2)
         @test getfield(df, :metadata) == Dict("caption" => "other")
         @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"),
-                                                3 => Dict("name" => "c"))
+                                                 3 => Dict("name" => "c"))
 
         df = DataFrame(a=1:3, b=2:4)
         metadata(df)["caption"] = "other"
@@ -863,7 +863,7 @@ end
         fun(df, eachrow(df2))
         @test getfield(df, :metadata) == Dict("caption" => "other")
         @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"),
-                                                3 => Dict("name" => "c"))
+                                                 3 => Dict("name" => "c"))
 
         df = DataFrame(a=1:3, b=2:4)
         metadata(df)["caption"] = "other"
@@ -871,7 +871,7 @@ end
         fun(df, eachcol(df2))
         @test getfield(df, :metadata) == Dict("caption" => "other")
         @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"),
-                                                3 => Dict("name" => "c"))
+                                                 3 => Dict("name" => "c"))
 
         df = DataFrame(a=1:3, b=2:4)
         metadata(df)["caption"] = "other"
@@ -886,6 +886,35 @@ end
         fun(df, Tables.columntable(df2))
         @test getfield(df, :metadata) == Dict("caption" => "other")
         @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"))
+    end
+end
+
+@testset "leftjoin!" begin
+    for fun in ((x, y) -> leftjoin!(x, y, on=:a),)
+        df = DataFrame(a=1:3, b=2:4)
+        df2 = DataFrame(a=1:3, c=1:3)
+
+        fun(df, df2)
+        @test getfield(df, :metadata) === nothing
+        @test getfield(df, :colmetadata) === nothing
+
+        metadata(df2)["caption"] = "other2"
+        colmetadata(df2, :c)["name"] = "c"
+        colmetadata(df2, :a)["name"] = "a"
+        df = DataFrame(a=1:3, b=2:4)
+        fun(df, df2)
+        @test getfield(df, :metadata) === nothing
+        @test getfield(df, :colmetadata) == Dict(3 => Dict("name" => "c"))
+
+        df = DataFrame(a=1:3, b=2:4)
+        metadata(df)["caption"] = "other"
+        colmetadata(df, :b)["name"] = "b"
+        colmetadata(df, :a)["name"] = "df_a"
+        fun(df, df2)
+        @test getfield(df, :metadata) == Dict("caption" => "other")
+        @test getfield(df, :colmetadata) == Dict(1 => Dict("name" => "df_a"),
+                                                 2 => Dict("name" => "b"),
+                                                 3 => Dict("name" => "c"))
     end
 end
 
