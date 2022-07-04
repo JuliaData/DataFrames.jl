@@ -100,18 +100,32 @@ _rename_cols(old_names::AbstractVector{Symbol},
            for n in old_names]
 
 function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDataFrame,
-                                  res::DataFrame)
+                                  res::DataFrame, kind::Symbol)
+    @assert kind == :left || kind == :right || kind == :outer || kind == :inner
     for i in 1:ncol(joiner.dfl)
         _copy_colmetadata!(res, i, joiner.dfl, i)
     end
 
-    for i in eachindex(joiner.left_on, joiner.right_on)
-        l = joiner.left_on[i]
-        r = joiner.right_on[i]
-        if hascolmetadata(res, l) && hascolmetadata(joiner.dfr, r)
-            _intersect_dicts!(colmetadata(res, l), colmetadata(joiner.dfr, r))
-        else
-            _drop_colmetadata!(res, l)
+    if kind == :outer || kind == :inner
+        for i in eachindex(joiner.left_on, joiner.right_on)
+            l = joiner.left_on[i]
+            l_idx = columnindex(joiner.dfl, l)
+            r = joiner.right_on[i]
+            if hascolmetadata(res, l_idx) && hascolmetadata(joiner.dfr, r)
+                _intersect_dicts!(colmetadata(res, l_idx), colmetadata(joiner.dfr, r))
+                if isempty(colmetadata(res, l_idx))
+                    _drop_colmetadata!(res, l_idx)
+                end
+            else
+                _drop_colmetadata!(res, l_idx)
+            end
+        end
+    elseif kind == :right
+        for i in eachindex(joiner.left_on, joiner.right_on)
+            l = joiner.left_on[i]
+            l_idx = columnindex(joiner.dfl, l)
+            r = joiner.right_on[i]
+            _copy_colmetadata!(res, l_idx, joiner.dfr, r)
         end
     end
 
@@ -119,10 +133,19 @@ function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDa
         _copy_colmetadata!(res, ncol(joiner.dfl) + i, dfr_noon, i)
     end
 
-    if hasmetadata(joiner.dfl) === true && hasmetadata(joiner.dfr) === true
-        setfield!(res, :metadata, _intersect_dicts(metadata(joiner.dfl), metadata(joiner.dfr)))
-    else
-        _drop_metadata!(res)
+    if kind == :outer || kind == :inner
+        if hasmetadata(joiner.dfl) === true && hasmetadata(joiner.dfr) === true
+            d = _intersect_dicts(metadata(joiner.dfl), metadata(joiner.dfr))
+            if !isempty(d)
+                setfield!(res, :metadata, d)
+            end
+        else
+            _drop_metadata!(res)
+        end
+    elseif kind == :right
+        _copy_metadata!(res, joiner.dfr)
+    else # :left
+        _copy_metadata!(res, joiner.dfl)
     end
 
     return nothing
@@ -163,7 +186,7 @@ function compose_inner_table(joiner::DataFrameJoiner,
                      _rename_cols(_names(dfr_noon), right_rename))
     res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
 
-    _propagate_join_metadata!(joiner, dfr_noon, res)
+    _propagate_join_metadata!(joiner, dfr_noon, res, :inner)
     return res
 end
 
@@ -317,7 +340,7 @@ function _compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique
                      _rename_cols(_names(dfr_noon), right_rename))
     res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
 
-    _propagate_join_metadata!(joiner, dfr_noon, res)
+    _propagate_join_metadata!(joiner, dfr_noon, res, kind)
 
     return res, src_indicator
 end
@@ -477,14 +500,6 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
     return joined
 end
 
-const JOIN_METADATA = """
-Metadata: function propagates table level metadata if some key is present
-in all passed data frames and value associated with it is identical.
-Function propagates column level metadata for all columns except for key
-columns in which case if some key is present in all matching key columns
-in passed data frames and value associated with it is identical.
-"""
-
 """
     innerjoin(df1, df2; on, makeunique=false, validate=(false, false),
               renamecols=(identity => identity), matchmissing=:error)
@@ -546,7 +561,11 @@ If more than two data frames are passed, the join is performed recursively with
 left associativity. In this case the `validate` keyword argument is applied
 recursively with left associativity.
 
-$JOIN_METADATA
+Metadata: propagates table level metadata if some key is present
+in all passed data frames and value associated with it is identical.
+Function propagates column level metadata for all columns except for key
+columns in which case if some key is present in all matching key columns
+in passed data frames and value associated with it is identical.
 
 See also: [`leftjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -689,7 +708,9 @@ When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
 
-$JOIN_METADATA
+Metadata: table level and column level metadata is preserved from `df1`, except
+for columns added to it from `df2`, in which case their column level metadata
+is taken from df2.
 
 See also: [`innerjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -838,7 +859,9 @@ When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
 
-$JOIN_METADATA
+Metadata: table level and column level metadata is preserved from `df2` (including
+key columns), except for columns added to it from `df1`, in which case their column
+level metadata is taken from df1.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -996,7 +1019,11 @@ recursively with left associativity.
 In this case the `indicator` keyword argument is not supported
 and `validate` keyword argument is applied recursively with left associativity.
 
-$JOIN_METADATA
+Metadata: propagates table level metadata if some key is present
+in all passed data frames and value associated with it is identical.
+Function propagates column level metadata for all columns except for key
+columns in which case if some key is present in all matching key columns
+in passed data frames and value associated with it is identical.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -1141,7 +1168,7 @@ When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
 
-$JOIN_METADATA
+Metadata: table level and column level metadata is preserved from `df1`.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -1249,7 +1276,7 @@ When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
 
-$JOIN_METADATA
+Metadata: table level and column level metadata is preserved from `df1`.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`semijoin`](@ref), [`crossjoin`](@ref).
@@ -1391,7 +1418,10 @@ function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::B
     end
 
     if hasmetadata(df1) === true && hasmetadata(df2) === true
-        setfield!(res, :metadata, _intersect_dicts(metadata(df1), metadata(df2)))
+        d = _intersect_dicts(metadata(df1), metadata(df2))
+        if !isempty(d)
+            setfield!(res, :metadata, d)
+        end
     end
 
     return res

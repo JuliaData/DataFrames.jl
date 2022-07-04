@@ -1182,6 +1182,9 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame;
 
     if hasmetadata(df1) === true && hasmetadata(df2) === true
         _intersect_dicts!(metadata(df1), metadata(df2))
+        if isempty(metadata(df1))
+            _drop_metadata!(df1)
+        end
     else
         _drop_metadata!(df1)
     end
@@ -1645,8 +1648,8 @@ function _drop_colmetadata!(df::DataFrame)
     return nothing
 end
 
-function _drop_colmetadata!(df::DataFrame, col::ColumnIndex)
-    colmetadata = getfield(df, :colmetadata)
+function _drop_colmetadata!(df::AbstractDataFrame, col::ColumnIndex)
+    colmetadata = getfield(parent(df), :colmetadata)
     if colmetadata !== nothing
         delete!(colmetadata, index(df)[col])
     end
@@ -1662,7 +1665,7 @@ function _copy_metadata!(dst::DataFrame, src)
     return nothing
 end
 
-function _copy_colmetadata!(dst::DataFrame, dstcol::ColumnIndex,
+function _copy_colmetadata!(dst::AbstractDataFrame, dstcol::ColumnIndex,
                             src, srccol::ColumnIndex)
     if hascolmetadata(src, srccol) === true
         copy!(colmetadata(dst, dstcol), colmetadata(src, srccol))

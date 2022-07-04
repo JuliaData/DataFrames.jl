@@ -512,7 +512,7 @@ end
 
     metadata(df1)["type"] = "other"
     res = hcat(df1, df2)
-    @test getfield(res, :metadata) == Dict()
+    @test getfield(res, :metadata) === nothing
     @test getfield(res, :colmetadata) === nothing
 
     res = hcat(df1)
@@ -521,7 +521,7 @@ end
 
     metadata(df1)["name"] = "some2"
     res = hcat(df1, df2)
-    @test getfield(res, :metadata) == Dict()
+    @test getfield(res, :metadata) === nothing
     @test getfield(res, :colmetadata) === nothing
 
     metadata(df1)["name"] = "some"
@@ -890,32 +890,191 @@ end
 end
 
 @testset "leftjoin!" begin
-    for fun in ((x, y) -> leftjoin!(x, y, on=:a),)
+    df = DataFrame(a=1:3, b=2:4)
+    df2 = DataFrame(a=1:3, c=1:3)
+
+    leftjoin!(df, df2, on=:a)
+    @test getfield(df, :metadata) === nothing
+    @test getfield(df, :colmetadata) === nothing
+
+    metadata(df2)["caption"] = "other2"
+    colmetadata(df2, :c)["name"] = "c"
+    colmetadata(df2, :a)["name"] = "a"
+    df = DataFrame(a=1:3, b=2:4)
+    leftjoin!(df, df2, on=:a)
+    @test getfield(df, :metadata) === nothing
+    @test getfield(df, :colmetadata) == Dict(3 => Dict("name" => "c"))
+
+    df = DataFrame(a=1:3, b=2:4)
+    metadata(df)["caption"] = "other"
+    colmetadata(df, :b)["name"] = "b"
+    colmetadata(df, :a)["name"] = "df_a"
+    leftjoin!(df, df2, on=:a)
+    @test getfield(df, :metadata) == Dict("caption" => "other")
+    @test getfield(df, :colmetadata) == Dict(1 => Dict("name" => "df_a"),
+                                             2 => Dict("name" => "b"),
+                                             3 => Dict("name" => "c"))
+end
+
+@testset "leftjoin" begin
+    for fun in ((x, y) -> leftjoin(x, y, on=:a),
+                (x, y) -> leftjoin(x, y, on=:a, renamecols = "_left" => "_right"))
         df = DataFrame(a=1:3, b=2:4)
         df2 = DataFrame(a=1:3, c=1:3)
 
-        fun(df, df2)
-        @test getfield(df, :metadata) === nothing
-        @test getfield(df, :colmetadata) === nothing
+        res = fun(df, df2)
+        @test getfield(res, :metadata) === nothing
+        @test getfield(res, :colmetadata) === nothing
 
         metadata(df2)["caption"] = "other2"
         colmetadata(df2, :c)["name"] = "c"
         colmetadata(df2, :a)["name"] = "a"
-        df = DataFrame(a=1:3, b=2:4)
-        fun(df, df2)
-        @test getfield(df, :metadata) === nothing
-        @test getfield(df, :colmetadata) == Dict(3 => Dict("name" => "c"))
+        res = fun(df, df2)
+        @test getfield(res, :metadata) === nothing
+        @test getfield(res, :colmetadata) == Dict(3 => Dict("name" => "c"))
 
-        df = DataFrame(a=1:3, b=2:4)
         metadata(df)["caption"] = "other"
         colmetadata(df, :b)["name"] = "b"
         colmetadata(df, :a)["name"] = "df_a"
-        fun(df, df2)
-        @test getfield(df, :metadata) == Dict("caption" => "other")
-        @test getfield(df, :colmetadata) == Dict(1 => Dict("name" => "df_a"),
-                                                 2 => Dict("name" => "b"),
-                                                 3 => Dict("name" => "c"))
+        res = fun(df, df2)
+        @test metadata(res) == metadata(df)
+        @test metadata(res) !== metadata(df)
+        @test getfield(res, :colmetadata) == Dict(1 => Dict("name" => "df_a"),
+                                                  2 => Dict("name" => "b"),
+                                                  3 => Dict("name" => "c"))
     end
+end
+
+@testset "rightjoin" begin
+    for fun in ((x, y) -> rightjoin(x, y, on=:a),
+                (x, y) -> rightjoin(x, y, on=:a, renamecols = "_left" => "_right"))
+        df = DataFrame(a=1:3, b=2:4)
+        df2 = DataFrame(a=1:3, c=1:3)
+
+        res = fun(df, df2)
+        @test getfield(res, :metadata) === nothing
+        @test getfield(res, :colmetadata) === nothing
+
+        metadata(df2)["caption"] = "other2"
+        colmetadata(df2, :c)["name"] = "c"
+        colmetadata(df2, :a)["name"] = "a"
+        res = fun(df, df2)
+        @test metadata(res) == metadata(df2)
+        @test metadata(res) !== metadata(df2)
+        @test getfield(res, :colmetadata) == Dict(1 => Dict("name" => "a"),
+                                                  3 => Dict("name" => "c"))
+
+        metadata(df)["caption"] = "other"
+        colmetadata(df, :b)["name"] = "b"
+        colmetadata(df, :a)["name"] = "df_a"
+        res = fun(df, df2)
+        @test metadata(res) == metadata(df2)
+        @test metadata(res) !== metadata(df2)
+        @test getfield(res, :colmetadata) == Dict(1 => Dict("name" => "a"),
+                                                  2 => Dict("name" => "b"),
+                                                  3 => Dict("name" => "c"))
+    end
+end
+
+@testset "innerjoin, outerjoin" begin
+    for fun in ((x, y) -> innerjoin(x, y, on=:a),
+                (x, y) -> innerjoin(x, y, on=:a, renamecols = "_left" => "_right"),
+                (x, y) -> outerjoin(x, y, on=:a),
+                (x, y) -> outerjoin(x, y, on=:a, renamecols = "_left" => "_right"))
+        df = DataFrame(a=1:3, b=2:4)
+        df2 = DataFrame(a=1:3, c=1:3)
+
+        res = fun(df, df2)
+        @test getfield(res, :metadata) === nothing
+        @test getfield(res, :colmetadata) === nothing
+
+        metadata(df2)["caption"] = "other2"
+        colmetadata(df2, :c)["name"] = "c"
+        colmetadata(df2, :a)["name"] = "a"
+        res = fun(df, df2)
+        @test getfield(res, :metadata) === nothing
+        @test getfield(res, :colmetadata) == Dict(3 => Dict("name" => "c"))
+
+        metadata(df)["caption"] = "other"
+        colmetadata(df, :b)["name"] = "b"
+        colmetadata(df, :a)["name"] = "df_a"
+        res = fun(df, df2)
+        @test getfield(res, :metadata) === nothing
+        @test getfield(res, :colmetadata) == Dict(2 => Dict("name" => "b"),
+                                                  3 => Dict("name" => "c"))
+
+        metadata(df)["caption"] = "other2"
+        colmetadata(df, :b)["name"] = "b"
+        colmetadata(df, :a)["name"] = "a"
+        res = fun(df, df2)
+        @test metadata(res) == Dict("caption" => "other2")
+        @test getfield(res, :colmetadata) == Dict(1 => Dict("name" => "a"),
+                                                  2 => Dict("name" => "b"),
+                                                  3 => Dict("name" => "c"))
+    end
+end
+
+@testset "semijoin, antijoin" begin
+        for fun in ((x, y) -> semijoin(x, y, on=:a),
+                    (x, y) -> antijoin(x, y, on=:a))
+        df = DataFrame(a=1:3, b=2:4)
+        df2 = DataFrame(a=1:3, c=1:3)
+
+        res = fun(df, df2)
+        @test getfield(res, :metadata) === nothing
+        @test getfield(res, :colmetadata) === nothing
+
+        metadata(df2)["caption"] = "other2"
+        colmetadata(df2, :c)["name"] = "c"
+        colmetadata(df2, :a)["name"] = "a"
+        res = fun(df, df2)
+        @test getfield(res, :metadata) === nothing
+        @test getfield(res, :colmetadata) === nothing
+
+        metadata(df)["caption"] = "other"
+        colmetadata(df, :b)["name"] = "b"
+        colmetadata(df, :a)["name"] = "df_a"
+        res = fun(df, df2)
+        @test metadata(res) == metadata(df)
+        @test metadata(res) !== metadata(df)
+        @test getfield(res, :colmetadata) == getfield(df, :colmetadata)
+        @test getfield(res, :colmetadata) !== getfield(df, :colmetadata)
+    end
+end
+
+@testset "crossjoin" begin
+    df = DataFrame(a=1:3, b=2:4)
+    df2 = DataFrame(a=1:3, c=1:3)
+
+    res = crossjoin(df, df2, makeunique=true)
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) === nothing
+
+    metadata(df2)["caption"] = "other2"
+    colmetadata(df2, :c)["name"] = "c"
+    colmetadata(df2, :a)["name"] = "a"
+    res = crossjoin(df, df2, makeunique=true)
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) == Dict(3 => Dict("name" => "a"),
+                                              4 => Dict("name" => "c"))
+
+    metadata(df)["caption"] = "other"
+    colmetadata(df, :b)["name"] = "b"
+    colmetadata(df, :a)["name"] = "df_a"
+    res = crossjoin(df, df2, makeunique=true)
+    @test getfield(res, :metadata) === nothing
+    @test getfield(res, :colmetadata) == Dict(1 => Dict("name" => "df_a"),
+                                                2 => Dict("name" => "b"),
+                                                3 => Dict("name" => "a"),
+                                                4 => Dict("name" => "c"))
+
+    metadata(df2)["caption"] = "other"
+    res = crossjoin(df, df2, makeunique=true)
+    @test getfield(res, :metadata) == Dict("caption" => "other")
+    @test getfield(res, :colmetadata) == Dict(1 => Dict("name" => "df_a"),
+                                                2 => Dict("name" => "b"),
+                                                3 => Dict("name" => "a"),
+                                                4 => Dict("name" => "c"))
 end
 
 end # module

@@ -293,15 +293,21 @@ described above) is applied:
   metadata of the destination data frame, except that if new columns are added
   and these columns have metadata in the apppended/prepended table then this
   metadata is preserved.
-* `leftjoin!`: table and column level metadata is kept from the left table
-  except for non-key columns from right table for which metadata is preserved
-  from right table;
+* `leftjoin!`, `leftjoin`: table and column level metadata is kept from the left
+  table except for non-key columns from right table for which metadata is
+  preserved from right table;
+* `right`: table and column level metadata is kept from the right
+  table except for non-key columns from left table for which metadata is
+  preserved from left table;
+* `innerjoin`, `outerjoin`: propagate table level metadata if some key is present
+  in all passed data frames and value associated with it is identical.
+  column level metadata is propagated for all columns except for key
+  columns in which case if some key is present in all matching key columns
+  in passed data frames and value associated with it is identical.
+* `semijoin`, `antijoin`: table and column level metadata is kept from the left
+  table.
+* `crossjoin`: propagates table level metadata if some key is present
+  in `df1` and `df2` data frames and value associated with it is identical in
+  them; propagates column level metadata from both source data frames.
 
-* `innerjoin`
-* `leftjoin`
-* `rightjoin`
-* `outerjoin`
-* `semijoin`
-* `antijoin`
-* `crossjoin`
 * `select[!]`, `transform[!]`, `combine`
