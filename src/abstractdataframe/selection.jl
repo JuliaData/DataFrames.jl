@@ -8,8 +8,13 @@
 
 const TRANSFORM_METADATA = """
 Metadata: this function propagates table metadata.
-Column metadata is propagated if passed operation column selection,
-column renaming or transformation operation where transformation is `identity` or `copy`.
+Column metadata is propagated if:
+a) a single column from a source data frame is transformed to a single column
+in a destination data frame and the name of the column does not change
+(this includes all column selection operations), or
+b) a single column from a source data frame is transformed
+   with `identity` or `copy` to a single column in a destination data frame
+   even if column name is changed (this includes column renaming).
 """
 
 const TRANSFORMATION_COMMON_RULES =
@@ -1678,7 +1683,7 @@ combine(@nospecialize(f::Pair), gd::AbstractDataFrame;
 
 function _add_metadata_selection_vec_helper!(out_df::DataFrame, in_df::DataFrame, normalized_cs::AbstractVector{Int})
     in_names = _names(in_df)
-    for name_idx in nc
+    for name_idx in normalized_cs
         colname = in_names[name_idx]
         # copy metadata only if it is not present yet as it could already be set by other transformation
         if !hascolmetadata(out_df, colname)

@@ -260,7 +260,7 @@ Most of the functions in DataFrames.jl just preserve table and column metadata.
 Below is a list of cases where a more complex logic (following the rules
 described above) is applied:
 
-* [`dropallmetadata!](@ref) removes both table level and column level metadata
+* [`dropallmetadata!`](@ref) removes both table level and column level metadata
   from a data frame; note that removing metadata can speed up certain operations.
 * [`describe`](@ref) preserves only table level metadata;
   column level metadata is dropped.
