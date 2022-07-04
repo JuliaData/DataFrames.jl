@@ -1428,6 +1428,8 @@ function _replace_columns!(df::DataFrame, newdf::DataFrame)
     colmeta = getfield(newdf, :colmetadata)
     if colmeta !== nothing
         setfield!(df, :colmetadata, copy(colmeta))
+    else
+        setfield!(df, :colmetadata, nothing)
     end
 
     return df

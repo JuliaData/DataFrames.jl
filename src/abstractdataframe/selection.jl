@@ -814,8 +814,8 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
     if newname isa DataType
         newname === AsTable || throw(ArgumentError("Only DataType supported as target is AsTable"))
     end
-    # It is allowed to request a tranformation operation into a newname column
-    # only once. This is ensured by the logic related to transformed_cols dictionaly
+    # It is allowed to request a transformation operation into a newname column
+    # only once. This is ensured by the logic related to transformed_cols dictionary
     # in _manipulate, therefore in select_transform! such a duplicate should not happen
     res = _transformation_helper(df, col_idx, Ref{Any}(fun))
 
@@ -857,6 +857,9 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
         end
         _add_multicol_res(res, newdf, df, colnames, allow_resizing_newdf, wfun,
                           col_idx, copycols, newname, column_to_copy)
+        for cn_multi in colnames
+            _drop_colmetadata!(newdf, cn_multi)
+        end
     elseif res isa AbstractVector
         if newname === nothing
             newname = :x1
@@ -869,6 +872,12 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
         lr = length(res)
         _fix_existing_columns_for_vector(newdf, df, allow_resizing_newdf, lr, wfun)
         _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, res, column_to_copy)
+        if (col_idx isa Int || (col_idx isa AbstractVector{Int} && length(col_idx) == 1)) &&
+           (fun === identity || fun === copy || _names(df)[only(col_idx)] == newname)
+           _copy_colmetadata!(newdf, newname, df, only(col_idx))
+        else
+            _drop_colmetadata!(newdf, newname)
+        end
     else
         if newname === nothing
             newname = :x1
@@ -888,6 +897,12 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
         end
         newdf[!, newname] = fill!(Tables.allocatecolumn(typeof(res_unwrap), rows),
                                   res_unwrap)
+        if (col_idx isa Int || (col_idx isa AbstractVector{Int} && length(col_idx) == 1)) &&
+           (fun === identity || fun === copy || _names(df)[only(col_idx)] == newname)
+           _copy_colmetadata!(newdf, newname, df, only(col_idx))
+        else
+            _drop_colmetadata!(newdf, newname)
+        end
     end
 end
 
@@ -1681,48 +1696,6 @@ combine(@nospecialize(f::Pair), gd::AbstractDataFrame;
                         "You can pass a `Pair` as the second argument of the transformation. If you want the return " *
                         "value to be processed as having multiple columns add `=> AsTable` suffix to the pair."))
 
-function _add_metadata_selection_vec_helper!(out_df::DataFrame, in_df::DataFrame, normalized_cs::AbstractVector{Int})
-    in_names = _names(in_df)
-    for name_idx in normalized_cs
-        colname = in_names[name_idx]
-        # copy metadata only if it is not present yet as it could already be set by other transformation
-        if !hascolmetadata(out_df, colname)
-            _copy_colmetadata!(out_df, colname, in_df, name_idx)
-        end
-    end
-
-    return nothing
-end
-
-function _add_metadata_selection!(out_df::DataFrame, in_df::AbstractDataFrame, normalized_cs::Vector{Any})
-    _copy_metadata!(out_df, in_df)
-    hascolmetadata(in_df) || return
-
-    # normalized_cs can only have the following elements
-    # 1) AbstractVector{Int}
-    # 2) Pair{Int, <:Pair{<:Base.Callable, <:Union{Symbol, Vector{Symbol}, Type{AsTable}}}}
-    # 3) Pair{AbstractVector{Int}, <:Pair{<:Base.Callable, <:Union{Symbol, AbstractVector{Symbol}, Type{AsTable}}}}
-    # 4) Pair{AsTable, <:Pair{<:Base.Callable, <:Union{Symbol, Vector{Symbol}, Type{AsTable}}}}
-    # 5) Callable
-    # only cases 1. and 2. with Symbol in 3rd position propagate metadata
-
-    for nc in normalized_cs
-        # in all other cases we do not propagate metadata
-        if nc isa AbstractVector{Int}
-            _add_metadata_selection_vec_helper!(out_df, in_df, nc)
-        elseif nc isa Pair{Int}
-            in_col_idx, (fun, out_col_name) = nc
-            if hascolmetadata(in_df, in_col_idx) && out_col_name isa Symbol
-                in_col_name = _names(in_df)[in_col_idx]
-                if fun === identity || fun === copy || in_col_name == out_col_name
-                    _copy_colmetadata!(out_df, out_col_name, in_df, in_col_idx)
-                end
-            end
-        end
-    end
-    return nothing
-end
-
 function manipulate(df::DataFrame, @nospecialize(cs...); copycols::Bool, keeprows::Bool, renamecols::Bool)
     cs_vec = []
     for v in cs
@@ -1733,9 +1706,7 @@ function manipulate(df::DataFrame, @nospecialize(cs...); copycols::Bool, keeprow
         end
     end
     normalized_cs = Any[normalize_selection(index(df), make_pair_concrete(c), renamecols) for c in cs_vec]
-    out_df = _manipulate(df, normalized_cs, copycols, keeprows)
-    _add_metadata_selection!(out_df, df, normalized_cs)
-    return out_df
+    return _manipulate(df, normalized_cs, copycols, keeprows)
 end
 
 function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols::Bool, keeprows::Bool)
@@ -1811,6 +1782,7 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
                     newdf[!, newname] = column_to_copy[i] ? df[:, i] : df[!, i]
                     column_to_copy[i] = true
                     allow_resizing_newdf[] = false
+                    _copy_colmetadata!(newdf, newname, df, i)
                 end
             end
         else
@@ -1818,6 +1790,8 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
                               allow_resizing_newdf, column_to_copy)
         end
     end
+    hascolmetadata(newdf) || (setfield!(newdf, :colmetadata, nothing))
+    _copy_metadata!(newdf, df)
     return newdf
 end
 
@@ -1833,9 +1807,7 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
             end
         end
         normalized_cs = Any[normalize_selection(index(dfv), make_pair_concrete(c), renamecols) for c in cs_vec]
-        out_df = _manipulate(dfv, normalized_cs, true, keeprows)
-        _add_metadata_selection!(out_df, dfv, normalized_cs)
-        return out_df
+        return _manipulate(dfv, normalized_cs, true, keeprows)
     else
         # we do not support transformations here
         # newinds contains only indexing; making it Vector{Any} avoids some compilation

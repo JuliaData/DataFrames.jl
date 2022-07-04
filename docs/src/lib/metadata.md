@@ -294,21 +294,28 @@ described above) is applied:
   metadata of the destination data frame, except that if new columns are added
   and these columns have metadata in the apppended/prepended table then this
   metadata is preserved.
-* `leftjoin!`, `leftjoin`: table and column level metadata is kept from the left
-  table except for non-key columns from right table for which metadata is
-  preserved from right table;
-* `right`: table and column level metadata is kept from the right
+* [`leftjoin!`](@ref), [`leftjoin`](@ref): table and column level metadata is
+  kept from the left table except for non-key columns from right table for which
+  metadata is preserved from right table;
+* [`rightjoin`](@ref): table and column level metadata is kept from the right
   table except for non-key columns from left table for which metadata is
   preserved from left table;
-* `innerjoin`, `outerjoin`: propagate table level metadata if some key is present
-  in all passed data frames and value associated with it is identical.
-  column level metadata is propagated for all columns except for key
-  columns in which case if some key is present in all matching key columns
-  in passed data frames and value associated with it is identical.
-* `semijoin`, `antijoin`: table and column level metadata is kept from the left
-  table.
-* `crossjoin`: propagates table level metadata if some key is present
+* [`innerjoin`](@ref), [`outerjoin`](@ref): propagate table level metadata if
+  some key is present in all passed data frames and value associated with it is
+  identical. column level metadata is propagated for all columns except for key
+  columns in which case if some key is present in all matching key columns in
+  passed data frames and value associated with it is identical.
+* [`semijoin`](@ref), [`antijoin`](@ref): table and column level metadata is
+  kept from the left table.
+* [`crossjoin`](@ref): propagates table level metadata if some key is present
   in `df1` and `df2` data frames and value associated with it is identical in
   them; propagates column level metadata from both source data frames.
-
-* `select[!]`, `transform[!]`, `combine`
+* [`select`]](@ref), [`select!`](@ref), [`transform`](@ref),
+  [`transform!`](@ref), [`combine`]](@ref): propagate table level metadata;
+  Column metadata is propagated if:
+  a) a single column from a source data frame is transformed to a single column
+     in a destination data frame and the name of the column does not change
+     (this includes all column selection operations), or
+  b) a single column from a source data frame is transformed
+     with `identity` or `copy` to a single column in a destination data frame
+     even if column name is changed (this includes column renaming).
