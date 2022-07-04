@@ -278,6 +278,8 @@ end
                 x -> parent(subset(groupby(x, []), [] => ByRow(() -> false), ungroup=false)),
                 copy,
                 DataFrame,
+                x -> DataFrame(eachrow(x)),
+                x -> DataFrame(eachcol(x)),
                 x -> DataFrame(x, copycols=false),
                 x -> DataFrame(groupby(x, [])))
         df = DataFrame()
@@ -803,6 +805,88 @@ end
     @test getfield(res, :colmetadata) == Dict(2 => Dict("x" => "y"))
     @test colmetadata(res, :b) == colmetadata(df1, :b)
     @test colmetadata(res, :b) !== colmetadata(df1, :b)
+end
+
+@testset "push!, pushfirst!, insert!" begin
+    for fun in ((x, y) -> push!(x, y, cols=:union),
+                (x, y) -> pushfirst!(x, y, cols=:union),
+                (x, y) -> insert!(x, 2, y, cols=:union))
+        df = DataFrame(a=1:3, b=2:4)
+        fun(df, (a=10, b=20))
+        @test getfield(df, :metadata) === nothing
+        @test getfield(df, :colmetadata) === nothing
+        df2 = DataFrame(a=1:3, b=2:4, c=1:3)
+        metadata(df2)["caption"] = "other2"
+        colmetadata(df2, :c)["name"] = "c"
+        dfr = df2[1, :]
+
+        fun(df, dfr)
+        @test getfield(df, :metadata) === nothing
+        @test getfield(df, :colmetadata) === nothing
+
+        metadata(df)["caption"] = "other"
+        colmetadata(df, :b)["name"] = "b"
+        fun(df, dfr)
+        @test getfield(df, :metadata) == Dict("caption" => "other")
+        @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"))
+    end
+end
+
+@testset "append!, prepend!" begin
+    for fun in ((x, y) -> append!(x, y, cols=:union),
+                (x, y) -> prepend!(x, y, cols=:union))
+        df = DataFrame(a=1:3, b=2:4)
+        df2 = DataFrame(a=1:3, b=2:4, c=1:3)
+
+        fun(df, df2)
+        @test getfield(df, :metadata) === nothing
+        @test getfield(df, :colmetadata) === nothing
+
+        metadata(df2)["caption"] = "other2"
+        colmetadata(df2, :c)["name"] = "c"
+        df = DataFrame(a=1:3, b=2:4)
+        fun(df, df2)
+        @test getfield(df, :metadata) === nothing
+        @test getfield(df, :colmetadata) == Dict(3 => Dict("name" => "c"))
+
+        df = DataFrame(a=1:3, b=2:4)
+        metadata(df)["caption"] = "other"
+        colmetadata(df, :b)["name"] = "b"
+        fun(df, df2)
+        @test getfield(df, :metadata) == Dict("caption" => "other")
+        @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"),
+                                                3 => Dict("name" => "c"))
+
+        df = DataFrame(a=1:3, b=2:4)
+        metadata(df)["caption"] = "other"
+        colmetadata(df, :b)["name"] = "b"
+        fun(df, eachrow(df2))
+        @test getfield(df, :metadata) == Dict("caption" => "other")
+        @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"),
+                                                3 => Dict("name" => "c"))
+
+        df = DataFrame(a=1:3, b=2:4)
+        metadata(df)["caption"] = "other"
+        colmetadata(df, :b)["name"] = "b"
+        fun(df, eachcol(df2))
+        @test getfield(df, :metadata) == Dict("caption" => "other")
+        @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"),
+                                                3 => Dict("name" => "c"))
+
+        df = DataFrame(a=1:3, b=2:4)
+        metadata(df)["caption"] = "other"
+        colmetadata(df, :b)["name"] = "b"
+        fun(df, Tables.rowtable(df2))
+        @test getfield(df, :metadata) == Dict("caption" => "other")
+        @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"))
+
+        df = DataFrame(a=1:3, b=2:4)
+        metadata(df)["caption"] = "other"
+        colmetadata(df, :b)["name"] = "b"
+        fun(df, Tables.columntable(df2))
+        @test getfield(df, :metadata) == Dict("caption" => "other")
+        @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"))
+    end
 end
 
 end # module

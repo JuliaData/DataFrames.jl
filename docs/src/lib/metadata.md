@@ -162,11 +162,11 @@ julia> colmetadata(df, :rating)
 Dict{String, Any} with 1 entry:
   "label" => "ELO rating in classical time control"
 
-julia> colmetadata.(Ref(df), names(df))
-3-element Vector{Dict{String, Any}}:
- Dict("label" => "First and last name of a player")
- Dict("label" => "Rating date in yyyy-u format as string")
- Dict("label" => "ELO rating in classical time control")
+julia> names(df) .=> colmetadata.(Ref(df), names(df))
+3-element Vector{Pair{String, Dict{String, Any}}}:
+   "name" => Dict("label" => "First and last name of a player")
+   "date" => Dict("label" => "Rating date in yyyy-u format")
+ "rating" => Dict("label" => "ELO rating in classical time control")
 
 julia> foreach(col -> empty!(colmetadata(df, col)), names(df))
 
@@ -286,58 +286,13 @@ described above) is applied:
 * `getindex` does not affect table level and keeps column level metadata
   for kept columns
 * `setindex!` does not affect table level and column level metadata
-
-
-* `rename!`
-* `rename`
-* `empty`
-* `empty!`
-* `similar`
-* `only`
-* `first`
-* `last`
-* `dropmissing`
-* `dropmissing!`
-* `filter`
-* `filter!`
-* `unique`
-* `unique!`
-* `fillcombinations`
-* `repeat`
-* `repeat!`
-* `disallowmissing`
-* `allowmissing`
-* `disallowmissing!`
-* `allowmissing!`
-* `flatten`
-* `reverse`
-* `reverse!`
-* `permute!`
-* `invpermute!`
-* `shuffle`
-* `shuffle!`
-* `insertcols`
-* `insertcols!`
-* `mapcols!`
-* `mapcols`
-* `sort`
-* `sort!`
-* `subset`
-* `subset!`
-* `DataFrame`
-* `copy`
-* `view`
-* `groupby`
-* `eachrow`
-* `eachcol`
-* `deleteat!`
-* `keepat!`
-* `resize!`
-* `pop!`
-* `popfirst!`
-* `popat!`
-* `getindex`
-* `setindex!`
+* [`push!`](@ref), [`pushfirst!`](@ref), [`insert!`](@ref) do not affect
+  data frame metadata (even if they add new columns and pushed row is
+  `DataFrameRow` or other value supporting metadata interface)
+* [`append!`](@ref) and [`prepend!`](@ref) do not change table and column level
+  metadata of the destination data frame, except that if new columns are added
+  and these columns have metadata in the apppended/prepended table then this
+  metadata is preserved.
 
 * `innerjoin`
 * `leftjoin`
@@ -347,9 +302,4 @@ described above) is applied:
 * `semijoin`
 * `antijoin`
 * `crossjoin`
-* `push!`
-* `pushfirst!`
-* `insert!`
-* `append!`
-* `prepend!`
 * `select[!]`, `transform[!]`, `combine`

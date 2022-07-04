@@ -37,11 +37,9 @@ The above rule has the following exceptions:
 Please note that `append!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
-Metadata: `append!` retains table level metadata if some key is present
-in `df1` and `df2` data frames and value associated with it is identical in them.
-For matching columns `append!` retains column level metadata if some key is present
-in that column and value associated with it is identical in them. For non-matching
-columns metadata is retained from the source data frame.
+Metadata: table level metadata is kept from `df`; the same with column level
+metadata for columns present in `df`. If new columns are added and they have
+metadata it is copied from the appended table.
 
 See also: use [`push!`](@ref) to add individual rows to a data frame, [`prepend!`](@ref)
 to add a table at the beginning, and [`vcat`](@ref) to vertically concatenate
@@ -125,11 +123,9 @@ The above rule has the following exceptions:
 Please note that `prepend!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
-Metadata: `prepend` retains table level metadata if some key is present
-in `df1` and `df2` data frames and value associated with it is identical in them.
-For matching columns `prepend` retains column level metadata if some key is present
-in that column and value associated with it is identical in them. For non-matching
-columns metadata is retained from the source data frame.
+Metadata: table level metadata is kept from `df`; the same with column level
+metadata for columns present in `df`. If new columns are added and they have
+metadata it is copied from the prepended table.
 
 See also: use [`pushfirst!`](@ref) to add individual rows at the beginning of a data frame,
 [`append!`](@ref) to add a table at the end, and [`vcat`](@ref)
@@ -301,22 +297,6 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
         end
         @error "Error adding value to column :$(_names(df1)[current_col])."
         rethrow(err)
-    end
-
-    for n in _names(df1)
-        if hasproperty(df2, n)
-            if hascolmetadata(df1, n) && hascolmetadata(df2, n)
-                _intersect_dicts!(colmetadata(df1, n), colmetadata(df2, n))
-            else
-                _drop_colmetadata!(df1, n)
-            end
-        end
-    end
-
-    if hasmetadata(df1) && hasmetadata(df2)
-        _intersect_dicts!(metadata(df1), metadata(df2))
-    else
-        _drop_metadata!(df1)
     end
 
     ncol1 = ncol(df1)
