@@ -276,7 +276,7 @@ function _combine_process_groupindices((cs_i,)::Ref{Any},
             trans_res[loc] = TransformationResult(idx_agg, outcol, out_col_name, optional_i, 0)
             seen_cols[out_col_name] = (optional_i, loc)
         else
-            push!(trans_res, TransformationResult(idx_agg, outcol, out_col_name, optional_i), 0)
+            push!(trans_res, TransformationResult(idx_agg, outcol, out_col_name, optional_i, 0))
             seen_cols[out_col_name] = (optional_i, length(trans_res))
         end
     end
