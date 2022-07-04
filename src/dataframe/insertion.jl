@@ -302,7 +302,7 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
     if cols == :union
         for n in setdiff(_names(df2), _names(df1))
             newcol = similar(df2[!, n], Union{Missing, eltype(df2[!, n])},
-                                targetrows)
+                             targetrows)
             firstindex(newcol) != 1 && _onebased_check_error()
             if atend
                 newcol[1:nrow1] .= missing
