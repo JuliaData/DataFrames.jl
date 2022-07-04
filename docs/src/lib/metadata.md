@@ -7,9 +7,10 @@ level. This is supported using the functions defined by DataAPI.jl interface:
 [`hasmetadata`](@ref), [`hascolmetadata`](@ref),
 [`metadata`](@ref) and [`colmetadata`](@ref).
 These functions work with [`DataFrame`](@ref),
-[`SubDataFrame`](@ref), [`DataFrameRow`](@ref), [`GroupedDataFrame`](@ref),
-[`DataFrameRows`](@ref), and [`DataFrameColumns`](@ref) objects. In this
-section collectively these objects will be called *data frame like*.
+[`SubDataFrame`](@ref), [`DataFrameRow`](@ref), [`GroupedDataFrame`](@ref)
+objects, and objects returned by [`eachrow`](@ref), and [`eachcol`](@ref)
+functions. In this section collectively these objects will be called
+*data frame like*.
 
 Additionally DataFrames.jl defines [`dropallmetadata!`](@ref) function that
 removes both table level and column level metadata from a data frame.

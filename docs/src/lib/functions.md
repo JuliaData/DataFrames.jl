@@ -189,3 +189,12 @@ pairs
 ```@docs
 isapprox
 ```
+
+## Metadata
+```@docs
+hasmetadata
+metadata
+hascolmetadata
+colmetadata
+dropallmetadata!
+```
