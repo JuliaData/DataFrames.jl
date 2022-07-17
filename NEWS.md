@@ -47,8 +47,8 @@
 * Add support for global and per-column metadata using
   `metadata` and `hasmetadata` from DataAPI.jl
   ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
-* make `completecases` and `nonunique` return result when data frame with no
-  columns is passed
+* `completecases` and `nonunique` do not throw an error when data frame
+  with no columns is passed
   ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
 
 ## Previously announced breaking changes
