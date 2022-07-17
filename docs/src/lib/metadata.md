@@ -10,12 +10,13 @@ These functions work with [`DataFrame`](@ref),
 [`SubDataFrame`](@ref), [`DataFrameRow`](@ref), [`GroupedDataFrame`](@ref)
 objects, and objects returned by [`eachrow`](@ref), and [`eachcol`](@ref)
 functions. In this section collectively these objects will be called
-*data frame like*.
+*data frame-like*.
 
-Additionally DataFrames.jl defines [`dropallmetadata!`](@ref) function that
+Additionally DataFrames.jl defines [`dropallmetadata!`](@ref) the function that
 removes both table level and column level metadata from a data frame.
 
-Assume that we work with a data frame `df` that has a column `:col`.
+Assume that we work with a data frame-like object `df` that has a column `col`
+(referred to either via a `Symbol`, a string or an integer index).
 
 ### Contract for `hasmetadata`
 
@@ -32,18 +33,17 @@ if the queried object does not support attaching metadata.
 
 ### Contract for `hascolmetadata`
 
-In DataFrames.jl context `hascolmetadata(df, :col)` (alternatively string or
-column number can be used) can return either `true` or `false`.
-If `false` is returned this means that column `:col` of data frame `df` does not
+In DataFrames.jl context `hascolmetadata(df, col)` can return either `true` or `false`.
+If `false` is returned this means that column `col` of data frame `df` does not
 have any column level metadata defined. If `true` is returned it means that for
-`:col` column some metadata is defined.
+`col` column some metadata is defined.
 
-If `:col` is not present in `df` an error is thrown.
+If `col` is not present in `df` an error is thrown.
 
 Additionally `hascolmetadata(df)` returns `true` if for any column `col` of `df`
 `hascolmetadata(df, col)` returns `true`. Otherwise `false` is returned.
 
-Although `hascolmetadata` is guaranteed to return `Bool` value in DataFrames.jl
+Although `hascolmetadata` is guaranteed to return a `Bool` value in DataFrames.jl,
 in generic code it is recommended to check its return value against `true` and
 `false` explicitly using the `===` operator. The reason is that, in code
 accepting any Tables.jl table, `hascolmetadata` is also allowed to return
@@ -51,24 +51,24 @@ accepting any Tables.jl table, `hascolmetadata` is also allowed to return
 
 ### Contract for `metadata`
 
-In DataFrames.jl `metadata(df)` always returns `AbstractDict{String, Any}` storing
+In DataFrames.jl `metadata(df)` always returns an `AbstractDict{String, Any}` storing
 key-value mappings of table level metadata. To add or update metadata mutate
 the returned dictionary.
 
 ### Contract for `colmetadata`
 
-In DataFrames.jl `colmetadata(df, :col)` (alternatively string or
-column number can be used) always returns `AbstractDict{String, Any}` storing
-key-value mappings of column level metadata for column `:col`.
+In DataFrames.jl `colmetadata(df, col)` always returns an `AbstractDict{String, Any}` storing
+key-value mappings of column level metadata for column `col`.
 To add or update metadata mutate the returned dictionary.
 
-If `:col` is not present in `df` an error is thrown.
+If `col` is not present in `df` an error is thrown.
 
 ### General design principles for use of metadata
 
-It is recommended to use strings as values of the metadata. The reason
-is that some storage formats, like for example Apache Arrow, only support
-storing string data as metadata values.
+DataFrames.jl supports storing any object as metadata values. However, 
+it is recommended to use strings as values of the metadata,
+as some storage formats, like for example Apache Arrow, only support
+strings.
 
 The `metadata` and `colmetadata` functions called on objects defined in
 DataFrames.jl are not thread safe and should not be used in multi-threaded code.
@@ -78,20 +78,20 @@ mutate it (this might change in the future versions of DataFrames.jl).
 
 When working interactively with DataFrames.jl you can safely just rely on the
 `metadata` and `colmetadata` functions. This will create a minimal overhead
-in case some data frame does not have metadata yet, but it should not be
+in case the passed data frame does not have metadata yet, but it should not be
 noticeable in typical usage scenarios.
 
-In generic code or code that is performance critical it is recommended to run
-`hasmetadata` check before calling `metadata` function (the same considerations
-apply to `hascolmetadata` and `colmetadata`). There are two reasons for this:
+In generic code or code that is performance critical it is recommended to check that
+`hasmetadata` returns `true` before calling `metadata`,
+and that `hascolmetadata` returns `true` before calling `colmetadata`.
+There are two reasons for this:
 
-* if some Tables.jl table (other than data frame) does not support metadata the
-  call to `metadata` function throws an error. A similar rule applies to calling
-  `hascolmetadata` before calling `colmetadata`.
-* if you know you query a data frame, using the `hasmetadata` function avoids
-  creation of metadata dictionary in a data frame in case it were not needed.
-  A call to `metadata` will create such a dictionary when it was not present
-  in a data frame yet.
+* if some Tables.jl table (other than data frame) does not support table or column level
+  metadata (respectively) the call to `metadata` or `colmetadata` throws an error.
+* if you know you query a data frame, checking `hasmetadata` or `hascolmetadata` avoids
+  the creation of a metadata dictionary in case it were not needed.
+  A call to `metadata` or `colmetadata` will create such a dictionary when it was not present
+  in the data frame yet.
 
 ## Examples
 
@@ -186,7 +186,7 @@ As a practical tip if you have metadata attached to some object
 some new object you can use:
 * `copy!` to fully overwrite destination object metadata with source object
   metadata;
-* `merge!` to add destination object metadata with source object metadata
+* `merge!` to add source object metadata to destination object metadata
   (overwriting duplicates).
 
 ## Propagation of metadata
@@ -197,48 +197,43 @@ data frames are  transformed.
 !!! note
 
     The provided rules might change in the future. Any change to metadata
-    propagation rules will not be considered to be a breaking change
-    in DataFrames.jl and can be done in any minor release of DataFrames.jl.
+    propagation rules will not be considered as breaking
+    and can be done in any minor release of DataFrames.jl.
     Such changes might be made based on users' feedback about what metadata
     propagation rules are most convenient in practice.
 
-The general design rules for propagation of table metadata is as follows.
+The general design rules for propagation of table metadata are as follows.
 
 For operations that take a single data frame as an input:
 * Table level metadata is propagated to the returned data frame object.
 * For column level metadata:
-  - in all cases when a single column from a source data frame is transformed to
-    a single column in a destination data frame and the name of the column does
+  - in all cases when a single column is transformed to
+    a single column and the name of the column does
     not change (or is automatically changed e.g. to de-duplicate column names or
     via column renaming in joins)
     column level metadata is preserved (example operations of this kind are
     `getindex`, `subset`, joins, `mapcols`).
-  - in all cases when a single column from a source data frame is transformed
-    with `identity` or `copy` to a single column in a destination data frame
+  - in all cases when a single column is transformed with `identity` or `copy` to a single column,
     column level metadata is preserved even if column name is changed (example
-    operations of this kind are `rename` function call or `:x => :y` or
+    operations of this kind are `rename`, or the `:x => :y` or
     `:x => copy => :y` operation specification in `select`).
 
-For operations that take a multiple data data frames as an input two cases are
-defined.
-Case 1 is when there is a natural main table in the operation (`append!`, `prepend!`,
-`leftjoin`, `leftjoin!`, `rightjoin`, `semijoin`, `antijoin`, `setindex!`).
-Case 2 is when all tables are equivalent (`hcat`, `vcat`, `innerjoin`, `outerjoin`).
+For operations that take multiple data frames as their input two cases are distinguished:
+- when there is a natural main table in the operation (`append!`, `prepend!`,
+  `leftjoin`, `leftjoin!`, `rightjoin`, `semijoin`, `antijoin`, `setindex!`);
+- when all tables are equivalent (`hcat`, `vcat`, `innerjoin`, `outerjoin`).
 
 In the situation when there is a main table:
-* Table level metadata is kept from the main table.
+* Table level metadata is taken from the main table.
 * Column level metadata for columns from the main table is taken from main table.
   Column level metadata for columns from the non-main table is taken only for
   columns not present in the main table.
 
 In the situation when all tables are equivalent:
-* Table level metadata is preserved only if for some key for all passed tables
-  there is the same value of the metadata (e.g., for all tables there is a `"source"`
-  key and the value of metadata for this key is the same).
-* Column level metadata is preserved only if for some key for source column in all
-  passed tables that contain this column there is the same value of the column
-  metadata (e.g., for all tables there is a `"source"` key for source column and
-  the value of metadata for this key is the same).
+* Table level metadata is preserved only for keys which are defined
+  in all passed tables and have the same value;
+* Column level metadata is preserved only for keys which are defined
+  in all passed tables that contain this column and have the same value
 
 In all these operations when metadata is preserved the values in the key-value
 pairs are not copied (this is relevant in case of mutable values).
@@ -251,7 +246,7 @@ pairs are not copied (this is relevant in case of mutable values).
     not changed. This is valid for many operations, however, it is not true
     in general. For example `:x => ByRow(log) => :x` transformation might
     invalidate metadata if it contained unit of measure of a variable. In such
-    cases user must manually drop or update such matadata from the `:x` column
+    cases user must manually drop or update such metadata from the `:x` column
     after the transformation.
 
 ### Operations that preserve metadata
@@ -264,14 +259,12 @@ described above) is applied:
   from a data frame; note that removing metadata can speed up certain operations.
 * [`describe`](@ref) preserves only table level metadata;
   column level metadata is dropped.
-* [`hcat`](@ref): propagates table level metadata if some key is present
-  in all passed data frames and value associated with it is identical in all
-  passed data frames; propagates all column level metadata.
-* [`vcat`](@ref): propagates table level metadata if some key is present
-  in all passed data frames and value associated with it is identical in all
-  passed data frames; column level metadata is propagated for columns if some
-  key for a given column is present in all passed data frames that contain this
-  column and value associated with it is identical in all passed data frames.
+* [`hcat`](@ref): propagates table level metadata only for keys which are defined
+  in all passed tables and have the same value.
+* [`vcat`](@ref): propagates table level metadata only for keys which are defined
+  in all passed tables and have the same value;
+  column level metadata is preserved only for keys which are defined
+  in all passed tables that contain this column and have the same value;
 * [`stack`](@ref): propagates table level metadata and column level metadata
   for identifier columns.
 * [`stack`](@ref): propagates table level metadata and column level metadata
@@ -284,38 +277,36 @@ described above) is applied:
   passed data frames; column level metadata is propagated for columns if some
   key for a given column is present in all passed data frames and value
   associated with it is identical in all passed data frames.
-* `getindex` does not affect table level and keeps column level metadata
-  for kept columns
+* `getindex` preserves table level metadata and column level metadata
+  for selected columns
 * `setindex!` does not affect table level and column level metadata
 * [`push!`](@ref), [`pushfirst!`](@ref), [`insert!`](@ref) do not affect
   data frame metadata (even if they add new columns and pushed row is
-  `DataFrameRow` or other value supporting metadata interface)
+  a `DataFrameRow` or other value supporting metadata interface)
 * [`append!`](@ref) and [`prepend!`](@ref) do not change table and column level
   metadata of the destination data frame, except that if new columns are added
-  and these columns have metadata in the apppended/prepended table then this
+  and these columns have metadata in the appended/prepended table then this
   metadata is preserved.
 * [`leftjoin!`](@ref), [`leftjoin`](@ref): table and column level metadata is
-  kept from the left table except for non-key columns from right table for which
-  metadata is preserved from right table;
-* [`rightjoin`](@ref): table and column level metadata is kept from the right
+  taken from the left table except for non-key columns from right table for which
+  metadata is taken from right table;
+* [`rightjoin`](@ref): table and column level metadata is taken from the right
   table except for non-key columns from left table for which metadata is
-  preserved from left table;
-* [`innerjoin`](@ref), [`outerjoin`](@ref): propagate table level metadata if
-  some key is present in all passed data frames and value associated with it is
-  identical. column level metadata is propagated for all columns except for key
-  columns in which case if some key is present in all matching key columns in
-  passed data frames and value associated with it is identical.
+  taken from left table;
+* [`innerjoin`](@ref), [`outerjoin`](@ref): propagates table level metadata only for keys
+  that are defined in all passed data frames and have the same value;
+  column level metadata is propagated for all columns except for key
+  columns, for which it is propagated only for keys that are defined
+  in all passed data frames and have the same value.
 * [`semijoin`](@ref), [`antijoin`](@ref): table and column level metadata is
-  kept from the left table.
-* [`crossjoin`](@ref): propagates table level metadata if some key is present
-  in `df1` and `df2` data frames and value associated with it is identical in
-  them; propagates column level metadata from both source data frames.
+  taken from the left table.
+* [`crossjoin`](@ref): propagates table level metadata only for keys
+  that are defined in both passed data frames and have the same value;
+  propagates column level metadata from both passed data frames.
 * [`select`]](@ref), [`select!`](@ref), [`transform`](@ref),
   [`transform!`](@ref), [`combine`]](@ref): propagate table level metadata;
   Column metadata is propagated if:
-  a) a single column from a source data frame is transformed to a single column
-     in a destination data frame and the name of the column does not change
+  a) a single column is transformed to a single column and the name of the column does not change
      (this includes all column selection operations), or
-  b) a single column from a source data frame is transformed
-     with `identity` or `copy` to a single column in a destination data frame
+  b) a single column is transformed with `identity` or `copy` to a single column
      even if column name is changed (this includes column renaming).

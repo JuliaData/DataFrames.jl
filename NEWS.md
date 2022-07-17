@@ -59,6 +59,7 @@
   ([#3022](https://github.com/JuliaData/DataFrames.jl/pull/3022))
 
 ## Internal changes
+
 * `DataFrame` is now a `mutable struct` and has two new fields
   `metadata` and `colmetadata`; this change makes `DataFrame` objects
   serialized under earlier versions of DataFrames.jl incompatible with
