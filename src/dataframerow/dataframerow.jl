@@ -509,4 +509,5 @@ function hascolmetadata(dfr::DataFrameRow)
     return any(col -> hascolmetadata(dfr, col), _names(dfr))
 end
 
-dropallmetadata!(dfr::DataFrameRow) = dropallmetadata!(parent(dfr))
+dropmetadata!(dfr::DataFrameRow; type::Symbol=:all) =
+    dropmetadata!(parent(dfr), type=type)

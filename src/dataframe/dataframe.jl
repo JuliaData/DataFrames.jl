@@ -1599,7 +1599,7 @@ If column `col` is not present in the input object an error is thrown.
 function hascolmetadata(df::DataFrame, col::ColumnIndex)
     idx = index(df)[col]
     meta = getfield(df, :colmetadata)
-    return meta !== nothing && !isempty(get(meta, idx, ())
+    return meta !== nothing && !isempty(get(meta, idx, ()))
 end
 
 """
@@ -1622,17 +1622,30 @@ function hascolmetadata(df::DataFrame)
 end
 
 """
-    dropallmetadata!(df::AbstractDataFrame)
-    dropallmetadata!(dfr::DataFrameRow)
-    dropallmetadata!(dfc::DataFrameColumns)
-    dropallmetadata!(dfr::DataFrameRows)
-    dropallmetadata!(gdf::GroupedDataFrame)
+    dropmetadata!(df::AbstractDataFrame, type=:all)
+    dropmetadata!(dfr::DataFrameRow, type=:all)
+    dropmetadata!(dfc::DataFrameColumns, type=:all)
+    dropmetadata!(dfr::DataFrameRows, type=:all)
+    dropmetadata!(gdf::GroupedDataFrame, type=:all)
 
-Remove all table level and column level metadata from passed object.
+Remove metadata from passed object.
+
+If `type=:all` (the default) both table level and column level metadata is
+dropped. If `type=:table` only table level metadata is dropped.
+If `type=:column` only column level metadata is dropped.
 """
-function dropallmetadata!(df::DataFrame)
-    _drop_metadata!(df)
-    _drop_colmetadata!(df)
+function dropmetadata!(df::DataFrame; type::Symbol=:all)
+    if type == :all
+        _drop_metadata!(df)
+        _drop_colmetadata!(df)
+    elseif type == :table
+        _drop_metadata!(df)
+    elseif type == :column
+        _drop_colmetadata!(df)
+    else
+        throw(ArgumentError("`type` keyword argument must be one of: " *
+                            "`:all`, `:table`, `:column`."))
+    end
     return df
 end
 

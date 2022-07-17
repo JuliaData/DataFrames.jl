@@ -99,7 +99,8 @@ colmetadata(dfr::DataFrameRows, col::ColumnIndex) = colmetadata(parent(dfr), col
 hascolmetadata(dfr::DataFrameRows, col::ColumnIndex) = hascolmetadata(parent(dfr), col)
 hascolmetadata(dfr::DataFrameRows) = hascolmetadata(parent(dfr))
 
-dropallmetadata!(dfr::DataFrameRows) = dropallmetadata!(parent(dfr))
+dropmetadata!(dfr::DataFrameRows; type::Symbol=:all) =
+    dropmetadata!(parent(dfr), type=type)
 
 # Iteration by columns
 
@@ -353,7 +354,8 @@ colmetadata(dfc::DataFrameColumns, col::ColumnIndex) = colmetadata(parent(dfc), 
 hascolmetadata(dfc::DataFrameColumns, col::ColumnIndex) = hascolmetadata(parent(dfc), col)
 hascolmetadata(dfc::DataFrameColumns) = hascolmetadata(parent(dfc))
 
-dropallmetadata!(dfc::DataFrameColumns) = dropallmetadata!(parent(dfc))
+dropmetadata!(dfc::DataFrameColumns; type::Symbol=:all) =
+    dropmetadata!(parent(dfc), type=type)
 
 """
     mapcols(f::Union{Function, Type}, df::AbstractDataFrame)

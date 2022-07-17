@@ -385,4 +385,5 @@ function hascolmetadata(sdf::SubDataFrame)
     return any(col -> hascolmetadata(sdf, col), _names(sdf))
 end
 
-dropallmetadata!(sdf::SubDataFrame) = dropallmetadata!(parent(sdf))
+dropmetadata!(sdf::SubDataFrame; type::Symbol=:all) =
+    dropmetadata!(parent(sdf), type=type)

@@ -1223,4 +1223,5 @@ hascolmetadata(gdf::GroupedDataFrame, col::ColumnIndex) =
 hascolmetadata(gdf::GroupedDataFrame) =
     hascolmetadata(parent(gdf))
 
-dropallmetadata!(gdf::GroupedDataFrame) = dropallmetadata!(parent(gdf))
+dropmetadata!(gdf::GroupedDataFrame; type::Symbol=:all) =
+    dropmetadata!(parent(gdf), type=type)

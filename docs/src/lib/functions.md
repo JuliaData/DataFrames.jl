@@ -196,5 +196,5 @@ hasmetadata
 metadata
 hascolmetadata
 colmetadata
-dropallmetadata!
+dropmetadata!
 ```

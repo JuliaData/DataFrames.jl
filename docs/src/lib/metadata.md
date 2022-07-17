@@ -12,8 +12,8 @@ objects, and objects returned by [`eachrow`](@ref), and [`eachcol`](@ref)
 functions. In this section collectively these objects will be called
 *data frame-like*.
 
-Additionally DataFrames.jl defines [`dropallmetadata!`](@ref) the function that
-removes both table level and column level metadata from a data frame.
+Additionally DataFrames.jl defines [`dropmetadata!`](@ref) the function that
+removes table level and/or column level metadata from a data frame.
 
 Assume that we work with a data frame-like object `df` that has a column `col`
 (referred to either via a `Symbol`, a string or an integer index).
@@ -65,7 +65,7 @@ If `col` is not present in `df` an error is thrown.
 
 ### General design principles for use of metadata
 
-DataFrames.jl supports storing any object as metadata values. However, 
+DataFrames.jl supports storing any object as metadata values. However,
 it is recommended to use strings as values of the metadata,
 as some storage formats, like for example Apache Arrow, only support
 strings.
@@ -255,7 +255,7 @@ Most of the functions in DataFrames.jl just preserve table and column metadata.
 Below is a list of cases where a more complex logic (following the rules
 described above) is applied:
 
-* [`dropallmetadata!`](@ref) removes both table level and column level metadata
+* [`dropmetadata!`](@ref) removes both table level and/or column level metadata
   from a data frame; note that removing metadata can speed up certain operations.
 * [`describe`](@ref) preserves only table level metadata;
   column level metadata is dropped.

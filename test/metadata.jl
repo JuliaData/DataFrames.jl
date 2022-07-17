@@ -75,7 +75,7 @@ end
     end
 end
 
-@testset "dropallmetadata!" begin
+@testset "dropmetadata!" begin
     for fun in (identity, eachcol, eachrow, x -> groupby(x, :a),
                 x -> x[1, :], x -> @view x[:, :])
         df = DataFrame(b=2, a=1)
@@ -84,10 +84,55 @@ end
         x = fun(df)
         @test hasmetadata(x)
         @test hascolmetadata(x)
-        dropallmetadata!(x)
+        dropmetadata!(x)
         @test !hasmetadata(x)
         @test !hascolmetadata(x)
         @test getfield(df, :metadata) === nothing
+        @test getfield(df, :colmetadata) === nothing
+    end
+
+    for fun in (identity, eachcol, eachrow, x -> groupby(x, :a),
+                x -> x[1, :], x -> @view x[:, :])
+        df = DataFrame(b=2, a=1)
+        metadata(df)["name"] = "empty"
+        colmetadata(df, :a)["name"] = "a"
+        x = fun(df)
+        @test hasmetadata(x)
+        @test hascolmetadata(x)
+        dropmetadata!(x, type=:all)
+        @test !hasmetadata(x)
+        @test !hascolmetadata(x)
+        @test getfield(df, :metadata) === nothing
+        @test getfield(df, :colmetadata) === nothing
+    end
+
+    for fun in (identity, eachcol, eachrow, x -> groupby(x, :a),
+                x -> x[1, :], x -> @view x[:, :])
+        df = DataFrame(b=2, a=1)
+        metadata(df)["name"] = "empty"
+        colmetadata(df, :a)["name"] = "a"
+        x = fun(df)
+        @test hasmetadata(x)
+        @test hascolmetadata(x)
+        dropmetadata!(x, type=:table)
+        @test !hasmetadata(x)
+        @test hascolmetadata(x)
+        @test getfield(df, :metadata) === nothing
+        @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "a"))
+    end
+
+    for fun in (identity, eachcol, eachrow, x -> groupby(x, :a),
+                x -> x[1, :], x -> @view x[:, :])
+        df = DataFrame(b=2, a=1)
+        metadata(df)["name"] = "empty"
+        colmetadata(df, :a)["name"] = "a"
+        x = fun(df)
+        @test hasmetadata(x)
+        @test hascolmetadata(x)
+        dropmetadata!(x, type=:column)
+        @test hasmetadata(x)
+        @test !hascolmetadata(x)
+        @test getfield(df, :metadata) == Dict("name" => "empty")
         @test getfield(df, :colmetadata) === nothing
     end
 end
