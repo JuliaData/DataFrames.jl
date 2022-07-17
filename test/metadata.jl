@@ -155,7 +155,6 @@ end
 end
 
 @testset "similar, empty, empty!" begin
-
     for fun in (x -> similar(x, 2), empty, empty!)
         df = DataFrame()
         df2 = fun(df)
@@ -184,11 +183,11 @@ end
     mc1 = copy(getfield(df, :colmetadata))
     m2 = metadata(df)
     mc2 = getfield(df, :colmetadata)
-    df2 = empty!(df)
-    @test getfield(df2, :metadata) == m1
-    @test getfield(df2, :metadata) === m2
-    @test getfield(df2, :colmetadata) == mc1
-    @test getfield(df2, :colmetadata) === mc2
+    empty!(df)
+    @test getfield(df, :metadata) == m1
+    @test getfield(df, :metadata) === m2
+    @test getfield(df, :colmetadata) == mc1
+    @test getfield(df, :colmetadata) === mc2
 end
 
 @testset "only, first, last" begin
@@ -1331,15 +1330,15 @@ end
             res = fun(df, :a => copy => :id)
             @test getfield(parent(res), :metadata) == Dict("name" => "refdf")
             @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "a"),
-                                                                      2 => Dict("name" => "a"),
-                                                                      4 => Dict("name" => "c"))
+                                                              2 => Dict("name" => "a"),
+                                                              4 => Dict("name" => "c"))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :a => :id)
             @test getfield(parent(res), :metadata) == Dict("name" => "refdf")
             @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "a"),
-                                                                      2 => Dict("name" => "a"),
-                                                                      4 => Dict("name" => "c"))
+                                                              2 => Dict("name" => "a"),
+                                                              4 => Dict("name" => "c"))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             ref = fun(df, :b => (x -> x) => :c)
