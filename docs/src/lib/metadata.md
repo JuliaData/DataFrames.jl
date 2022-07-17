@@ -129,8 +129,7 @@ julia> metadata(df)
 Dict{String, Any} with 1 entry:
   "caption" => "ELO ratings of chess players"
 
-julia> empty!(df_meta)
-Dict{String, Any}()
+julia> dropmetadata!(df, type=:table) # or dropmetadata!(df) that drops both table and column level metadata
 
 julia> hasmetadata(df)
 false
@@ -169,7 +168,7 @@ julia> names(df) .=> colmetadata.(Ref(df), names(df))
    "date" => Dict("label" => "Rating date in yyyy-u format")
  "rating" => Dict("label" => "ELO rating in classical time control")
 
-julia> foreach(col -> empty!(colmetadata(df, col)), names(df))
+julia> dropmetadata!(df, type=:column) # or dropmetadata!(df) that drops both table and column level metadata
 
 julia> hascolmetadata(df)
 false
