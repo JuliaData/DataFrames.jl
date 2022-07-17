@@ -39,8 +39,7 @@ that return views into the original data frame.
   as long as it supports conversion from `String`.
   When `view=true`, a `RepeatedVector{T}` is produced.
 
-Metadata: `stack` keeps table metadata and column level metadata for identifier
-          columns.
+Metadata: table metadata and column level metadata for identifier columns are preserved.
 
 # Examples
 ```jldoctest
@@ -200,8 +199,8 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
         catnms = copyto!(similar(nms, variable_eltype), nms)
     end
     out_df = DataFrame(AbstractVector[[RepeatedVector(df[!, c], 1, N) for c in ints_id_vars]..., # id_var columns
-                                      RepeatedVector(catnms, nrow(df), 1),                  # variable
-                                      StackedVector(Any[df[!, c] for c in measure_vars])],  # value
+                                      RepeatedVector(catnms, nrow(df), 1),                       # variable
+                                      StackedVector(Any[df[!, c] for c in measure_vars])],       # value
                        cnames, copycols=false)
     _copy_metadata!(out_df, df)
     if hascolmetadata(df)
@@ -265,8 +264,7 @@ Row and column keys will be ordered in the order of their first appearance.
     Whether or not tasks are actually spawned and their number are determined automatically.
     Set to `false` if `valuestransform` requires serial execution or is not thread-safe.
 
-Metadata: `unstack` keeps table metadata and column level metadata for row keys
-          columns.
+Metadata: table metadata and column level metadata for row keys columns are preserved.
 
 # Examples
 
@@ -723,7 +721,7 @@ That is, if the source data frame contains `Int` and `Float64` columns,
 resulting columns will have element type `Float64`. If the source has
 `Int` and `String` columns, resulting columns will have element type `Any`.
 
-Metadata: `permutedims` keeps table metadata and drops column metadata.
+Metadata: table metadata is preserved and column metadata is dropped.
 
 # Examples
 
