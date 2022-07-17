@@ -40,9 +40,9 @@ imaginary part of the number. If you need to perform a join on such values use
 CategoricalArrays.jl and transform a column containing such values into a
 `CategoricalVector`.
 
-Metadata: table level and column level metadata is preserved from `df1`, except
-for columns added to it from `df2`, in which case their column level metadata
-is taken from df2.
+Metadata: table level and column level metadata is taken from `df1` (including
+key columns), except for columns added to it from `df2`, whose column
+level metadata is taken from `df2`.
 
 See also: [`leftjoin`](@ref).
 

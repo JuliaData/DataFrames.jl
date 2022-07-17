@@ -79,7 +79,7 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
     dfs = AbstractDataFrame[df for df in bcf.args if df isa AbstractDataFrame]
     @assert !isempty(dfs)
 
-    if all(x -> hasmetadata(x) === true, dfs)
+    if all(x -> hasmetadata(x), dfs)
         all_meta = [metadata(x) for x in dfs]
         if length(all_meta) == 1
             _copy_metadata!(df, only(dfs))
@@ -98,7 +98,7 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
         end
     end
 
-    if all(x -> hascolmetadata(x) === true, dfs)
+    if all(x -> hascolmetadata(x), dfs)
         for colname in _names(df)
             if length(dfs) == 1
                 _copy_colmetadata!(df, colname, only(dfs), colname)
