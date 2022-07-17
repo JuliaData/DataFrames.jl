@@ -1098,7 +1098,7 @@ end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df)
             if fun === select! || fun === transform!
-                @test getfield(parent(res), :metadata) == metadata(df)
+                @test getfield(parent(res), :metadata) === metadata(df)
             else
                 @test getfield(parent(res), :metadata) == metadata(df)
                 @test getfield(parent(res), :metadata) !== metadata(df)
@@ -1108,7 +1108,7 @@ end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :a)
             if fun === select! || fun === transform!
-                @test getfield(parent(res), :metadata) == metadata(df)
+                @test getfield(parent(res), :metadata) === metadata(df)
             else
                 @test getfield(parent(res), :metadata) == metadata(df)
                 @test getfield(parent(res), :metadata) !== metadata(df)
@@ -1465,7 +1465,7 @@ end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id))
             if fun === select! || fun === transform!
-                @test getfield(parent(res), :metadata) == metadata(df)
+                @test getfield(parent(res), :metadata) === metadata(df)
             else
                 @test getfield(parent(res), :metadata) == metadata(df)
                 @test getfield(parent(res), :metadata) !== metadata(df)
@@ -1475,7 +1475,7 @@ end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :a)
             if fun === select! || fun === transform!
-                @test getfield(parent(res), :metadata) == metadata(df)
+                @test getfield(parent(res), :metadata) === metadata(df)
             else
                 @test getfield(parent(res), :metadata) == metadata(df)
                 @test getfield(parent(res), :metadata) !== metadata(df)
