@@ -506,7 +506,7 @@ hascolmetadata(dfr::DataFrameRow, col::ColumnIndex) =
 
 function hascolmetadata(dfr::DataFrameRow)
     getfield(parent(dfr), :colmetadata) === nothing && return false
-    return any(col -> hascolmetadata(dfr, col), _names(dfr))
+    return any(col -> hascolmetadata(dfr, col), 1:length(dfr))
 end
 
 dropmetadata!(dfr::DataFrameRow; type::Symbol=:all) =

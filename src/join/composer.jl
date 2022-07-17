@@ -102,6 +102,25 @@ _rename_cols(old_names::AbstractVector{Symbol},
 function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDataFrame,
                                    res::DataFrame, kind::Symbol)
     @assert kind == :left || kind == :right || kind == :outer || kind == :inner
+
+    # The steps taken in this function are:
+    # We initially copy metadata from left table as left table is always used
+    # to populate starting columns of a data frame
+    #
+    # Next processing depends on the type of join:
+    # 1. inner and outer joins treat both tables as equivalent so:
+    #    a. for key columns we intersect column metadata from left table with
+    #       column metadata of right table
+    #    b. we merge table level metadata
+    # 2. right join treats right table as main so:
+    #    a. for key columns we copy column metadata from right table to left table.
+    #    b. we copy right table table level metadata
+    # 3. left join treats left table as main so:
+    #    a. column level metadata does not require changing
+    #    b. we copy left table table level metadata
+    #
+    # We copy non-key column metadata from right table for all cases.
+
     for i in 1:ncol(joiner.dfl)
         _copy_colmetadata!(res, i, joiner.dfl, i)
     end

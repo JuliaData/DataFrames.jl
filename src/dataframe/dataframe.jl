@@ -800,9 +800,7 @@ function Base.copy(df::DataFrame; copycols::Bool=true)
 
     _copy_metadata!(cdf, df)
     df_colmetadata = getfield(df, :colmetadata)
-    if isnothing(df_colmetadata)
-        _drop_colmetadata!(cdf)
-    else
+    if !isnothing(df_colmetadata)
         cdf_colmetadata = Dict{Int, Dict{String, Any}}()
         for (k, v) in pairs(df_colmetadata)
             cdf_colmetadata[k] = copy(v)
@@ -1533,6 +1531,33 @@ end
 Return an `AbstractDict{String, Any}` object storing key-value mappings
 of table level metadata.
 To add, remove or update metadata, mutate the returned dictionary.
+
+See also: [`colmetadata`](@ref), [`hasmetadata`](@ref),
+[`hascolmetadata`](@ref), [`dropmetadata!`](@ref).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(a=1, b=2);
+
+julia> hasmetadata(df)
+false
+
+julia> meta = metadata(df)
+Dict{String, Any}()
+
+julia> hasmetadata(df)
+false
+
+julia> meta["name"] = "example";
+
+julia> hasmetadata(df)
+true
+
+julia> metadata(df)
+Dict{String, Any} with 1 entry:
+  "name" => "example"
+```
 """
 function metadata(df::DataFrame)
     meta = getfield(df, :metadata)
@@ -1551,6 +1576,33 @@ end
 
 Indicate whether the passed object has any table level metadata defined,
 i.e. whether calling [`metadata`](@ref) would return a non-empty object.
+
+See also: [`hascolmetadata`](@ref), [`metadata`](@ref),
+[`colmetadata`](@ref), [`dropmetadata!`](@ref).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(a=1, b=2);
+
+julia> hasmetadata(df)
+false
+
+julia> meta = metadata(df)
+Dict{String, Any}()
+
+julia> hasmetadata(df)
+false
+
+julia> meta["name"] = "example";
+
+julia> hasmetadata(df)
+true
+
+julia> metadata(df)
+Dict{String, Any} with 1 entry:
+  "name" => "example"
+```
 """
 function hasmetadata(df::DataFrame)
     meta = getfield(df, :metadata)
@@ -1569,6 +1621,42 @@ key-value mappings of column level metadata for column `col`.
 To add, remove or update metadata, mutate the returned dictionary.
 
 If column `col` is not present in the input object an error is thrown.
+
+See also: [`metadata`](@ref), [`hasmetadata`](@ref),
+[`hascolmetadata`](@ref), [`dropmetadata!`](@ref).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(a=1, b=2);
+
+julia> hascolmetadata(df)
+false
+
+julia> hascolmetadata(df, :b)
+false
+
+julia> metab = colmetadata(df, :b)
+Dict{String, Any}()
+
+julia> hascolmetadata(df)
+false
+
+julia> hascolmetadata(df, :b)
+false
+
+julia> metab["name"] = "column b";
+
+julia> hascolmetadata(df)
+true
+
+julia> hascolmetadata(df, :b)
+true
+
+julia> colmetadata(df, :b)
+Dict{String, Any} with 1 entry:
+  "name" => "column b"
+```
 """
 function colmetadata(df::DataFrame, col::ColumnIndex)
     idx = index(df)[col]
@@ -1595,6 +1683,42 @@ Indicate whether the passed object has any column level metadata defined,
 i.e. whether calling [`colmetadata`](@ref) would return a non-empty object.
 
 If column `col` is not present in the input object an error is thrown.
+
+See also: [`hasmetadata`](@ref), [`metadata`](@ref),
+[`colmetadata`](@ref), [`dropmetadata!`](@ref).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(a=1, b=2);
+
+julia> hascolmetadata(df)
+false
+
+julia> hascolmetadata(df, :b)
+false
+
+julia> metab = colmetadata(df, :b)
+Dict{String, Any}()
+
+julia> hascolmetadata(df)
+false
+
+julia> hascolmetadata(df, :b)
+false
+
+julia> metab["name"] = "column b";
+
+julia> hascolmetadata(df)
+true
+
+julia> hascolmetadata(df, :b)
+true
+
+julia> colmetadata(df, :b)
+Dict{String, Any} with 1 entry:
+  "name" => "column b"
+```
 """
 function hascolmetadata(df::DataFrame, col::ColumnIndex)
     idx = index(df)[col]
@@ -1614,6 +1738,42 @@ for at least one column, i.e. whether calling [`colmetadata`](@ref) on all colum
 would return at least one non-empty object.
 
 If column `col` is not present in the input object an error is thrown.
+
+See also: [`hasmetadata`](@ref), [`metadata`](@ref),
+[`colmetadata`](@ref), [`dropmetadata!`](@ref).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(a=1, b=2);
+
+julia> hascolmetadata(df)
+false
+
+julia> hascolmetadata(df, :b)
+false
+
+julia> metab = colmetadata(df, :b)
+Dict{String, Any}()
+
+julia> hascolmetadata(df)
+false
+
+julia> hascolmetadata(df, :b)
+false
+
+julia> metab["name"] = "column b";
+
+julia> hascolmetadata(df)
+true
+
+julia> hascolmetadata(df, :b)
+true
+
+julia> colmetadata(df, :b)
+Dict{String, Any} with 1 entry:
+  "name" => "column b"
+```
 """
 function hascolmetadata(df::DataFrame)
     meta = getfield(df, :colmetadata)
@@ -1633,6 +1793,33 @@ Remove metadata from passed object.
 If `type=:all` (the default) both table level and column level metadata is
 dropped. If `type=:table` only table level metadata is dropped.
 If `type=:column` only column level metadata is dropped.
+
+See also: [`metadata`](@ref), [`colmetadata`](@ref),
+[`hasmetadata`](@ref), [`hascolmetadata`](@ref).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(a=1, b=2);
+
+julia> metadata(df)["name"] = "example";
+
+julia> colmetadata(df, :b)["name"] = "column b";
+
+julia> hasmetadata(df)
+true
+
+julia> hascolmetadata(df)
+true
+
+julia> dropmetadata!(df);
+
+julia> hasmetadata(df)
+false
+
+julia> hascolmetadata(df)
+false
+```
 """
 function dropmetadata!(df::DataFrame; type::Symbol=:all)
     if type == :all
@@ -1694,4 +1881,26 @@ function _unsafe_copy_all_metadata!(dst::DataFrame, src::AbstractDataFrame)
         end
     end
     return nothing
+end
+
+function _merge_matching_df_metadata!(res::DataFrame, dfs)
+    # only table level metadata is merged
+    if !isempty(dfs) && all(x -> hasmetadata(x), dfs)
+        all_meta = Dict{String,Any}[metadata(df) for df in dfs]
+        if length(all_meta) == 1
+            _copy_metadata!(res, only(dfs))
+        else
+            new_meta = Dict{String, Any}()
+            for (k, v) in pairs(all_meta[1])
+                if all(@view all_meta[2:end]) do this_meta
+                    return isequal(get(this_meta, k, _MetadataMergeSentinelType()), v)
+                end
+                    new_meta[k] = v
+                end
+            end
+            if !isempty(new_meta)
+                copy!(metadata(res), new_meta)
+            end
+        end
+    end
 end

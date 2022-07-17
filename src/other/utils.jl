@@ -528,11 +528,13 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
     @assert false "should not be reached"
 end
 
+struct _MetadataMergeSentinelType end
+
 function _intersect_dicts(d1::Dict{String, Any}, d2::Dict{String, Any})
     length(d1) > length(d2) && return _intersect_dicts(d2, d1)
     d_out = Dict{String,Any}()
     for (k, v) in pairs(d1)
-        if haskey(d2, k) && isequal(v, d2[k])
+        if isequal(v, get(d2, k, _MetadataMergeSentinelType()))
             d_out[k] = v
         end
     end
@@ -541,7 +543,7 @@ end
 
 function _intersect_dicts!(d1::Dict{String, Any}, d2::Dict{String, Any})
     for (k, v) in pairs(d1)
-        if !haskey(d2, k) || !isequal(v, d2[k])
+        if !isequal(v, get(d2, k, _MetadataMergeSentinelType()))
             delete!(d1, k)
         end
     end

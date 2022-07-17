@@ -79,24 +79,7 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
     dfs = AbstractDataFrame[df for df in bcf.args if df isa AbstractDataFrame]
     @assert !isempty(dfs)
 
-    if all(x -> hasmetadata(x), dfs)
-        all_meta = [metadata(x) for x in dfs]
-        if length(all_meta) == 1
-            _copy_metadata!(df, only(dfs))
-        else
-            new_meta = Dict{String, Any}()
-            for (k, v) in pairs(all_meta[1])
-                if all(@view all_meta[2:end]) do this_meta
-                    return haskey(this_meta, k) && isequal(this_meta[k], v)
-                end
-                    new_meta[k] = v
-                end
-            end
-            if !isempty(new_meta)
-                copy!(metadata(df), new_meta)
-            end
-        end
-    end
+    _merge_matching_df_metadata!(df, dfs)
 
     if all(x -> hascolmetadata(x), dfs)
         for colname in _names(df)

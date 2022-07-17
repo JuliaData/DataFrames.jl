@@ -2009,24 +2009,7 @@ function Base.reduce(::typeof(vcat),
     res = _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
 
     # only handle table level metadata, as column level metadata was done in _vcat
-    if !isempty(dfs) && all(x -> hasmetadata(x), dfs)
-        all_meta = [metadata(df) for df in dfs]
-        if length(all_meta) == 1
-            _copy_metadata!(res, only(dfs))
-        else
-            new_meta = Dict{String, Any}()
-            for (k, v) in pairs(all_meta[1])
-                if all(@view all_meta[2:end]) do this_meta
-                    return haskey(this_meta, k) && isequal(this_meta[k], v)
-                end
-                    new_meta[k] = v
-                end
-            end
-            if !isempty(new_meta)
-                copy!(metadata(res), new_meta)
-            end
-        end
-    end
+    _merge_matching_df_metadata!(res, dfs)
 
     if source !== nothing
         len = length(dfs)
@@ -2165,7 +2148,7 @@ function _vcat(dfs::AbstractVector{AbstractDataFrame};
                 for (k, v) in pairs(colmetadata(all_meta_df[1], colname))
                     if all(@view all_meta_df[2:end]) do df
                         this_meta = colmetadata(df, colname)
-                        return haskey(this_meta, k) && isequal(this_meta[k], v)
+                        return isequal(get(this_meta, k, _MetadataMergeSentinelType()), v)
                     end
                         new_meta[k] = v
                     end

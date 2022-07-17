@@ -382,7 +382,7 @@ hascolmetadata(sdf::SubDataFrame, col::ColumnIndex) =
 
 function hascolmetadata(sdf::SubDataFrame)
     getfield(parent(sdf), :colmetadata) === nothing && return false
-    return any(col -> hascolmetadata(sdf, col), _names(sdf))
+    return any(col -> hascolmetadata(sdf, col), axes(sdf, 2))
 end
 
 dropmetadata!(sdf::SubDataFrame; type::Symbol=:all) =
