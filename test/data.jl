@@ -139,10 +139,15 @@ end
     @test dropmissing!(df1b) === df1b
     @test df1b == df1
 
+    @test isempty(completecases(DataFrame())) && completecases(DataFrame()) isa BitVector
+
+    @test_throws ArgumentError completecases(DataFrame(a=1), Not(:a))
+    @test_throws ArgumentError completecases(DataFrame(a=1), [])
+
     @test completecases(DataFrame(x=1:3, y=1:3), [:x]) == trues(3)
     @test completecases(DataFrame(x=[1, missing, 3], y=1:3), [:x]) == [true, false, true]
     @test completecases(DataFrame()) == trues(0)
-    @test completecases(DataFrame(x=1:3), Cols()) == trues(3)
+    @test_throws ArgumentError completecases(DataFrame(x=1:3), Cols())
     @test_throws MethodError completecases(DataFrame(x=1), true)
     @test_throws ArgumentError completecases(df3, :a)
 
@@ -266,8 +271,9 @@ end
     @test unique(df, :a => x -> 1) == df[1:1, :]
     @test unique(DataFrame()) == DataFrame()
     @test isempty(nonunique(DataFrame())) && nonunique(DataFrame()) isa Vector{Bool}
-    @test nonunique(DataFrame(a=1:3), []) == [false, true, true]
-    @test unique(DataFrame(a=1:3), []) == DataFrame(a=1)
+    @test unique(DataFrame()) == DataFrame()
+    @test_throws ArgumentError nonunique(DataFrame(a=1:3), [])
+    @test_throws ArgumentError unique(DataFrame(a=1:3), [])
 
     @test unique(copy(df1), "a") == unique(copy(df1), :a) == unique(copy(df1), 1) ==
           df1[1:2, :]

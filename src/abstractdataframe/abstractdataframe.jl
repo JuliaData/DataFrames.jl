@@ -784,7 +784,8 @@ Return a Boolean vector with `true` entries indicating rows without missing valu
 (complete cases) in data frame `df`.
 
 If `cols` is provided, only missing values in the corresponding columns are considered.
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR)
+that produces a non-empty result.
 
 See also: [`dropmissing`](@ref) and [`dropmissing!`](@ref).
 Use `findall(completecases(df))` to get the indices of the rows.
@@ -833,6 +834,12 @@ julia> completecases(df, [:x, :y])
 function completecases(df::AbstractDataFrame, cols::MultiColumnIndex=:)
     colsidx = index(df)[cols]
     length(colsidx) == 1 && return completecases(df, only(colsidx))
+
+    if ncol(df) > 0 && isempty(colsidx)
+        throw(ArgumentError("finding complete cases in data frame when " *
+                            "`cols` selects no columns is not allowed"))
+    end
+
     res = trues(size(df, 1))
     isempty(colsidx) && return res
     aux = BitVector(undef, size(df, 1))
@@ -1314,7 +1321,8 @@ See also [`unique`](@ref) and [`unique!`](@ref).
 # Arguments
 - `df` : `AbstractDataFrame`
 - `cols` : a selector specifying the column(s) or their transformations to compare.
-  Can be any column selector or transformation accepted by [`select`](@ref).
+  Can be any column selector or transformation accepted by [`select`](@ref) that
+  produces a non-empty result.
 
 # Examples
 ```jldoctest
@@ -1379,12 +1387,9 @@ end
 
 function nonunique(df::AbstractDataFrame, cols)
     udf = select(df, cols, copycols=false)
-    if ncol(udf) == 0
-        res = fill(true, nrow(df))
-        if !isempty(res)
-            res[1] = false
-        end
-        return res
+    if ncol(df) > 0 && ncol(udf) == 0
+         throw(ArgumentError("finding duplicate rows in data frame when " *
+                             "`cols` selects no columns is not allowed"))
     else
         return nonunique(udf)
     end
