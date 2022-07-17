@@ -1180,7 +1180,7 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame;
         _copy_colmetadata!(df1, u[i], df2, i)
     end
 
-    if hasmetadata(df1) === true && hasmetadata(df2) === true
+    if hasmetadata(df1) && hasmetadata(df2)
         _intersect_dicts!(metadata(df1), metadata(df2))
         if isempty(metadata(df1))
             _drop_metadata!(df1)
@@ -1415,7 +1415,7 @@ function repeat!(df::DataFrame, count::Integer)
 end
 
 # This is not exactly copy! as in general we allow axes to be different
-# Also no table metadata is needed to be copied as we use _replace_columns!
+# Also no table metadata needs to be copied as we use _replace_columns!
 # only in situations when table metadata is kept
 function _replace_columns!(df::DataFrame, newdf::DataFrame)
     # for DataFrame object here we do not support keep_present keyword argument
@@ -1532,7 +1532,9 @@ end
     metadata(dfr::DataFrameRows)
     metadata(gdf::GroupedDataFrame)
 
-Return `AbstractDict{String, Any}` storing key-value mappings of table level metadata.
+Return an `AbstractDict{String, Any}` object storing key-value mappings
+of table level metadata.
+To add, remove or update metadata, mutate the returned dictionary.
 """
 function metadata(df::DataFrame)
     meta = getfield(df, :metadata)
@@ -1549,14 +1551,12 @@ end
     hasmetadata(dfr::DataFrameRows)
     hasmetadata(gdf::GroupedDataFrame)
 
-Return either `Bool`.
-If `false` is returned this means that data frame `df` does not have any table
-level metadata defined. If `true` is returned it means that at table level some
-metadata is defined for `df`.
+Indicate whether the passed object has any table level metadata defined,
+i.e. whether calling [`metadata`](@ref) would return a non-empty object.
 """
 function hasmetadata(df::DataFrame)
     meta = getfield(df, :metadata)
-    return !(meta === nothing || isempty(meta))
+    return meta !== nothing && !isempty(meta)
 end
 
 """
@@ -1566,11 +1566,11 @@ end
     colmetadata(dfr::DataFrameRows, col::ColumnIndex)
     colmetadata(gdf::GroupedDataFrame, col::ColumnIndex)
 
-Return `AbstractDict{String, Any}` storing
+Return an `AbstractDict{String, Any}` object storing
 key-value mappings of column level metadata for column `col`.
-To add or update metadata mutate the returned dictionary.
+To add, remove or update metadata, mutate the returned dictionary.
 
-If `col` is not present in `df` an error is thrown.
+If column `col` is not present in the input object an error is thrown.
 """
 function colmetadata(df::DataFrame, col::ColumnIndex)
     idx = index(df)[col]
@@ -1593,12 +1593,10 @@ end
     hascolmetadata(dfr::DataFrameRows, col::ColumnIndex)
     hascolmetadata(gdf::GroupedDataFrame, col::ColumnIndex)
 
-Return `Bool`.
-If `false` is returned this means that column `col` of data frame `df` does not
-have any column level metadata defined. If `true` is returned it means that for
-`:col` column some metadata is defined.
+Indicate whether the passed object has any column level metadata defined,
+i.e. whether calling [`colmetadata`](@ref) would return a non-empty object.
 
-If `col` is not present in `df` an error is thrown.
+If column `col` is not present in the input object an error is thrown.
 """
 function hascolmetadata(df::DataFrame, col::ColumnIndex)
     idx = index(df)[col]
@@ -1613,11 +1611,11 @@ end
     hascolmetadata(dfr::DataFrameRows)
     hascolmetadata(gdf::GroupedDataFrame)
 
-Return `Bool`. If `true` is returned it means that for at least one column
-`:col` of the data frame `hasmetadata(df, :col)` returns `true`.
-`:col` column some metadata is defined. Otherwise `false` is returned.
+Indicate whether the passed object has any column level metadata defined
+for at least one column, i.e. whether calling [`colmetadata`](@ref) on all columns
+would return at least one non-empty object.
 
-If `col` is not present in `df` an error is thrown.
+If column `col` is not present in the input object an error is thrown.
 """
 function hascolmetadata(df::DataFrame)
     meta = getfield(df, :colmetadata)
@@ -1632,23 +1630,16 @@ end
     dropallmetadata!(dfr::DataFrameRows)
     dropallmetadata!(gdf::GroupedDataFrame)
 
-Remove all table level and column level metadata from `df`.
+Remove all table level and column level metadata from passed object.
 """
 function dropallmetadata!(df::DataFrame)
     _drop_metadata!(df)
     _drop_colmetadata!(df)
-    return nothing
+    return df
 end
 
-function _drop_metadata!(df::DataFrame)
-    setfield!(df, :metadata, nothing)
-    return nothing
-end
-
-function _drop_colmetadata!(df::DataFrame)
-    setfield!(df, :colmetadata, nothing)
-    return nothing
-end
+_drop_metadata!(df::DataFrame) = setfield!(df, :metadata, nothing)
+_drop_colmetadata!(df::DataFrame) = setfield!(df, :colmetadata, nothing)
 
 function _drop_colmetadata!(df::AbstractDataFrame, col::ColumnIndex)
     colmetadata = getfield(parent(df), :colmetadata)
