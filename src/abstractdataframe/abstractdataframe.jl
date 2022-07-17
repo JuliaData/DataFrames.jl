@@ -145,7 +145,7 @@ a vector) then:
 Mixing symbols and strings in `to` and `from` is not allowed.
 
 $METADATA_FIXED
-Column metadata is considered to be attached to column number.
+When a column is renamed, its metadata becomes associated to its new name.
 
 See also: [`rename`](@ref)
 
@@ -1385,8 +1385,9 @@ function nonunique(df::AbstractDataFrame, cols)
             res[1] = false
         end
         return res
+    else
+        return nonunique(udf)
     end
-    return nonunique(udf)
 end
 
 """
@@ -1409,7 +1410,7 @@ specifying the column(s) to compare.
 
 $METADATA_FIXED
 
-See also: [`unique!`](@ref) [`nonunique`](@ref).
+See also: [`unique!`](@ref), [`nonunique`](@ref).
 
 # Examples
 ```jldoctest
@@ -1483,7 +1484,7 @@ specifying the column(s) to compare.
 
 $METADATA_FIXED
 
-See also: [`unique!`](@ref) [`nonunique`](@ref).
+See also: [`unique!`](@ref), [`nonunique`](@ref).
 
 # Examples
 ```jldoctest
@@ -1694,9 +1695,9 @@ source (without copying). This option should be used with caution as mutating
 either the columns in sources or in the returned `DataFrame` might lead to
 the corruption of the other object.
 
-Metadata: `hcat` propagates table level metadata if some key is present
-in all passed data frames and value associated with it is identical in all
-passed data frames. `hcat` propagates column level metadata.
+Metadata: `hcat` propagates table level metadata for keys that are present
+in all passed data frames and have the same value;
+it propagates column level metadata.
 
 # Example
 ```jldoctest
@@ -1796,12 +1797,10 @@ as with `vcat` for `AbstractVector`s.
 making it possible to initialize an empty data frame at the beginning of a loop
 and `vcat` onto it.
 
-Metadata: `vcat` propagates table level metadata if some key is present
-in all passed data frames and value associated with it is identical in all
-passed data frames.
-`vcat` propagates column level metadata for columns if some key for a given
-column is present in all passed data frames that contain this column and value
-associated with it is identical in all passed data frames.
+Metadata: `vcat` propagates table level metadata for keys that are present
+in all passed data frames and have the same value.
+`vcat` propagates column level metadata for keys that are present in all passed
+data frames that contain this column and have the same value.
 
 # Example
 ```jldoctest
@@ -1933,12 +1932,10 @@ The column order, names, and types of the resulting `DataFrame`, and
 the behavior of `cols` and `source` keyword arguments follow the rules specified
 for [`vcat`](@ref) of `AbstractDataFrame`s.
 
-Metadata: `vcat` propagates table level metadata if some key is present
-in all passed data frames and value associated with it is identical in all
-passed data frames.
-`vcat` propagates column level metadata for columns that are present in all
-passed data frames if some key for a given column is present in all passed data
-frames and value associated with it is identical in all passed data frames.
+Metadata: `vcat` propagates table level metadata for keys that are present
+in all passed data frames and have the same value.
+`vcat` propagates column level metadata for keys that are present in all passed
+data frames that contain this column and have the same value.
 
 # Example
 ```jldoctest
@@ -2007,7 +2004,7 @@ function Base.reduce(::typeof(vcat),
     res = _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
 
     # only handle table level metadata, as column level metadata was done in _vcat
-    if !isempty(dfs) && all(x -> hasmetadata(x) === true, dfs)
+    if !isempty(dfs) && all(x -> hasmetadata(x), dfs)
         all_meta = [metadata(df) for df in dfs]
         if length(all_meta) == 1
             _copy_metadata!(res, only(dfs))
