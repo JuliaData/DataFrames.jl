@@ -37,9 +37,9 @@ The above rule has the following exceptions:
 Please note that `append!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
-Metadata: table level metadata is kept from `df`; the same with column level
-metadata for columns present in `df`. If new columns are added and they have
-metadata it is copied from the appended table.
+Metadata: table level metadata and column level metadata for columns present in `df`
+are preserved.
+If new columns are added their metadata is copied from the appended table.
 
 See also: use [`push!`](@ref) to add individual rows to a data frame, [`prepend!`](@ref)
 to add a table at the beginning, and [`vcat`](@ref) to vertically concatenate
@@ -123,9 +123,9 @@ The above rule has the following exceptions:
 Please note that `prepend!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
-Metadata: table level metadata is kept from `df`; the same with column level
-metadata for columns present in `df`. If new columns are added and they have
-metadata it is copied from the prepended table.
+Metadata: table level metadata and column level metadata for columns present in `df`
+are preserved.
+If new columns are added their metadata is copied from the appended table.
 
 See also: use [`pushfirst!`](@ref) to add individual rows at the beginning of a data frame,
 [`append!`](@ref) to add a table at the end, and [`vcat`](@ref)

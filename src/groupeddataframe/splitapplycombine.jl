@@ -214,7 +214,7 @@ struct TransformationResult
     col::AbstractVector # computed value of a column
     name::Symbol # name of a column
     optional::Bool # whether a column is allowed to be replaced in the future
-    metadatacol::Int # if metadata should be propagated:
+    metadatacol::Int # whether metadata should be propagated:
                      # 0 if not
                      # if greater than zero column number of metadata source
 end
