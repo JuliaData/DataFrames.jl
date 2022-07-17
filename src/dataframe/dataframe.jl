@@ -1182,10 +1182,8 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame;
 
     if hasmetadata(df1) && hasmetadata(df2)
         _intersect_dicts!(metadata(df1), metadata(df2))
-        if isempty(metadata(df1))
-            _drop_metadata!(df1)
-        end
-    else
+    end
+    if !hasmetadata(df1)
         _drop_metadata!(df1)
     end
 
@@ -1601,7 +1599,7 @@ If column `col` is not present in the input object an error is thrown.
 function hascolmetadata(df::DataFrame, col::ColumnIndex)
     idx = index(df)[col]
     meta = getfield(df, :colmetadata)
-    return meta !== nothing && haskey(meta, idx) && !isempty(meta[idx])
+    return meta !== nothing && !isempty(get(meta, idx, ())
 end
 
 """
