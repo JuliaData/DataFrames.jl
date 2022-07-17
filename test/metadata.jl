@@ -11,7 +11,7 @@ using Test, DataFrames, Random
         m["name"] = "empty"
         @test hasmetadata(x)
         @test metadata(x) === m
-        @test metadata(x) === Dict("name" => "empty")
+        @test metadata(x) == Dict("name" => "empty")
         empty!(m)
         @test !hasmetadata(x)
         @test metadata(x) === m
@@ -28,7 +28,7 @@ using Test, DataFrames, Random
         m["name"] = "empty"
         @test hasmetadata(x)
         @test metadata(x) === m
-        @test metadata(x) === Dict("name" => "empty")
+        @test metadata(x) == Dict("name" => "empty")
         empty!(m)
         @test !hasmetadata(x)
         @test metadata(x) === m
@@ -58,7 +58,7 @@ end
         @test hascolmetadata(y, a)
         @test !hascolmetadata(y, b)
         @test colmetadata(y, a) === m
-        @test colmetadata(y, a) === Dict("name" => "empty")
+        @test colmetadata(y, a) == Dict("name" => "empty")
         empty!(m)
         @test !hascolmetadata(y)
         @test_throws ArgumentError hascolmetadata(y, x)
