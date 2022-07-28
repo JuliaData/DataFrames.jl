@@ -38,36 +38,64 @@ function Base.show(io::IO, gd::GroupedDataFrame;
                  truncate=truncate, kwargs...)
         end
     else
-        if N > 0
-            nrows = size(gd[1], 1)
-            rows = nrows > 1 ? "rows" : "row"
+        N > 0 || return
 
-            identified_groups = [string(col, " = ", repr(gd[1][1, col]))
-                                 for col in gd.cols]
 
-            print(io, "\nFirst Group ($nrows $rows): ")
-            join(io, identified_groups, ", ")
-            println(io)
+        (h, w) = get(io, :displaysize, displaysize(io))
+        h -= 2 # two lines are already used for header
 
-            show(io, gd[1]; summary=false,
-                 allrows=allrows, allcols=allcols, rowlabel=rowlabel,
-                 truncate=truncate, kwargs...)
-        end
+        h1 = h2 = h # display heights available for first and last groups
         if N > 1
-            nrows = size(gd[N], 1)
-            rows = nrows > 1 ? "rows" : "row"
+            # line height of groups if printed in full (nrows + 3 extra for header)
+            g1 = size(gd[1], 1) + 3
+            g2 = size(gd[N], 1) + 3
 
-            identified_groups = [string(col, " = ", repr(gd[N][1, col]))
-                                 for col in gd.cols]
-            print(io, "\n⋮")
-            print(io, "\nLast Group ($nrows $rows): ")
-            join(io, identified_groups, ", ")
-            println(io)
-
-            show(io, gd[N]; summary=false,
-                 allrows=allrows, allcols=allcols, rowlabel=rowlabel,
-                 truncate=truncate, kwargs...)
+            if g1 + g2 > h # won't fit on screen
+                if g1 < h ÷ 2
+                    h2 = h - g1 - 2 # show first group fully, squash last
+                elseif g2 < h ÷ 2
+                    h1 = h - g2 - 2 # show last group fully, squash first
+                else
+                    # squash both groups
+                    h += 1
+                    h1 = h ÷ 2
+                    h2 = h - h1
+                end
+            end
         end
+
+
+        nrows = size(gd[1], 1)
+        rows = nrows > 1 ? "rows" : "row"
+
+        identified_groups = [string(col, " = ", repr(gd[1][1, col]))
+                             for col in gd.cols]
+
+        print(io, "\nFirst Group ($nrows $rows): ")
+        join(io, identified_groups, ", ")
+        println(io)
+
+        show(io, gd[1]; summary=false,
+             allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+             truncate=truncate, kwargs..., display_size=(h1, w))
+
+
+        N > 1 || return
+
+
+        nrows = size(gd[N], 1)
+        rows = nrows > 1 ? "rows" : "row"
+
+        identified_groups = [string(col, " = ", repr(gd[N][1, col]))
+                             for col in gd.cols]
+        print(io, "\n⋮")
+        print(io, "\nLast Group ($nrows $rows): ")
+        join(io, identified_groups, ", ")
+        println(io)
+
+        show(io, gd[N]; summary=false,
+             allrows=allrows, allcols=allcols, rowlabel=rowlabel,
+             truncate=truncate, kwargs..., display_size=(h2, w))
     end
 end
 
