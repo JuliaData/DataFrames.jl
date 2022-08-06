@@ -74,6 +74,17 @@ function metadata(df::DataFrame, key::AbstractString; style::Bool=false)
     return style ? meta[key] : meta[key][1]
 end
 
+metadata(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+         key::AbstractString; style::Bool=false) =
+    metadata(parent(x), key, style=style)
+
+function metadata(x::Union{DataFrameRow, SubDataFrame},
+                  key::AbstractString; style::Bool=false)
+    meta_value, meta_style = metadata(parent(x), key, style=true)
+    meta_style !== :note && throw(KeyError("Metadata for key $key not found"))
+    return style ? (meta_value, meta_style) : meta_value
+end
+
 """
     metadatakeys(df::AbstractDataFrame)
     metadatakeys(dfr::DataFrameRow)
@@ -116,6 +127,17 @@ function metadatakeys(df::DataFrame)
     metakeys = keys(meta)
     @assert !isempty(metakeys) # by design in such cases meta === nothing should be met
     return metakeys
+end
+
+metadatakeys(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame}) =
+    metadatakeys(parent(x))
+
+function metadatakeys(x::Union{DataFrameRow, SubDataFrame})
+    df = parent(x)
+    meta = getfield(df, :metadata)
+    meta === nothing && return ()
+    @assert !isempty(meta)
+    return (k for (k, (_, s)) in pairs(meta) if s === :note)
 end
 
 """
@@ -167,6 +189,27 @@ function metadata!(df::DataFrame, key::AbstractString, value::Any; style)
     return df
 end
 
+function metadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+                   key::AbstractString, value::Any; style)
+    metadata!(parent(x), key, value, style=style)
+    return x
+end
+
+function metadata!(x::Union{DataFrameRow, SubDataFrame},
+                   key::AbstractString, value::Any; style)
+    style === :note || throw(ArgumentError("only :note style is supported for " *
+                                           "DataFrameRow and SubDataFrame"))
+    df = parent(x)
+    meta = getfield(df, :metadata)
+    if meta !== nothing && haskey(meta, key) && meta[key][2] !== :note
+        throw(ArgumentError("trying to set metadata for DataFrameRow and SubDataFrame" *
+                            "that is already present in the parent and does not " *
+                            "have :note style"))
+    end
+    metadata!(df, key, value, style=style)
+    return x
+end
+
 """
     deletemetadata!(df::AbstractDataFrame, key::AbstractString)
     deletemetadata!(dfr::DataFrameRow, key::AbstractString)
@@ -215,12 +258,27 @@ function deletemetadata!(df::DataFrame, key::AbstractString)
     return df
 end
 
+function  deletemetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+                          key::AbstractString)
+    deletemetadata!(parent(x), key)
+    return x
+end
+
+function deletemetadata!(x::Union{DataFrameRow, SubDataFrame}, key::AbstractString)
+    df = parent(x)
+    if key in metadatakeys(df)
+        _, s = metadata(df, key, style=true)
+        s == :note && deletemetadata!(df, key)
+    end
+    return x
+end
+
 """
-    deletemetadata!(df::AbstractDataFrame, key::AbstractString)
-    deletemetadata!(dfr::DataFrameRow, key::AbstractString)
-    deletemetadata!(dfc::DataFrameColumns, key::AbstractString)
-    deletemetadata!(dfr::DataFrameRows, key::AbstractString)
-    deletemetadata!(gdf::GroupedDataFrame, key::AbstractString)
+    emptymetadata!(df::AbstractDataFrame)
+    emptymetadata!(dfr::DataFrameRow)
+    emptymetadata!(dfc::DataFrameColumns)
+    emptymetadata!(dfr::DataFrameRows)
+    emptymetadata!(gdf::GroupedDataFrame)
 
 Delete table level metadata from object `df` for key `key`.
 
@@ -257,6 +315,20 @@ julia> metadatakeys(df)
 function emptymetadata!(df::DataFrame)
     setfield!(df, :metadata, nothing)
     return df
+end
+
+function emptymetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame})
+    emptymetadata!(parent(x))
+    return x
+end
+
+function emptymetadata!(x::Union{DataFrameRow, SubDataFrame})
+    df = parent(x)
+    for key in metadatakeys(df)
+        _, s = metadata(df, key, style=true)
+        s == :note && deletemetadata!(df, key)
+    end
+    return x
 end
 
 """
@@ -307,6 +379,40 @@ colmetadata(df::DataFrame, col::Symbol, key::AbstractString; style::Bool=false) 
     colmetadata(df, Int(index(df)[col]), key, style=style)
 colmetadata(df::DataFrame, col::ColumnIndex, key::AbstractString; style::Bool=false) =
     colmetadata(df, Int(index(df)[col]), key, style=style)
+
+colmetadata(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+            col::Int, key::AbstractString; style::Bool=false) =
+    colmetadata(parent(x), col, key; style=style)
+colmetadata(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+            col::Symbol, key::AbstractString; style::Bool=false) =
+    colmetadata(parent(x), col, key; style=style)
+colmetadata(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString; style::Bool=false) =
+    colmetadata(parent(dfr), col, key; style=style)
+colmetadata(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString; style::Bool=false) =
+    colmetadata(parent(dfc), col, key; style=style)
+colmetadata(gdf::GroupedDataFrame, col::ColumnIndex, key::AbstractString; style::Bool=false) =
+    colmetadata(parent(gdf), col, key; style=style)
+
+function colmetadata(x::Union{DataFrameRow, SubDataFrame},
+                     col::Int, key::AbstractString; style::Bool=false)
+    col_name = _names(x)[col]
+    df = parent(x)
+    val_meta, style_meta = colmetadata(df, col_name, key, style=true)
+    if style_meta !== :note
+        throw(KeyError("Metadata for column $col for key $key with :note style not found"))
+    end
+    return style ? (val_meta, style_meta) : val_meta
+end
+
+colmetadata(x::Union{DataFrameRow, SubDataFrame},
+            col::Symbol, key::AbstractString; style::Bool=false) =
+            colmetadata(x, Int(index(x)[col]), key, style=style)
+colmetadata(x::DataFrameRow,
+            col::ColumnIndex, key::AbstractString; style::Bool=false) =
+            colmetadata(x, Int(index(x)[col]), key, style=style)
+colmetadata(x::SubDataFrame,
+            col::ColumnIndex, key::AbstractString; style::Bool=false) =
+            colmetadata(x, Int(index(x)[col]), key, style=style)
 
 """
     colmetadatakeys(df::AbstractDataFrame, [col::ColumnIndex])
@@ -365,6 +471,42 @@ function colmetadatakeys(df::DataFrame)
     return (_names(df)[idx] => colmetadatakeys(df, idx) for idx in keys(cols_meta))
 end
 
+colmetadatakeys(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame}, col::Int) =
+    colmetadatakeys(parent(x), col)
+colmetadatakeys(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame}, col::Symbol) =
+    colmetadatakeys(parent(x), col)
+colmetadatakeys(dfr::DataFrameRows, col::ColumnIndex) = colmetadatakeys(parent(dfr), col)
+colmetadatakeys(dfc::DataFrameColumns, col::ColumnIndex) = colmetadatakeys(parent(dfc), col)
+colmetadatakeys(gdf::GroupedDataFrame, col::ColumnIndex) = colmetadatakeys(parent(gdf), col)
+colmetadatakeys(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame}) =
+    colmetadatakeys(parent(x))
+
+function colmetadatakeys(x::Union{DataFrameRow, SubDataFrame}, col::Int)
+    col_name = _names(x)[col]
+    df = parent(x)
+    idx = index(df)[col_name]
+    cols_meta = getfield(df, :colmetadata)
+    cols_meta === nothing && return ()
+    haskey(cols_meta, idx) || return ()
+    col_meta = cols_meta[idx]
+    @assert !isempty(col_meta) # by design in such cases meta === nothing should be met
+    return (k for (k, (_, s)) in pairs(col_meta) if s === :note)
+end
+
+colmetadatakeys(x::Union{DataFrameRow, SubDataFrame}, col::Symbol) =
+    colmetadatakeys(x, Int(index(x)[col]))
+colmetadatakeys(x::DataFrameRow, col::ColumnIndex) =
+    colmetadatakeys(x, Int(index(x)[col]))
+colmetadatakeys(x::SubDataFrame, col::ColumnIndex) =
+    colmetadatakeys(x, Int(index(x)[col]))
+
+function colmetadatakeys(x::Union{DataFrameRow, SubDataFrame})
+    df = parent(x)
+    cols_meta = getfield(df, :colmetadata)
+    cols_meta === nothing && return ()
+    return (col => colmetadatakeys(x, col) for col in _names(x) if !isempty(colmetadatakeys(x, col)))
+end
+
 """
     colmetadata!(df::AbstractDataFrame, col::ColumnIndex, key::AbstractString, value; style)
     colmetadata!(dfr::DataFrameRow, col::ColumnIndex, key::AbstractString, value; style)
@@ -421,6 +563,59 @@ colmetadata!(df::DataFrame, col::Symbol, key::AbstractString, value::Any; style)
 colmetadata!(df::DataFrame, col::ColumnIndex, key::AbstractString, value::Any; style) =
     colmetadata!(df, Int(index(df)[col]), key, value; style=style)
 
+function colmetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+                      col::Int, key::AbstractString, value::Any; style)
+    colmetadata!(parent(x), col, key, value; style=style)
+    return x
+end
+
+function colmetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+                      col::Symbol, key::AbstractString, value::Any; style)
+    colmetadata!(parent(x), col, key, value; style=style)
+    return x
+end
+
+function colmetadata!(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString, value::Any; style)
+    colmetadata!(parent(dfr), col, key, value; style=style)
+    return dfr
+end
+
+function colmetadata!(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString, value::Any; style)
+    colmetadata!(parent(dfc), col, key, value; style=style)
+    return dfc
+end
+
+function colmetadata!(gdf::GroupedDataFrame, col::ColumnIndex, key::AbstractString, value::Any; style)
+    colmetadata!(parent(gdf), col, key, value; style=style)
+    return gdf
+end
+
+function colmetadata!(x::Union{DataFrameRow, SubDataFrame},
+                      col::Int, key::AbstractString, value::Any; style)
+    col_name = _names(x)[col]
+    style === :note || throw(ArgumentError("only :note style is supported for " *
+                                           "DataFrameRow and SubDataFrame"))
+    df = parent(x)
+    cols_meta = getfield(df, :colsmetadata)
+    idx = index(df)[col_name]
+    if cols_meta !== nothing && haskey(cols_meta, idx) &&
+       haskey(cols_meta[idx], key) && cols_meta[idx][key][2] !== :note
+        throw(ArgumentError("trying to set metadata for DataFrameRow and SubDataFrame" *
+                            "that is already present in the parent and does not " *
+                            "have :note style"))
+    end
+    colmetadata!(df, idx, key, value, style=style)
+    return x
+end
+
+colmetadata!(x::Union{DataFrameRow, SubDataFrame},
+             col::Symbol, key::AbstractString, value::Any; style) =
+    colmetadata!(x, Int(index(x)[col]), key, value; style=style)
+colmetadata!(x::DataFrameRow, col::ColumnIndex, key::AbstractString, value::Any; style) =
+    colmetadata!(x, Int(index(x)[col]), key, value; style=style)
+colmetadata!(x::SubDataFrame, col::ColumnIndex), key::AbstractString, value::Any; style =
+    colmetadata!(x, Int(index(x)[col]), key, value; style=style)
+
 """
     deletecolmetadata!(df::AbstractDataFrame, col::ColumnIndex, key::AbstractString)
     deletecolmetadata!(dfr::DataFrameRow, col::ColumnIndex, key::AbstractString)
@@ -474,6 +669,52 @@ deletecolmetadata!(df::DataFrame, col::Symbol, key::AbstractString) =
     deletecolmetadata!(df, Int(index(df)[col]), key)
 deletecolmetadata!(df::DataFrame, col::ColumnIndex, key::AbstractString) =
     deletecolmetadata!(df, Int(index(df)[col]), key)
+
+function deletecolmetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+                            col::Int, key::AbstractString)
+    deletecolmetadata!(parent(x), col, key)
+    return x
+end
+
+function deletecolmetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+                            col::Symbol, key::AbstractString)
+    deletecolmetadata!(parent(x), col, key)
+    return x
+end
+
+function deletecolmetadata!(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString)
+    deletecolmetadata!(parent(dfr), col, key)
+    return dfr
+end
+
+function deletecolmetadata!(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString)
+    deletecolmetadata!(parent(dfc), col, key)
+    return dfc
+end
+
+function deletecolmetadata!(gdf::GroupedDataFrame, col::ColumnIndex, key::AbstractString)
+    deletecolmetadata!(parent(gdf), col, key)
+    return gdf
+end
+
+function deletecolmetadata!(x::Union{DataFrameRow, SubDataFrame}, col::Int, key::AbstractString)
+    col_name = _names(x)[col]
+    df = parent(x)
+    idx = index(df)[col_name]
+
+    if key in colmetadatakeys(df, idx)
+        _, s = colmetadata(df, idx, key, style=true)
+        s == :note && deletecolmetadata!(df, idx, key)
+    end
+    return x
+end
+
+deletecolmetadata!(x::Union{DataFrameRow, SubDataFrame}, col::Symbol, key::AbstractString) =
+    deletecolmetadata!(x, Int(index(x)[col]), key)
+deletecolmetadata!(x::DataFrameRow, col::ColumnIndex, key::AbstractString) =
+    deletecolmetadata!(x, Int(index(x)[col]), key)
+deletecolmetadata!(x::SubDataFrame, col::ColumnIndex, key::AbstractString) =
+    deletecolmetadata!(x, Int(index(x)[col]), key)
 
 """
     emptycolmetadata!(df::AbstractDataFrame, col::ColumnIndex, key::AbstractString)
@@ -530,8 +771,62 @@ function emptycolmetadata!(df::DataFrame)
     return df
 end
 
+function emptycolmetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame}, col::Int)
+    emptycolmetadata!(parent(x), col)
+    return x
+end
+
+function emptycolmetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame}, col::Symbol)
+    emptycolmetadata!(parent(x), col)
+    return x
+end
+
+function emptycolmetadata!(dfr::DataFrameRows, col::ColumnIndex)
+    emptycolmetadata!(parent(dfr), col)
+    return dfr
+end
+
+function emptycolmetadata!(dfc::DataFrameColumns, col::ColumnIndex)
+    emptycolmetadata!(parent(dfc), col)
+    return dfc
+end
+
+function emptycolmetadata!(gdf::GroupedDataFrame, col::ColumnIndex)
+    emptycolmetadata!(parent(gdf), col)
+    return gdf
+end
+
+function emptycolmetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame})
+    emptycolmetadata!(parent(x))
+    return x
+end
 
 
+function emptycolmetadata!(x::Union{DataFrameRow, SubDataFrame}, col::Int)
+    col_name = _names(x)[col]
+    df = parent(x)
+    idx = index(df)[col_name]
+
+    for key in colmetadatakeys(df, idx)
+        _, s = colmetadata(df, idx, key, style=true)
+        s == :note && deletecolmetadata!(df, idx, key)
+    end
+    return x
+end
+
+emptycolmetadata!(x::Union{DataFrameRow, SubDataFrame}, col::Symbol) =
+    emptycolmetadata!(x, Int(index(x)[col]), key)
+emptycolmetadata!(x::DataFrameRow, col::ColumnIndex) =
+    emptycolmetadata!(x, Int(index(x)[col]), key)
+emptycolmetadata!(x::SubDataFrame, col::ColumnIndex) =
+    emptycolmetadata!(x, Int(index(x)[col]), key)
+
+function emptycolmetadata!(x::Union{DataFrameRow, SubDataFrame})
+    for i in 1:ncol(x)
+        emptycolmetadata!(x, i)
+    end
+    return x
+end
 
 
 

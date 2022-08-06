@@ -495,19 +495,3 @@ function DataFrame(dfr::DataFrameRow)
     row, cols = parentindices(dfr)
     parent(dfr)[row:row, cols]
 end
-
-metadata(dfr::DataFrameRow) = metadata(parent(dfr))
-hasmetadata(dfr::DataFrameRow) = hasmetadata(parent(dfr))
-
-colmetadata(dfr::DataFrameRow, col::ColumnIndex) =
-    colmetadata(parent(dfr), _names(dfr)[index(dfr)[col]])
-hascolmetadata(dfr::DataFrameRow, col::ColumnIndex) =
-    hascolmetadata(parent(dfr), _names(dfr)[index(dfr)[col]])
-
-function hascolmetadata(dfr::DataFrameRow)
-    getfield(parent(dfr), :colmetadata) === nothing && return false
-    return any(col -> hascolmetadata(dfr, col), 1:length(dfr))
-end
-
-dropmetadata!(dfr::DataFrameRow; type::Symbol=:all) =
-    dropmetadata!(parent(dfr), type=type)

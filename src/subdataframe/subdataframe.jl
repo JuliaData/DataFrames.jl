@@ -372,18 +372,3 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame; keep_present::Bo
 
     return sdf
 end
-
-metadata(sdf::SubDataFrame) = metadata(parent(sdf))
-hasmetadata(sdf::SubDataFrame) = hasmetadata(parent(sdf))
-colmetadata(sdf::SubDataFrame, col::ColumnIndex) =
-    colmetadata(parent(sdf), _names(sdf)[index(sdf)[col]])
-hascolmetadata(sdf::SubDataFrame, col::ColumnIndex) =
-    hascolmetadata(parent(sdf), _names(sdf)[index(sdf)[col]])
-
-function hascolmetadata(sdf::SubDataFrame)
-    getfield(parent(sdf), :colmetadata) === nothing && return false
-    return any(col -> hascolmetadata(sdf, col), axes(sdf, 2))
-end
-
-dropmetadata!(sdf::SubDataFrame; type::Symbol=:all) =
-    dropmetadata!(parent(sdf), type=type)

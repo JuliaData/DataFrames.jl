@@ -92,16 +92,6 @@ Compat.hasproperty(itr::DataFrameRows, s::AbstractString) = haskey(index(parent(
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(parent(itr))
 
-metadata(dfr::DataFrameRows) = metadata(parent(dfr))
-hasmetadata(dfr::DataFrameRows) = hasmetadata(parent(dfr))
-
-colmetadata(dfr::DataFrameRows, col::ColumnIndex) = colmetadata(parent(dfr), col)
-hascolmetadata(dfr::DataFrameRows, col::ColumnIndex) = hascolmetadata(parent(dfr), col)
-hascolmetadata(dfr::DataFrameRows) = hascolmetadata(parent(dfr))
-
-dropmetadata!(dfr::DataFrameRows; type::Symbol=:all) =
-    dropmetadata!(parent(dfr), type=type)
-
 # Iteration by columns
 
 const DATAFRAMECOLUMNS_DOCSTR = """
@@ -346,16 +336,6 @@ Base.show(dfcs::DataFrameColumns;
           kwargs...) =
     show(stdout, dfcs; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
          summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
-
-metadata(dfc::DataFrameColumns) = metadata(parent(dfc))
-hasmetadata(dfc::DataFrameColumns) = hasmetadata(parent(dfc))
-
-colmetadata(dfc::DataFrameColumns, col::ColumnIndex) = colmetadata(parent(dfc), col)
-hascolmetadata(dfc::DataFrameColumns, col::ColumnIndex) = hascolmetadata(parent(dfc), col)
-hascolmetadata(dfc::DataFrameColumns) = hascolmetadata(parent(dfc))
-
-dropmetadata!(dfc::DataFrameColumns; type::Symbol=:all) =
-    dropmetadata!(parent(dfc), type=type)
 
 """
     mapcols(f::Union{Function, Type}, df::AbstractDataFrame)

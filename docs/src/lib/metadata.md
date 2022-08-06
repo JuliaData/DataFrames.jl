@@ -71,6 +71,16 @@ on [`SubDataFrame`](@ref) and [`DataFrameRow`](@ref) then:
 * trying to add key-value pair such that in the parent data frame already
   mapping for key exists with `:none` style throws an error.
 
+DataFrames.jl is designed to be able to take advantage of the fact that
+there is no metadata in a data frame. Therefore if you need maximum performance
+of operations that do not rely on metadata use `emptymetadata!` and
+`emptycolmetadata!` functions on a `DataFrame` you work with.
+
+Processing metadata for `SubDataFrame` and `DataFrameRow` has more overhead
+than for other types defined in DataFrames.jl that support metadata, because
+they have a more complex logic of handling it (they support only `:note`
+metadata, which means that other metadata needs to be filtered-out).
+
 ## Examples
 
 Here is a simple example how you can work with metadata in DataFrames.jl:
