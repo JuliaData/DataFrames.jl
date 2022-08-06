@@ -192,9 +192,14 @@ isapprox
 
 ## Metadata
 ```@docs
-hasmetadata
 metadata
-hascolmetadata
+metadatakeys
+metadata!
+deletemetadata!
+emptymetadata!
 colmetadata
-dropmetadata!
+colmetadatakeys
+colmetadata!
+deletecolmetadata!
+emptycolmetadata!
 ```

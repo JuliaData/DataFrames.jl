@@ -25,10 +25,17 @@ import DataAPI,
        DataAPI.crossjoin,
        DataAPI.nrow,
        DataAPI.ncol,
-       DataAPI.metadata,
-       DataAPI.hasmetadata,
-       DataAPI.colmetadata,
-       DataAPI.hascolmetadata,
+# TODO: uncomment when DataAPI.jl version is bumped
+    #    DataAPI.metadata,
+    #    DataAPI.metadatakeys,
+    #    DataAPI.metadata!,
+    #    DataAPI.deletemetadata!,
+    #    DataAPI.emptymetadata!,
+    #    DataAPI.colmetadata,
+    #    DataAPI.colmetadatakeys,
+    #    DataAPI.colmetadata!,
+    #    DataAPI.deletecolmetadata!,
+    #    DataAPI.emptycolmetadata!,
        Tables,
        Tables.columnindex,
        Future.copy!
@@ -47,7 +54,6 @@ export AbstractDataFrame,
        allcombinations,
        allowmissing!,
        antijoin,
-       colmetadata,
        columnindex,
        combine,
        completecases,
@@ -56,14 +62,11 @@ export AbstractDataFrame,
        disallowmissing!,
        dropmissing!,
        dropmissing,
-       dropmetadata!,
        fillcombinations,
        flatten,
        groupby,
        groupindices,
        groupcols,
-       hascolmetadata,
-       hasmetadata,
        innerjoin,
        insertcols,
        insertcols!,
@@ -71,7 +74,6 @@ export AbstractDataFrame,
        leftjoin!,
        mapcols,
        mapcols!,
-       metadata,
        ncol,
        nonunique,
        nrow,
@@ -94,7 +96,16 @@ export AbstractDataFrame,
        transform!,
        unique!,
        unstack,
-       valuecols
+       valuecols,
+       metadatakeys,
+       metadata!,
+       deletemetadata!,
+       emptymetadata!,
+       colmetadata,
+       colmetadatakeys,
+       colmetadata!,
+       deletecolmetadata!,
+       emptycolmetadata!
 
 if VERSION >= v"1.1.0-DEV.792"
     import Base.eachcol, Base.eachrow
@@ -152,12 +163,41 @@ else
 end
 
 const METADATA_FIXED = """
-Metadata: this function preserves table level and column level metadata.
+Metadata: this function preserves table level and column level metadata
+that has `:note` style.
 """
 
-# TODO: remove when DataAPI.jl is bumped
-hasmetadata(::Any) = nothing
-hascolmetadata(::Any, ::Any) = nothing
+# TODO: remove when DataAPI.jl version is bumped
+metadata(::T, ::AbstractString; style::Bool=false) where {T} =
+    throw(ArgumentError("Objects of type $T do not support getting metadata"))
+metadatakeys(::Any) = ()
+metadata!(::T, ::AbstractString, ::Any; style) where {T} =
+    throw(ArgumentError("Objects of type $T do not support setting metadata"))
+deletemetadata!(::T, ::AbstractString) where {T} =
+    throw(ArgumentError("Objects of type $T do not support metadata deletion"))
+emptymetadata!(::T) where {T} =
+    throw(ArgumentError("Objects of type $T do not support metadata deletion"))
+colmetadata(::T, ::Int, ::AbstractString; style::Bool=false) where {T} =
+    throw(ArgumentError("Objects of type $T do not support getting column metadata"))
+colmetadata(::T, ::Symbol, ::AbstractString; style::Bool=false) where {T} =
+    throw(ArgumentError("Objects of type $T do not support getting column metadata"))
+colmetadatakeys(::Any, ::Int) = ()
+colmetadatakeys(::Any, ::Symbol) = ()
+colmetadatakeys(::Any) = ()
+colmetadata!(::T, ::Int, ::AbstractString, ::Any; style) where {T} =
+    throw(ArgumentError("Objects of type $T do not support setting metadata"))
+colmetadata!(::T, ::Symbol, ::AbstractString, ::Any; style) where {T} =
+    throw(ArgumentError("Objects of type $T do not support setting metadata"))
+deletecolmetadata!(::T, ::Symbol, ::AbstractString) where {T} =
+    throw(ArgumentError("Objects of type $T do not support metadata deletion"))
+deletecolmetadata!(::T, ::Int, ::AbstractString) where {T} =
+    throw(ArgumentError("Objects of type $T do not support metadata deletion"))
+emptycolmetadata!(::T, ::Symbol) where {T} =
+    throw(ArgumentError("Objects of type $T do not support metadata deletion"))
+emptycolmetadata!(::T, ::Int) where {T} =
+    throw(ArgumentError("Objects of type $T do not support metadata deletion"))
+emptycolmetadata!(::T) where {T} =
+    throw(ArgumentError("Objects of type $T do not support metadata deletion"))
 
 include("other/utils.jl")
 include("other/index.jl")

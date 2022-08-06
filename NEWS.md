@@ -44,8 +44,8 @@
 * New `threads` argument allows disabling multithreading in
   `combine`, `select`, `select!`, `transform`, `transform!`, `subset` and `subset!`
   ([#3030](https://github.com/JuliaData/DataFrames.jl/pull/3030))
-* Add support for global and per-column metadata using
-  `metadata` and `hasmetadata` from DataAPI.jl
+* Add support for table and column level metadata using
+  DataAPI.jl interface
   ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
 * `completecases` and `nonunique` do not throw an error when data frame
   with no columns is passed

@@ -4,204 +4,118 @@
 
 DataFrames.jl allows you to store and retrieve metadata on table and column
 level. This is supported using the functions defined by DataAPI.jl interface:
-[`hasmetadata`](@ref), [`hascolmetadata`](@ref),
-[`metadata`](@ref) and [`colmetadata`](@ref).
-These functions work with [`DataFrame`](@ref),
-[`SubDataFrame`](@ref), [`DataFrameRow`](@ref), [`GroupedDataFrame`](@ref)
-objects, and objects returned by [`eachrow`](@ref), and [`eachcol`](@ref)
-functions. In this section collectively these objects will be called
-*data frame-like*.
 
-Additionally DataFrames.jl defines [`dropmetadata!`](@ref) the function that
-removes table level and/or column level metadata from a data frame.
+* for table level metadata: [`metadata`](@ref), [`metadatakes`](@ref),
+  [`metadata!`](@ref), [`deletemetadata!`](@ref), [`emptymetadata!`](@ref);
+* for column level metatadata: [`colmetadata`](@ref), [`colmetadatakeys`](@ref),
+  [`colmetadata!`](@ref), [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
 Assume that we work with a data frame-like object `df` that has a column `col`
 (referred to either via a `Symbol`, a string or an integer index).
 
-### Contract for `hasmetadata`
+Table level metadata has a form of key-value pairs that are attached to `df`.
+Table level metadata has a form of key-value pairs that are attached to
+a specific column `col` of `df` data frame.
 
-In DataFrames.jl context `hasmetadata(df)` can return either `true` or `false`.
-If `false` is returned this means that data frame `df` does not have any table
-level metadata defined. If `true` is returned it means that at table level some
-metadata is defined for `df`.
+Additionally each metadata key-value pair has a style information attached to
+it.
+In DataFrames.jl the metadata style influences how metadata is propagated when
+`df` is transformed. The following metadata styles are supported:
 
-Although `hasmetadata` is guaranteed to return `Bool` value in DataFrames.jl in
-generic code it is recommended to check its return value against `true` and
-`false` explicitly using the `===` operator. The reason is that, in code
-accepting any Tables.jl table, `hasmetadata` is also allowed to return `nothing`
-if the queried object does not support attaching metadata.
+* `:none`: metadata having this style is considered to be attached to a concrete
+  instance and state of `df` (this means that any operation on this data frame,
+  like copying or indexing or transformation, invalidates such metadata and
+  it is dropped in the result of such operation);
+* `:note`: metadata having this style is considered to be an annotation of
+  a table or a column that should be propagated under transformations
+  (exact propagation rules of such metadata are described below);
+* all other metadata styles are allowed but they are currently treated as having
+  `:none` style (this might change in the future if other standard metadata
+  styles are defined).
 
-### Contract for `hascolmetadata`
+All DataAPI.jl functions work with [`DataFrame`](@ref),
+[`SubDataFrame`](@ref), [`DataFrameRow`](@ref), [`GroupedDataFrame`](@ref)
+objects, and objects returned by [`eachrow`](@ref), and [`eachcol`](@ref)
+functions. In this section collectively these objects will be called
+*data frame-like*, and follow the rules:
 
-In DataFrames.jl context `hascolmetadata(df, col)` can return either `true` or `false`.
-If `false` is returned this means that column `col` of data frame `df` does not
-have any column level metadata defined. If `true` is returned it means that for
-`col` column some metadata is defined.
+* [`GroupedDataFrame`](@ref) objects, and objects returned by
+  [`eachrow`](@ref), and [`eachcol`](@ref) functions have the same metadata
+  as metadata of their parent `AbstractDataFrame`;
+* [`SubDataFrame`](@ref) and [`DataFrameRow`](@ref) have only metadata from
+  their parent `DataFrame` that has `:note` style.
 
-If `col` is not present in `df` an error is thrown.
+!!! note
 
-Additionally `hascolmetadata(df)` returns `true` if for any column `col` of `df`
-`hascolmetadata(df, col)` returns `true`. Otherwise `false` is returned.
+    DataFrames.jl allows users to extract out columns of a data frame
+    and perform operations on them. Such operations will not affect
+    metadata. Therefore, even if some metadata has `:none` style it might
+    get invalidated if the user mutates columns of a data frame using
+    a direct access to them.
 
-Although `hascolmetadata` is guaranteed to return a `Bool` value in DataFrames.jl,
-in generic code it is recommended to check its return value against `true` and
-`false` explicitly using the `===` operator. The reason is that, in code
-accepting any Tables.jl table, `hascolmetadata` is also allowed to return
-`nothing` if the queried object does not support attaching metadata to a column.
-
-### Contract for `metadata`
-
-In DataFrames.jl `metadata(df)` always returns an `AbstractDict{String, Any}` storing
-key-value mappings of table level metadata. To add or update metadata mutate
-the returned dictionary.
-
-### Contract for `colmetadata`
-
-In DataFrames.jl `colmetadata(df, col)` always returns an `AbstractDict{String, Any}` storing
-key-value mappings of column level metadata for column `col`.
-To add or update metadata mutate the returned dictionary.
-
-If `col` is not present in `df` an error is thrown.
-
-### General design principles for use of metadata
+### DataFrames.jl specific design principles for use of metadata
 
 DataFrames.jl supports storing any object as metadata values. However,
 it is recommended to use strings as values of the metadata,
 as some storage formats, like for example Apache Arrow, only support
 strings.
 
-The `metadata` and `colmetadata` functions called on objects defined in
-DataFrames.jl are not thread safe and should not be used in multi-threaded code.
-In particular, as an implementation detail, the first time `metadata` is called
-on a data frame object that previously did not have any metadata stored, it will
-mutate it (this might change in the future versions of DataFrames.jl).
+For all functions that operate on column level metadata if passed column
+is not present in a data frame an `ArgumentError` is thrown.
 
-When working interactively with DataFrames.jl you can safely just rely on the
-`metadata` and `colmetadata` functions. This will create a minimal overhead
-in case the passed data frame does not have metadata yet, but it should not be
-noticeable in typical usage scenarios.
+If [`metadata`](@ref) or [`colmetadata`](@ref) is used to add metadata
+on [`SubDataFrame`](@ref) and [`DataFrameRow`](@ref) then:
 
-In generic code or code that is performance critical it is recommended to check that
-`hasmetadata` returns `true` before calling `metadata`,
-and that `hascolmetadata` returns `true` before calling `colmetadata`.
-There are two reasons for this:
-
-* if some Tables.jl table (other than data frame) does not support table or column level
-  metadata (respectively) the call to `metadata` or `colmetadata` throws an error.
-* if you know you query a data frame, checking `hasmetadata` or `hascolmetadata` avoids
-  the creation of a metadata dictionary in case it were not needed.
-  A call to `metadata` or `colmetadata` will create such a dictionary when it was not present
-  in the data frame yet.
+* using `:none` style for metadata throws an error;
+* trying to add key-value pair such that in the parent data frame already
+  mapping for key exists with `:none` style throws an error.
 
 ## Examples
 
 Here is a simple example how you can work with metadata in DataFrames.jl:
 
 ```jldoctest dataframe
-julia> using DataFrames
+using DataFrames
 
-julia> df = DataFrame(name=["Jan Krzysztof Duda", "Jan Krzysztof Duda",
-                            "Radosław Wojtaszek", "Radosław Wojtaszek"],
-                      date=["2022-Jun", "2021-Jun", "2022-Jun", "2021-Jun"],
-                                     rating=[2750, 2729, 2708, 2687])
-4×3 DataFrame
- Row │ name                date      rating
-     │ String              String    Int64
-─────┼──────────────────────────────────────
-   1 │ Jan Krzysztof Duda  2022-Jun    2750
-   2 │ Jan Krzysztof Duda  2021-Jun    2729
-   3 │ Radosław Wojtaszek  2022-Jun    2708
-   4 │ Radosław Wojtaszek  2021-Jun    2687
+df = DataFrame(name=["Jan Krzysztof Duda", "Jan Krzysztof Duda",
+                     "Radosław Wojtaszek", "Radosław Wojtaszek"],
+               date=["2022-Jun", "2021-Jun", "2022-Jun", "2021-Jun"],
+               rating=[2750, 2729, 2708, 2687])
+metadatakeys(df)
+metadata!(df, "caption", "ELO ratings of chess players", style=:note)
+metadatakeys(df)
+metadata(df, "caption")
+metadata(df, "caption", full=true)
+emptymetadata!(df);
+metadatakeys(df)
 
-julia> hasmetadata(df)
-false
-
-julia> df_meta = metadata(df)
-Dict{String, Any}()
-
-julia> df_meta["caption"] = "ELO ratings of chess players"
-"ELO ratings of chess players"
-
-julia> hasmetadata(df)
-true
-
-julia> metadata(df)
-Dict{String, Any} with 1 entry:
-  "caption" => "ELO ratings of chess players"
-
-julia> dropmetadata!(df, type=:table); # or dropmetadata!(df) that drops both table and column level metadata
-
-julia> hasmetadata(df)
-false
-
-julia> metadata(df)
-Dict{String, Any}()
-
-julia> hascolmetadata(df)
-false
-
-julia> hascolmetadata(df, :rating)
-false
-
-julia> colmetadata(df, :name)["label"] = "First and last name of a player"
-"First and last name of a player"
-
-julia> colmetadata(df, :date)["label"] = "Rating date in yyyy-u format"
-"Rating date in yyyy-u format"
-
-julia> colmetadata(df, :rating)["label"] = "ELO rating in classical time control"
-"ELO rating in classical time control"
-
-julia> hascolmetadata(df)
-true
-
-julia> hascolmetadata(df, :rating)
-true
-
-julia> colmetadata(df, :rating)
-Dict{String, Any} with 1 entry:
-  "label" => "ELO rating in classical time control"
-
-julia> names(df) .=> colmetadata.(Ref(df), names(df))
-3-element Vector{Pair{String, Dict{String, Any}}}:
-   "name" => Dict("label" => "First and last name of a player")
-   "date" => Dict("label" => "Rating date in yyyy-u format")
- "rating" => Dict("label" => "ELO rating in classical time control")
-
-julia> dropmetadata!(df, type=:column); # or dropmetadata!(df) that drops both table and column level metadata
-
-julia> hascolmetadata(df)
-false
-
-julia> hascolmetadata(df, :rating)
-false
-
-julia> colmetadata(df, :rating)
-Dict{String, Any}()
+colmetadatakeys(df)
+colmetadata!(df, :name, "label", "First and last name of a player", style=:note)
+colmetadata!(df, :date, "label", "Rating date in yyyy-u format", style=:note)
+colmetadata!(df, :rating, "label", "ELO rating in classical time control", style=:note)
+colmetadatakeys(df)
+colmetadata(df, :rating, "label")
+colmetadata(df, :rating, "label", full=true)
+[[colmetadata(df, col, key) for key in metakeys] for
+ (col, metakeys) in colmetadatakeys(df)]
+emptycolmetadata!(df)
+colmetadatakeys(df)
 ```
 
-As a practical tip if you have metadata attached to some object
-(either data frame or data frame column) and you want to propagate it to
-some new object you can use:
-* `copy!` to fully overwrite destination object metadata with source object
-  metadata;
-* `merge!` to add source object metadata to destination object metadata
-  (overwriting duplicates).
+## Propagation of `:note` style metadata
 
-## Propagation of metadata
-
-An important design feature of metatada is how it is handled when
-data frames are  transformed.
+An important design feature of `:note` style metatada is how it is handled when
+data frames are transformed.
 
 !!! note
 
-    The provided rules might change in the future. Any change to metadata
-    propagation rules will not be considered as breaking
+    The provided rules might slightly change in the future. Any change to
+    `:note` style metadata propagation rules will not be considered as breaking
     and can be done in any minor release of DataFrames.jl.
     Such changes might be made based on users' feedback about what metadata
     propagation rules are most convenient in practice.
 
-The general design rules for propagation of table metadata are as follows.
+The general design rules for propagation of `:note` style metadata are as follows.
 
 For operations that take a single data frame as an input:
 * Table level metadata is propagated to the returned data frame object.
@@ -230,27 +144,30 @@ In the situation when there is a main table:
 
 In the situation when all tables are equivalent:
 * Table level metadata is preserved only for keys which are defined
-  in all passed tables and have the same value;
+  in all passed tables and have the same value and all have `:note` style;
 * Column level metadata is preserved only for keys which are defined
   in all passed tables that contain this column and have the same value
+  and all have `:note` style.
 
 In all these operations when metadata is preserved the values in the key-value
 pairs are not copied (this is relevant in case of mutable values).
 
 !!! note
 
-    The rules for column level metadata propagation are designed to make
-    a right decision in common cases. In particular, they assume that if source
-    and target column name is the same then the metadata for the column is
+    The rules for `:note` style column level metadata propagation are designed
+    to make a right decision in common cases. In particular, they assume that if
+    source and target column name is the same then the metadata for the column is
     not changed. This is valid for many operations, however, it is not true
     in general. For example `:x => ByRow(log) => :x` transformation might
     invalidate metadata if it contained unit of measure of a variable. In such
-    cases user must manually drop or update such metadata from the `:x` column
+    cases user must set metadata style to `:none` before operation,
+    or manually drop or update such metadata from the `:x` column
     after the transformation.
 
-### Operations that preserve metadata
+### Operations that preserve `:note` style metadata metadata
 
-Most of the functions in DataFrames.jl just preserve table and column metadata.
+Most of the functions in DataFrames.jl just preserve table and column metadata
+that has `:note` style.
 Below is a list of cases where a more complex logic (following the rules
 described above) is applied:
 
