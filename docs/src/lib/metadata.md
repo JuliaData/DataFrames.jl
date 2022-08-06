@@ -23,9 +23,10 @@ In DataFrames.jl the metadata style influences how metadata is propagated when
 `df` is transformed. The following metadata styles are supported:
 
 * `:none`: metadata having this style is considered to be attached to a concrete
-  instance and state of `df` (this means that any operation on this data frame,
-  like copying or indexing or transformation, invalidates such metadata and
-  it is dropped in the result of such operation);
+  state of `df`; this means that any operation on this data frame,
+  invalidates such metadata and it is dropped in the result of such operation;
+  the only exceptions are `DataFrame` and `copy` operations which create an
+  identical copy of the passed data frame;
 * `:note`: metadata having this style is considered to be an annotation of
   a table or a column that should be propagated under transformations
   (exact propagation rules of such metadata are described below);
@@ -75,31 +76,74 @@ on [`SubDataFrame`](@ref) and [`DataFrameRow`](@ref) then:
 Here is a simple example how you can work with metadata in DataFrames.jl:
 
 ```jldoctest dataframe
-using DataFrames
+julia> using DataFrames
 
-df = DataFrame(name=["Jan Krzysztof Duda", "Jan Krzysztof Duda",
-                     "Radosław Wojtaszek", "Radosław Wojtaszek"],
-               date=["2022-Jun", "2021-Jun", "2022-Jun", "2021-Jun"],
-               rating=[2750, 2729, 2708, 2687])
-metadatakeys(df)
-metadata!(df, "caption", "ELO ratings of chess players", style=:note)
-metadatakeys(df)
-metadata(df, "caption")
-metadata(df, "caption", full=true)
-emptymetadata!(df);
-metadatakeys(df)
+julia> df = DataFrame(name=["Jan Krzysztof Duda", "Jan Krzysztof Duda",
+                            "Radosław Wojtaszek", "Radosław Wojtaszek"],
+                      date=["2022-Jun", "2021-Jun", "2022-Jun", "2021-Jun"],
+                                     rating=[2750, 2729, 2708, 2687])
+4×3 DataFrame
+ Row │ name                date      rating
+     │ String              String    Int64
+─────┼──────────────────────────────────────
+   1 │ Jan Krzysztof Duda  2022-Jun    2750
+   2 │ Jan Krzysztof Duda  2021-Jun    2729
+   3 │ Radosław Wojtaszek  2022-Jun    2708
+   4 │ Radosław Wojtaszek  2021-Jun    2687
 
-colmetadatakeys(df)
-colmetadata!(df, :name, "label", "First and last name of a player", style=:note)
-colmetadata!(df, :date, "label", "Rating date in yyyy-u format", style=:note)
-colmetadata!(df, :rating, "label", "ELO rating in classical time control", style=:note)
-colmetadatakeys(df)
-colmetadata(df, :rating, "label")
-colmetadata(df, :rating, "label", full=true)
-[[colmetadata(df, col, key) for key in metakeys] for
- (col, metakeys) in colmetadatakeys(df)]
-emptycolmetadata!(df)
-colmetadatakeys(df)
+julia> metadatakeys(df)
+()
+
+julia> metadata!(df, "caption", "ELO ratings of chess players", style=:note);
+
+julia> collect(metadatakeys(df))
+1-element Vector{String}:
+ "caption"
+
+julia> metadata(df, "caption")
+"ELO ratings of chess players"
+
+julia> metadata(df, "caption", style=true)
+("ELO ratings of chess players", :note)
+
+julia> emptymetadata!(df);
+
+julia> metadatakeys(df)
+()
+
+julia> colmetadatakeys(df)
+()
+
+julia> colmetadata!(df, :name, "label", "First and last name of a player", style=:note);
+
+julia> colmetadata!(df, :date, "label", "Rating date in yyyy-u format", style=:note);
+
+julia> colmetadata!(df, :rating, "label", "ELO rating in classical time control", style=:note);
+
+julia> colmetadata(df, :rating, "label")
+"ELO rating in classical time control"
+
+julia> colmetadata(df, :rating, "label", style=true)
+("ELO rating in classical time control", :note)
+
+julia> collect(colmetadatakeys(df))
+3-element Vector{Pair{Symbol, Base.KeySet{String, Dict{String, Tuple{Any, Any}}}}}:
+   :date => ["label"]
+ :rating => ["label"]
+   :name => ["label"]
+
+julia> [only(names(df, col)) =>
+        [key => colmetadata(df, col, key) for key in metakeys] for
+        (col, metakeys) in colmetadatakeys(df)]
+3-element Vector{Pair{String, Vector{Pair{String, String}}}}:
+   "date" => ["label" => "Rating date in yyyy-u format"]
+ "rating" => ["label" => "ELO rating in classical time control"]
+   "name" => ["label" => "First and last name of a player"]
+
+julia> emptycolmetadata!(df);
+
+julia> colmetadatakeys(df)
+()
 ```
 
 ## Propagation of `:note` style metadata

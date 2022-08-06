@@ -97,6 +97,7 @@ export AbstractDataFrame,
        unique!,
        unstack,
        valuecols,
+       metadata,
        metadatakeys,
        metadata!,
        deletemetadata!,
@@ -167,38 +168,6 @@ Metadata: this function preserves table level and column level metadata
 that has `:note` style.
 """
 
-# TODO: remove when DataAPI.jl version is bumped
-metadata(::T, ::AbstractString; style::Bool=false) where {T} =
-    throw(ArgumentError("Objects of type $T do not support getting metadata"))
-metadatakeys(::Any) = ()
-metadata!(::T, ::AbstractString, ::Any; style) where {T} =
-    throw(ArgumentError("Objects of type $T do not support setting metadata"))
-deletemetadata!(::T, ::AbstractString) where {T} =
-    throw(ArgumentError("Objects of type $T do not support metadata deletion"))
-emptymetadata!(::T) where {T} =
-    throw(ArgumentError("Objects of type $T do not support metadata deletion"))
-colmetadata(::T, ::Int, ::AbstractString; style::Bool=false) where {T} =
-    throw(ArgumentError("Objects of type $T do not support getting column metadata"))
-colmetadata(::T, ::Symbol, ::AbstractString; style::Bool=false) where {T} =
-    throw(ArgumentError("Objects of type $T do not support getting column metadata"))
-colmetadatakeys(::Any, ::Int) = ()
-colmetadatakeys(::Any, ::Symbol) = ()
-colmetadatakeys(::Any) = ()
-colmetadata!(::T, ::Int, ::AbstractString, ::Any; style) where {T} =
-    throw(ArgumentError("Objects of type $T do not support setting metadata"))
-colmetadata!(::T, ::Symbol, ::AbstractString, ::Any; style) where {T} =
-    throw(ArgumentError("Objects of type $T do not support setting metadata"))
-deletecolmetadata!(::T, ::Symbol, ::AbstractString) where {T} =
-    throw(ArgumentError("Objects of type $T do not support metadata deletion"))
-deletecolmetadata!(::T, ::Int, ::AbstractString) where {T} =
-    throw(ArgumentError("Objects of type $T do not support metadata deletion"))
-emptycolmetadata!(::T, ::Symbol) where {T} =
-    throw(ArgumentError("Objects of type $T do not support metadata deletion"))
-emptycolmetadata!(::T, ::Int) where {T} =
-    throw(ArgumentError("Objects of type $T do not support metadata deletion"))
-emptycolmetadata!(::T) where {T} =
-    throw(ArgumentError("Objects of type $T do not support metadata deletion"))
-
 include("other/utils.jl")
 include("other/index.jl")
 
@@ -238,6 +207,7 @@ include("abstractdataframe/sort.jl")
 
 include("other/tables.jl")
 include("other/names.jl")
+include("other/metadata.jl")
 
 include("deprecated.jl")
 
