@@ -427,7 +427,7 @@ If `col` is passed return an iterator of column level metadata keys for which
 `SubDataFrame` and `DataFrameRow` expose only `:note` style metadata of their parent.
 
 If `col` is not passed return an iterator of `col => colmetadatakeys(x, col)`
-pairs for all columns that have metadata.
+pairs for all columns that have metadata, where `col` are `Symbol`.
 
 See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`metadata!`](@ref), [`deletemetadata!`](@ref), [`emptymetadata!`](@ref),
@@ -828,6 +828,126 @@ function emptycolmetadata!(x::Union{DataFrameRow, SubDataFrame})
     return x
 end
 
+### Internal utility functions for metadata handling
+
+# copy table level :note metadata from src to dst
+# discarding previous metadata contents of dst
+function _copy_df_note_metadata!(dst::DataFrame, src)
+    emptymetadata!(dst)
+    for key in metadatakeys(src)
+        val, style = metadata(src, key, style=true)
+        style === :note && metadata!(dst, key, val, style=:note)
+    end
+    return nothing
+end
+
+# copy column level :note metadata from src to dst from column src_col to dst_col
+# discarding previous metadata contents of dst
+function _copy_col_note_metadata!(dst::DataFrame, dst_col, src, src_col)
+    emptycolmetadata!(dst, dst_col)
+    for key in colmetadatakeys(src, src_col)
+        val, style = colmetadata(src, src_col, key, style=true)
+        style === :note && colmetadata!(dst, dst_col, key, val, style=:note)
+    end
+    return nothing
+end
+
+# this is a function used to copy table and column level :note metadata
+# discarding previous metadata contents of dst
+function _copy_all_note_metadata!(dst::DataFrame, src)
+    _copy_df_note_metadata!(dst, src)
+    emptycolmetadata!(dst)
+    for (col, col_keys) in colmetadatakeys(src)
+        if hasproperty(dst, col)
+            for key in col_keys
+                val, style = colmetadata(src, col, key, style=true)
+                style === :note && colmetadata!(dst, col, key, val, style=:note)
+            end
+        end
+    end
+    return nothing
+end
+
+# this is a function used to drop table level metadata that is not :note style
+function _drop_df_nonnote_metadata!(df::DataFrame)
+    for key in metadatakeys(df)
+        _, style = metadata(src, key, style=true)
+        style === :note || deletemetadata!(df, key)
+    end
+    return nothing
+end
+
+# this is a function used to drop table and column level metadata that is not :note style
+function _drop_all_nonnote_metadata!(df::DataFrame)
+    _drop_df_nonnote_metadata!(df)
+    for (col, col_keys) in colmetadatakeys(df)
+        for key in col_keys
+            _, style = colmetadata(src, col, key, style=true)
+            style === :note || deletecolmetadata!(df, col, key)
+        end
+    end
+    return nothing
+end
+
+# this is a function used to merge matching table level metadata that has :note style
+function _merge_matching_df_note_metadata!(res::DataFrame, dfs)
+    @assert firstindex(dfs) == 1
+    if !isempty(dfs) && all(x -> !isempty(metadatakeys(x)), dfs)
+        df1 = dfs[1]
+        for key1 in metadatakeys(df1)
+            meta_val1, meta_style1 = metadata(df1, key1, style=true)
+            if meta_style1 === :note
+                good_key = true
+                for i in 2:length(dfs)
+                    dfi = dfs[i]
+                    if key1 in metadatakeys(dfi)
+                        meta_vali, meta_stylei = metadata(dfi, key1, style=true)
+                        if !(meta_stylei === :note && isequal(meta_val1, meta_vali))
+                            good_key = false
+                            break
+                        end
+                    else
+                        good_key = false
+                        break
+                    end
+                end
+                good_key && metadata!(res, key1, meta_val1, style=:note)
+            end
+        end
+    end
+end
+
+
+
+
+
+
+
+
+
+
+
+struct _MetadataMergeSentinelType end
+
+function _intersect_dicts(d1::Dict{String, Any}, d2::Dict{String, Any})
+    length(d1) > length(d2) && return _intersect_dicts(d2, d1)
+    d_out = Dict{String,Any}()
+    for (k, v) in pairs(d1)
+        if isequal(v, get(d2, k, _MetadataMergeSentinelType()))
+            d_out[k] = v
+        end
+    end
+    return d_out
+end
+
+function _intersect_dicts!(d1::Dict{String, Any}, d2::Dict{String, Any})
+    for (k, v) in pairs(d1)
+        if !isequal(v, get(d2, k, _MetadataMergeSentinelType()))
+            delete!(d1, k)
+        end
+    end
+    return d1
+end
 
 
 _drop_metadata!(df::DataFrame) = setfield!(df, :metadata, nothing)
@@ -841,15 +961,6 @@ function _drop_colmetadata!(df::AbstractDataFrame, col::ColumnIndex)
     return nothing
 end
 
-function _copy_metadata!(dst::DataFrame, src)
-    if hasmetadata(src) === true
-        copy!(metadata(dst), metadata(src))
-    else
-        _drop_metadata!(dst)
-    end
-    return nothing
-end
-
 function _copy_colmetadata!(dst::AbstractDataFrame, dstcol::ColumnIndex,
                             src, srccol::ColumnIndex)
     if hascolmetadata(src, srccol) === true
@@ -858,43 +969,4 @@ function _copy_colmetadata!(dst::AbstractDataFrame, dstcol::ColumnIndex,
         _drop_colmetadata!(dst, dstcol)
     end
     return nothing
-end
-
-# this is a function used to copy metadata
-# to a freshly allocated dst without metadata where column names
-# in dst is a subset of column names in src
-function _unsafe_copy_all_metadata!(dst::DataFrame, src::AbstractDataFrame)
-    _copy_metadata!(dst, src)
-    # parent(src) is guaranteed to be DataFrame
-    src_colmetadata = getfield(parent(src), :colmetadata)
-    if isnothing(src_colmetadata)
-        _drop_colmetadata!(dst)
-    else
-        for col in _names(dst)
-            _copy_colmetadata!(dst, col, src, col)
-        end
-    end
-    return nothing
-end
-
-function _merge_matching_df_metadata!(res::DataFrame, dfs)
-    # only table level metadata is merged
-    if !isempty(dfs) && all(x -> hasmetadata(x), dfs)
-        all_meta = Dict{String,Any}[metadata(df) for df in dfs]
-        if length(all_meta) == 1
-            _copy_metadata!(res, only(dfs))
-        else
-            new_meta = Dict{String, Any}()
-            for (k, v) in pairs(all_meta[1])
-                if all(@view all_meta[2:end]) do this_meta
-                    return isequal(get(this_meta, k, _MetadataMergeSentinelType()), v)
-                end
-                    new_meta[k] = v
-                end
-            end
-            if !isempty(new_meta)
-                copy!(metadata(res), new_meta)
-            end
-        end
-    end
 end

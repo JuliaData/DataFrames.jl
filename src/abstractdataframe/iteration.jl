@@ -393,10 +393,9 @@ function mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
             push!(vs, [fv])
         end
     end
+
     new_df = DataFrame(vs, _names(df), copycols=false)
-
-    _unsafe_copy_all_metadata!(new_df, df)
-
+    _copy_all_note_metadata!(new_df, df)
     return new_df
 end
 
@@ -475,5 +474,6 @@ function mapcols!(f::Union{Function, Type}, df::DataFrame)
         raw_columns[i] = vs[i]
     end
 
+    _drop_all_nonnote_metadata!(df)
     return df
 end

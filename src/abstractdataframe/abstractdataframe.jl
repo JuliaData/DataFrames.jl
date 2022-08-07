@@ -145,7 +145,8 @@ a vector) then:
 Mixing symbols and strings in `to` and `from` is not allowed.
 
 $METADATA_FIXED
-When a column is renamed, its metadata becomes associated to its new name.
+When a column is renamed, its :note metadata becomes associated to its new name.
+As a special case when no renaming operation is passed all metadata is kept.
 
 See also: [`rename`](@ref)
 
@@ -193,17 +194,23 @@ julia> rename!(uppercase, df)
 function rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol};
                  makeunique::Bool=false)
     rename!(index(df), vals, makeunique=makeunique)
+    # renaming columns of SubDataFrame has to clean non-note metadata in its parent
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
 function rename!(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
                  makeunique::Bool=false)
     rename!(index(df), Symbol.(vals), makeunique=makeunique)
+    # renaming columns of SubDataFrame has to clean non-note metadata in its parent
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
 function rename!(df::AbstractDataFrame, args::AbstractVector{Pair{Symbol, Symbol}})
     rename!(index(df), args)
+    # renaming columns of SubDataFrame has to clean non-note metadata in its parent
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
@@ -216,6 +223,8 @@ function rename!(df::AbstractDataFrame,
                              AbstractDict{<:AbstractString, Symbol},
                              AbstractDict{<:AbstractString, <:AbstractString}})
     rename!(index(df), [Symbol(from) => Symbol(to) for (from, to) in args])
+    # renaming columns of SubDataFrame has to clean non-note metadata in its parent
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
@@ -225,14 +234,19 @@ function rename!(df::AbstractDataFrame,
                              AbstractDict{<:Integer, <:AbstractString},
                              AbstractDict{<:Integer, Symbol}})
     rename!(index(df), [_names(df)[from] => Symbol(to) for (from, to) in args])
+    # renaming columns of SubDataFrame has to clean non-note metadata in its parent
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
+# in this case this is a no-op so we do not drop non-:note style metadata
 rename!(df::AbstractDataFrame) = df # needed because of dispach ambiguity
 rename!(df::AbstractDataFrame, args::Pair...) = rename!(df, collect(args))
 
 function rename!(f::Function, df::AbstractDataFrame)
     rename!(f, index(df))
+    # renaming columns of SubDataFrame has to clean non-note metadata in its parent
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
@@ -271,6 +285,7 @@ Mixing symbols and strings in `to` and `from` is not allowed.
 
 $METADATA_FIXED
 Column metadata is considered to be attached to column number.
+As a special case when no renaming operation is passed all metadata is kept.
 
 See also: [`rename!`](@ref)
 
@@ -428,7 +443,7 @@ function Base.similar(df::AbstractDataFrame, rows::Integer = size(df, 1))
     rows < 0 && throw(ArgumentError("the number of rows must be non-negative"))
     out_df = DataFrame(AbstractVector[similar(x, rows) for x in eachcol(df)], copy(index(df)),
                        copycols=false)
-    _unsafe_copy_all_metadata!(out_df, df)
+    _copy_all_note_metadata!(out_df, df)
     return out_df
 end
 
@@ -710,8 +725,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         data[!, stat] = [d[stat] for d in col_stats_dicts]
     end
 
-    _copy_metadata!(data, df)
-
+    _copy_df_note_metadata!(data, df)
     return data
 end
 
@@ -1019,7 +1033,7 @@ function dropmissing!(df::AbstractDataFrame,
                       disallowmissing::Bool=true)
     inds = completecases(df, cols)
     inds .= .!(inds)
-    deleteat!(df, inds)
+    deleteat!(df, inds) # drops non :note style metadata
     disallowmissing && disallowmissing!(df, cols)
     df
 end
@@ -1678,7 +1692,7 @@ function fillcombinations(df::AbstractDataFrame, indexcols;
 
     # keep only columns from the source in their original order
     select!(out_df, _names(df))
-    _unsafe_copy_all_metadata!(out_df, df)
+    _copy_all_note_metadata!(out_df, df)
 
     return out_df
 end
@@ -1700,9 +1714,10 @@ source (without copying). This option should be used with caution as mutating
 either the columns in sources or in the returned `DataFrame` might lead to
 the corruption of the other object.
 
-Metadata: `hcat` propagates table level metadata for keys that are present
+Metadata: `hcat` propagates :note style table level metadata for keys that are present
 in all passed data frames and have the same value;
-it propagates column level metadata.
+it propagates :note style column level metadata. As a special case if only a single
+data frame argument is passed to `hcat` all metadata is kept.
 
 # Example
 ```jldoctest
@@ -1802,10 +1817,11 @@ as with `vcat` for `AbstractVector`s.
 making it possible to initialize an empty data frame at the beginning of a loop
 and `vcat` onto it.
 
-Metadata: `vcat` propagates table level metadata for keys that are present
+Metadata: `vcat` propagates :note style table level metadata for keys that are present
 in all passed data frames and have the same value.
-`vcat` propagates column level metadata for keys that are present in all passed
+`vcat` propagates :note style column level metadata for keys that are present in all passed
 data frames that contain this column and have the same value.
+As a special case when only one data frame is passed all metadata is kept.
 
 # Example
 ```jldoctest
@@ -1937,10 +1953,11 @@ The column order, names, and types of the resulting `DataFrame`, and
 the behavior of `cols` and `source` keyword arguments follow the rules specified
 for [`vcat`](@ref) of `AbstractDataFrame`s.
 
-Metadata: `vcat` propagates table level metadata for keys that are present
+Metadata: `vcat` propagates :note style table level metadata for keys that are present
 in all passed data frames and have the same value.
-`vcat` propagates column level metadata for keys that are present in all passed
+`vcat` propagates :note style column level metadata for keys that are present in all passed
 data frames that contain this column and have the same value.
+As a special case when only one data frame is passed all metadata is kept.
 
 # Example
 ```jldoctest
@@ -2006,10 +2023,14 @@ function Base.reduce(::typeof(vcat),
                                  AbstractVector{<:AbstractString}}=:setequal,
                      source::Union{Nothing, SymbolOrString,
                                    Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
-    res = _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
-
-    # only handle table level metadata, as column level metadata was done in _vcat
-    _merge_matching_df_metadata!(res, dfs)
+    if length(dfs) == 1 && source === nothing
+        res = copy(only(dfs))
+    else
+        res = _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
+        # only handle table level metadata, as column level metadata was done in _vcat
+        _drop_df_nonnote_metadata!(res)
+        _merge_matching_df_note_metadata!(res, dfs)
+    end
 
     if source !== nothing
         len = length(dfs)
@@ -2139,22 +2160,31 @@ function _vcat(dfs::AbstractVector{AbstractDataFrame};
     # here we process column metadata, table metadata is processed in reduce
     for colname in _names(out_df)
         if length(dfs) == 1
-            df1 = only(dfs)
-            hasproperty(df1, colname) && _copy_colmetadata!(out_df, colname, df1, colname)
+            df1 = dfs[1]
+            hasproperty(df1, colname) && _copy_col_note_metadata!(out_df, colname, df1, colname)
         else
-            all_meta_df = AbstractDataFrame[df for df in dfs if hasproperty(df, colname)]
-            if !isempty(all_meta_df) && all(x -> hascolmetadata(x, colname), all_meta_df)
-                new_meta = Dict{String, Any}()
-                for (k, v) in pairs(colmetadata(all_meta_df[1], colname))
-                    if all(@view all_meta_df[2:end]) do df
-                        this_meta = colmetadata(df, colname)
-                        return isequal(get(this_meta, k, _MetadataMergeSentinelType()), v)
+            start = findfirst(x -> hasproperty(x, colname), dfs)
+            df_start = dfs[start]
+            for key_start in colmetadatakeys(df_start, colname)
+                meta_val_start, meta_style_start = colmetadata(df_start, colname, key_start)
+                if meta_style_start === :note
+                    good_key = true
+                    for i in start+1:length(dfs)
+                        dfi = dfs[i]
+                        if hasproperty(dfi, colname)
+                            if key_start in colmetadatakeys(dfi, colname)
+                                meta_vali, meta_stylei = colmetadata(dfi, colname, key_start, style=true)
+                                if !(meta_stylei === :note && isequal(meta_val1, meta_vali))
+                                    good_key = false
+                                    break
+                                end
+                            else
+                                good_key = false
+                                break
+                            end
+                        end
                     end
-                        new_meta[k] = v
-                    end
-                end
-                if !isempty(new_meta)
-                    copy!(colmetadata(out_df, colname), new_meta)
+                    good_key && colmetadata!(out_df, colname, key_start, meta_val_start, style=:note)
                 end
             end
         end
@@ -2344,8 +2374,7 @@ function Missings.disallowmissing(df::AbstractDataFrame,
     end
 
     new_df = DataFrame(newcols, _names(df), copycols=false)
-    _unsafe_copy_all_metadata!(new_df, df)
-
+    _copy_all_note_metadata!(new_df, df)
     return new_df
 end
 
@@ -2396,8 +2425,7 @@ function Missings.allowmissing(df::AbstractDataFrame,
     end
 
     new_df = DataFrame(newcols, _names(df), copycols=false)
-    _unsafe_copy_all_metadata!(new_df, df)
-
+    _copy_all_note_metadata!(new_df, df)
     return new_df
 end
 
@@ -2511,8 +2539,7 @@ function flatten(df::AbstractDataFrame,
         insertcols!(new_df, col, _names(df)[col] => flattened_col)
     end
 
-    _unsafe_copy_all_metadata!(new_df, df)
-
+    _copy_all_note_metadata!(new_df, df)
     return new_df
 end
 
@@ -2594,6 +2621,7 @@ memory but are not identical (e.g. are different views of the same parent
 vector) then `reverse!` result might be incorrect.
 
 $METADATA_FIXED
+(metadata having other styles is dropped from parent data frame)
 
 # Examples
 
@@ -2648,6 +2676,7 @@ function Base.reverse!(df::AbstractDataFrame, start::Integer=1, stop::Integer=nr
             reverse!(col, start, stop)
         end
     end
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
@@ -2673,6 +2702,7 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
         end
     end
 
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
@@ -2751,6 +2781,7 @@ some part of memory but are not identical (e.g. are different views of the same 
 vector) then `permute!` result might be incorrect.
 
 $METADATA_FIXED
+(metadata having other styles is dropped from parent data frame)
 
 # Examples
 julia> df = DataFrame(a=1:5, b=6:10, c=11:15)
@@ -2789,6 +2820,7 @@ columns share some part of memory but are not identical (e.g. are different view
 of the same parent vector) then `invpermute!` result might be incorrect.
 
 $METADATA_FIXED
+(metadata having other styles is dropped from parent data frame)
 
 # Examples
 
@@ -2868,6 +2900,7 @@ memory but are not identical (e.g. are different views of the same parent
 vector) then `shuffle!` result might be incorrect.
 
 $METADATA_FIXED
+(metadata having other styles is dropped from parent data frame)
 
 # Examples
 
@@ -2993,6 +3026,7 @@ Insert a column into a data frame in place. Return the updated data frame.
 $INSERTCOLS_ARGUMENTS
 
 $METADATA_FIXED
+(metadata having other styles is dropped from parent data frame)
 
 See also [`insertcols`](@ref).
 
@@ -3155,6 +3189,8 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Sy
         end
         col_ind += 1
     end
+
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 

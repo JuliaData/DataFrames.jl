@@ -25,8 +25,13 @@ In DataFrames.jl the metadata style influences how metadata is propagated when
 * `:none`: metadata having this style is considered to be attached to a concrete
   state of `df`; this means that any operation on this data frame,
   invalidates such metadata and it is dropped in the result of such operation;
-  the only exceptions are `DataFrame` and `copy` operations which create an
-  identical copy of the passed data frame;
+  the only exceptions that keep non-note metadata are:
+    - [`DataFrame`](@ref) constructor;
+    - [`copy`](@ref) of a data frame;
+    - [`rename`](@ref) and [`rename!`](@ref) taking no renaming arguments;
+    - [`hcat`](@ref) taking one argument that is data frame;
+    - [`vcat`](@ref) taking one argument that is data frame and `source===nothing`;
+    - [`insertcols!`](@ref) taking no columns to insert;
 * `:note`: metadata having this style is considered to be an annotation of
   a table or a column that should be propagated under transformations
   (exact propagation rules of such metadata are described below);
