@@ -39,7 +39,8 @@ that return views into the original data frame.
   as long as it supports conversion from `String`.
   When `view=true`, a `RepeatedVector{T}` is produced.
 
-Metadata: table metadata and column level metadata for identifier columns are preserved.
+Metadata: table metadata and column level metadata for identifier columns
+with :note style are preserved.
 
 # Examples
 ```jldoctest
@@ -172,10 +173,10 @@ function stack(df::AbstractDataFrame,
                                        repeat(catnms, inner=nrow(df)),                       # variable
                                        vcat([df[!, c] for c in ints_measure_vars]...)],      # value
                         cnames, copycols=false)
-    _copy_metadata!(out_df, df)
-    if hascolmetadata(df)
+    _copy_df_note_metadata!(out_df, df)
+    if !isempty(colmetadatakeys(df))
         for (i_out, i_in) in enumerate(ints_id_vars)
-            _copy_colmetadata!(out_df, i_out, df, i_in)
+            _copy_col_note_metadata!(out_df, i_out, df, i_in)
         end
     end
     return out_df
@@ -202,10 +203,10 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
                                       RepeatedVector(catnms, nrow(df), 1),                       # variable
                                       StackedVector(Any[df[!, c] for c in measure_vars])],       # value
                        cnames, copycols=false)
-    _copy_metadata!(out_df, df)
-    if hascolmetadata(df)
+    _copy_df_note_metadata!(out_df, df)
+    if !isempty(colmetadatakeys(df))
         for (i_out, i_in) in enumerate(ints_id_vars)
-            _copy_colmetadata!(out_df, i_out, df, i_in)
+            _copy_col_note_metadata!(out_df, i_out, df, i_in)
         end
     end
     return out_df
@@ -264,7 +265,8 @@ Row and column keys will be ordered in the order of their first appearance.
     Whether or not tasks are actually spawned and their number are determined automatically.
     Set to `false` if `valuestransform` requires serial execution or is not thread-safe.
 
-Metadata: table metadata and column level metadata for row keys columns are preserved.
+Metadata: table metadata and column level metadata for row keys columns
+with :note style are preserved.
 
 # Examples
 
@@ -563,6 +565,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
 
     # note that Symbol(renamecols(x)) must produce unique column names
     # and names between df1 and df2 must be unique
+    # here df1 gets proper column level metadata with :note style
     df1 = df[row_group_row_idxs, g_rowkey.cols]
     df2 = DataFrame(unstacked_val, Symbol[Symbol(renamecols(x)) for x in colref_map],
                     copycols=false)
@@ -581,7 +584,9 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
         res_df = res_df[sortperm(row_group_row_idxs), :]
     end
 
-    _copy_metadata!(res_df, df)
+    # only table level :note style metadata needs to be copied
+    # as column level :note style metadata is already correctly set
+    _copy_df_note_metadata!(res_df, df)
 
     return res_df
 end
@@ -721,7 +726,7 @@ That is, if the source data frame contains `Int` and `Float64` columns,
 resulting columns will have element type `Float64`. If the source has
 `Int` and `String` columns, resulting columns will have element type `Any`.
 
-Metadata: table metadata is preserved and column metadata is dropped.
+Metadata: table metadata with :note style is preserved and column metadata is dropped.
 
 # Examples
 
@@ -800,7 +805,7 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
         df_tmp = rename!(DataFrame(Tables.table(m)), new_col_names, makeunique=makeunique)
     end
     out_df = hcat!(df_permuted, df_tmp, makeunique=makeunique, copycols=false)
-    _copy_metadata!(out_df, df)
+    _copy_df_note_metadata!(out_df, df)
     return out_df
 end
 

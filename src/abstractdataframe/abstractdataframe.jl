@@ -146,7 +146,6 @@ Mixing symbols and strings in `to` and `from` is not allowed.
 
 $METADATA_FIXED
 When a column is renamed, its :note metadata becomes associated to its new name.
-As a special case when no renaming operation is passed all metadata is kept.
 
 See also: [`rename`](@ref)
 
@@ -239,8 +238,12 @@ function rename!(df::AbstractDataFrame,
     return df
 end
 
-# in this case this is a no-op so we do not drop non-:note style metadata
-rename!(df::AbstractDataFrame) = df # needed because of dispach ambiguity
+ # needed because of dispach ambiguity
+function rename!(df::AbstractDataFrame)
+    _drop_all_nonnote_metadata!(parent(df))
+    return df
+end
+
 rename!(df::AbstractDataFrame, args::Pair...) = rename!(df, collect(args))
 
 function rename!(f::Function, df::AbstractDataFrame)
@@ -285,7 +288,6 @@ Mixing symbols and strings in `to` and `from` is not allowed.
 
 $METADATA_FIXED
 Column metadata is considered to be attached to column number.
-As a special case when no renaming operation is passed all metadata is kept.
 
 See also: [`rename!`](@ref)
 
@@ -1716,8 +1718,7 @@ the corruption of the other object.
 
 Metadata: `hcat` propagates :note style table level metadata for keys that are present
 in all passed data frames and have the same value;
-it propagates :note style column level metadata. As a special case if only a single
-data frame argument is passed to `hcat` all metadata is kept.
+it propagates :note style column level metadata.
 
 # Example
 ```jldoctest
@@ -1757,8 +1758,12 @@ julia> df3.A === df1.A
 true
 ```
 """
-Base.hcat(df::AbstractDataFrame; makeunique::Bool=false, copycols::Bool=true) =
-    DataFrame(df, copycols=copycols)
+function Base.hcat(df::AbstractDataFrame; makeunique::Bool=false, copycols::Bool=true)
+    df = DataFrame(df, copycols=copycols)
+    _drop_all_nonnote_metadata!(df)
+    return df
+end
+
 # TODO: after deprecation remove AbstractVector methods
 Base.hcat(df::AbstractDataFrame, x::AbstractVector; makeunique::Bool=false, copycols::Bool=true) =
     hcat!(DataFrame(df, copycols=copycols), x, makeunique=makeunique, copycols=copycols)
@@ -1821,7 +1826,6 @@ Metadata: `vcat` propagates :note style table level metadata for keys that are p
 in all passed data frames and have the same value.
 `vcat` propagates :note style column level metadata for keys that are present in all passed
 data frames that contain this column and have the same value.
-As a special case when only one data frame is passed all metadata is kept.
 
 # Example
 ```jldoctest
@@ -1957,7 +1961,6 @@ Metadata: `vcat` propagates :note style table level metadata for keys that are p
 in all passed data frames and have the same value.
 `vcat` propagates :note style column level metadata for keys that are present in all passed
 data frames that contain this column and have the same value.
-As a special case when only one data frame is passed all metadata is kept.
 
 # Example
 ```jldoctest
@@ -2023,14 +2026,9 @@ function Base.reduce(::typeof(vcat),
                                  AbstractVector{<:AbstractString}}=:setequal,
                      source::Union{Nothing, SymbolOrString,
                                    Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
-    if length(dfs) == 1 && source === nothing
-        res = copy(only(dfs))
-    else
-        res = _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
-        # only handle table level metadata, as column level metadata was done in _vcat
-        _drop_df_nonnote_metadata!(res)
-        _merge_matching_df_note_metadata!(res, dfs)
-    end
+    res = _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
+    # only handle table level metadata, as column level metadata was done in _vcat
+    _merge_matching_df_note_metadata!(res, dfs)
 
     if source !== nothing
         len = length(dfs)
@@ -3026,7 +3024,6 @@ Insert a column into a data frame in place. Return the updated data frame.
 $INSERTCOLS_ARGUMENTS
 
 $METADATA_FIXED
-(metadata having other styles is dropped from parent data frame)
 
 See also [`insertcols`](@ref).
 
@@ -3219,5 +3216,6 @@ function insertcols!(df::AbstractDataFrame, col::Int=ncol(df)+1; makeunique::Boo
         throw(ArgumentError("inserting columns using a keyword argument is not supported, " *
                             "pass a Pair as a positional argument instead"))
     end
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end

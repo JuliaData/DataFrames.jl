@@ -186,6 +186,9 @@ function metadata!(df::DataFrame, key::AbstractString, value::Any; style)
         meta = premeta
     end
     meta[key] = (value, style)
+    if style !== :note
+        setfield!(df, :allnotemetadata, false)
+    end
     return df
 end
 
@@ -555,6 +558,9 @@ function colmetadata!(df::DataFrame, col::Int, key::AbstractString, value::Any; 
     end
     col_meta = get!(Dict{String, Tuple{Any, Any}}, cols_meta, idx)
     col_meta[key] = (value, style)
+    if style !== :note
+        setfield!(df, :allnotemetadata, false)
+    end
     return df
 end
 
@@ -868,8 +874,47 @@ function _copy_all_note_metadata!(dst::DataFrame, src)
     return nothing
 end
 
+# copy all table level metadata from src to dst
+# discarding previous metadata contents of dst
+function _copy_df_all_metadata!(dst::DataFrame, src)
+    emptymetadata!(dst)
+    for key in metadatakeys(src)
+        val, style = metadata(src, key, style=true)
+        metadata!(dst, key, val, style=style)
+    end
+    return nothing
+end
+
+# copy all column level metadata from src to dst from column src_col to dst_col
+# discarding previous metadata contents of dst
+function _copy_col_all_metadata!(dst::DataFrame, dst_col, src, src_col)
+    emptycolmetadata!(dst, dst_col)
+    for key in colmetadatakeys(src, src_col)
+        val, style = colmetadata(src, src_col, key, style=true)
+        colmetadata!(dst, dst_col, key, val, style=style)
+    end
+    return nothing
+end
+
+# this is a function used to copy all table and column level metadata
+# discarding previous metadata contents of dst
+function _copy_all_all_metadata!(dst::DataFrame, src)
+    _copy_df_all_metadata!(dst, src)
+    emptycolmetadata!(dst)
+    for (col, col_keys) in colmetadatakeys(src)
+        if hasproperty(dst, col)
+            for key in col_keys
+                val, style = colmetadata(src, col, key, style=true)
+                colmetadata!(dst, col, key, val, style=style)
+            end
+        end
+    end
+    return nothing
+end
+
 # this is a function used to drop table level metadata that is not :note style
 function _drop_df_nonnote_metadata!(df::DataFrame)
+    getfield(df, :allnotemetadata) && return nothing
     for key in metadatakeys(df)
         _, style = metadata(src, key, style=true)
         style === :note || deletemetadata!(df, key)
@@ -879,6 +924,7 @@ end
 
 # this is a function used to drop table and column level metadata that is not :note style
 function _drop_all_nonnote_metadata!(df::DataFrame)
+    getfield(df, :allnotemetadata) && return nothing
     _drop_df_nonnote_metadata!(df)
     for (col, col_keys) in colmetadatakeys(df)
         for key in col_keys
@@ -886,11 +932,14 @@ function _drop_all_nonnote_metadata!(df::DataFrame)
             style === :note || deletecolmetadata!(df, col, key)
         end
     end
+    setfield!(df, :allnotemetadata, true)
     return nothing
 end
 
 # this is a function used to merge matching table level metadata that has :note style
+# it removes all table level metadata previously stored in `res`
 function _merge_matching_df_note_metadata!(res::DataFrame, dfs)
+    emptymetadata!(res)
     @assert firstindex(dfs) == 1
     if !isempty(dfs) && all(x -> !isempty(metadatakeys(x)), dfs)
         df1 = dfs[1]

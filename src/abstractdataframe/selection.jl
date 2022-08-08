@@ -7,8 +7,8 @@
 # 5) Callable
 
 const TRANSFORM_METADATA = """
-Metadata: this function propagates table metadata.
-Column metadata is propagated if:
+Metadata: this function propagates table level metadata that has :note style.
+Column level metadata that has :note style is propagated if:
 a) a single column is transformed to a single column and the name of the column
 does not change (this includes all column selection operations), or
 b) a single column is transformed with `identity` or `copy` to a single column
@@ -856,7 +856,7 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
         _add_multicol_res(res, newdf, df, colnames, allow_resizing_newdf, wfun,
                           col_idx, copycols, newname, column_to_copy)
         for cn_multi in colnames
-            _drop_colmetadata!(newdf, cn_multi)
+            emptycolmetadata!(newdf, cn_multi)
         end
     elseif res isa AbstractVector
         if newname === nothing
@@ -872,9 +872,9 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
         _add_col_check_copy(newdf, df, col_idx, copycols, wfun, newname, res, column_to_copy)
         if (col_idx isa Int || (col_idx isa AbstractVector{Int} && length(col_idx) == 1)) &&
            (fun === identity || fun === copy || _names(df)[only(col_idx)] == newname)
-           _copy_colmetadata!(newdf, newname, df, only(col_idx))
+           _copy_col_note_metadata!(newdf, newname, df, only(col_idx))
         else
-            _drop_colmetadata!(newdf, newname)
+            emptycolmetadata!(newdf, newname)
         end
     else
         if newname === nothing
@@ -897,9 +897,9 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
                                   res_unwrap)
         if (col_idx isa Int || (col_idx isa AbstractVector{Int} && length(col_idx) == 1)) &&
            (fun === identity || fun === copy || _names(df)[only(col_idx)] == newname)
-           _copy_colmetadata!(newdf, newname, df, only(col_idx))
+           _copy_col_note_metadata!(newdf, newname, df, only(col_idx))
         else
-            _drop_colmetadata!(newdf, newname)
+            emptycolmetadata!(newdf, newname)
         end
     end
 end
@@ -1780,7 +1780,7 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
                     newdf[!, newname] = column_to_copy[i] ? df[:, i] : df[!, i]
                     column_to_copy[i] = true
                     allow_resizing_newdf[] = false
-                    _copy_colmetadata!(newdf, newname, df, i)
+                    _copy_col_note_metadata!(newdf, newname, df, i)
                 end
             end
         else
@@ -1788,8 +1788,7 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
                               allow_resizing_newdf, column_to_copy)
         end
     end
-    hascolmetadata(newdf) || (setfield!(newdf, :colmetadata, nothing))
-    _copy_metadata!(newdf, df)
+    _copy_df_note_metadata!(newdf, df)
     return newdf
 end
 
@@ -1837,8 +1836,7 @@ end
 function manipulate(df::DataFrame, args::AbstractVector{Int};
                     copycols::Bool, keeprows::Bool, renamecols::Bool)
     new_df = DataFrame(_columns(df)[args], Index(_names(df)[args]), copycols=copycols)
-    _unsafe_copy_all_metadata!(new_df, df)
-
+    _copy_all_note_metadata!(new_df, df)
     return new_df
 end
 
