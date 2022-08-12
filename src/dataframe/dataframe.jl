@@ -175,8 +175,12 @@ struct DataFrame <: AbstractDataFrame
         if length(columns) == length(colindex) == 0
             return new(AbstractVector[], Index())
         elseif length(columns) != length(colindex)
-            throw(DimensionMismatch("Number of columns ($(length(columns))) and number of " *
-                                    "column names ($(length(colindex))) are not equal"))
+            if all(length(x) == length(colindex) for x in columns)
+                columns = convert(Vector{Vector}, collect(eachrow(reduce(hcat, columns))))
+            else
+                throw(DimensionMismatch("Number of columns ($(length(columns))) and number of " *
+                                        "column names ($(length(colindex))) are not equal"))
+            end
         end
 
         len = -1
