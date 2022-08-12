@@ -791,3 +791,5 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
     return permutedims(df, src_namescol, dest_namescol;
                        makeunique=makeunique, strict=strict)
 end
+
+Base.permutedims(df::AbstractDataFrame) = DataFrame(permutedims(Matrix(df)), :auto)
