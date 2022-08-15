@@ -964,6 +964,29 @@ function _merge_matching_df_note_metadata!(res::DataFrame, dfs)
             end
         end
     end
+    return nothing
+end
+
+# this is a function used to keep only matching between dst and src
+# table level :note style metadata; all other table level metadata is dropped
+function _keep_matching_df_note_metadata!(dst::DataFrame, src::AbstractDataFrame)
+    _drop_df_nonnote_metadata!(dst)
+    src_keys = metadatakeys(src)
+
+    # here we know it is only non-note metadata
+    for key in metadatakeys(dst)
+        if key in src_keys
+            src_val, src_style = metadata(src, key, style=true)
+            if src_style == :note
+                isequal(metadata(dst, key), src_val) || deletemetadata!(dst, key)
+            else
+                deletemetadata!(dst, key)
+            end
+        else
+            deletemetadata!(dst, key)
+        end
+    end
+    return nothing
 end
 
 

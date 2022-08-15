@@ -352,21 +352,10 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame; keep_present::Bo
         select!(pdf, _names(newdf))
     end
 
-    # No table metadata needs to be copied as we use _replace_columns!
-    # only in situations when table metadata is kept
-    if getfield(newdf, :colmetadata) !== nothing || getfield(pdf, :colmetadata) !== nothing
-        if keep_present
-            for colname in _names(newdf)
-                _copy_colmetadata!(pdf, colname, newdf, colname)
-                hascolmetadata(pdf) || setfield!(pdf, :colmetadata, nothing)
-            end
-        else
-            colmeta = getfield(newdf, :colmetadata)
-            if colmeta !== nothing
-                setfield!(pdf, :colmetadata, copy(colmeta))
-            else
-                setfield!(pdf, :colmetadata, nothing)
-            end
+    _drop_all_nonnote_metadata!(pdf)
+    if !(isempty(colmetadatakeys(pdf)) && isempty(colmetadatakeys(newdf)))
+        for colname in _names(newdf)
+            _copy_col_note_metadata!(pdf, colname, newdf, colname)
         end
     end
 

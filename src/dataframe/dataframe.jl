@@ -1199,16 +1199,12 @@ end
 function hcat!(df1::DataFrame, df2::AbstractDataFrame;
                makeunique::Bool=false, copycols::Bool=true)
     u = add_names(index(df1), index(df2), makeunique=makeunique)
+
+    _drop_all_nonnote_metadata!(df1)
+    _keep_matching_df_note_metadata!(df1, df2)
     for i in 1:length(u)
         df1[!, u[i]] = copycols ? df2[:, i] : df2[!, i]
-        _copy_colmetadata!(df1, u[i], df2, i)
-    end
-
-    if hasmetadata(df1) && hasmetadata(df2)
-        _intersect_dicts!(metadata(df1), metadata(df2))
-    end
-    if !hasmetadata(df1)
-        _drop_metadata!(df1)
+        _copy_col_note_metadata!(df1, u[i], df2, i)
     end
 
     return df1
@@ -1231,7 +1227,11 @@ function hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false, copycol
 end
 
 # hcat! for 1-n arguments
-hcat!(df::DataFrame; makeunique::Bool=false, copycols::Bool=true) = df
+function hcat!(df::DataFrame; makeunique::Bool=false, copycols::Bool=true)
+    _drop_all_nonnote_metadata!(df1)
+    return df
+end
+
 hcat!(a::DataFrame, b::Union{AbstractDataFrame, AbstractVector},
       c::Union{AbstractDataFrame, AbstractVector}...;
       makeunique::Bool=false, copycols::Bool=true) =
@@ -1266,6 +1266,7 @@ function allowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex})
     for col in cols
         allowmissing!(df, col)
     end
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -1274,6 +1275,7 @@ function allowmissing!(df::DataFrame, cols::AbstractVector{Bool})
     for (col, cond) in enumerate(cols)
         cond && allowmissing!(df, col)
     end
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -1318,6 +1320,7 @@ function disallowmissing!(df::DataFrame, col::ColumnIndex; error::Bool=true)
             end
         end
     end
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -1326,6 +1329,7 @@ function disallowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex};
     for col in cols
         disallowmissing!(df, col, error=error)
     end
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -1334,6 +1338,7 @@ function disallowmissing!(df::DataFrame, cols::AbstractVector{Bool}; error::Bool
     for (col, cond) in enumerate(cols)
         cond && disallowmissing!(df, col, error=error)
     end
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -1392,7 +1397,7 @@ function repeat!(df::DataFrame; inner::Integer=1, outer::Integer=1)
         firstindex(col_new) != 1 && _onebased_check_error(i, col_new)
         cols[i] = col_new
     end
-
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -1433,6 +1438,7 @@ function repeat!(df::DataFrame, count::Integer)
         firstindex(col_new) != 1 && _onebased_check_error(i, col_new)
         cols[i] = col_new
     end
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -1447,13 +1453,8 @@ function _replace_columns!(df::DataFrame, newdf::DataFrame)
     copy!(_names(index(df)), _names(newdf))
     copy!(index(df).lookup, index(newdf).lookup)
 
-    colmeta = getfield(newdf, :colmetadata)
-    if colmeta !== nothing
-        setfield!(df, :colmetadata, copy(colmeta))
-    else
-        setfield!(df, :colmetadata, nothing)
-    end
-
+    _copy_col_note_metadata!(df, newdf)
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
