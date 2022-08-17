@@ -37,7 +37,6 @@ emptycolmetadata!(::T) where {T} =
     metadata(dfr::DataFrameRow, key::AbstractString; style::Bool=false)
     metadata(dfc::DataFrameColumns, key::AbstractString; style::Bool=false)
     metadata(dfr::DataFrameRows, key::AbstractString; style::Bool=false)
-    metadata(gdf::GroupedDataFrame, key::AbstractString; style::Bool=false)
 
 Return table level metadata value associated with `df` for key `key`.
 If `style=true` return a tuple of metadata value and metadata style.
@@ -74,7 +73,7 @@ function metadata(df::DataFrame, key::AbstractString; style::Bool=false)
     return style ? meta[key] : meta[key][1]
 end
 
-metadata(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+metadata(x::Union{DataFrameRows, DataFrameColumns},
          key::AbstractString; style::Bool=false) =
     metadata(parent(x), key, style=style)
 
@@ -90,7 +89,6 @@ end
     metadatakeys(dfr::DataFrameRow)
     metadatakeys(dfc::DataFrameColumns)
     metadatakeys(dfr::DataFrameRows)
-    metadatakeys(gdf::GroupedDataFrame)
 
 Return an iterator of table level metadata keys for which `metadata(df, key)`
 returns a metadata value.
@@ -129,7 +127,7 @@ function metadatakeys(df::DataFrame)
     return metakeys
 end
 
-metadatakeys(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame}) =
+metadatakeys(x::Union{DataFrameRows, DataFrameColumns}) =
     metadatakeys(parent(x))
 
 function metadatakeys(x::Union{DataFrameRow, SubDataFrame})
@@ -145,7 +143,6 @@ end
     metadata!(dfr::DataFrameRow, key::AbstractString, value; style)
     metadata!(dfc::DataFrameColumns, key::AbstractString, value; style)
     metadata!(dfr::DataFrameRows, key::AbstractString, value; style)
-    metadata!(gdf::GroupedDataFrame, key::AbstractString, value; style)
 
 Set table level metadata for object `df` for key `key` to have value `value`
 and style `style` and return `df`.
@@ -192,7 +189,7 @@ function metadata!(df::DataFrame, key::AbstractString, value::Any; style)
     return df
 end
 
-function metadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+function metadata!(x::Union{DataFrameRows, DataFrameColumns},
                    key::AbstractString, value::Any; style)
     metadata!(parent(x), key, value, style=style)
     return x
@@ -218,7 +215,6 @@ end
     deletemetadata!(dfr::DataFrameRow, key::AbstractString)
     deletemetadata!(dfc::DataFrameColumns, key::AbstractString)
     deletemetadata!(dfr::DataFrameRows, key::AbstractString)
-    deletemetadata!(gdf::GroupedDataFrame, key::AbstractString)
 
 Delete table level metadata from object `df` for key `key`.
 
@@ -261,13 +257,14 @@ function deletemetadata!(df::DataFrame, key::AbstractString)
     return df
 end
 
-function  deletemetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+function  deletemetadata!(x::Union{DataFrameRows, DataFrameColumns},
                           key::AbstractString)
     deletemetadata!(parent(x), key)
     return x
 end
 
-function deletemetadata!(x::Union{DataFrameRow, SubDataFrame}, key::AbstractString)
+function deletemetadata!(x::Union{DataFrameRow, SubDataFrame},
+                         key::AbstractString)
     df = parent(x)
     if key in metadatakeys(df)
         _, s = metadata(df, key, style=true)
@@ -281,7 +278,6 @@ end
     emptymetadata!(dfr::DataFrameRow)
     emptymetadata!(dfc::DataFrameColumns)
     emptymetadata!(dfr::DataFrameRows)
-    emptymetadata!(gdf::GroupedDataFrame)
 
 Delete table level metadata from object `df` for key `key`.
 
@@ -320,7 +316,7 @@ function emptymetadata!(df::DataFrame)
     return df
 end
 
-function emptymetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame})
+function emptymetadata!(x::Union{DataFrameRows, DataFrameColumns})
     emptymetadata!(parent(x))
     return x
 end
@@ -339,7 +335,6 @@ end
     colmetadata(dfr::DataFrameRow, col::ColumnIndex, key::AbstractString; style::Bool=false)
     colmetadata(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString; style::Bool=false)
     colmetadata(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString; style::Bool=false)
-    colmetadata(gdf::GroupedDataFrame, col::ColumnIndex, key::AbstractString; style::Bool=false)
 
 Return column level metadata value associated with `df` for column `col` and key `key`.
 
@@ -383,18 +378,16 @@ colmetadata(df::DataFrame, col::Symbol, key::AbstractString; style::Bool=false) 
 colmetadata(df::DataFrame, col::ColumnIndex, key::AbstractString; style::Bool=false) =
     colmetadata(df, Int(index(df)[col]), key, style=style)
 
-colmetadata(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+colmetadata(x::Union{DataFrameRows, DataFrameColumns},
             col::Int, key::AbstractString; style::Bool=false) =
     colmetadata(parent(x), col, key; style=style)
-colmetadata(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+colmetadata(x::Union{DataFrameRows, DataFrameColumns},
             col::Symbol, key::AbstractString; style::Bool=false) =
     colmetadata(parent(x), col, key; style=style)
 colmetadata(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString; style::Bool=false) =
     colmetadata(parent(dfr), col, key; style=style)
 colmetadata(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString; style::Bool=false) =
     colmetadata(parent(dfc), col, key; style=style)
-colmetadata(gdf::GroupedDataFrame, col::ColumnIndex, key::AbstractString; style::Bool=false) =
-    colmetadata(parent(gdf), col, key; style=style)
 
 function colmetadata(x::Union{DataFrameRow, SubDataFrame},
                      col::Int, key::AbstractString; style::Bool=false)
@@ -422,7 +415,6 @@ colmetadata(x::SubDataFrame,
     colmetadatakeys(dfr::DataFrameRow, [col::ColumnIndex])
     colmetadatakeys(dfc::DataFrameColumns, [col::ColumnIndex])
     colmetadatakeys(dfr::DataFrameRows, [col::ColumnIndex])
-    colmetadatakeys(gdf::GroupedDataFrame, [col::ColumnIndex])
 
 If `col` is passed return an iterator of column level metadata keys for which
 `metadata(x, col, key)` returns a metadata value.
@@ -474,14 +466,13 @@ function colmetadatakeys(df::DataFrame)
     return (_names(df)[idx] => colmetadatakeys(df, idx) for idx in keys(cols_meta))
 end
 
-colmetadatakeys(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame}, col::Int) =
+colmetadatakeys(x::Union{DataFrameRows, DataFrameColumns}, col::Int) =
     colmetadatakeys(parent(x), col)
-colmetadatakeys(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame}, col::Symbol) =
+colmetadatakeys(x::Union{DataFrameRows, DataFrameColumns}, col::Symbol) =
     colmetadatakeys(parent(x), col)
 colmetadatakeys(dfr::DataFrameRows, col::ColumnIndex) = colmetadatakeys(parent(dfr), col)
 colmetadatakeys(dfc::DataFrameColumns, col::ColumnIndex) = colmetadatakeys(parent(dfc), col)
-colmetadatakeys(gdf::GroupedDataFrame, col::ColumnIndex) = colmetadatakeys(parent(gdf), col)
-colmetadatakeys(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame}) =
+colmetadatakeys(x::Union{DataFrameRows, DataFrameColumns}) =
     colmetadatakeys(parent(x))
 
 function colmetadatakeys(x::Union{DataFrameRow, SubDataFrame}, col::Int)
@@ -515,7 +506,6 @@ end
     colmetadata!(dfr::DataFrameRow, col::ColumnIndex, key::AbstractString, value; style)
     colmetadata!(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString, value; style)
     colmetadata!(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString, value; style)
-    colmetadata!(gdf::GroupedDataFrame, col::ColumnIndex, key::AbstractString, value; style)
 
 Set column level metadata for `df` for column `col` for key `key` to have value `value`
 and style `style` and return `df`.
@@ -569,13 +559,13 @@ colmetadata!(df::DataFrame, col::Symbol, key::AbstractString, value::Any; style)
 colmetadata!(df::DataFrame, col::ColumnIndex, key::AbstractString, value::Any; style) =
     colmetadata!(df, Int(index(df)[col]), key, value; style=style)
 
-function colmetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+function colmetadata!(x::Union{DataFrameRows, DataFrameColumns},
                       col::Int, key::AbstractString, value::Any; style)
     colmetadata!(parent(x), col, key, value; style=style)
     return x
 end
 
-function colmetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+function colmetadata!(x::Union{DataFrameRows, DataFrameColumns},
                       col::Symbol, key::AbstractString, value::Any; style)
     colmetadata!(parent(x), col, key, value; style=style)
     return x
@@ -589,11 +579,6 @@ end
 function colmetadata!(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString, value::Any; style)
     colmetadata!(parent(dfc), col, key, value; style=style)
     return dfc
-end
-
-function colmetadata!(gdf::GroupedDataFrame, col::ColumnIndex, key::AbstractString, value::Any; style)
-    colmetadata!(parent(gdf), col, key, value; style=style)
-    return gdf
 end
 
 function colmetadata!(x::Union{DataFrameRow, SubDataFrame},
@@ -627,7 +612,6 @@ colmetadata!(x::SubDataFrame, col::ColumnIndex), key::AbstractString, value::Any
     deletecolmetadata!(dfr::DataFrameRow, col::ColumnIndex, key::AbstractString)
     deletecolmetadata!(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString)
     deletecolmetadata!(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString)
-    deletecolmetadata!(gdf::GroupedDataFrame, col::ColumnIndex, key::AbstractString)
 
 Delete column level metadata for `df` for column `col` for key `key` and return `df`.
 
@@ -676,13 +660,13 @@ deletecolmetadata!(df::DataFrame, col::Symbol, key::AbstractString) =
 deletecolmetadata!(df::DataFrame, col::ColumnIndex, key::AbstractString) =
     deletecolmetadata!(df, Int(index(df)[col]), key)
 
-function deletecolmetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+function deletecolmetadata!(x::Union{DataFrameRows, DataFrameColumns},
                             col::Int, key::AbstractString)
     deletecolmetadata!(parent(x), col, key)
     return x
 end
 
-function deletecolmetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame},
+function deletecolmetadata!(x::Union{DataFrameRows, DataFrameColumns},
                             col::Symbol, key::AbstractString)
     deletecolmetadata!(parent(x), col, key)
     return x
@@ -696,11 +680,6 @@ end
 function deletecolmetadata!(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString)
     deletecolmetadata!(parent(dfc), col, key)
     return dfc
-end
-
-function deletecolmetadata!(gdf::GroupedDataFrame, col::ColumnIndex, key::AbstractString)
-    deletecolmetadata!(parent(gdf), col, key)
-    return gdf
 end
 
 function deletecolmetadata!(x::Union{DataFrameRow, SubDataFrame}, col::Int, key::AbstractString)
@@ -727,7 +706,6 @@ deletecolmetadata!(x::SubDataFrame, col::ColumnIndex, key::AbstractString) =
     emptycolmetadata!(dfr::DataFrameRow, col::ColumnIndex, key::AbstractString)
     emptycolmetadata!(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString)
     emptycolmetadata!(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString)
-    emptycolmetadata!(gdf::GroupedDataFrame, col::ColumnIndex, key::AbstractString)
 
 Delete column level metadata for `df` for column `col` for key `key` and return `df`.
 
@@ -777,12 +755,12 @@ function emptycolmetadata!(df::DataFrame)
     return df
 end
 
-function emptycolmetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame}, col::Int)
+function emptycolmetadata!(x::Union{DataFrameRows, DataFrameColumns}, col::Int)
     emptycolmetadata!(parent(x), col)
     return x
 end
 
-function emptycolmetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame}, col::Symbol)
+function emptycolmetadata!(x::Union{DataFrameRows, DataFrameColumns}, col::Symbol)
     emptycolmetadata!(parent(x), col)
     return x
 end
@@ -797,16 +775,10 @@ function emptycolmetadata!(dfc::DataFrameColumns, col::ColumnIndex)
     return dfc
 end
 
-function emptycolmetadata!(gdf::GroupedDataFrame, col::ColumnIndex)
-    emptycolmetadata!(parent(gdf), col)
-    return gdf
-end
-
-function emptycolmetadata!(x::Union{DataFrameRows, DataFrameColumns, GroupedDataFrame})
+function emptycolmetadata!(x::Union{DataFrameRows, DataFrameColumns})
     emptycolmetadata!(parent(x))
     return x
 end
-
 
 function emptycolmetadata!(x::Union{DataFrameRow, SubDataFrame}, col::Int)
     col_name = _names(x)[col]

@@ -254,6 +254,7 @@ for T in MULTICOLUMNINDEX_TUPLE
         for (col, val) in pairs(v)
             df[row_ind, col] = val
         end
+        _drop_all_nonnote_metadata!(df)
         return df
     end
 end

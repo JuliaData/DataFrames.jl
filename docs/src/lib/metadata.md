@@ -42,16 +42,20 @@ In DataFrames.jl the metadata style influences how metadata is propagated when
   styles are defined).
 
 All DataAPI.jl functions work with [`DataFrame`](@ref),
-[`SubDataFrame`](@ref), [`DataFrameRow`](@ref), [`GroupedDataFrame`](@ref)
+[`SubDataFrame`](@ref), [`DataFrameRow`](@ref)
 objects, and objects returned by [`eachrow`](@ref), and [`eachcol`](@ref)
 functions. In this section collectively these objects will be called
 *data frame-like*, and follow the rules:
 
-* [`GroupedDataFrame`](@ref) objects, and objects returned by
+* objects returned by
   [`eachrow`](@ref), and [`eachcol`](@ref) functions have the same metadata
   as metadata of their parent `AbstractDataFrame`;
 * [`SubDataFrame`](@ref) and [`DataFrameRow`](@ref) have only metadata from
   their parent `DataFrame` that has `:note` style.
+
+Notably metadata is not supported for [`GroupedDataFrame`](@ref) as it does not
+expose columns directly. You can inspect metadata of `parent` of a
+[`GroupedDataFrame`](@ref) or of any of its groups.
 
 !!! note
 

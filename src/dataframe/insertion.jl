@@ -37,9 +37,10 @@ The above rule has the following exceptions:
 Please note that `append!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
-Metadata: table level metadata and column level metadata for columns present in `df`
-are preserved.
-If new columns are added their metadata is copied from the appended table.
+Metadata: table level metadata and column level metadata of `:note` style
+for columns present in `df` are preserved.
+If new columns are added their `:note` style metadata is copied from the appended table.
+`:none` style metadata is dropped.
 
 See also: use [`push!`](@ref) to add individual rows to a data frame, [`prepend!`](@ref)
 to add a table at the beginning, and [`vcat`](@ref) to vertically concatenate
@@ -123,9 +124,10 @@ The above rule has the following exceptions:
 Please note that `prepend!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
-Metadata: table level metadata and column level metadata for columns present in `df`
-are preserved.
-If new columns are added their metadata is copied from the appended table.
+Metadata: table level metadata and column level metadata of `:note` style
+for columns present in `df` are preserved.
+If new columns are added their `:note` style metadata is copied from the appended table.
+`:none` style metadata is dropped.
 
 See also: use [`pushfirst!`](@ref) to add individual rows at the beginning of a data frame,
 [`append!`](@ref) to add a table at the end, and [`vcat`](@ref)
@@ -177,9 +179,11 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
                             ":orderequal, :setequal, :intersect, :subset or :union)"))
     end
 
+    _drop_all_nonnote_metadata!(df1)
     if ncol(df1) == 0
         for (n, v) in pairs(eachcol(df2))
             df1[!, n] = copy(v) # make sure df1 does not reuse df2
+            _copy_col_note_metadata!(df1, n, df2, n)
         end
         return df1
     end
@@ -312,7 +316,7 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
                 copyto!(newcol, 1, df2[!, n], 1, nrow2)
             end
             df1[!, n] = newcol
-            _copy_colmetadata!(df1, n, df2, n)
+            _copy_col_note_metadata!(df1, n, df2, n)
         end
     end
 
@@ -683,7 +687,8 @@ function _row_inserter!(df::DataFrame, loc::Integer, row::Any,
         @error "Error adding value to column :$(_names(df)[current_col])."
         rethrow(err)
     end
-    df
+    _drop_all_nonnote_metadata!(df)
+    return df
 end
 
 Base.push!(df::DataFrame, row::DataFrameRow;
@@ -747,6 +752,7 @@ function _dfr_row_inserter!(df::DataFrame, loc::Integer, dfr::DataFrameRow,
             mode isa Val{:pushfirst} && pushfirsthelper!(col, r)
             mode isa Val{:insert} && inserthelper!(col, loc, r)
         end
+        _drop_all_nonnote_metadata!(df)
         return df
     end
 
@@ -795,6 +801,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
         for (n, v) in pairs(row)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
         end
+        _drop_all_nonnote_metadata!(df)
         return df
     end
 
@@ -887,6 +894,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
             mode isa Val{:insert} && (newcol[loc] = val)
             df[!, colname] = newcol
         end
+        _drop_all_nonnote_metadata!(df)
         return df
     end
 
@@ -957,5 +965,6 @@ function _row_inserter!(df::DataFrame, loc::Integer,
         @error "Error adding value to column :$(_names(df)[current_col])."
         rethrow(err)
     end
+    _drop_all_nonnote_metadata!(df)
     return df
 end
