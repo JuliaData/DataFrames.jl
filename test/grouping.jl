@@ -1470,17 +1470,79 @@ end
     str2 = String(take!(io.io))
     @test str1 == str2
 
-
-    @test sprint(show, "text/html", gd) ==
-        "<p><b>GroupedDataFrame with 4 groups based on key: A</b></p>" *
-        "<p><i>First Group (1 row): A = 1</i></p><div class=\"data-frame\"><table class=\"data-frame\">" *
-        "<thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr><tr><th></th>" *
-        "<th title=\"Int64\">Int64</th><th title=\"String\">String</th><th title=\"Float32\">Float32</th></tr></thead>" *
-        "<tbody><tr><th>1</th><td>1</td><td>x&quot;</td><td>1.0</td></tr></tbody>" *
-        "</table></div><p>&vellip;</p><p><i>Last Group (1 row): A = 4</i></p>" *
-        "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr>" *
-        "<tr><th></th><th title=\"Int64\">Int64</th><th title=\"String\">String</th><th title=\"Float32\">Float32</th></tr></thead>" *
-        "<tbody><tr><th>1</th><td>4</td><td>A\\nC</td><td>4.0</td></tr></tbody></table></div>"
+    str = sprint(show, "text/html", gd)
+    @test str == "<p>" *
+                 "<b>GroupedDataFrame with 4 groups based on key: A</b>" *
+                 "</p>" *
+                 "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>First Group (1 row): A = 1</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">A</th>" *
+                 "<th style = \"text-align: left;\">B</th>" *
+                 "<th style = \"text-align: left;\">C</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Float32\" style = \"text-align: left;\">Float32</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: right;\">1</td>" *
+                 "<td style = \"text-align: left;\">x&quot;</td>" *
+                 "<td style = \"text-align: right;\">1.0</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>" *
+                 "<p>&vellip;</p>" *
+                 "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>Last Group (1 row): A = 4</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">A</th>" *
+                 "<th style = \"text-align: left;\">B</th>" *
+                 "<th style = \"text-align: left;\">C</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Float32\" style = \"text-align: left;\">Float32</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: right;\">4</td>" *
+                 "<td style = \"text-align: left;\">A\\nC</td>" *
+                 "<td style = \"text-align: right;\">4.0</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     @test sprint(show, "text/latex", gd) == """
         GroupedDataFrame with 4 groups based on key: A
@@ -1519,12 +1581,41 @@ end
         ─────┼────────────────
            1 │ &       &"""
 
-    @test sprint(show, "text/html", gd) ==
-        "<p><b>$summary_str</b></p><p><i>" *
-        "First Group (1 row): a = :&amp;, b = &quot;&amp;&quot;</i></p>" *
-        "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th></th><th>a</th><th>b</th></tr>" *
-        "<tr><th></th><th title=\"Symbol\">Symbol</th><th title=\"String\">String</th></tr></thead><tbody><tr><th>1</th>" *
-        "<td>&amp;</td><td>&amp;</td></tr></tbody></table></div>"
+    str = sprint(show, "text/html", gd)
+    @test str == "<p>" *
+                 "<b>GroupedDataFrame with 1 group based on keys: a, b</b>" *
+                 "</p>" *
+                 "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>First Group (1 row): a = :&amp;, b = &quot;&amp;&quot;</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">a</th>" *
+                 "<th style = \"text-align: left;\">b</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"Symbol\" style = \"text-align: left;\">Symbol</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: left;\">&amp;</td>" *
+                 "<td style = \"text-align: left;\">&amp;</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     @test sprint(show, "text/latex", gd) == """
         $summary_str
