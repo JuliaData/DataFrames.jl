@@ -127,8 +127,8 @@ julia> show(stdout, MIME("text/csv"), DataFrame(A=1:3, B=["x", "y", "z"]))
 """
 Base.show(io::IO, mime::MIME, df::AbstractDataFrame)
 Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame;
-          summary::Bool=true, eltypes::Bool=true) =
-    _show(io, mime, df, summary=summary, eltypes=eltypes)
+          summary::Bool=true, eltypes::Bool=true, kwargs...) =
+    _show(io, mime, df; summary=summary, eltypes=eltypes, kwargs...)
 Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame; eltypes::Bool=true) =
     _show(io, mime, df, eltypes=eltypes)
 Base.show(io::IO, mime::MIME"text/csv", df::AbstractDataFrame) =
