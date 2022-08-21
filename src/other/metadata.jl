@@ -604,7 +604,7 @@ colmetadata!(x::Union{DataFrameRow, SubDataFrame},
     colmetadata!(x, Int(index(x)[col]), key, value; style=style)
 colmetadata!(x::DataFrameRow, col::ColumnIndex, key::AbstractString, value::Any; style) =
     colmetadata!(x, Int(index(x)[col]), key, value; style=style)
-colmetadata!(x::SubDataFrame, col::ColumnIndex), key::AbstractString, value::Any; style =
+colmetadata!(x::SubDataFrame, col::ColumnIndex, key::AbstractString, value::Any; style) =
     colmetadata!(x, Int(index(x)[col]), key, value; style=style)
 
 """
@@ -846,32 +846,14 @@ function _copy_all_note_metadata!(dst::DataFrame, src)
     return nothing
 end
 
-# copy all table level metadata from src to dst
+# this is a function used to copy all table and column level metadata
 # discarding previous metadata contents of dst
-function _copy_df_all_metadata!(dst::DataFrame, src)
+function _copy_all_all_metadata!(dst::DataFrame, src)
     emptymetadata!(dst)
     for key in metadatakeys(src)
         val, style = metadata(src, key, style=true)
         metadata!(dst, key, val, style=style)
     end
-    return nothing
-end
-
-# copy all column level metadata from src to dst from column src_col to dst_col
-# discarding previous metadata contents of dst
-function _copy_col_all_metadata!(dst::DataFrame, dst_col, src, src_col)
-    emptycolmetadata!(dst, dst_col)
-    for key in colmetadatakeys(src, src_col)
-        val, style = colmetadata(src, src_col, key, style=true)
-        colmetadata!(dst, dst_col, key, val, style=style)
-    end
-    return nothing
-end
-
-# this is a function used to copy all table and column level metadata
-# discarding previous metadata contents of dst
-function _copy_all_all_metadata!(dst::DataFrame, src)
-    _copy_df_all_metadata!(dst, src)
     emptycolmetadata!(dst)
     for (col, col_keys) in colmetadatakeys(src)
         if hasproperty(dst, col)
@@ -957,60 +939,6 @@ function _keep_matching_df_note_metadata!(dst::DataFrame, src::AbstractDataFrame
         else
             deletemetadata!(dst, key)
         end
-    end
-    return nothing
-end
-
-
-
-
-
-
-
-
-
-
-
-struct _MetadataMergeSentinelType end
-
-function _intersect_dicts(d1::Dict{String, Any}, d2::Dict{String, Any})
-    length(d1) > length(d2) && return _intersect_dicts(d2, d1)
-    d_out = Dict{String,Any}()
-    for (k, v) in pairs(d1)
-        if isequal(v, get(d2, k, _MetadataMergeSentinelType()))
-            d_out[k] = v
-        end
-    end
-    return d_out
-end
-
-function _intersect_dicts!(d1::Dict{String, Any}, d2::Dict{String, Any})
-    for (k, v) in pairs(d1)
-        if !isequal(v, get(d2, k, _MetadataMergeSentinelType()))
-            delete!(d1, k)
-        end
-    end
-    return d1
-end
-
-
-_drop_metadata!(df::DataFrame) = setfield!(df, :metadata, nothing)
-_drop_colmetadata!(df::DataFrame) = setfield!(df, :colmetadata, nothing)
-
-function _drop_colmetadata!(df::AbstractDataFrame, col::ColumnIndex)
-    colmetadata = getfield(parent(df), :colmetadata)
-    if colmetadata !== nothing
-        delete!(colmetadata, index(df)[col])
-    end
-    return nothing
-end
-
-function _copy_colmetadata!(dst::AbstractDataFrame, dstcol::ColumnIndex,
-                            src, srccol::ColumnIndex)
-    if hascolmetadata(src, srccol) === true
-        copy!(colmetadata(dst, dstcol), colmetadata(src, srccol))
-    else
-        _drop_colmetadata!(dst, dstcol)
     end
     return nothing
 end

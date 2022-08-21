@@ -40,9 +40,9 @@ imaginary part of the number. If you need to perform a join on such values use
 CategoricalArrays.jl and transform a column containing such values into a
 `CategoricalVector`.
 
-Metadata: table level and column level metadata is taken from `df1` (including
-key columns), except for columns added to it from `df2`, whose column
-level metadata is taken from `df2`.
+Metadata: table level and column level `:note` style metadata is taken from
+`df1` (including key columns), except for columns added to it from `df2`,
+whose `:note` style column level metadata is taken from `df2`.
 
 See also: [`leftjoin`](@ref).
 
@@ -126,6 +126,8 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
     right_ixs = _map_leftjoin_ixs(nrow(df1), left_ixs_inner, right_ixs_inner)
 
+    # need to call parent as df1 can be a SubDataFrame
+    _drop_all_nonnote_metadata!(parent(df1))
     # TODO: consider adding threading support in the future
     for colname in right_noon_names
         rcol = joiner.dfr[!, colname] # note that joiner.dfr does not have to be df2
@@ -134,7 +136,8 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
         # if df1 isa SubDataFrame we must copy columns
         insertcols!(df1, colname => rcol_joined, makeunique=makeunique,
                     copycols=!(df1 isa DataFrame))
-        _copy_colmetadata!(df1, ncol(df1), joiner.dfr, colname)
+        # need to call parent as df1 can be a SubDataFrame
+        _copy_col_note_metadata!(parent(df1), ncol(df1), joiner.dfr, colname)
     end
 
     if source !== nothing

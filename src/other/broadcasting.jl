@@ -79,25 +79,32 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
     dfs = AbstractDataFrame[df for df in bcf.args if df isa AbstractDataFrame]
     @assert !isempty(dfs)
 
-    _merge_matching_df_metadata!(df, dfs)
+    _merge_matching_df_note_metadata!(df, dfs)
 
-    if all(x -> hascolmetadata(x), dfs)
+    if all(x -> !isempty(colmetadatakeys(x)), dfs)
         for colname in _names(df)
             if length(dfs) == 1
-                _copy_colmetadata!(df, colname, only(dfs), colname)
+                _copy_col_note_metadata!(df, colname, only(dfs), colname)
             else
-                if all(x -> hascolmetadata(x, colname), dfs)
-                    new_meta = Dict{String, Any}()
-                    for (k, v) in pairs(colmetadata(dfs[1], colname))
-                        if all(@view dfs[2:end]) do x
-                            this_meta = colmetadata(x, colname)
-                            return haskey(this_meta, k) && isequal(this_meta[k], v)
+                if all(x -> !isempty(colmetadatakeys(x, colname)), dfs)
+                    for key1 in colmetadatakeys(dfs[1], colname)
+                        val1, style1 = colmetadata(dfs[1], colname, key1, style=true)
+                        if style1 === :note
+                            add_meta = true
+                            for i in 2:length(dfs)
+                                if key1 in colmetadatakeys(dfs[i], colname)
+                                    vali, stylei = colmetadata(dfs[i], colname, key1, style=true)
+                                    if !(stylei === :note && isequal(val1, vali))
+                                        add_meta = false
+                                        break
+                                    end
+                                else
+                                    add_meta = false
+                                    break
+                                end
+                            end
+                            add_meta && colmetadata!(df, colname, key1, val1, :note)
                         end
-                            new_meta[k] = v
-                        end
-                    end
-                    if !isempty(new_meta)
-                        copy!(colmetadata(df, colname), new_meta)
                     end
                 end
             end
@@ -283,6 +290,7 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
     for i in axes(df, 2)
         _copyto_helper!(df[!, i], getcolbc(bcf′, i), i)
     end
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 

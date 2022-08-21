@@ -103,7 +103,7 @@ function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDa
                                    res::DataFrame, kind::Symbol)
     @assert kind == :left || kind == :right || kind == :outer || kind == :inner
 
-    # The steps taken in this function are:
+    # The steps taken in this function are (all applies only to :note style metadata):
     # We initially copy metadata from left table as left table is always used
     # to populate starting columns of a data frame
     #
@@ -122,7 +122,7 @@ function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDa
     # We copy non-key column metadata from right table for all cases.
 
     for i in 1:ncol(joiner.dfl)
-        _copy_colmetadata!(res, i, joiner.dfl, i)
+        _copy_col_note_metadata!(res, i, joiner.dfl, i)
     end
 
     if kind == :outer || kind == :inner
@@ -130,13 +130,20 @@ function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDa
             l = joiner.left_on[i]
             l_idx = columnindex(joiner.dfl, l)
             r = joiner.right_on[i]
-            if hascolmetadata(res, l_idx) && hascolmetadata(joiner.dfr, r)
-                _intersect_dicts!(colmetadata(res, l_idx), colmetadata(joiner.dfr, r))
-                if isempty(colmetadata(res, l_idx))
-                    _drop_colmetadata!(res, l_idx)
-                end
+            rkeys = colmetadatakeys(joiner.dfr, r)
+            if isempty(rkeys)
+                emptycolmetadata!(res, l_idx)
             else
-                _drop_colmetadata!(res, l_idx)
+                for lkey in colmetadatakeys(res, l_idx)
+                    if lkey in rkeys
+                        rval, rstyle = colmetadata(joiner.dfr, r, lkey, style=true)
+                        if !(rstyle === :note && isequal(rval, colmetadata(res, l_idx, lkey)))
+                            deletecolmetadata!(res, l_idx, lkey)
+                        end
+                    else
+                        deletecolmetadata!(res, l_idx, lkey)
+                    end
+                end
             end
         end
     elseif kind == :right
@@ -144,27 +151,20 @@ function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDa
             l = joiner.left_on[i]
             l_idx = columnindex(joiner.dfl, l)
             r = joiner.right_on[i]
-            _copy_colmetadata!(res, l_idx, joiner.dfr, r)
+            _copy_col_note_metadata!(res, l_idx, joiner.dfr, r)
         end
     end
 
     for i in 1:ncol(dfr_noon)
-        _copy_colmetadata!(res, ncol(joiner.dfl) + i, dfr_noon, i)
+        _copy_col_note_metadata!(res, ncol(joiner.dfl) + i, dfr_noon, i)
     end
 
     if kind == :outer || kind == :inner
-        if hasmetadata(joiner.dfl) && hasmetadata(joiner.dfr)
-            d = _intersect_dicts(metadata(joiner.dfl), metadata(joiner.dfr))
-            if !isempty(d)
-                setfield!(res, :metadata, d)
-            end
-        else
-            _drop_metadata!(res)
-        end
+        _merge_matching_df_note_metadata!(res, (joiner.dfl, joiner.dfr))
     elseif kind == :right
-        _copy_metadata!(res, joiner.dfr)
+        _copy_df_note_metadata!(res, joiner.dfr)
     else # :left
-        _copy_metadata!(res, joiner.dfl)
+        _copy_df_note_metadata!(res, joiner.dfl)
     end
 
     return nothing
@@ -581,10 +581,10 @@ left associativity. In this case the `validate` keyword argument is applied
 recursively with left associativity.
 
 Metadata: table level metadata is preserved only for keys which are defined
-in all passed tables and have the same value.
-Column level metadata is preserved for all columns except for key columns,
-for which only metadata keys which are defined in all passed tables
-and have the same value are preserved.
+in all passed tables and have the same value and have `:note` style.
+Column level `:note` style metadata is preserved for all columns except for key
+columns, for which only metadata keys which are defined in all passed tables
+and have the same value and have `:note` style are preserved.
 
 See also: [`leftjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -727,9 +727,9 @@ When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
 
-Metadata: table level and column level metadata is taken from `df1` (including
-key columns), except for columns added to it from `df2`, whose column
-level metadata is taken from `df2`.
+Metadata: table level and column level `:note` style metadata is taken from `df1`
+(including key columns), except for columns added to it from `df2`, whose column
+level `:note` style metadata is taken from `df2`.
 
 See also: [`innerjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -878,9 +878,9 @@ When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
 
-Metadata: table level and column level metadata is taken from `df2` (including
-key columns), except for columns added to it from `df1`, whose column
-level metadata is taken from `df1`.
+Metadata: table level and column level `:note` style metadata is taken from `df2`
+(including key columns), except for columns added to it from `df1`, whose column
+level `:note` style metadata is taken from `df1`.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -1039,10 +1039,10 @@ In this case the `indicator` keyword argument is not supported
 and `validate` keyword argument is applied recursively with left associativity.
 
 Metadata: table level metadata is preserved only for keys which are defined
-in all passed tables and have the same value.
-Column level metadata is preserved for all columns except for key columns,
-for which only metadata keys which are defined in all passed tables
-and have the same value are preserved.
+in all passed tables and have the same value and have `:note` style.
+Column level `:note` style metadata is preserved for all columns except for key
+columns, for which only metadata keys which are defined in all passed tables
+and have the same value and have `:note` style are preserved.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -1187,7 +1187,7 @@ When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
 
-Metadata: table level and column level metadata are taken from `df1`.
+Metadata: table level and column level `:note` style metadata are taken from `df1`.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -1295,7 +1295,7 @@ When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
 
-Metadata: table level and column level metadata are preserved from `df1`.
+Metadata: table level and column level `:note` style metadata are preserved from `df1`.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`semijoin`](@ref), [`crossjoin`](@ref).
@@ -1382,8 +1382,8 @@ If more than two data frames are passed, the join is performed
 recursively with left associativity.
 
 Metadata: table level metadata is preserved only for keys which are defined
-in all passed tables and have the same value.
-Column level metadata is preserved.
+in all passed tables and have the same value and have `:note` style.
+Column level `:note` style metadata is preserved from both tables.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`semijoin`](@ref), [`antijoin`](@ref).
@@ -1430,18 +1430,13 @@ function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::B
     res = DataFrame(cols, colindex, copycols=false)
 
     for i in 1:ncol(df1)
-        _copy_colmetadata!(res, i, df1, i)
+        _copy_col_note_metadata!(res, i, df1, i)
     end
     for i in 1:ncol(df2)
-        _copy_colmetadata!(res, ncol(df1) + i, df2, i)
+        _copy_col_note_metadata!(res, ncol(df1) + i, df2, i)
     end
 
-    if hasmetadata(df1) && hasmetadata(df2)
-        d = _intersect_dicts(metadata(df1), metadata(df2))
-        if !isempty(d)
-            setfield!(res, :metadata, d)
-        end
-    end
+    _merge_matching_df_note_metadata!(res, (df1, df2))
 
     return res
 end
