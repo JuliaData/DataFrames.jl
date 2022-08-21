@@ -127,9 +127,11 @@ julia> show(stdout, MIME("text/csv"), DataFrame(A=1:3, B=["x", "y", "z"]))
 """
 Base.show(io::IO, mime::MIME, df::AbstractDataFrame)
 function Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame;
-                   summary::Bool=true, eltypes::Bool=true, kwargs...)
+                   summary::Bool=true, eltypes::Bool=true, truncate::Int=0,
+                   kwargs...)
     _verify_kwargs_for_html(;kwargs...)
-    return _show(io, mime, df; summary=summary, eltypes=eltypes, kwargs...)
+    return _show(io, mime, df; summary=summary, eltypes=eltypes,
+                 truncate=truncate, kwargs...)
 end
 
 Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame; eltypes::Bool=true) =
@@ -165,6 +167,7 @@ function _show(io::IO,
                eltypes::Bool=true,
                rowid::Union{Int, Nothing}=nothing,
                title::String="",
+               truncate::Int=0,
                kwargs...)
     _check_consistency(df)
 
@@ -248,6 +251,8 @@ function _show(io::IO,
         show_row_number = false
     end
 
+    maximum_columns_width = truncate <= 0 ? "" : string(truncate) * "px"
+
     pretty_table(io, df;
                  alignment                 = alignment,
                  backend                   = Val(:html),
@@ -259,6 +264,7 @@ function _show(io::IO,
                  highlighters              = (_PRETTY_TABLES_HTML_HIGHLIGHTER,),
                  max_num_of_columns        = mxcol,
                  max_num_of_rows           = mxrow,
+                 maximum_columns_width     = maximum_columns_width,
                  minify                    = true,
                  nosubheader               = !eltypes,
                  row_name_column_title     = "Row",

@@ -1478,6 +1478,39 @@ end
                  "</table>" *
                  "</div>"
 
+    # With truncation
+    io = IOBuffer()
+    show(io, MIME("text/html"), df, truncate=100)
+    str = String(take!(io))
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>1×1 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; max-width: 100px; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap;\">Row</th>" *
+                 "<th style = \"max-width: 100px; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap;\">x</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; max-width: 100px; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap;\">" *
+                 "</th>" *
+                 "<th title = \"String\" style = \"max-width: 100px; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap;\">String</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; max-width: 100px; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap;\">1</td>" *
+                 "<td style = \"max-width: 100px; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap;\">0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
+
     # no truncation
     io = IOBuffer()
     show(io, MIME("text/latex"), df)
