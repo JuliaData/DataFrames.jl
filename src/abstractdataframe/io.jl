@@ -312,7 +312,6 @@ function Base.show(io::IO, mime::MIME"text/html", dfcs::DataFrameColumns; kwargs
 end
 
 function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
-    _verify_kwargs_for_html(;kwargs...)
     N = length(gd)
     keys = html_escape(join(string.(groupcols(gd)), ", "))
     keystr = length(gd.cols) > 1 ? "keys" : "key"
