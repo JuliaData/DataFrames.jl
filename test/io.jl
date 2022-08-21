@@ -555,6 +555,16 @@ end
                  "</tbody>" *
                  "</table>" *
                  "</div>"
+
+    # Test invalid keywords when printing to HTML.
+    @test_throws ArgumentError show(stdout, MIME("text/html"), df, rowid=10)
+    @test_throws ArgumentError show(stdout, MIME("text/html"), df, title="title")
+    @test_throws ArgumentError show(stdout, MIME("text/html"), eachcol(df), rowid=10)
+    @test_throws ArgumentError show(stdout, MIME("text/html"), eachcol(df), title="title")
+    @test_throws ArgumentError show(stdout, MIME("text/html"), eachrow(df), rowid=10)
+    @test_throws ArgumentError show(stdout, MIME("text/html"), eachrow(df), title="title")
+    @test_throws ArgumentError show(stdout, MIME("text/html"), df[1, :], rowid=10)
+    @test_throws ArgumentError show(stdout, MIME("text/html"), df[1, :], title="title")
 end
 
 # test limit attribute of IOContext is used

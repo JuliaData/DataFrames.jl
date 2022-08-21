@@ -126,9 +126,12 @@ julia> show(stdout, MIME("text/csv"), DataFrame(A=1:3, B=["x", "y", "z"]))
 ```
 """
 Base.show(io::IO, mime::MIME, df::AbstractDataFrame)
-Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame;
-          summary::Bool=true, eltypes::Bool=true, kwargs...) =
-    _show(io, mime, df; summary=summary, eltypes=eltypes, kwargs...)
+function Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame;
+                   summary::Bool=true, eltypes::Bool=true, kwargs...)
+    _verify_kwargs_for_html(;kwargs...)
+    return _show(io, mime, df; summary=summary, eltypes=eltypes, kwargs...)
+end
+
 Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame; eltypes::Bool=true) =
     _show(io, mime, df, eltypes=eltypes)
 Base.show(io::IO, mime::MIME"text/csv", df::AbstractDataFrame) =
@@ -277,24 +280,28 @@ function _show(io::IO,
 end
 
 function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; kwargs...)
+    _verify_kwargs_for_html(;kwargs...)
     r, c = parentindices(dfr)
     title = "DataFrameRow ($(length(dfr)) columns)"
     _show(io, mime, view(parent(dfr), [r], c); rowid=r, title=title, kwargs...)
 end
 
 function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows; kwargs...)
+    _verify_kwargs_for_html(;kwargs...)
     df = parent(dfrs)
     title = "$(nrow(df))×$(ncol(df)) DataFrameRows"
     _show(io, mime, df; title=title, kwargs...)
 end
 
 function Base.show(io::IO, mime::MIME"text/html", dfcs::DataFrameColumns; kwargs...)
+    _verify_kwargs_for_html(;kwargs...)
     df = parent(dfcs)
     title = "$(nrow(df))×$(ncol(df)) DataFrameColumns"
     _show(io, mime, df; title=title, kwargs...)
 end
 
 function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
+    _verify_kwargs_for_html(;kwargs...)
     N = length(gd)
     keys = html_escape(join(string.(groupcols(gd)), ", "))
     keystr = length(gd.cols) > 1 ? "keys" : "key"
@@ -321,6 +328,18 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
         title = "Last Group ($nrows $rows): " * join(identified_groups, ", ")
         _show(io, mime, gd[N], title=title)
     end
+end
+
+# Internal function to verify the keywords in show functions using the HTML
+# backend.
+function _verify_kwargs_for_html(; kwargs...)
+    haskey(kwargs, :rowid) &&
+        throw(ArgumentError("The keyword `rowid` is reserved and must not be used."))
+
+    haskey(kwargs, :title) &&
+        throw(ArgumentError("Use the keyword `top_left_str` instead of `title` to change the label above the data frame."))
+
+    return nothing
 end
 
 ##############################################################################
