@@ -464,6 +464,9 @@ end
                  "</table>" *
                  "</div>"
 
+    @test_throws ArgumentError show(stdout, MIME("text/html"), dfr, rowid=10)
+    @test_throws ArgumentError show(stdout, MIME("text/html"), dfr, title="title")
+
     @test sprint(show, "text/latex", dfr) == """
         \\begin{tabular}{r|cc}
         \t& b & c\\\\
