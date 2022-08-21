@@ -101,8 +101,13 @@ Render a data frame to an I/O stream in MIME type `mime`.
 Additionally selected MIME types support passing the following keyword arguments:
 - MIME type `"text/plain"` accepts all listed keyword arguments and their behavior
   is identical as for `show(::IO, ::AbstractDataFrame)`
-- MIME type `"text/html"` accepts `summary` keyword argument which
-  allows to choose whether to print a brief string summary of the data frame.
+- MIME type `"text/html"` accepts the following keywords:
+    - `eltypes::Bool = true`: Whether to print the column types under column names.
+    - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
+    - `truncate::Int = 0`: If this value is grater then 0, the cells larger than
+          this number in pixels will be cropped during rendering.
+    - `kwargs...`: Any keyword argument supported by the function `pretty_table`
+      of PrettyTables.jl can be passed here to customize the output.
 
 # Examples
 ```jldoctest
