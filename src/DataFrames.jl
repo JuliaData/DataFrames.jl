@@ -78,7 +78,6 @@ export AbstractDataFrame,
        select!,
        select,
        semijoin,
-       stack,
        subset,
        subset!,
        transform,
@@ -140,6 +139,13 @@ if isdefined(Base, :ComposedFunction) # Julia >= 1.6.0-DEV.85
     using Base: ComposedFunction
 else
     using Compat: ComposedFunction
+end
+
+if VERSION >= v"1.9.0-DEV.1163"
+    import Base: stack
+else
+    import Compat: stack
+    export stack
 end
 
 include("other/utils.jl")
