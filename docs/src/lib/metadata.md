@@ -234,7 +234,8 @@ pairs are not copied (this is relevant in case of mutable values).
 Most of the functions in DataFrames.jl just preserve table and column metadata
 that has `:note` style.
 Below is a list of cases where a more complex logic (following the rules
-described above) is applied:
+described above; in particular under any transformation all non-`:note` style
+metadata is always dropped) is applied:
 
 * [`dropmetadata!`](@ref) removes both table level and/or column level metadata
   from a data frame; note that removing metadata can speed up certain operations.

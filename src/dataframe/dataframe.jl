@@ -185,7 +185,7 @@ mutable struct DataFrame <: AbstractDataFrame
     function DataFrame(columns::Union{Vector{Any}, Vector{AbstractVector}},
                        colindex::Index; copycols::Bool=true)
         if length(columns) == length(colindex) == 0
-            return new(AbstractVector[], Index(), nothing, nothing)
+            return new(AbstractVector[], Index(), nothing, nothing, true)
         elseif length(columns) != length(colindex)
             throw(DimensionMismatch("Number of columns ($(length(columns))) and number of " *
                                     "column names ($(length(colindex))) are not equal"))

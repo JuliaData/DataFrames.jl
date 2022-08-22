@@ -2,144 +2,212 @@ module TestMetadata
 
 using Test, DataFrames, Random
 
-@testset "hasmetadata & metadata" begin
+@testset "table level metadata" begin
     for x in (DataFrame(), DataFrame(a=1))
-        @test !hasmetadata(x)
-        m = metadata(x)
-        @test !hasmetadata(x)
-        @test isempty(m)
-        m["name"] = "empty"
-        @test hasmetadata(x)
-        @test metadata(x) === m
-        @test metadata(x) == Dict("name" => "empty")
-        empty!(m)
-        @test !hasmetadata(x)
-        @test metadata(x) === m
-        @test isempty(metadata(x))
+        @test isempty(metadatakeys(x))
+        @test metadatakeys(x) isa Tuple
+        @test getfield(x, :allnotemetadata)
+        metadata!(x, "name", "empty", style=:some)
+        @test !getfield(x, :allnotemetadata)
+        @test collect(metadatakeys(x)) == ["name"]
+        @test metadatakeys(x) isa Base.KeySet
+        @test metadata(x, "name") == "empty"
+        @test metadata(x, "name", style=true) == ("empty", :some)
+        emptymetadata!(x)
+        @test !getfield(x, :allnotemetadata)
+        @test isempty(metadatakeys(x))
+        @test metadatakeys(x) isa Tuple
+        metadata!(x, "name1", "empty1", style=:note)
+        metadata!(x, "name2", "empty2", style=:none)
+        @test sort(collect(metadatakeys(x))) == ["name1", "name2"]
+        deletemetadata!(x, "name2")
+        @test collect(metadatakeys(x)) == ["name1"]
+        deletemetadata!(x, "name3")
+        @test collect(metadatakeys(x)) == ["name1"]
+        deletemetadata!(x, "name1")
+        @test isempty(metadatakeys(x))
     end
 
-    for fun in (eachcol, eachrow, x -> groupby(x, :a),
+    for fun in (eachcol, eachrow,
                 x -> x[1, :], x -> @view x[:, :])
         x = fun(DataFrame(a=1))
-        @test !hasmetadata(x)
-        m = metadata(x)
-        @test !hasmetadata(x)
-        @test isempty(m)
-        m["name"] = "empty"
-        @test hasmetadata(x)
-        @test metadata(x) === m
-        @test metadata(x) == Dict("name" => "empty")
-        empty!(m)
-        @test !hasmetadata(x)
-        @test metadata(x) === m
-        @test isempty(metadata(x))
+        @test isempty(metadatakeys(x))
+        metadata!(x, "name", "empty", style=:note)
+        @test collect(metadatakeys(x)) == ["name"]
+        @test metadata(x, "name") == "empty"
+        @test metadata(x, "name", style=true) == ("empty", :note)
+        emptymetadata!(x)
+        @test isempty(metadatakeys(x))
+        metadata!(x, "name1", "empty1", style=:note)
+        metadata!(x, "name2", "empty2", style=:note)
+        @test sort(collect(metadatakeys(x))) == ["name1", "name2"]
+        deletemetadata!(x, "name2")
+        @test collect(metadatakeys(x)) == ["name1"]
+        deletemetadata!(x, "name3")
+        @test collect(metadatakeys(x)) == ["name1"]
+        deletemetadata!(x, "name1")
+        @test isempty(metadatakeys(x))
+    end
+
+    for fun in (eachcol, eachrow)
+        x = fun(DataFrame(a=1))
+        @test isempty(metadatakeys(x))
+        metadata!(x, "name", "empty", style=:none)
+        @test collect(metadatakeys(x)) == ["name"]
+        @test metadata(x, "name") == "empty"
+        @test metadata(x, "name", style=true) == ("empty", :none)
+        emptymetadata!(x)
+        @test isempty(metadatakeys(x))
+        metadata!(x, "name1", "empty1", style=:none)
+        metadata!(x, "name2", "empty2", style=:note)
+        @test sort(collect(metadatakeys(x))) == ["name1", "name2"]
+        deletemetadata!(x, "name2")
+        @test collect(metadatakeys(x)) == ["name1"]
+        deletemetadata!(x, "name3")
+        @test collect(metadatakeys(x)) == ["name1"]
+        deletemetadata!(x, "name1")
+        @test isempty(metadatakeys(x))
+    end
+
+    for fun in (x -> x[1, :], x -> @view x[:, :])
+        x = fun(DataFrame(a=1))
+        @test isempty(metadatakeys(x))
+        @test_throws ArgumentError metadata!(x, "name", "empty", style=:none)
+        metadata!(parent(x), "name", "empty", style=:none)
+        @test isempty(metadatakeys(x))
+        @test collect(metadatakeys(parent(x))) == ["name"]
+        metadata!(parent(x), "name1", "empty1", style=:none)
+        metadata!(x, "name2", "empty2", style=:note)
+        @test sort(collect(metadatakeys(x))) == ["name2"]
+        deletemetadata!(x, "name2")
+        @test isempty(metadatakeys(x))
+        deletemetadata!(x, "name3")
+        @test isempty(metadatakeys(x))
+        deletemetadata!(x, "name1")
+        @test isempty(metadatakeys(x))
+        @test sort(collect(metadatakeys(parent(x)))) == ["name", "name1"]
     end
 end
 
-@testset "hascolmetadata & colmetadata" begin
-    for fun in (identity, eachcol, eachrow, x -> groupby(x, :a),
-                x -> x[1, :], x -> @view x[:, :]),
-        a in (:a, "a", 2), b in (:b, "b", 1), x in (:x, "x")
-        y = fun(DataFrame(b=2, a=1))
-        @test !hascolmetadata(y)
-        @test_throws ArgumentError hascolmetadata(y, x)
-        @test !hascolmetadata(y, a)
-        @test !hascolmetadata(y, b)
-        @test_throws ArgumentError colmetadata(y, x)
-        m = colmetadata(y, a)
-        @test !hascolmetadata(y)
-        @test_throws ArgumentError hascolmetadata(y, x)
-        @test !hascolmetadata(y, a)
-        @test !hascolmetadata(y, b)
-        @test isempty(m)
-        m["name"] = "empty"
-        @test hascolmetadata(y)
-        @test_throws ArgumentError hascolmetadata(y, x)
-        @test hascolmetadata(y, a)
-        @test !hascolmetadata(y, b)
-        @test colmetadata(y, a) === m
-        @test colmetadata(y, a) == Dict("name" => "empty")
-        empty!(m)
-        @test !hascolmetadata(y)
-        @test_throws ArgumentError hascolmetadata(y, x)
-        @test !hascolmetadata(y, a)
-        @test !hascolmetadata(y, b)
-        @test colmetadata(y, a) === m
-        @test isempty(colmetadata(y, a))
-    end
+@testset "column level metadata" begin
+    for b in (:b, "b", 2, big(2))
+        x = DataFrame(a=1, b=2)
+        @test isempty(colmetadatakeys(x))
+        @test colmetadatakeys(x) isa Tuple
+        @test isempty(colmetadatakeys(x, :a))
+        @test colmetadatakeys(x, :a) isa Tuple
+        @test_throws ArgumentError colmetadatakeys(x, :c)
+        colmetadata!(x, b, "name1", "empty1", style=:note)
+        @test_throws ArgumentError colmetadata!(x, :c, "name", "empty", style=:note)
+        colmetadata!(x, b, "name2", "empty2", style=:note)
+        colmetadata!(x, :a, "name3", "empty3", style=:note)
+        @test getfield(x, :allnotemetadata)
+        @test colmetadatakeys(x, :a) == Set(["name3"])
+        @test colmetadatakeys(x, b) == Set(["name1", "name2"])
+        @test_throws ArgumentError colmetadatakeys(x, :c)
+        @test Set(colmetadatakeys(x)) == Set([:b => Set(["name1", "name2"]), :a => Set(["name3"])])
+        @test colmetadata(x, b, "name1") == "empty1"
+        @test colmetadata(x, b, "name1", style=true) == ("empty1", :note)
+        @test_throws KeyError colmetadata(x, b, "namex")
+        @test_throws ArgumentError colmetadata(x, :x, "name")
+        emptycolmetadata!(x, :a)
+        @test isempty(colmetadatakeys(x, :a))
+        @test colmetadatakeys(x, b) == Set(["name1", "name2"])
+        deletecolmetadata!(x, b, "name2")
+        @test colmetadatakeys(x, b) == Set(["name1"])
+        emptycolmetadata!(x)
+        @test isempty((colmetadatakeys(x)))
 
-    df = DataFrame(a=1, b=2, c=3)
-    colmetadata(df, :a)["name"] = "empty"
-    for x in (df[1, [3, 1]], @view df[1:1, [3, 1]])
-        @test !hascolmetadata(x, :c)
-        @test !hascolmetadata(x, 1)
-        @test hascolmetadata(x, :a)
-        @test hascolmetadata(x, 2)
-        @test colmetadata(x, :a) === colmetadata(x, 2) === colmetadata(df, :a)
-        @test_throws ArgumentError hascolmetadata(x, :x)
-        @test_throws BoundsError hascolmetadata(x, :b)
-    end
-end
+        for fun in (eachcol, eachrow,
+                    x -> x[1, :], x -> @view(x[:, :]),
+                    x -> x[1, 1:2], x -> @view x[:, 1:2])
+            x = fun(DataFrame(a=1, b=2, d=3))
+            @test isempty(colmetadatakeys(x))
+            @test colmetadatakeys(x) isa Tuple
+            @test isempty(colmetadatakeys(x, :a))
+            @test colmetadatakeys(x, :a) isa Tuple
+            @test_throws ArgumentError colmetadatakeys(x, :c)
+            colmetadata!(x, b, "name1", "empty1", style=:note)
+            @test_throws ArgumentError colmetadata!(x, :c, "name", "empty", style=:note)
+            colmetadata!(x, b, "name2", "empty2", style=:note)
+            colmetadata!(x, :a, "name3", "empty3", style=:note)
+            @test collect(colmetadatakeys(x, :a)) == ["name3"]
+            @test sort(collect(colmetadatakeys(x, b))) == ["name1", "name2"]
+            @test_throws ArgumentError colmetadatakeys(x, :c)
+            @test Set([k => sort(collect(v)) for (k, v) in colmetadatakeys(x)]) ==
+                Set([:b => ["name1", "name2"], :a => ["name3"]])
+            @test colmetadata(x, b, "name1") == "empty1"
+            @test colmetadata(x, b, "name1", style=true) == ("empty1", :note)
+            @test_throws KeyError colmetadata(x, b, "namex")
+            @test_throws ArgumentError colmetadata(x, :x, "name")
+            emptycolmetadata!(x, :a)
+            @test isempty(colmetadatakeys(x, :a))
+            @test sort(collect(colmetadatakeys(x, b))) == ["name1", "name2"]
+            deletecolmetadata!(x, b, "name2")
+            @test collect(colmetadatakeys(x, b)) == ["name1"]
+            emptycolmetadata!(x)
+            @test isempty((colmetadatakeys(x)))
+        end
 
-@testset "dropmetadata!" begin
-    for fun in (identity, eachcol, eachrow, x -> groupby(x, :a),
-                x -> x[1, :], x -> @view x[:, :])
-        df = DataFrame(b=2, a=1)
-        metadata(df)["name"] = "empty"
-        colmetadata(df, :a)["name"] = "a"
-        x = fun(df)
-        @test hasmetadata(x)
-        @test hascolmetadata(x)
-        dropmetadata!(x)
-        @test !hasmetadata(x)
-        @test !hascolmetadata(x)
-        @test getfield(df, :metadata) === nothing
-        @test getfield(df, :colmetadata) === nothing
-    end
+        for fun in (eachcol, eachrow)
+            x = fun(DataFrame(a=1, b=2, d=3))
+            @test isempty(colmetadatakeys(x))
+            @test colmetadatakeys(x) isa Tuple
+            @test isempty(colmetadatakeys(x, :a))
+            @test colmetadatakeys(x, :a) isa Tuple
+            @test_throws ArgumentError colmetadatakeys(x, :c)
+            colmetadata!(x, b, "name1", "empty1", style=:none)
+            @test_throws ArgumentError colmetadata!(x, :c, "name", "empty", style=:none)
+            colmetadata!(x, b, "name2", "empty2", style=:none)
+            colmetadata!(x, :a, "name3", "empty3", style=:none)
+            @test collect(colmetadatakeys(x, :a)) == ["name3"]
+            @test sort(collect(colmetadatakeys(x, b))) == ["name1", "name2"]
+            @test_throws ArgumentError colmetadatakeys(x, :c)
+            @test Set([k => sort(collect(v)) for (k, v) in colmetadatakeys(x)]) ==
+                Set([:b => ["name1", "name2"], :a => ["name3"]])
+            @test colmetadata(x, b, "name1") == "empty1"
+            @test colmetadata(x, b, "name1", style=true) == ("empty1", :none)
+            @test_throws KeyError colmetadata(x, b, "namex")
+            @test_throws ArgumentError colmetadata(x, :x, "name")
+            emptycolmetadata!(x, :a)
+            @test isempty(colmetadatakeys(x, :a))
+            @test sort(collect(colmetadatakeys(x, b))) == ["name1", "name2"]
+            deletecolmetadata!(x, b, "name2")
+            @test collect(colmetadatakeys(x, b)) == ["name1"]
+            emptycolmetadata!(x)
+            @test isempty((colmetadatakeys(x)))
+        end
 
-    for fun in (identity, eachcol, eachrow, x -> groupby(x, :a),
-                x -> x[1, :], x -> @view x[:, :])
-        df = DataFrame(b=2, a=1)
-        metadata(df)["name"] = "empty"
-        colmetadata(df, :a)["name"] = "a"
-        x = fun(df)
-        @test hasmetadata(x)
-        @test hascolmetadata(x)
-        dropmetadata!(x, type=:all)
-        @test !hasmetadata(x)
-        @test !hascolmetadata(x)
-        @test getfield(df, :metadata) === nothing
-        @test getfield(df, :colmetadata) === nothing
-    end
+        for fun in (x -> x[1, :], x -> @view(x[:, :]),
+                    x -> x[1, 1:2], x -> @view x[:, 1:2])
+            x = fun(DataFrame(a=1, b=2, d=3))
+            p = parent(x)
+            @test isempty(colmetadatakeys(x))
+            @test colmetadatakeys(x) isa Tuple
+            @test isempty(colmetadatakeys(x, :a))
+            @test colmetadatakeys(x, :a) isa Tuple
+            @test_throws ArgumentError colmetadatakeys(x, :c)
+            @test_throws ArgumentError colmetadata!(x, b, "name1", "empty1", style=:none)
+            @test_throws ArgumentError colmetadata!(x, b, "name2", "empty2", style=:none)
+            @test_throws ArgumentError colmetadata!(x, :a, "name3", "empty3", style=:none)
+            colmetadata!(p, b, "name1", "empty1", style=:none)
+            colmetadata!(p, b, "name2", "empty2", style=:none)
+            colmetadata!(p, :a, "name3", "empty3", style=:none)
+            @test isempty(colmetadatakeys(x, :a))
+            @test isempty(colmetadatakeys(x, b))
+            @test_throws ArgumentError colmetadatakeys(x, :c)
+            @test isempty(colmetadatakeys(x))
+            emptycolmetadata!(x)
+            @test colmetadatakeys(p, :a) == Set(["name3"])
+            @test colmetadatakeys(p, b) == Set(["name1", "name2"])
 
-    for fun in (identity, eachcol, eachrow, x -> groupby(x, :a),
-                x -> x[1, :], x -> @view x[:, :])
-        df = DataFrame(b=2, a=1)
-        metadata(df)["name"] = "empty"
-        colmetadata(df, :a)["name"] = "a"
-        x = fun(df)
-        @test hasmetadata(x)
-        @test hascolmetadata(x)
-        dropmetadata!(x, type=:table)
-        @test !hasmetadata(x)
-        @test hascolmetadata(x)
-        @test getfield(df, :metadata) === nothing
-        @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "a"))
-    end
-
-    for fun in (identity, eachcol, eachrow, x -> groupby(x, :a),
-                x -> x[1, :], x -> @view x[:, :])
-        df = DataFrame(b=2, a=1)
-        metadata(df)["name"] = "empty"
-        colmetadata(df, :a)["name"] = "a"
-        x = fun(df)
-        @test hasmetadata(x)
-        @test hascolmetadata(x)
-        dropmetadata!(x, type=:column)
-        @test hasmetadata(x)
-        @test !hascolmetadata(x)
-        @test getfield(df, :metadata) == Dict("name" => "empty")
-        @test getfield(df, :colmetadata) === nothing
+            if !("d" in names(x))
+                @test_throws BoundsError colmetadata!(x, "d", "n", "e", style=:note)
+            else
+                colmetadata!(x, "d", "n", "e", style=:note)
+                @test colmetadata(x, "d", "n") == "e"
+            end
+        end
     end
 end
 
