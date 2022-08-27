@@ -233,7 +233,7 @@ function _show(io::IO,
     # PrettyTables.jl. Otherwise, we can just use the row number column.
     if (rowid === nothing) || (ncol(df) == 0)
         show_row_number::Bool = get(kwargs, :show_row_number, true)
-        row_names = nothing
+        row_labels = nothing
 
         # If the columns with row numbers is not shown, then we should not
         # display a vertical line after the first column.
@@ -246,10 +246,10 @@ function _show(io::IO,
         # we must hide the row name column, which is used to display the
         # `rowid`.
         if !get(kwargs, :show_row_number, true)
-            row_names = nothing
+            row_labels = nothing
             vlines = Int[]
         else
-            row_names = [string(rowid)]
+            row_labels = [string(rowid)]
             vlines = Int[1]
         end
 
@@ -271,13 +271,13 @@ function _show(io::IO,
                  max_num_of_rows           = mxrow,
                  maximum_columns_width     = maximum_columns_width,
                  minify                    = true,
-                 nosubheader               = !eltypes,
-                 row_name_column_title     = "Row",
-                 row_names                 = row_names,
+                 row_label_column_title    = "Row",
+                 row_labels                = row_labels,
                  row_number_alignment      = :r,
                  row_number_column_title   = "Row",
                  show_omitted_cell_summary = true,
                  show_row_number           = show_row_number,
+                 show_subheader            = eltypes,
                  standalone                = false,
                  table_class               = "data-frame",
                  table_div_class           = "data-frame",

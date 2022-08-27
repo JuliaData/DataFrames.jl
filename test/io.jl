@@ -228,12 +228,12 @@ end
                  "<table class = \"data-frame\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
-                 "<th class = \"rowName\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
                  "<th style = \"text-align: left;\">Fish</th>" *
                  "<th style = \"text-align: left;\">Mass</th>" *
                  "</tr>" *
                  "<tr class = \"subheader headerLastRow\">" *
-                 "<th class = \"rowName\" style = \"font-weight: bold; text-align: right;\">" *
+                 "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
@@ -241,7 +241,7 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr>" *
-                 "<td class = \"rowName\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
                  "<td style = \"text-align: right;\">1.5</td>" *
                  "</tr>" *
@@ -355,12 +355,12 @@ end
                  "<table class = \"data-frame\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
-                 "<th class = \"rowName\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
                  "<th style = \"text-align: left;\">Fish</th>" *
                  "<th style = \"text-align: left;\">Mass</th>" *
                  "</tr>" *
                  "<tr class = \"subheader headerLastRow\">" *
-                 "<th class = \"rowName\" style = \"font-weight: bold; text-align: right;\">" *
+                 "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
@@ -368,7 +368,7 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr>" *
-                 "<td class = \"rowName\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
                  "<td style = \"text-align: right;\">1.5</td>" *
                  "</tr>" *

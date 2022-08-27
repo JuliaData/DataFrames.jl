@@ -443,12 +443,12 @@ end
                  "<table class = \"data-frame\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
-                 "<th class = \"rowName\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
                  "<th style = \"text-align: left;\">b</th>" *
                  "<th style = \"text-align: left;\">c</th>" *
                  "</tr>" *
                  "<tr class = \"subheader headerLastRow\">" *
-                 "<th class = \"rowName\" style = \"font-weight: bold; text-align: right;\">" *
+                 "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
@@ -456,7 +456,7 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr>" *
-                 "<td class = \"rowName\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: left;\">b</td>" *
                  "<td style = \"text-align: right;\">0</td>" *
                  "</tr>" *
@@ -519,14 +519,14 @@ end
                  "<table class = \"data-frame\">" *
                  "<thead>" *
                  "<tr class = \"header headerLastRow\">" *
-                 "<th class = \"rowName\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
                  "<th style = \"text-align: left;\">b</th>" *
                  "<th style = \"text-align: left;\">c</th>" *
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
                  "<tr>" *
-                 "<td class = \"rowName\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: left;\">b</td>" *
                  "<td style = \"text-align: right;\">0</td>" *
                  "</tr>" *
