@@ -1138,47 +1138,50 @@ end
     @test getfield(res, :metadata) === nothing
     @test getfield(res, :colmetadata) === nothing
 
-    metadata(df1)["name"] = "some"
-    colmetadata(df1, "b")["x"] = "y"
+    metadata!(df1, "name", "some", style=:note)
+    metadata!(df1, "name1", "some1", style=:none)
+    colmetadata!(df1, :b, "x", "y", style=:note)
+    colmetadata!(df1, :b, "x1", "y1", style=:none)
+
     res = log.(df1)
-    @test metadata(res) == metadata(df1)
-    @test metadata(res) !== metadata(df1)
-    @test getfield(res, :colmetadata) == Dict(2 => Dict("x" => "y"))
-    @test colmetadata(res, :b) == colmetadata(df1, :b)
-    @test colmetadata(res, :b) !== colmetadata(df1, :b)
+    @test collect(metadatakeys(res)) == ["name"]
+    @test metadata(res, "name") == "some"
+    @test isempty(colmetadatakeys(res, :a))
+    @test collect(colmetadatakeys(res, :b)) == ["x"]
+    @test colmetadata(res, :b, "x") == "y"
 
     res = log.(df1) .+ df2
     @test getfield(res, :metadata) === nothing
     @test getfield(res, :colmetadata) === nothing
 
-    metadata(df2)["name"] = "some1"
-    colmetadata(df2, "b")["x"] = "y1"
+    metadata!(df2, "name", "somex", style=:note)
+    colmetadata!(df2, :b, "x", "yx", style=:note)
     res = log.(df1) .+ df2
     @test getfield(res, :metadata) === nothing
     @test getfield(res, :colmetadata) === nothing
 
-    metadata(df2)["name"] = "some"
-    metadata(df2)["name1"] = "some1"
+    metadata!(df2, "name", "some", style=:none)
+    colmetadata!(df2, :b, "x", "y", style=:none)
     res = log.(df1) .+ df2
-    @test metadata(res) == metadata(df1)
-    @test metadata(res) !== metadata(df1)
+    @test getfield(res, :metadata) === nothing
     @test getfield(res, :colmetadata) === nothing
 
-    colmetadata(df2, "b")["x"] = "y"
-    colmetadata(df2, "b")["x1"] = "y1"
+    metadata!(df2, "name", "some", style=:note)
+    colmetadata!(df2, :b, "x", "y", style=:note)
     res = log.(df1) .+ df2
-    @test metadata(res) == metadata(df1)
-    @test metadata(res) !== metadata(df1)
-    @test getfield(res, :colmetadata) == Dict(2 => Dict("x" => "y"))
-    @test colmetadata(res, :b) == colmetadata(df1, :b)
-    @test colmetadata(res, :b) !== colmetadata(df1, :b)
+    @test collect(metadatakeys(res)) == ["name"]
+    @test metadata(res, "name") == "some"
+    @test isempty(colmetadatakeys(res, :a))
+    @test collect(colmetadatakeys(res, :b)) == ["x"]
+    @test colmetadata(res, :b, "x") == "y"
 
-    metadata(df1)["caption"] = "other"
+    metadata!(df1, "caption", "other", style=:note)
     res = log.(df1) .+ df2
-    @test metadata(res) == Dict("name" => "some")
-    @test getfield(res, :colmetadata) == Dict(2 => Dict("x" => "y"))
-    @test colmetadata(res, :b) == colmetadata(df1, :b)
-    @test colmetadata(res, :b) !== colmetadata(df1, :b)
+    @test collect(metadatakeys(res)) == ["name"]
+    @test metadata(res, "name") == "some"
+    @test isempty(colmetadatakeys(res, :a))
+    @test collect(colmetadatakeys(res, :b)) == ["x"]
+    @test colmetadata(res, :b, "x") == "y"
 end
 
 @testset "push!, pushfirst!, insert!" begin
@@ -1189,20 +1192,28 @@ end
         fun(df, (a=10, b=20))
         @test getfield(df, :metadata) === nothing
         @test getfield(df, :colmetadata) === nothing
+
         df2 = DataFrame(a=1:3, b=2:4, c=1:3)
-        metadata(df2)["caption"] = "other2"
-        colmetadata(df2, :c)["name"] = "c"
+        metadata!(df2, "caption", "other2", style=:note)
+        colmetadata!(df2, :c, "name", "c", style=:note)
+        metadata!(df2, "caption1", "other3", style=:none)
+        colmetadata!(df2, :c, "name1", "c2", style=:none)
         dfr = df2[1, :]
 
         fun(df, dfr)
         @test getfield(df, :metadata) === nothing
         @test getfield(df, :colmetadata) === nothing
 
-        metadata(df)["caption"] = "other"
-        colmetadata(df, :b)["name"] = "b"
+        metadata!(df, "caption", "some", style=:note)
+        colmetadata!(df, :b, "name", "b", style=:note)
+        metadata!(df, "caption1", "some1", style=:none)
+        colmetadata!(df, :b, "name1", "b2", style=:none)
         fun(df, dfr)
-        @test getfield(df, :metadata) == Dict("caption" => "other")
-        @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"))
+        @test collect(metadatakeys(df)) == ["caption"]
+        @test metadata(df, "caption") == "some"
+        @test isempty(colmetadatakeys(df, :a))
+        @test collect(colmetadatakeys(df, :b)) == ["name"]
+        @test colmetadata(df, :b, "name") == "b"
     end
 end
 
@@ -1216,50 +1227,86 @@ end
         @test getfield(df, :metadata) === nothing
         @test getfield(df, :colmetadata) === nothing
 
-        metadata(df2)["caption"] = "other2"
-        colmetadata(df2, :c)["name"] = "c"
+        metadata!(df2, "caption", "other2", style=:note)
+        colmetadata!(df2, :a, "name", "a", style=:note)
+        colmetadata!(df2, :c, "name", "c", style=:note)
+        metadata!(df2, "caption1", "other3", style=:none)
+        colmetadata!(df2, :c, "name1", "c2", style=:none)
         df = DataFrame(a=1:3, b=2:4)
         fun(df, df2)
         @test getfield(df, :metadata) === nothing
-        @test getfield(df, :colmetadata) == Dict(3 => Dict("name" => "c"))
+        @test isempty(colmetadatakeys(df, :a))
+        @test isempty(colmetadatakeys(df, :b))
+        @test collect(colmetadatakeys(df, :c)) == ["name"]
+        @test colmetadata(df, :c, "name") == "c"
 
         df = DataFrame(a=1:3, b=2:4)
-        metadata(df)["caption"] = "other"
-        colmetadata(df, :b)["name"] = "b"
+        metadata!(df, "caption", "some", style=:note)
+        colmetadata!(df, :b, "name", "b", style=:note)
+        metadata!(df, "caption1", "some1", style=:none)
+        colmetadata!(df, :b, "name1", "b2", style=:none)
         fun(df, df2)
-        @test getfield(df, :metadata) == Dict("caption" => "other")
-        @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"),
-                                                 3 => Dict("name" => "c"))
+        @test collect(metadatakeys(df)) == ["caption"]
+        @test metadata(df, "caption") == "some"
+        @test isempty(colmetadatakeys(df, :a))
+        @test collect(colmetadatakeys(df, :b)) == ["name"]
+        @test colmetadata(df, :b, "name") == "b"
+        @test collect(colmetadatakeys(df, :c)) == ["name"]
+        @test colmetadata(df, :c, "name") == "c"
 
         df = DataFrame(a=1:3, b=2:4)
-        metadata(df)["caption"] = "other"
-        colmetadata(df, :b)["name"] = "b"
+        metadata!(df, "caption", "some", style=:note)
+        colmetadata!(df, :b, "name", "b", style=:note)
+        metadata!(df, "caption1", "some1", style=:none)
+        colmetadata!(df, :b, "name1", "b2", style=:none)
         fun(df, eachrow(df2))
-        @test getfield(df, :metadata) == Dict("caption" => "other")
-        @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"),
-                                                 3 => Dict("name" => "c"))
+        @test collect(metadatakeys(df)) == ["caption"]
+        @test metadata(df, "caption") == "some"
+        @test isempty(colmetadatakeys(df, :a))
+        @test collect(colmetadatakeys(df, :b)) == ["name"]
+        @test colmetadata(df, :b, "name") == "b"
+        @test collect(colmetadatakeys(df, :c)) == ["name"]
+        @test colmetadata(df, :c, "name") == "c"
 
         df = DataFrame(a=1:3, b=2:4)
-        metadata(df)["caption"] = "other"
-        colmetadata(df, :b)["name"] = "b"
+        metadata!(df, "caption", "some", style=:note)
+        colmetadata!(df, :b, "name", "b", style=:note)
+        metadata!(df, "caption1", "some1", style=:none)
+        colmetadata!(df, :b, "name1", "b2", style=:none)
         fun(df, eachcol(df2))
-        @test getfield(df, :metadata) == Dict("caption" => "other")
-        @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"),
-                                                 3 => Dict("name" => "c"))
+        @test collect(metadatakeys(df)) == ["caption"]
+        @test metadata(df, "caption") == "some"
+        @test isempty(colmetadatakeys(df, :a))
+        @test collect(colmetadatakeys(df, :b)) == ["name"]
+        @test colmetadata(df, :b, "name") == "b"
+        @test collect(colmetadatakeys(df, :c)) == ["name"]
+        @test colmetadata(df, :c, "name") == "c"
 
         df = DataFrame(a=1:3, b=2:4)
-        metadata(df)["caption"] = "other"
-        colmetadata(df, :b)["name"] = "b"
+        metadata!(df, "caption", "some", style=:note)
+        colmetadata!(df, :b, "name", "b", style=:note)
+        metadata!(df, "caption1", "some1", style=:none)
+        colmetadata!(df, :b, "name1", "b2", style=:none)
         fun(df, Tables.rowtable(df2))
-        @test getfield(df, :metadata) == Dict("caption" => "other")
-        @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"))
+        @test collect(metadatakeys(df)) == ["caption"]
+        @test metadata(df, "caption") == "some"
+        @test isempty(colmetadatakeys(df, :a))
+        @test collect(colmetadatakeys(df, :b)) == ["name"]
+        @test colmetadata(df, :b, "name") == "b"
+        @test isempty(colmetadatakeys(df, :c))
 
         df = DataFrame(a=1:3, b=2:4)
-        metadata(df)["caption"] = "other"
-        colmetadata(df, :b)["name"] = "b"
+        metadata!(df, "caption", "some", style=:note)
+        colmetadata!(df, :b, "name", "b", style=:note)
+        metadata!(df, "caption1", "some1", style=:none)
+        colmetadata!(df, :b, "name1", "b2", style=:none)
         fun(df, Tables.columntable(df2))
-        @test getfield(df, :metadata) == Dict("caption" => "other")
-        @test getfield(df, :colmetadata) == Dict(2 => Dict("name" => "b"))
+        @test collect(metadatakeys(df)) == ["caption"]
+        @test metadata(df, "caption") == "some"
+        @test isempty(colmetadatakeys(df, :a))
+        @test collect(colmetadatakeys(df, :b)) == ["name"]
+        @test colmetadata(df, :b, "name") == "b"
+        @test isempty(colmetadatakeys(df, :c))
     end
 end
 

@@ -103,7 +103,7 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
                                     break
                                 end
                             end
-                            add_meta && colmetadata!(df, colname, key1, val1, :note)
+                            add_meta && colmetadata!(df, colname, key1, val1, style=:note)
                         end
                     end
                 end
