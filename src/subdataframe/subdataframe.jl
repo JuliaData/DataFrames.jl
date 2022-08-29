@@ -352,12 +352,16 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame; keep_present::Bo
         select!(pdf, _names(newdf))
     end
 
-    _drop_all_nonnote_metadata!(pdf)
-    if !(isempty(colmetadatakeys(pdf)) && isempty(colmetadatakeys(newdf)))
-        for colname in _names(newdf)
-            _copy_col_note_metadata!(pdf, colname, newdf, colname)
+    for (col, col_keys) in colmetadatakeys(newdf)
+        if hasproperty(pdf, col)
+            emptycolmetadata!(pdf, col)
+            for key in col_keys
+                val, style = colmetadata(newdf, col, key, style=true)
+                style === :note && colmetadata!(pdf, col, key, val, style=:note)
+            end
         end
     end
+    _drop_all_nonnote_metadata!(pdf)
 
     return sdf
 end

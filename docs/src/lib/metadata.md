@@ -239,8 +239,7 @@ metadata is always dropped) is applied:
 
 * [`dropmetadata!`](@ref) removes both table level and/or column level metadata
   from a data frame; note that removing metadata can speed up certain operations.
-* [`describe`](@ref) preserves only table level metadata;
-  column level metadata is dropped.
+* [`describe`](@ref) drops all metadata.
 * [`hcat`](@ref): propagates table level metadata only for keys which are defined
   in all passed tables and have the same value.
 * [`vcat`](@ref): propagates table level metadata only for keys which are defined

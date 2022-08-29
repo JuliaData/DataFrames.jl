@@ -132,12 +132,29 @@ end
 Base.axes(x::ColReplaceDataFrame) = (axes(x.df, 1), Base.OneTo(length(x.cols)))
 Base.ndims(::Type{<:ColReplaceDataFrame}) = 2
 
-Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2}) = df[idx]
-Base.maybeview(df::AbstractDataFrame, row::Integer, col::ColumnIndex) = df[row, col]
-Base.maybeview(df::AbstractDataFrame, rows, cols) = view(df, rows, cols)
+# In the functions below we need to call _drop_all_nonnote_metadata!
+# upfront as the rest of the operations is handled by Base Julia
+
+function Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2})
+    _drop_all_nonnote_metadata!(parent(df))
+    return df[idx]
+end
+
+function Base.maybeview(df::AbstractDataFrame, row::Integer, col::ColumnIndex)
+    _drop_all_nonnote_metadata!(parent(df))
+    return df[row, col]
+end
+
+function Base.maybeview(df::AbstractDataFrame, rows, cols)
+    _drop_all_nonnote_metadata!(parent(df))
+    return view(df, rows, cols)
+end
 
 function Base.dotview(df::AbstractDataFrame, ::Colon, cols::ColumnIndex)
-    haskey(index(df), cols) && return view(df, :, cols)
+    if haskey(index(df), cols)
+        _drop_all_nonnote_metadata!(parent(df))
+        return view(df, :, cols)
+    end
     if !(cols isa SymbolOrString)
         throw(ArgumentError("creating new columns using an integer index is disallowed"))
     end
@@ -290,7 +307,7 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
     for i in axes(df, 2)
         _copyto_helper!(df[!, i], getcolbc(bcf′, i), i)
     end
-    _drop_all_nonnote_metadata!(df)
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 

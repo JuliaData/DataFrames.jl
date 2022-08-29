@@ -603,7 +603,7 @@ missing values, the vector is wrapped in a call to `skipmissing`: custom
 functions must therefore support such objects (and not only vectors), and cannot
 access missing values.
 
-Metadata: this function preserves table level and drops column level metadata.
+Metadata: this function drops all metadata.
 
 # Examples
 ```jldoctest
@@ -727,7 +727,6 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         data[!, stat] = [d[stat] for d in col_stats_dicts]
     end
 
-    _copy_df_note_metadata!(data, df)
     return data
 end
 
@@ -1630,7 +1629,9 @@ function fillcombinations(df::AbstractDataFrame, indexcols;
     target_rows = Int(prod(x -> big(length(x)), uniquevals))
     if iszero(target_rows)
         @assert iszero(nrow(df))
-        return copy(df)
+        cdf = copy(df)
+        _drop_all_nonnote_metadata!(cdf)
+        return cdf
     end
 
     # construct expanded columns
@@ -2162,9 +2163,10 @@ function _vcat(dfs::AbstractVector{AbstractDataFrame};
             hasproperty(df1, colname) && _copy_col_note_metadata!(out_df, colname, df1, colname)
         else
             start = findfirst(x -> hasproperty(x, colname), dfs)
+            start === nothing && continue
             df_start = dfs[start]
             for key_start in colmetadatakeys(df_start, colname)
-                meta_val_start, meta_style_start = colmetadata(df_start, colname, key_start)
+                meta_val_start, meta_style_start = colmetadata(df_start, colname, key_start, style=true)
                 if meta_style_start === :note
                     good_key = true
                     for i in start+1:length(dfs)
@@ -2172,7 +2174,7 @@ function _vcat(dfs::AbstractVector{AbstractDataFrame};
                         if hasproperty(dfi, colname)
                             if key_start in colmetadatakeys(dfi, colname)
                                 meta_vali, meta_stylei = colmetadata(dfi, colname, key_start, style=true)
-                                if !(meta_stylei === :note && isequal(meta_val1, meta_vali))
+                                if !(meta_stylei === :note && isequal(meta_val_start, meta_vali))
                                     good_key = false
                                     break
                                 end
@@ -2510,7 +2512,11 @@ function flatten(df::AbstractDataFrame,
     _check_consistency(df)
 
     idxcols = index(df)[cols]
-    isempty(idxcols) && return copy(df)
+    if isempty(idxcols)
+        cdf = copy(df)
+        _drop_all_nonnote_metadata!(cdf)
+        return cdf
+    end
     col1 = first(idxcols)
     lengths = length.(df[!, col1])
     for col in idxcols
@@ -2686,7 +2692,10 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
 
     cp = _compile_permutation!(Base.copymutable(p))
 
-    isempty(cp) && return df
+    if isempty(cp)
+        _drop_all_nonnote_metadata!(parent(df))
+        return df
+    end
 
     if fun === Base.invpermute!!
         reverse!(@view cp[1:end-1])

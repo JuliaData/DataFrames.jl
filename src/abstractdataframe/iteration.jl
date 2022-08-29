@@ -437,7 +437,10 @@ julia> df
 """
 function mapcols!(f::Union{Function, Type}, df::DataFrame)
     # note: `f` must return a consistent length
-    ncol(df) == 0 && return df # skip if no columns
+    if ncol(df) == 0
+        _drop_all_nonnote_metadata!(df)
+        return df # skip if no columns
+    end
 
     vs = AbstractVector[]
     seenscalar = false

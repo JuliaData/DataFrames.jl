@@ -99,6 +99,8 @@ functions, or provide type assertions to the variables that hold columns
 extracted from a `DataFrame`.
 
 Metadata: this function preserves all table and column level metadata.
+As a special case if `GroupedDataFrame` is passed to `DataFrame` then
+only `:note` style metadata from parent of the `GroupedDataFrame` is preserved.
 
 # Examples
 ```jldoctest
@@ -651,7 +653,6 @@ function insert_single_column!(df::DataFrame, v::AbstractVector, col_ind::Column
     if haskey(index(df), col_ind)
         j = index(df)[col_ind]
         _columns(df)[j] = dv
-        emptycolmetadata!(df, j)
     else
         if col_ind isa SymbolOrString
             push!(index(df), Symbol(col_ind))
@@ -1453,7 +1454,15 @@ function _replace_columns!(df::DataFrame, newdf::DataFrame)
     copy!(_names(index(df)), _names(newdf))
     copy!(index(df).lookup, index(newdf).lookup)
 
-    _copy_col_note_metadata!(df, newdf)
+    emptycolmetadata!(df)
+    for (col, col_keys) in colmetadatakeys(newdf)
+        if hasproperty(df, col)
+            for key in col_keys
+                val, style = colmetadata(newdf, col, key, style=true)
+                style === :note && colmetadata!(df, col, key, val, style=:note)
+            end
+        end
+    end
     _drop_all_nonnote_metadata!(df)
     return df
 end

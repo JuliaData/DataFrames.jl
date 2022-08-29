@@ -998,7 +998,7 @@ end
 function _drop_df_nonnote_metadata!(df::DataFrame)
     getfield(df, :allnotemetadata) && return nothing
     for key in metadatakeys(df)
-        _, style = metadata(src, key, style=true)
+        _, style = metadata(df, key, style=true)
         style === :note || deletemetadata!(df, key)
     end
     return nothing
@@ -1010,7 +1010,7 @@ function _drop_all_nonnote_metadata!(df::DataFrame)
     _drop_df_nonnote_metadata!(df)
     for (col, col_keys) in colmetadatakeys(df)
         for key in col_keys
-            _, style = colmetadata(src, col, key, style=true)
+            _, style = colmetadata(df, col, key, style=true)
             style === :note || deletecolmetadata!(df, col, key)
         end
     end
