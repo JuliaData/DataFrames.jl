@@ -297,7 +297,7 @@ function DataFrame(sdf::SubDataFrame; copycols::Bool=true)
         return sdf[:, :]
     else
         new_df = DataFrame(collect(eachcol(sdf)), _names(sdf), copycols=false)
-        _unsafe_copy_all_metadata!(new_df, sdf)
+        _copy_all_note_metadata!(new_df, sdf)
         return new_df
     end
 end
