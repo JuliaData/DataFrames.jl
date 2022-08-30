@@ -1581,430 +1581,597 @@ end
         end
     end
 
-    metadata(refdf)["name"] = "refdf"
+    metadata!(refdf, "name_none", "none", style=:none)
+    colmetadata!(refdf, :id, "name_none", "id_none", style=:none)
+    colmetadata!(refdf, :a, "name_none", "id_none", style=:none)
+    colmetadata!(refdf, :b, "name_none", "id_none", style=:none)
+    colmetadata!(refdf, :c, "name_none", "id_none", style=:none)
 
     for fun in (combine, select, select!, transform, transform!)
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df)
-            if fun === select! || fun === transform!
-                @test getfield(parent(res), :metadata) === metadata(df)
-            else
-                @test getfield(parent(res), :metadata) == metadata(df)
-                @test getfield(parent(res), :metadata) !== metadata(df)
-            end
+            @test getfield(parent(res), :metadata) === nothing
             @test getfield(parent(res), :colmetadata) === nothing
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :a)
-            if fun === select! || fun === transform!
-                @test getfield(parent(res), :metadata) === metadata(df)
-            else
-                @test getfield(parent(res), :metadata) == metadata(df)
-                @test getfield(parent(res), :metadata) !== metadata(df)
-            end
+            @test getfield(parent(res), :metadata) === nothing
             @test getfield(parent(res), :colmetadata) === nothing
         end
     end
 
-    colmetadata(refdf, :id)["name"] = "id"
-    colmetadata(refdf, :a)["name"] = "a"
-    colmetadata(refdf, :c)["name"] = "c"
+    metadata!(refdf, "name", "refdf", style=:note)
+
+    for fun in (combine, select, select!, transform, transform!)
+        for df in (copy(refdf), @view copy(refdf)[:, :])
+            res = fun(df)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
+        end
+        for df in (copy(refdf), @view copy(refdf)[:, :])
+            res = fun(df, :a)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
+        end
+    end
+
+    colmetadata!(refdf, :id, "name", "id", style=:note)
+    colmetadata!(refdf, :a, "name", "a", style=:note)
+    colmetadata!(refdf, :c, "name", "c", style=:note)
 
     for fun in (combine, select, select!)
         for df in (copy(refdf), @view copy(refdf)[:, :])
+            res = fun(df, :id => :z)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :z)) == ["name"]
+            @test colmetadata(res, :z, "name") == "id"
+        end
+        for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :id => identity => :z)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf") == getfield(refdf, :metadata)
-            @test getfield(parent(res), :metadata) !== getfield(refdf, :metadata)
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "id"))
-            @test getfield(parent(res), :colmetadata)[1] == colmetadata(refdf, :id)
-            @test getfield(parent(res), :colmetadata)[1] !== colmetadata(refdf, :id)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :z)) == ["name"]
+            @test colmetadata(res, :z, "name") == "id"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :id => copy => :z)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf") == getfield(refdf, :metadata)
-            @test getfield(parent(res), :metadata) !== getfield(refdf, :metadata)
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "id"))
-            @test getfield(parent(res), :colmetadata)[1] == colmetadata(refdf, :id)
-            @test getfield(parent(res), :colmetadata)[1] !== colmetadata(refdf, :id)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :z)) == ["name"]
+            @test colmetadata(res, :z, "name") == "id"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :c)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf") == getfield(refdf, :metadata)
-            @test getfield(parent(res), :metadata) !== getfield(refdf, :metadata)
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "c"))
-            @test getfield(parent(res), :colmetadata)[1] == colmetadata(refdf, :c)
-            @test getfield(parent(res), :colmetadata)[1] !== colmetadata(refdf, :c)
-        end
-        for df in (copy(refdf), @view copy(refdf)[:, :])
-            res = fun(df, :id => :z)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf") == getfield(refdf, :metadata)
-            @test getfield(parent(res), :metadata) !== getfield(refdf, :metadata)
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "id"))
-            @test getfield(parent(res), :colmetadata)[1] == colmetadata(refdf, :id)
-            @test getfield(parent(res), :colmetadata)[1] !== colmetadata(refdf, :id)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :id => (x -> x) => :z)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf") == getfield(refdf, :metadata)
-            @test getfield(parent(res), :metadata) !== getfield(refdf, :metadata)
+            @test metadata(res, "name") == "refdf"
             @test getfield(parent(res), :colmetadata) === nothing
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :c => sum => :c)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf") == getfield(refdf, :metadata)
-            @test getfield(parent(res), :metadata) !== getfield(refdf, :metadata)
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "c"))
-            @test getfield(parent(res), :colmetadata)[1] == colmetadata(refdf, :c)
-            @test getfield(parent(res), :colmetadata)[1] !== colmetadata(refdf, :c)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :b => sum => :c)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf") == getfield(refdf, :metadata)
-            @test getfield(parent(res), :metadata) !== getfield(refdf, :metadata)
+            @test metadata(res, "name") == "refdf"
             @test getfield(parent(res), :colmetadata) === nothing
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            res = fun(df, :id => (x -> x) => :id)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf") == getfield(refdf, :metadata)
-            @test getfield(parent(res), :metadata) !== getfield(refdf, :metadata)
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "id"))
-            @test getfield(parent(res), :colmetadata)[1] == colmetadata(refdf, :id)
-            @test getfield(parent(res), :colmetadata)[1] !== colmetadata(refdf, :id)
+            res = fun(df, :c => sum)
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            res = fun(df, :a => identity => :id)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf") == getfield(refdf, :metadata)
-            @test getfield(parent(res), :metadata) !== getfield(refdf, :metadata)
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "a"))
-            @test getfield(parent(res), :colmetadata)[1] == colmetadata(refdf, :a)
-            @test getfield(parent(res), :colmetadata)[1] !== colmetadata(refdf, :a)
+            res = fun(df, :c => (x -> x) => :c)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            res = fun(df, :a => copy => :id)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf") == getfield(refdf, :metadata)
-            @test getfield(parent(res), :metadata) !== getfield(refdf, :metadata)
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "a"))
-            @test getfield(parent(res), :colmetadata)[1] == colmetadata(refdf, :a)
-            @test getfield(parent(res), :colmetadata)[1] !== colmetadata(refdf, :a)
+            res = fun(df, :c => identity => :id)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            res = fun(df, :a => :id)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf") == getfield(refdf, :metadata)
-            @test getfield(parent(res), :metadata) !== getfield(refdf, :metadata)
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "a"))
-            @test getfield(parent(res), :colmetadata)[1] == colmetadata(refdf, :a)
-            @test getfield(parent(res), :colmetadata)[1] !== colmetadata(refdf, :a)
+            res = fun(df, :c => copy => :id)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :b => (x -> x) => :c)
-            @test getfield(parent(ref), :colmetadata) === nothing
+            res = fun(df, :c => :id)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :b => (x -> x) => :c, :)
-            @test getfield(parent(ref), :colmetadata) == Dict(2 => Dict("name" => "id"),
-                                                              3 => Dict("name" => "a"))
-            @test getfield(parent(ref), :colmetadata)[2] == colmetadata(refdf, :id)
-            @test getfield(parent(ref), :colmetadata)[2] !== colmetadata(refdf, :id)
-            @test getfield(parent(ref), :colmetadata)[3] == colmetadata(refdf, :a)
-            @test getfield(parent(ref), :colmetadata)[3] !== colmetadata(refdf, :a)
+            res = fun(df, :b => (x -> x) => :c)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => (x -> x) => :a)
-            @test getfield(parent(ref), :colmetadata) === nothing
+            res = fun(df, :b => (x -> x) => :c, :)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :c))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => identity => :a)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "c"))
-            @test getfield(parent(ref), :colmetadata)[1] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[1] !== colmetadata(refdf, :c)
+            res = fun(df, :c => (x -> x) => :a)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => copy => :a)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "c"))
-            @test getfield(parent(ref), :colmetadata)[1] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[1] !== colmetadata(refdf, :c)
+            res = fun(df, [:c] => identity => :id)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => :a)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "c"))
-            @test getfield(parent(ref), :colmetadata)[1] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[1] !== colmetadata(refdf, :c)
+            res = fun(df, [:c] => copy => :id)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, [:c] => identity => :a)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "c"))
-            @test getfield(parent(ref), :colmetadata)[1] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[1] !== colmetadata(refdf, :c)
+            res = fun(df, :c => (x -> x) => :a, :)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :a))
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, [:c] => copy => :a)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "c"))
-            @test getfield(parent(ref), :colmetadata)[1] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[1] !== colmetadata(refdf, :c)
+            res = fun(df, :c => identity => :a, :)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => (x -> x) => :a, :)
-            @test getfield(parent(ref), :colmetadata) == Dict(2 => Dict("name" => "id"),
-                                                              4 => Dict("name" => "c"))
-            @test getfield(parent(ref), :colmetadata)[2] == colmetadata(refdf, :id)
-            @test getfield(parent(ref), :colmetadata)[2] !== colmetadata(refdf, :id)
-            @test getfield(parent(ref), :colmetadata)[4] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[4] !== colmetadata(refdf, :c)
+            res = fun(df, :c => copy => :a, :)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => identity => :a, :)
-            @test getfield(parent(ref), :colmetadata) == Dict(2 => Dict("name" => "id"),
-                                                              1 => Dict("name" => "c"),
-                                                              4 => Dict("name" => "c"))
-            @test getfield(parent(ref), :colmetadata)[1] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[1] !== colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[2] == colmetadata(refdf, :id)
-            @test getfield(parent(ref), :colmetadata)[2] !== colmetadata(refdf, :id)
-            @test getfield(parent(ref), :colmetadata)[4] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[4] !== colmetadata(refdf, :c)
+            res = fun(df, :c => :a, :)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => copy => :a, :)
-            @test getfield(parent(ref), :colmetadata) == Dict(2 => Dict("name" => "id"),
-                                                              1 => Dict("name" => "c"),
-                                                              4 => Dict("name" => "c"))
-            @test getfield(parent(ref), :colmetadata)[1] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[1] !== colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[2] == colmetadata(refdf, :id)
-            @test getfield(parent(ref), :colmetadata)[2] !== colmetadata(refdf, :id)
-            @test getfield(parent(ref), :colmetadata)[4] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[4] !== colmetadata(refdf, :c)
+            res = fun(df, [:c] => identity => :a, :)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => :a, :)
-            @test getfield(parent(ref), :colmetadata) == Dict(2 => Dict("name" => "id"),
-                                                              1 => Dict("name" => "c"),
-                                                              4 => Dict("name" => "c"))
-            @test getfield(parent(ref), :colmetadata)[1] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[1] !== colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[2] == colmetadata(refdf, :id)
-            @test getfield(parent(ref), :colmetadata)[2] !== colmetadata(refdf, :id)
-            @test getfield(parent(ref), :colmetadata)[4] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[4] !== colmetadata(refdf, :c)
+            res = fun(df, [:c] => copy => :a, :)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, [:c] => identity => :a, :)
-            @test getfield(parent(ref), :colmetadata) == Dict(2 => Dict("name" => "id"),
-                                                              1 => Dict("name" => "c"),
-                                                              4 => Dict("name" => "c"))
-            @test getfield(parent(ref), :colmetadata)[1] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[1] !== colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[2] == colmetadata(refdf, :id)
-            @test getfield(parent(ref), :colmetadata)[2] !== colmetadata(refdf, :id)
-            @test getfield(parent(ref), :colmetadata)[4] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[4] !== colmetadata(refdf, :c)
+            res = fun(df, :c => identity => AsTable)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, [:c] => copy => :a, :)
-            @test getfield(parent(ref), :colmetadata) == Dict(2 => Dict("name" => "id"),
-                                                              1 => Dict("name" => "c"),
-                                                              4 => Dict("name" => "c"))
-            @test getfield(parent(ref), :colmetadata)[1] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[1] !== colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[2] == colmetadata(refdf, :id)
-            @test getfield(parent(ref), :colmetadata)[2] !== colmetadata(refdf, :id)
-            @test getfield(parent(ref), :colmetadata)[4] == colmetadata(refdf, :c)
-            @test getfield(parent(ref), :colmetadata)[4] !== colmetadata(refdf, :c)
+            res = fun(df, :c => copy => AsTable)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => identity => AsTable)
-            @test getfield(parent(ref), :colmetadata) === nothing
+            res = fun(df, :c => identity => [:a])
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => copy => AsTable)
-            @test getfield(parent(ref), :colmetadata) === nothing
+            res = fun(df, :c => copy => [:a])
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => identity => [:a])
-            @test getfield(parent(ref), :colmetadata) === nothing
-        end
-        for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => copy => [:a])
-            @test getfield(parent(ref), :colmetadata) === nothing
-        end
-        for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, identity)
-            @test getfield(parent(ref), :colmetadata) === nothing
+            res = fun(df, identity)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
         end
     end
 
     for fun in (transform, transform!)
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :id => identity => :z)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "a"),
-                                                              4 => Dict("name" => "c"),
-                                                              5 => Dict("name" => "id"))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test collect(colmetadatakeys(res, :z)) == ["name"]
+            @test colmetadata(res, :z, "name") == "id"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :id => copy => :z)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "a"),
-                                                              4 => Dict("name" => "c"),
-                                                              5 => Dict("name" => "id"))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test collect(colmetadatakeys(res, :z)) == ["name"]
+            @test colmetadata(res, :z, "name") == "id"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :id => :z)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "a"),
-                                                              4 => Dict("name" => "c"),
-                                                              5 => Dict("name" => "id"))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test collect(colmetadatakeys(res, :z)) == ["name"]
+            @test colmetadata(res, :z, "name") == "id"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :c => sum => :c)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "a"),
-                                                              4 => Dict("name" => "c"))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :b => sum => :c)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "a"))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :c))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :id => (x -> x) => :z)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "a"),
-                                                              4 => Dict("name" => "c"))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :z))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :id => (x -> x) => :id)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "a"),
-                                                              4 => Dict("name" => "c"))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :a => identity => :id)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "a"),
-                                                              2 => Dict("name" => "a"),
-                                                              4 => Dict("name" => "c"))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "a"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :a => copy => :id)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "a"),
-                                                              2 => Dict("name" => "a"),
-                                                              4 => Dict("name" => "c"))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "a"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(df, :a => :id)
-            @test getfield(parent(res), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(res), :colmetadata) == Dict(1 => Dict("name" => "a"),
-                                                              2 => Dict("name" => "a"),
-                                                              4 => Dict("name" => "c"))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "a"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :b => (x -> x) => :c)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "a"))
+            res = fun(df, :b => (x -> x) => :c)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :c))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :b => (x -> x) => :c, :)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "a"))
+            res = fun(df, :b => (x -> x) => :c, :)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :c))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => (x -> x) => :a)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, :c => (x -> x) => :a)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :a))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => identity => :a)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "c"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, :c => identity => :a)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => copy => :a)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "c"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, :c => copy => :a)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, [:c] => identity => :a)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "c"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, [:c] => identity => :a)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, [:c] => copy => :a)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "c"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, [:c] => copy => :a)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => (x -> x) => :a, :)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, :c => (x -> x) => :a, :)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :a))
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => identity => :a, :)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "c"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, :c => identity => :a, :)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => copy => :a, :)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "c"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, :c => copy => :a, :)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => :a, :)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "c"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, :c => :a, :)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, [:c] => identity => :a, :)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "c"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, [:c] => identity => :a, :)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, [:c] => copy => :a, :)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "c"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, [:c] => copy => :a, :)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => identity => AsTable)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "a"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, :c => identity => AsTable)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :x1))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => copy => AsTable)
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              2 => Dict("name" => "a"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, :c => copy => AsTable)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :x1))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => identity => [:a])
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, :c => identity => [:a])
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :a))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, :c => copy => [:a])
-            @test getfield(parent(ref), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                              4 => Dict("name" => "c"))
+            res = fun(df, :c => copy => [:a])
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :a))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(df, identity)
-            @test getfield(parent(ref), :colmetadata) === nothing
+            res = fun(df, identity)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
         end
     end
 end
@@ -2025,426 +2192,815 @@ end
         end
     end
 
-    metadata(refdf)["name"] = "refdf"
+    metadata!(refdf, "name_none", "none", style=:none)
+    colmetadata!(refdf, :id, "name_none", "id_none", style=:none)
+    colmetadata!(refdf, :a, "name_none", "id_none", style=:none)
+    colmetadata!(refdf, :b, "name_none", "id_none", style=:none)
+    colmetadata!(refdf, :c, "name_none", "id_none", style=:none)
 
     for fun in (combine, select, select!, transform, transform!)
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id))
-            if fun === select! || fun === transform!
-                @test getfield(parent(res), :metadata) === metadata(df)
-            else
-                @test getfield(parent(res), :metadata) == metadata(df)
-                @test getfield(parent(res), :metadata) !== metadata(df)
-            end
+            @test getfield(parent(res), :metadata) === nothing
             @test getfield(parent(res), :colmetadata) === nothing
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :a)
-            if fun === select! || fun === transform!
-                @test getfield(parent(res), :metadata) === metadata(df)
-            else
-                @test getfield(parent(res), :metadata) == metadata(df)
-                @test getfield(parent(res), :metadata) !== metadata(df)
-            end
+            @test getfield(parent(res), :metadata) === nothing
             @test getfield(parent(res), :colmetadata) === nothing
         end
     end
 
-    colmetadata(refdf, :id)["name"] = "id"
-    colmetadata(refdf, :a)["name"] = "a"
-    colmetadata(refdf, :c)["name"] = "c"
+    metadata!(refdf, "name", "refdf", style=:note)
+
+    for fun in (combine, select, select!, transform, transform!)
+        for df in (copy(refdf), @view copy(refdf)[:, :])
+            res = fun(groupby(df, :id))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
+        end
+        for df in (copy(refdf), @view copy(refdf)[:, :])
+            res = fun(groupby(df, :id), :a)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
+        end
+    end
+
+    colmetadata!(refdf, :id, "name", "id", style=:note)
+    colmetadata!(refdf, :a, "name", "a", style=:note)
+    colmetadata!(refdf, :c, "name", "c", style=:note)
 
     for fun in (combine, select, select!), ug in (true, false)
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :id => identity => :z, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "id"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :z)) == ["name"]
+            @test colmetadata(res, :z, "name") == "id"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :id => copy => :z, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "id"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :z)) == ["name"]
+            @test colmetadata(res, :z, "name") == "id"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :c, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :id => :z, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "id"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :z)) == ["name"]
+            @test colmetadata(res, :z, "name") == "id"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :id => (x -> x) => :z, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :z))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :c => sum => :c, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :b => sum => :c, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :c))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :id => (x -> x) => :id, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
         end
         if fun !== select!
             for df in (copy(refdf), @view copy(refdf)[:, :])
                 res = fun(groupby(df, :id), :a => (x -> x) => :id, keepkeys=false)
-                @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
+                res = parent(parent(res))
+                @test collect(metadatakeys(res)) == ["name"]
+                @test metadata(res, "name") == "refdf"
                 @test getfield(parent(parent(res)), :colmetadata) === nothing
             end
             for df in (copy(refdf), @view copy(refdf)[:, :])
                 res = fun(groupby(df, :id), :a => identity => :id, keepkeys=false)
-                @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-                @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "a"))
+                res = parent(parent(res))
+                @test collect(metadatakeys(res)) == ["name"]
+                @test metadata(res, "name") == "refdf"
+                @test collect(colmetadatakeys(res, :id)) == ["name"]
+                @test colmetadata(res, :id, "name") == "a"
             end
             for df in (copy(refdf), @view copy(refdf)[:, :])
                 res = fun(groupby(df, :id), :a => copy => :id, keepkeys=false)
-                @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-                @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "a"))
+                res = parent(parent(res))
+                @test collect(metadatakeys(res)) == ["name"]
+                @test metadata(res, "name") == "refdf"
+                @test collect(colmetadatakeys(res, :id)) == ["name"]
+                @test colmetadata(res, :id, "name") == "a"
             end
             for df in (copy(refdf), @view copy(refdf)[:, :])
                 res = fun(groupby(df, :id), :a => :id, keepkeys=false)
-                @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-                @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "a"))
+                res = parent(parent(res))
+                @test collect(metadatakeys(res)) == ["name"]
+                @test metadata(res, "name") == "refdf"
+                @test collect(colmetadatakeys(res, :id)) == ["name"]
+                @test colmetadata(res, :id, "name") == "a"
             end
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             # note that here grouping column metadata is retained
             res = fun(groupby(df, :id), :a => identity => :id)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             # note that here grouping column metadata is retained
             res = fun(groupby(df, :id), :a => copy => :id)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             # note that here grouping column metadata is retained
             res = fun(groupby(df, :id), :a => :id)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :b => (x -> x) => :c, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"))
+            res = fun(groupby(df, :id), :b => (x -> x) => :c, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :c))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :b => (x -> x) => :c, :, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      3 => Dict("name" => "a"))
+            res = fun(groupby(df, :id), :b => (x -> x) => :c, :, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :c))
+            @test isempty(colmetadatakeys(res, :b))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => (x -> x) => :a, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"))
+            res = fun(groupby(df, :id), :c => (x -> x) => :a, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :a))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => identity => :a, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => identity => :a, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => copy => :a, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => copy => :a, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => :a, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => :a, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), [:c] => identity => :a, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), [:c] => identity => :a, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), [:c] => copy => :a, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), [:c] => copy => :a, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => (x -> x) => :a, :, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => (x -> x) => :a, :, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :a))
+            @test isempty(colmetadatakeys(res, :b))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => identity => :a, :, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => identity => :a, :, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => copy => :a, :, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => copy => :a, :, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => :a, :, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => :a, :, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), [:c] => identity => :a, :, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), [:c] => identity => :a, :, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), [:c] => copy => :a, :, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), [:c] => copy => :a, :, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => identity => AsTable, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"))
+            res = fun(groupby(df, :id), :c => identity => AsTable, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :x1))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => copy => AsTable, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"))
+            res = fun(groupby(df, :id), :c => copy => AsTable, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :x1))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => identity => [:a], ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"))
+            res = fun(groupby(df, :id), :c => identity => [:a], ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :a))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => copy => [:a], ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"))
+            res = fun(groupby(df, :id), :c => copy => [:a], ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :a))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), identity, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"))
+            res = fun(groupby(df, :id), identity, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :a))
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :c))
         end
     end
 
     for fun in (transform, transform!), ug in (true, false)
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :id => identity => :z, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "a"),
-                                                                      4 => Dict("name" => "c"),
-                                                                      5 => Dict("name" => "id"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test collect(colmetadatakeys(res, :z)) == ["name"]
+            @test colmetadata(res, :z, "name") == "id"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :id => copy => :z, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "a"),
-                                                                      4 => Dict("name" => "c"),
-                                                                      5 => Dict("name" => "id"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test collect(colmetadatakeys(res, :z)) == ["name"]
+            @test colmetadata(res, :z, "name") == "id"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :id => :z, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "a"),
-                                                                      4 => Dict("name" => "c"),
-                                                                      5 => Dict("name" => "id"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test collect(colmetadatakeys(res, :z)) == ["name"]
+            @test colmetadata(res, :z, "name") == "id"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :c => sum => :c, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "a"),
-                                                                      4 => Dict("name" => "c"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :b => sum => :c, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "a"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :c))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :id => (x -> x) => :z, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "a"),
-                                                                      4 => Dict("name" => "c"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :z))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(groupby(df, :id), :id => (x -> x) => :id, ungroup=ug)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "a"),
-                                                                      4 => Dict("name" => "c"))
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         if fun !== transform!
             for df in (copy(refdf), @view copy(refdf)[:, :])
                 res = fun(groupby(df, :id), :a => (x -> x) => :id, keepkeys=false)
-                @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-                @test getfield(parent(parent(res)), :colmetadata) == Dict(2 => Dict("name" => "a"),
-                                                                          4 => Dict("name" => "c"))
+                @test collect(metadatakeys(res)) == ["name"]
+                @test metadata(res, "name") == "refdf"
+                @test isempty(colmetadatakeys(res, :id))
+                @test collect(colmetadatakeys(res, :a)) == ["name"]
+                @test colmetadata(res, :a, "name") == "a"
+                @test isempty(colmetadatakeys(res, :b))
+                @test collect(colmetadatakeys(res, :c)) == ["name"]
+                @test colmetadata(res, :c, "name") == "c"
             end
             for df in (copy(refdf), @view copy(refdf)[:, :])
                 res = fun(groupby(df, :id), :a => identity => :id, keepkeys=false)
-                @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-                @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "a"),
-                                                                          2 => Dict("name" => "a"),
-                                                                          4 => Dict("name" => "c"))
+                @test collect(metadatakeys(res)) == ["name"]
+                @test metadata(res, "name") == "refdf"
+                @test collect(colmetadatakeys(res, :id)) == ["name"]
+                @test colmetadata(res, :id, "name") == "a"
+                @test collect(colmetadatakeys(res, :a)) == ["name"]
+                @test colmetadata(res, :a, "name") == "a"
+                @test isempty(colmetadatakeys(res, :b))
+                @test collect(colmetadatakeys(res, :c)) == ["name"]
+                @test colmetadata(res, :c, "name") == "c"
             end
             for df in (copy(refdf), @view copy(refdf)[:, :])
                 res = fun(groupby(df, :id), :a => copy => :id, keepkeys=false)
-                @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-                @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "a"),
-                                                                          2 => Dict("name" => "a"),
-                                                                          4 => Dict("name" => "c"))
+                @test collect(metadatakeys(res)) == ["name"]
+                @test metadata(res, "name") == "refdf"
+                @test collect(colmetadatakeys(res, :id)) == ["name"]
+                @test colmetadata(res, :id, "name") == "a"
+                @test collect(colmetadatakeys(res, :a)) == ["name"]
+                @test colmetadata(res, :a, "name") == "a"
+                @test isempty(colmetadatakeys(res, :b))
+                @test collect(colmetadatakeys(res, :c)) == ["name"]
+                @test colmetadata(res, :c, "name") == "c"
             end
             for df in (copy(refdf), @view copy(refdf)[:, :])
                 res = fun(groupby(df, :id), :a => :id, keepkeys=false)
-                @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-                @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "a"),
-                                                                          2 => Dict("name" => "a"),
-                                                                          4 => Dict("name" => "c"))
+                @test collect(metadatakeys(res)) == ["name"]
+                @test metadata(res, "name") == "refdf"
+                @test collect(colmetadatakeys(res, :id)) == ["name"]
+                @test colmetadata(res, :id, "name") == "a"
+                @test collect(colmetadatakeys(res, :a)) == ["name"]
+                @test colmetadata(res, :a, "name") == "a"
+                @test isempty(colmetadatakeys(res, :b))
+                @test collect(colmetadatakeys(res, :c)) == ["name"]
+                @test colmetadata(res, :c, "name") == "c"
             end
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             # note that here grouping column metadata is retained
             res = fun(groupby(df, :id), :a => identity => :id)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "a"),
-                                                                      4 => Dict("name" => "c"))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             # note that here grouping column metadata is retained
             res = fun(groupby(df, :id), :a => copy => :id)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "a"),
-                                                                      4 => Dict("name" => "c"))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             # note that here grouping column metadata is retained
             res = fun(groupby(df, :id), :a => :id)
-            @test getfield(parent(parent(res)), :metadata) == Dict("name" => "refdf")
-            @test getfield(parent(parent(res)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "a"),
-                                                                      4 => Dict("name" => "c"))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :b => (x -> x) => :c, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "a"))
+            res = fun(groupby(df, :id), :b => (x -> x) => :c, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :c))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :b => (x -> x) => :c, :, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "a"))
+            res = fun(groupby(df, :id), :b => (x -> x) => :c, :, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :c))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => (x -> x) => :a, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => (x -> x) => :a, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :a))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => identity => :a, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => identity => :a, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => copy => :a, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => copy => :a, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => :a, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => :a, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), [:c] => identity => :a, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), [:c] => identity => :a, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), [:c] => copy => :a, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), [:c] => copy => :a, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => (x -> x) => :a, :, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => (x -> x) => :a, :, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :a))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => identity => :a, :, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => identity => :a, :, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => copy => :a, :, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => copy => :a, :, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => :a, :, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => :a, :, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), [:c] => identity => :a, :, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), [:c] => identity => :a, :, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), [:c] => copy => :a, :, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "c"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), [:c] => copy => :a, :, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "c"
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => identity => AsTable, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "a"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => identity => AsTable, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :x1))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => copy => AsTable, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      2 => Dict("name" => "a"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => copy => AsTable, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test collect(colmetadatakeys(res, :a)) == ["name"]
+            @test colmetadata(res, :a, "name") == "a"
+            @test isempty(colmetadatakeys(res, :x1))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => identity => [:a], ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => identity => [:a], ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :a))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), :c => copy => [:a], ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"),
-                                                                      4 => Dict("name" => "c"))
+            res = fun(groupby(df, :id), :c => copy => [:a], ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test collect(colmetadatakeys(res, :c)) == ["name"]
+            @test colmetadata(res, :c, "name") == "c"
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :a))
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
-            ref = fun(groupby(df, :id), identity, ungroup=ug)
-            @test getfield(parent(parent(ref)), :colmetadata) == Dict(1 => Dict("name" => "id"))
+            res = fun(groupby(df, :id), identity, ungroup=ug)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :a))
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :c))
         end
     end
 end

@@ -352,9 +352,12 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame; keep_present::Bo
         select!(pdf, _names(newdf))
     end
 
+    for col in _names(newdf)
+        emptycolmetadata!(pdf, col)
+    end
+
     for (col, col_keys) in colmetadatakeys(newdf)
         if hasproperty(pdf, col)
-            emptycolmetadata!(pdf, col)
             for key in col_keys
                 val, style = colmetadata(newdf, col, key, style=true)
                 style === :note && colmetadata!(pdf, col, key, val, style=:note)

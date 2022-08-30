@@ -13,6 +13,9 @@ a) a single column is transformed to a single column and the name of the column
 does not change (this includes all column selection operations), or
 b) a single column is transformed with `identity` or `copy` to a single column
    even if column name is changed (this includes column renaming).
+   As a special case for `GroupedDataFrame` if this transformation is made
+   into a grouping column that is kept it is ignored (metadata of grouping
+   column is retained).
 """
 
 const TRANSFORMATION_COMMON_RULES =
