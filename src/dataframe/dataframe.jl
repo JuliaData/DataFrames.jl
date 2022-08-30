@@ -1229,7 +1229,7 @@ end
 
 # hcat! for 1-n arguments
 function hcat!(df::DataFrame; makeunique::Bool=false, copycols::Bool=true)
-    _drop_all_nonnote_metadata!(df1)
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
