@@ -597,8 +597,8 @@ _sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) =
           rev::Union{Bool, AbstractVector{Bool}}=false,
           order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
 
-Sort data frame `df` by column(s) `cols`. Sorting on multiple columns is done
-lexicographicallly.
+Sort data frame `df` by column(s) `cols` by permuting its rows in-place.
+Sorting on multiple columns is done lexicographicallly.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR). If
 `cols` selects no columns, sort `df` on all columns (this behaviour is

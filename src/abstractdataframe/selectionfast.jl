@@ -21,9 +21,9 @@ This function might become a part of the public API of DataFrames.jl in the
 future, currently it should be considered experimental.
 
 Fast paths are implemented within DataFrames.jl for the following functions `fun`:
-* `sum`, `ByRow(sum), `ByRow(sum∘skipmissing)`
+* `sum`, `ByRow(sum)`, `ByRow(sum∘skipmissing)`
 * `length`, `ByRow(length)`, `ByRow(length∘skipmissing)`
-* `mean`, `ByRow(mean), `ByRow(mean∘skipmissing)`
+* `mean`, `ByRow(mean)`, `ByRow(mean∘skipmissing)`
 * `ByRow(var)`, `ByRow(var∘skipmissing)`
 * `ByRow(std)`, `ByRow(std∘skipmissing)`
 * `ByRow(median)`, `ByRow(median∘skipmissing)`

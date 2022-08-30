@@ -260,10 +260,10 @@ Row and column keys will be ordered in the order of their first appearance.
   default is `missing`. If the `value` column is a `CategoricalVector` and
   `fill` is not `missing` then in order to keep unstacked value columns also
   `CategoricalVector` the `fill` must be passed as `CategoricalValue`
-  - `threads`: whether `valuestransform` may be run in separate tasks which
-    can execute in parallel (possibly being applied to multiple groups at the same time).
-    Whether or not tasks are actually spawned and their number are determined automatically.
-    Set to `false` if `valuestransform` requires serial execution or is not thread-safe.
+- `threads`: whether `valuestransform` may be run in separate tasks which
+  can execute in parallel (possibly being applied to multiple groups at the same time).
+  Whether or not tasks are actually spawned and their number are determined automatically.
+  Set to `false` if `valuestransform` requires serial execution or is not thread-safe.
 
 Metadata: table metadata and column level metadata for row keys columns
 with :note style are preserved.

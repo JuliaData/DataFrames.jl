@@ -89,7 +89,6 @@ export AbstractDataFrame,
        select!,
        select,
        semijoin,
-       stack,
        subset,
        subset!,
        transform,
@@ -167,6 +166,13 @@ const METADATA_FIXED = """
 Metadata: this function preserves table level and column level metadata
 that has `:note` style.
 """
+
+if VERSION >= v"1.9.0-DEV.1163"
+    import Base: stack
+else
+    import Compat: stack
+    export stack
+end
 
 include("other/utils.jl")
 include("other/index.jl")

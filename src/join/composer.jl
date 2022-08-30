@@ -49,6 +49,17 @@ struct DataFrameJoiner
             end
         end
 
+        for col in left_on
+            if !hasproperty(dfl, col)
+                throw(ArgumentError("column :$col not found in the left data frame"))
+            end
+        end
+        for col in right_on
+            if !hasproperty(dfr, col)
+                throw(ArgumentError("column :$col not found in the right data frame"))
+            end
+        end
+
         if matchmissing === :notequal
             if kind in (:left, :semi, :anti)
                 dfr = dropmissing(dfr, right_on, view=true)
@@ -1086,23 +1097,25 @@ julia> job2 = DataFrame(identifier=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"]
    2 │          2  Doctor
    3 │          4  Farmer
 
-julia> rightjoin(name, job2, on = :ID => :identifier, renamecols = "_left" => "_right")
-3×3 DataFrame
+julia> outerjoin(name, job2, on = :ID => :identifier, renamecols = "_left" => "_right")
+4×3 DataFrame
  Row │ ID     Name_left  Job_right
-     │ Int64  String?    String
+     │ Int64  String?    String?
 ─────┼─────────────────────────────
    1 │     1  John Doe   Lawyer
    2 │     2  Jane Doe   Doctor
-   3 │     4  missing    Farmer
+   3 │     3  Joe Blogs  missing
+   4 │     4  missing    Farmer
 
-julia> rightjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase => lowercase)
-3×3 DataFrame
- Row │ ID     NAME      job
-     │ Int64  String?   String
-─────┼─────────────────────────
-   1 │     1  John Doe  Lawyer
-   2 │     2  Jane Doe  Doctor
-   3 │     4  missing   Farmer
+julia> outerjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase => lowercase)
+4×3 DataFrame
+ Row │ ID     NAME       job
+     │ Int64  String?    String?
+─────┼───────────────────────────
+   1 │     1  John Doe   Lawyer
+   2 │     2  Jane Doe   Doctor
+   3 │     3  Joe Blogs  missing
+   4 │     4  missing    Farmer
 ```
 """
 function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
