@@ -743,7 +743,7 @@ end
 
     # special case due to changes in handling of broadcasting in Julia 1.7
     if VERSION >= v"1.7.0"
-        for fun in (x -> (x.a .= 11:13,))
+        for fun in (x -> (x.a .= 11:13),)
             df = DataFrame(a=1:3, b=["x", "y", "z"])
             metadata!(df, "name", "empty", style=:note)
             metadata!(df, "name2", "empty2", style=:none)
