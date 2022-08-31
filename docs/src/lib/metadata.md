@@ -5,7 +5,7 @@
 DataFrames.jl allows you to store and retrieve metadata on table and column
 level. This is supported using the functions defined by DataAPI.jl interface:
 
-* for table level metadata: [`metadata`](@ref), [`metadatakes`](@ref),
+* for table level metadata: [`metadata`](@ref), [`metadatakeys`](@ref),
   [`metadata!`](@ref), [`deletemetadata!`](@ref), [`emptymetadata!`](@ref);
 * for column level metatadata: [`colmetadata`](@ref), [`colmetadatakeys`](@ref),
   [`colmetadata!`](@ref), [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
@@ -237,8 +237,6 @@ Below is a list of cases where a more complex logic (following the rules
 described above; in particular under any transformation all non-`:note` style
 metadata is always dropped) is applied:
 
-* [`dropmetadata!`](@ref) removes both table level and/or column level metadata
-  from a data frame; note that removing metadata can speed up certain operations.
 * [`describe`](@ref) drops all metadata.
 * [`hcat`](@ref): propagates table level metadata only for keys which are defined
   in all passed tables and have the same value.
@@ -252,7 +250,10 @@ metadata is always dropped) is applied:
   for row keys columns.
 * [`permutedims`](@ref): propagates table level metadata and drops column level
    metadata.
-* broadcasted assignment does not change target metadata
+* broadcasted assignment does not change target metadata (note! under Julia
+  earlier than 1.7 operation of kind `df.a .= s` does not drop non-`:note` style
+  metadata; under Julia 1.7 or later this operation perserves only `:note` style
+  metadata)
 * broadcasting propagates table level metadata if some key is present
   in all passed data frames and value associated with it is identical in all
   passed data frames; column level metadata is propagated for columns if some

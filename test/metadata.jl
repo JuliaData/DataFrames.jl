@@ -701,7 +701,6 @@ end
                 x -> (x[:, :a] = 11:13),
                 x -> (x[!, :a] = 11:13),
                 x -> (x.c = 11:13),
-                x -> (x.a .= 11:13),
                 x -> (x[:, :a] .= 11:13),
                 x -> (x[!, :a] .= 11:13),
                 x -> (x.c = 11:13),
@@ -740,6 +739,35 @@ end
         @test collect(colmetadatakeys(df, :a)) == ["name"]
         @test colmetadata(df, :a, "name") == "a"
         @test isempty(collect(colmetadatakeys(df, :b)))
+    end
+
+    # special case due to changes in handling of broadcasting in Julia 1.7
+    if VERSION >= v"1.7.0"
+        for fun in (x -> (x.a .= 11:13,))
+            df = DataFrame(a=1:3, b=["x", "y", "z"])
+            metadata!(df, "name", "empty", style=:note)
+            metadata!(df, "name2", "empty2", style=:none)
+            colmetadata!(df, :a, "name", "a", style=:note)
+            colmetadata!(df, :a, "name2", "a2", style=:none)
+            fun(df)
+            @test collect(metadatakeys(df)) == ["name"]
+            @test metadata(df, "name") == "empty"
+            @test collect(colmetadatakeys(df, :a)) == ["name"]
+            @test colmetadata(df, :a, "name") == "a"
+            @test isempty(collect(colmetadatakeys(df, :b)))
+
+            df = view(DataFrame(a=1:3, b=["x", "y", "z"]), :, :)
+            metadata!(df, "name", "empty", style=:note)
+            metadata!(parent(df), "name2", "empty2", style=:none)
+            colmetadata!(df, :a, "name", "a", style=:note)
+            colmetadata!(parent(df), :a, "name2", "a2", style=:none)
+            fun(df)
+            @test collect(metadatakeys(df)) == ["name"]
+            @test metadata(df, "name") == "empty"
+            @test collect(colmetadatakeys(df, :a)) == ["name"]
+            @test colmetadata(df, :a, "name") == "a"
+            @test isempty(collect(colmetadatakeys(df, :b)))
+        end
     end
 end
 
