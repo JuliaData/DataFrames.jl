@@ -79,6 +79,8 @@ using Test, DataFrames, Random
         metadata!(parent(x), "name1", "empty1", style=:none)
         metadata!(x, "name2", "empty2", style=:note)
         @test sort(collect(metadatakeys(x))) == ["name2"]
+        @test metadata(x, "name2") == "empty2"
+        @test_throws KeyError metadata(x, "name1")
         deletemetadata!(x, "name2")
         @test isempty(metadatakeys(x))
         deletemetadata!(x, "name3")
@@ -108,19 +110,19 @@ using Test, DataFrames, Random
 end
 
 @testset "column level metadata" begin
-    for b in (:b, "b", 2, big(2))
+    for b in (:b, "b", 2, big(2)), a in (:a, "a", 1, big(1))
         x = DataFrame(a=1, b=2)
         @test isempty(colmetadatakeys(x))
         @test colmetadatakeys(x) isa Tuple
-        @test isempty(colmetadatakeys(x, :a))
-        @test colmetadatakeys(x, :a) isa Tuple
+        @test isempty(colmetadatakeys(x, a))
+        @test colmetadatakeys(x, a) isa Tuple
         @test_throws ArgumentError colmetadatakeys(x, :c)
         colmetadata!(x, b, "name1", "empty1", style=:note)
         @test_throws ArgumentError colmetadata!(x, :c, "name", "empty", style=:note)
         colmetadata!(x, b, "name2", "empty2", style=:note)
-        colmetadata!(x, :a, "name3", "empty3", style=:note)
+        colmetadata!(x, a, "name3", "empty3", style=:note)
         @test getfield(x, :allnotemetadata)
-        @test colmetadatakeys(x, :a) == Set(["name3"])
+        @test colmetadatakeys(x, a) == Set(["name3"])
         @test colmetadatakeys(x, b) == Set(["name1", "name2"])
         @test_throws ArgumentError colmetadatakeys(x, :c)
         @test Set(colmetadatakeys(x)) == Set([:b => Set(["name1", "name2"]), :a => Set(["name3"])])
@@ -128,8 +130,8 @@ end
         @test colmetadata(x, b, "name1", style=true) == ("empty1", :note)
         @test_throws KeyError colmetadata(x, b, "namex")
         @test_throws ArgumentError colmetadata(x, :x, "name")
-        emptycolmetadata!(x, :a)
-        @test isempty(colmetadatakeys(x, :a))
+        emptycolmetadata!(x, a)
+        @test isempty(colmetadatakeys(x, a))
         @test colmetadatakeys(x, b) == Set(["name1", "name2"])
         deletecolmetadata!(x, b, "name2")
         @test colmetadatakeys(x, b) == Set(["name1"])
@@ -142,14 +144,14 @@ end
             x = fun(DataFrame(a=1, b=2, d=3))
             @test isempty(colmetadatakeys(x))
             @test colmetadatakeys(x) isa Tuple
-            @test isempty(colmetadatakeys(x, :a))
-            @test colmetadatakeys(x, :a) isa Tuple
+            @test isempty(colmetadatakeys(x, a))
+            @test colmetadatakeys(x, a) isa Tuple
             @test_throws ArgumentError colmetadatakeys(x, :c)
             colmetadata!(x, b, "name1", "empty1", style=:note)
             @test_throws ArgumentError colmetadata!(x, :c, "name", "empty", style=:note)
             colmetadata!(x, b, "name2", "empty2", style=:note)
-            colmetadata!(x, :a, "name3", "empty3", style=:note)
-            @test collect(colmetadatakeys(x, :a)) == ["name3"]
+            colmetadata!(x, a, "name3", "empty3", style=:note)
+            @test collect(colmetadatakeys(x, a)) == ["name3"]
             @test sort(collect(colmetadatakeys(x, b))) == ["name1", "name2"]
             @test_throws ArgumentError colmetadatakeys(x, :c)
             @test Set([k => sort(collect(v)) for (k, v) in colmetadatakeys(x)]) ==
@@ -158,8 +160,8 @@ end
             @test colmetadata(x, b, "name1", style=true) == ("empty1", :note)
             @test_throws KeyError colmetadata(x, b, "namex")
             @test_throws ArgumentError colmetadata(x, :x, "name")
-            emptycolmetadata!(x, :a)
-            @test isempty(colmetadatakeys(x, :a))
+            emptycolmetadata!(x, a)
+            @test isempty(colmetadatakeys(x, a))
             @test sort(collect(colmetadatakeys(x, b))) == ["name1", "name2"]
             deletecolmetadata!(x, b, "name2")
             @test collect(colmetadatakeys(x, b)) == ["name1"]
@@ -171,14 +173,14 @@ end
             x = fun(DataFrame(a=1, b=2, d=3))
             @test isempty(colmetadatakeys(x))
             @test colmetadatakeys(x) isa Tuple
-            @test isempty(colmetadatakeys(x, :a))
-            @test colmetadatakeys(x, :a) isa Tuple
+            @test isempty(colmetadatakeys(x, a))
+            @test colmetadatakeys(x, a) isa Tuple
             @test_throws ArgumentError colmetadatakeys(x, :c)
             colmetadata!(x, b, "name1", "empty1", style=:none)
             @test_throws ArgumentError colmetadata!(x, :c, "name", "empty", style=:none)
             colmetadata!(x, b, "name2", "empty2", style=:none)
-            colmetadata!(x, :a, "name3", "empty3", style=:none)
-            @test collect(colmetadatakeys(x, :a)) == ["name3"]
+            colmetadata!(x, a, "name3", "empty3", style=:none)
+            @test collect(colmetadatakeys(x, a)) == ["name3"]
             @test sort(collect(colmetadatakeys(x, b))) == ["name1", "name2"]
             @test_throws ArgumentError colmetadatakeys(x, :c)
             @test Set([k => sort(collect(v)) for (k, v) in colmetadatakeys(x)]) ==
@@ -187,8 +189,8 @@ end
             @test colmetadata(x, b, "name1", style=true) == ("empty1", :none)
             @test_throws KeyError colmetadata(x, b, "namex")
             @test_throws ArgumentError colmetadata(x, :x, "name")
-            emptycolmetadata!(x, :a)
-            @test isempty(colmetadatakeys(x, :a))
+            emptycolmetadata!(x, a)
+            @test isempty(colmetadatakeys(x, a))
             @test sort(collect(colmetadatakeys(x, b))) == ["name1", "name2"]
             deletecolmetadata!(x, b, "name2")
             @test collect(colmetadatakeys(x, b)) == ["name1"]
@@ -202,23 +204,26 @@ end
             p = parent(x)
             @test isempty(colmetadatakeys(x))
             @test colmetadatakeys(x) isa Tuple
-            @test isempty(colmetadatakeys(x, :a))
-            @test colmetadatakeys(x, :a) isa Tuple
+            @test isempty(colmetadatakeys(x, a))
+            @test colmetadatakeys(x, a) isa Tuple
             @test_throws ArgumentError colmetadatakeys(x, :c)
             @test_throws ArgumentError colmetadata!(x, b, "name1", "empty1", style=:none)
             @test_throws ArgumentError colmetadata!(x, b, "name2", "empty2", style=:none)
-            @test_throws ArgumentError colmetadata!(x, :a, "name3", "empty3", style=:none)
+            @test_throws ArgumentError colmetadata!(x, a, "name3", "empty3", style=:none)
             colmetadata!(p, b, "name1", "empty1", style=:none)
             colmetadata!(p, b, "name2", "empty2", style=:none)
-            colmetadata!(p, :a, "name3", "empty3", style=:none)
-            @test isempty(colmetadatakeys(x, :a))
+            colmetadata!(p, a, "name3", "empty3", style=:none)
+            @test isempty(colmetadatakeys(x, a))
             @test isempty(colmetadatakeys(x, b))
             @test_throws ArgumentError colmetadatakeys(x, :c)
             @test isempty(colmetadatakeys(x))
             emptycolmetadata!(x)
-            @test colmetadatakeys(p, :a) == Set(["name3"])
+            @test colmetadatakeys(p, a) == Set(["name3"])
             @test colmetadatakeys(p, b) == Set(["name1", "name2"])
 
+            colmetadata!(x, a, "label", "a", style=:note)
+            @test colmetadata(x, a, "label") == "a"
+            @test_throws KeyError colmetadata(x, a, "name3")
             if !("d" in names(x))
                 @test_throws BoundsError colmetadata!(x, "d", "n", "e", style=:note)
             else
@@ -1210,6 +1215,29 @@ end
     @test isempty(colmetadatakeys(res, :a))
     @test collect(colmetadatakeys(res, :b)) == ["x"]
     @test colmetadata(res, :b, "x") == "y"
+
+    # complex case
+    df1 = DataFrame(a=1, b=2, c=3, d=4)
+    df2 = DataFrame(a=1, b=2, c=3, d=4)
+    df3 = DataFrame(a=1, b=2, c=3, d=4)
+    colmetadata!(df1, :a, "label", "a", style=:note)
+    colmetadata!(df2, :a, "label", "a", style=:note)
+    colmetadata!(df3, :a, "label", "a", style=:note)
+    colmetadata!(df1, :b, "label", "b", style=:note)
+    colmetadata!(df2, :b, "label", "b", style=:note)
+    colmetadata!(df3, :b, "label", "x", style=:note)
+    colmetadata!(df1, :c, "label", "c", style=:note)
+    colmetadata!(df2, :c, "label", "c", style=:note)
+    colmetadata!(df1, :d, "label", "b", style=:note)
+    colmetadata!(df2, :d, "label", "b", style=:note)
+    colmetadata!(df3, :d, "label", "b", style=:none)
+    df4 = df1 .+ df2 .+ df3
+    @test isempty(metadatakeys(df4))
+    @test collect(colmetadatakeys(df4, :a)) == ["label"]
+    @test colmetadata(df4, :a, "label") == "a"
+    @test isempty(colmetadatakeys(df4, :b))
+    @test isempty(colmetadatakeys(df4, :c))
+    @test isempty(colmetadatakeys(df4, :d))
 end
 
 @testset "push!, pushfirst!, insert!" begin

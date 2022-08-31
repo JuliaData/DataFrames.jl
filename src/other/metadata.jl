@@ -69,7 +69,7 @@ julia> metadata(df, "name")
 """
 function metadata(df::DataFrame, key::AbstractString; style::Bool=false)
     meta = getfield(df, :metadata)
-    meta === nothing && throw(KeyError("Metadata for key $key not found"))
+    meta === nothing && throw(KeyError(key))
     return style ? meta[key] : meta[key][1]
 end
 
@@ -80,7 +80,7 @@ metadata(x::Union{DataFrameRows, DataFrameColumns},
 function metadata(x::Union{DataFrameRow, SubDataFrame},
                   key::AbstractString; style::Bool=false)
     meta_value, meta_style = metadata(parent(x), key, style=true)
-    meta_style !== :note && throw(KeyError("Metadata for key $key not found"))
+    meta_style !== :note && throw(KeyError("$key with :note style"))
     return style ? (meta_value, meta_style) : meta_value
 end
 
@@ -366,7 +366,7 @@ julia> colmetadata(df, :a, "name")
 function colmetadata(df::DataFrame, col::Int, key::AbstractString; style::Bool=false)
     idx = index(df)[col] # bounds checking
     cols_meta = getfield(df, :colmetadata)
-    cols_meta === nothing && throw(KeyError("Metadata for column $col for key $key not found"))
+    cols_meta === nothing && throw(KeyError("$key for column $col"))
     col_meta = cols_meta[idx]
     return style ? col_meta[key] : col_meta[key][1]
 
@@ -401,7 +401,7 @@ function colmetadata(x::DataFrameRow,
     df = parent(x)
     val_meta, style_meta = colmetadata(df, col_name, key, style=true)
     if style_meta !== :note
-        throw(KeyError("Metadata for column $col for key $key with :note style not found"))
+        throw(KeyError("$key for column $col with :note style"))
     end
     return style ? (val_meta, style_meta) : val_meta
 end
@@ -412,7 +412,7 @@ function colmetadata(x::SubDataFrame,
     df = parent(x)
     val_meta, style_meta = colmetadata(df, col_name, key, style=true)
     if style_meta !== :note
-        throw(KeyError("Metadata for column $col for key $key with :note style not found"))
+        throw(KeyError("$key for column $col with :note style"))
     end
     return style ? (val_meta, style_meta) : val_meta
 end
