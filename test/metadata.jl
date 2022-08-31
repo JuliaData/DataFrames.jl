@@ -1228,6 +1228,7 @@ end
     colmetadata!(df3, :b, "label", "x", style=:note)
     colmetadata!(df1, :c, "label", "c", style=:note)
     colmetadata!(df2, :c, "label", "c", style=:note)
+    colmetadata!(df3, :c, "labelx", "c", style=:note)
     colmetadata!(df1, :d, "label", "b", style=:note)
     colmetadata!(df2, :d, "label", "b", style=:note)
     colmetadata!(df3, :d, "label", "b", style=:none)
