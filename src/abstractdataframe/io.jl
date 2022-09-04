@@ -204,13 +204,13 @@ function _show(io::IO,
         mxrow = tryparse(Int, get(ENV, "DATAFRAMES_ROWS", "25"))
 
         if isnothing(mxrow)
-            mxrow = 100
+            mxrow = 25
         end
 
         mxcol = tryparse(Int, get(ENV, "DATAFRAMES_COLUMNS", "100"))
 
         if isnothing(mxcol)
-            mxcol = 500
+            mxcol = 100
         end
     else
         mxrow = -1
