@@ -27,6 +27,15 @@ relevant variables into your current namespace.
     file. See [here](https://jupyter-client.readthedocs.io/en/stable/kernels.html) for information about location
     and specification of Jupyter kernels.
 
+    The package [PrettyTables.jl](https://github.com/ronisbr/PrettyTables.jl) renders the `DataFrame` in the
+    Jupyter notebook. If the user wants to customize the output, they can pass keywords (`kwargs...`) to the
+    function `show`: `show(stdout, MIME("text/html"), df; kwargs...)`, where `df` is the `DataFrame`. Any
+    argument supported by PrettyTables.jl in the HTML backend can be used here. Hence, for example, if the user
+    wants to change the color of all numbers smaller than 0 to red in Jupyter, they can execute:
+    `show(stdout, MIME("text/html"), df; highlighters = hl_lt(0, HtmlDecoration(color = "red")))` after
+    `using PrettyTables`. For more information about the available options, check
+    [PrettyTables.jl documentation](https://ronisbr.github.io/PrettyTables.jl/stable/man/usage/).
+
 ## The `DataFrame` Type
 
 Objects of the `DataFrame` type represent a data table as a series of vectors,
