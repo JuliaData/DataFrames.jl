@@ -16,7 +16,7 @@ relevant variables into your current namespace.
 !!! note
 
     By default DataFrames.jl limits the number of rows and columns when displaying a data frame in a Jupyter
-    Notebook to 100 and 500, respectively. You can override this behavior by changing the values of the
+    Notebook to 25 and 100, respectively. You can override this behavior by changing the values of the
     `ENV["DATAFRAMES_COLUMNS"]` and `ENV["DATAFRAMES_ROWS"]` variables to hold the maximum number of columns
     and rows of the output.
 
