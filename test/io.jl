@@ -639,7 +639,7 @@ end
         @test str == """
         \e[1m9×2 DataFrame\e[0m
         \e[1m Row \e[0m│\e[1m A     \e[0m\e[1m B                                 \e[0m
-        \e[1m     \e[0m│\e[90m Int64 \e[0m\e[90m Any                               \e[0m
+             │\e[90m Int64 \e[0m\e[90m Any                               \e[0m
         ─────┼──────────────────────────────────────────
            1 │     1 \e[90m 9×2 DataFrame                     \e[0m
            2 │     2 \e[90m 2-element DataFrameRow            \e[0m

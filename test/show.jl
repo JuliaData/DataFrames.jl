@@ -221,7 +221,7 @@ end
         @test sprint(show, df, context=:color=>true) == """
             \e[1m2×2 DataFrame\e[0m
             \e[1m Row \e[0m│\e[1m Fish   \e[0m\e[1m Mass      \e[0m
-            \e[1m     \e[0m│\e[90m String \e[0m\e[90m Float64?  \e[0m
+                 │\e[90m String \e[0m\e[90m Float64?  \e[0m
             ─────┼───────────────────
                1 │ Suzy          1.5
                2 │ Amir   \e[90m missing   \e[0m"""
@@ -232,7 +232,7 @@ end
         @test sprint(show, df, context=:color=>true) == """
             \e[1m3×3 DataFrame\e[0m
             \e[1m Row \e[0m│\e[1m A       \e[0m\e[1m B       \e[0m\e[1m C       \e[0m
-            \e[1m     \e[0m│\e[90m Symbol? \e[0m\e[90m String? \e[0m\e[90m Any     \e[0m
+                 │\e[90m Symbol? \e[0m\e[90m String? \e[0m\e[90m Any     \e[0m
             ─────┼───────────────────────────
                1 │ Symbol  \e[90m missing \e[0m missing
                2 │\e[90m missing \e[0m String   missing
@@ -301,8 +301,8 @@ end
     @test sprint(show, df) == """
         1×3 DataFrame
          Row │ a           b                    c
-             │ Date        DateTime             Day
-        ─────┼────────────────────────────────────────
+             │ Date        DateTime             Dates.Day
+        ─────┼────────────────────────────────────────────
            1 │ 2020-02-11  2020-02-11T15:00:00  1 day"""
 
     # Irrational
