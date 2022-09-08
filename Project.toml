@@ -38,7 +38,7 @@ SortingAlgorithms = "0.1, 0.2, 0.3, 1"
 TableTraits = "0.4, 1"
 Tables = "1.2"
 Unitful = "1"
-julia = "1"
+julia = "1.6"
 
 [extras]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
