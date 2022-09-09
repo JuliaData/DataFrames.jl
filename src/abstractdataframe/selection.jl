@@ -7,8 +7,8 @@
 # 5) Callable
 
 const TRANSFORM_METADATA = """
-Metadata: this function propagates table level metadata that has :note style.
-Column level metadata that has :note style is propagated if:
+Metadata: this function propagates table-level `:note`-style metadata.
+Column-level `:note`-style metadata is propagated if:
 a) a single column is transformed to a single column and the name of the column
 does not change (this includes all column selection operations), or
 b) a single column is transformed with `identity` or `copy` to a single column
