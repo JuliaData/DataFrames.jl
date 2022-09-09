@@ -145,7 +145,8 @@ a vector) then:
 Mixing symbols and strings in `to` and `from` is not allowed.
 
 $METADATA_FIXED
-When a column is renamed, its :note metadata becomes associated to its new name.
+Column `:note` metadata is considered to be attached to column number:
+when a column is renamed, its `:note` metadata becomes associated to its new name.
 
 See also: [`rename`](@ref)
 
@@ -287,7 +288,8 @@ a vector) then:
 Mixing symbols and strings in `to` and `from` is not allowed.
 
 $METADATA_FIXED
-Column metadata is considered to be attached to column number.
+Column `:note` metadata is considered to be attached to column number:
+when a column is renamed, its `:note` metadata becomes associated to its new name.
 
 See also: [`rename!`](@ref)
 
@@ -800,7 +802,7 @@ Return a Boolean vector with `true` entries indicating rows without missing valu
 
 If `cols` is provided, only missing values in the corresponding columns are considered.
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR)
-that produces a non-empty result.
+that returns at least one column if `df` has at least one column.
 
 See also: [`dropmissing`](@ref) and [`dropmissing!`](@ref).
 Use `findall(completecases(df))` to get the indices of the rows.
@@ -856,7 +858,7 @@ function completecases(df::AbstractDataFrame, cols::MultiColumnIndex=:)
     end
 
     res = trues(size(df, 1))
-    isempty(colsidx) && return res
+    ncol(df) == 0 && return res
     aux = BitVector(undef, size(df, 1))
     for i in colsidx
         v = df[!, i]
@@ -1337,7 +1339,7 @@ See also [`unique`](@ref) and [`unique!`](@ref).
 - `df` : `AbstractDataFrame`
 - `cols` : a selector specifying the column(s) or their transformations to compare.
   Can be any column selector or transformation accepted by [`select`](@ref) that
-  produces a non-empty result.
+  returns at least one column if `df` has at least one column.
 
 # Examples
 ```jldoctest
@@ -1717,9 +1719,9 @@ source (without copying). This option should be used with caution as mutating
 either the columns in sources or in the returned `DataFrame` might lead to
 the corruption of the other object.
 
-Metadata: `hcat` propagates :note style table level metadata for keys that are present
+Metadata: `hcat` propagates `:note`-style table-level metadata for keys that are present
 in all passed data frames and have the same value;
-it propagates :note style column level metadata.
+it propagates `:note` style column-level metadata.
 
 # Example
 ```jldoctest
@@ -1823,9 +1825,9 @@ as with `vcat` for `AbstractVector`s.
 making it possible to initialize an empty data frame at the beginning of a loop
 and `vcat` onto it.
 
-Metadata: `vcat` propagates :note style table level metadata for keys that are present
+Metadata: `vcat` propagates `:note`-style table-level metadata for keys that are present
 in all passed data frames and have the same value.
-`vcat` propagates :note style column level metadata for keys that are present in all passed
+`vcat` propagates `:note`-style column-level metadata for keys that are present in all passed
 data frames that contain this column and have the same value.
 
 # Example
@@ -1958,9 +1960,9 @@ The column order, names, and types of the resulting `DataFrame`, and
 the behavior of `cols` and `source` keyword arguments follow the rules specified
 for [`vcat`](@ref) of `AbstractDataFrame`s.
 
-Metadata: `vcat` propagates :note style table level metadata for keys that are present
+Metadata: `vcat` propagates `:note`-style table-level metadata for keys that are present
 in all passed data frames and have the same value.
-`vcat` propagates :note style column level metadata for keys that are present in all passed
+`vcat` propagates `:note`-style column-level metadata for keys that are present in all passed
 data frames that contain this column and have the same value.
 
 # Example
@@ -2517,6 +2519,7 @@ function flatten(df::AbstractDataFrame,
         _drop_all_nonnote_metadata!(cdf)
         return cdf
     end
+
     col1 = first(idxcols)
     lengths = length.(df[!, col1])
     for col in idxcols
