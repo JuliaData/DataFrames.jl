@@ -146,7 +146,6 @@ end
 
     @test completecases(DataFrame(x=1:3, y=1:3), [:x]) == trues(3)
     @test completecases(DataFrame(x=[1, missing, 3], y=1:3), [:x]) == [true, false, true]
-    @test completecases(DataFrame()) == trues(0)
     @test_throws ArgumentError completecases(DataFrame(x=1:3), Cols())
     @test_throws MethodError completecases(DataFrame(x=1), true)
     @test_throws ArgumentError completecases(df3, :a)
@@ -271,7 +270,6 @@ end
     @test unique(df, :a => x -> 1) == df[1:1, :]
     @test unique(DataFrame()) == DataFrame()
     @test isempty(nonunique(DataFrame())) && nonunique(DataFrame()) isa Vector{Bool}
-    @test unique(DataFrame()) == DataFrame()
     @test_throws ArgumentError nonunique(DataFrame(a=1:3), [])
     @test_throws ArgumentError unique(DataFrame(a=1:3), [])
 

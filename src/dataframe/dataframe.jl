@@ -99,7 +99,7 @@ functions, or provide type assertions to the variables that hold columns
 extracted from a `DataFrame`.
 
 Metadata: this function preserves all table and column level metadata.
-As a special case if `GroupedDataFrame` is passed to `DataFrame` then
+As a special case if a `GroupedDataFrame` is passed then
 only `:note` style metadata from parent of the `GroupedDataFrame` is preserved.
 
 # Examples
@@ -174,13 +174,13 @@ mutable struct DataFrame <: AbstractDataFrame
     colindex::Index
     metadata::Union{Nothing, Dict{String, Tuple{Any, Any}}}
     colmetadata::Union{Nothing, Dict{Int, Dict{String, Tuple{Any, Any}}}}
-    # this is a helper field for optimizing performance of
-    # _drop_all_nonnote_metadata and _drop_df_nonnote_metadata
-    # so that if we only have :note metadata these functions are no-op
-    # the contract is that if allnotemetadata=true then it is guaranteed that
-    # there are only :note style metadata entries in a data frame
+    # This is a helper field for optimizing performance of
+    # _drop_all_nonnote_metadata! and _drop_df_nonnote_metadata!
+    # so that if we only have :note metadata these functions are no-op.
+    # The contract is that if allnotemetadata=true then it is guaranteed that
+    # there are only :note style metadata entries in the data frame.
     # metadata! and colmetadata! functions appropriately set this field if a
-    # non-:note style metadata is added
+    # non-:note style metadata is added.
     allnotemetadata::Bool
 
     # the inner constructor should not be used directly
