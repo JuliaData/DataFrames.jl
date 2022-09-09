@@ -163,9 +163,9 @@ else
 end
 
 const METADATA_FIXED = """
-Metadata: this function preserves table level and column level metadata
-that has `:note` style.
-"""
+    Metadata: this function preserves table level and column level metadata
+    that has `:note` style.
+    """
 
 if VERSION >= v"1.9.0-DEV.1163"
     import Base: stack
