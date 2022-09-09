@@ -47,7 +47,7 @@
 * Add support for table and column level metadata using
   DataAPI.jl interface
   ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
-* `completecases` and `nonunique` do not throw an error when data frame
+* `completecases` and `nonunique` no longer throw an error when data frame
   with no columns is passed
   ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
 
