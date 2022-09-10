@@ -858,8 +858,10 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
         end
         _add_multicol_res(res, newdf, df, colnames, allow_resizing_newdf, wfun,
                           col_idx, copycols, newname, column_to_copy)
-        for cn_multi in colnames
-            emptycolmetadata!(newdf, cn_multi)
+        if !isempty(colmetdatakeys(newdf))
+            for cn_multi in colnames
+                emptycolmetadata!(newdf, cn_multi)
+            end
         end
     elseif res isa AbstractVector
         if newname === nothing

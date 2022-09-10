@@ -118,7 +118,9 @@ function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDa
     # We initially copy metadata from left table as left table is always used
     # to populate starting columns of a data frame
     #
-    # Next processing depends on the type of join:
+    # We copy non-key column-level metadata from right table.
+    # For table-level metadata and column-level metadata for key columns
+    # processing depends on the type of join:
     # 1. inner and outer joins treat both tables as equivalent so:
     #    a. for key columns we intersect column metadata from left table with
     #       column metadata from right table
@@ -130,8 +132,6 @@ function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDa
     # 3. left join treats left table as main so:
     #    a. column-level metadata does not require changing
     #    b. we copy left table table-level metadata
-    #
-    # We copy non-key column metadata from right table for all cases.
 
     for i in 1:ncol(joiner.dfl)
         _copy_col_note_metadata!(res, i, joiner.dfl, i)

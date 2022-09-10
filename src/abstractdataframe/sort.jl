@@ -616,6 +616,7 @@ memory but are not identical (e.g. are different views of the same parent
 vector) then `sort!` result might be incorrect.
 
 $METADATA_FIXED
+Metadata having other styles is dropped from parent data frame.
 
 # Examples
 ```jldoctest
