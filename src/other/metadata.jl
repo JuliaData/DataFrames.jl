@@ -124,7 +124,7 @@ function metadatakeys(df::DataFrame)
     meta = getfield(df, :metadata)
     meta === nothing && return ()
     metakeys = keys(meta)
-    @assert !isempty(metakeys) # by design in such cases meta === nothing should be met
+    @assert !isempty(metakeys) # by design if isempty(metakeys) then meta === nothing should be met
     return metakeys
 end
 
