@@ -816,10 +816,8 @@ function Base.copy(df::DataFrame; copycols::Bool=true)
     end
     df_colmetadata = getfield(df, :colmetadata)
     if !isnothing(df_colmetadata)
-        cdf_colmetadata = Dict{Int, Dict{String, Tuple{Any, Any}}}()
-        for (k, v) in pairs(df_colmetadata)
-            cdf_colmetadata[k] = copy(v)
-        end
+        cdf_colmetadata = copy(df_colmetadata)
+        map!(copy, values(cdf_colmetadata))
         setfield!(cdf, :colmetadata, cdf_colmetadata)
     end
     setfield!(cdf, :allnotemetadata, getfield(df, :allnotemetadata))
