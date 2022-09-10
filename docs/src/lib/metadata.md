@@ -5,9 +5,9 @@
 DataFrames.jl allows you to store and retrieve metadata on table and column
 level. This is supported using the functions defined by the DataAPI.jl interface:
 
-* for table level metadata: [`metadata`](@ref), [`metadatakeys`](@ref),
+* for table-level metadata: [`metadata`](@ref), [`metadatakeys`](@ref),
   [`metadata!`](@ref), [`deletemetadata!`](@ref), [`emptymetadata!`](@ref);
-* for column level metatadata: [`colmetadata`](@ref), [`colmetadatakeys`](@ref),
+* for column-level metatadata: [`colmetadata`](@ref), [`colmetadatakeys`](@ref),
   [`colmetadata!`](@ref), [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
 Assume that we work with a data frame-like object `df` that has a column `col`
@@ -29,7 +29,7 @@ In DataFrames.jl the metadata style influences how metadata is propagated when
   the data frame: the rule is that calling a function that might alter a data
   frame drops such metadata; in this way it is possible to statically determine
   whether metadata of styles other than `:note` is dropped after a function call.
-  Only two functions are exceptions that keep non-`:note` metadata, as these
+  Only two functions are exceptions that keep non-`:note`-style metadata, as these
   operations are specifically designed to create an identical copy of the source
   data frame:
     - [`DataFrame`](@ref) constructor;
@@ -38,7 +38,7 @@ In DataFrames.jl the metadata style influences how metadata is propagated when
   a table or a column that should be propagated under transformations
   (exact propagation rules of such metadata are described below).
 * All other metadata styles are allowed but they are currently treated as having
-  `:none` style (this might change in the future if other standard metadata
+  `:none`-style (this might change in the future if other standard metadata
   styles are defined).
 
 All DataAPI.jl metadata functions work with [`DataFrame`](@ref),
@@ -51,7 +51,7 @@ functions. In this section collectively these objects will be called
   [`eachrow`](@ref) and [`eachcol`](@ref) functions have the same metadata
   as their parent `AbstractDataFrame`;
 * [`SubDataFrame`](@ref) and [`DataFrameRow`](@ref) have only metadata from
-  their parent `DataFrame` that has `:note` style.
+  their parent `DataFrame` that has `:note`-style.
 
 Notably metadata is not supported for [`GroupedDataFrame`](@ref) as it does not
 expose columns directly. You can inspect metadata of the `parent` of a
@@ -89,7 +89,7 @@ of operations that do not rely on metadata call `emptymetadata!` and
 
 Processing metadata for `SubDataFrame` and `DataFrameRow` has more overhead
 than for other types defined in DataFrames.jl that support metadata, because
-they have a more complex logic of handling it (they support only `:note`
+they have a more complex logic of handling it (they support only `:note`-style
 metadata, which means that other metadata needs to be filtered-out).
 
 ## Examples
@@ -167,32 +167,32 @@ julia> colmetadatakeys(df)
 ()
 ```
 
-## Propagation of `:note` style metadata
+## Propagation of `:note`-style metadata
 
-An important design feature of `:note` style metatada is how it is handled when
+An important design feature of `:note`-style metatada is how it is handled when
 data frames are transformed.
 
 !!! note
 
     The provided rules might slightly change in the future. Any change to
-    `:note` style metadata propagation rules will not be considered as breaking
+    `:note`-style metadata propagation rules will not be considered as breaking
     and can be done in any minor release of DataFrames.jl.
     Such changes might be made based on users' feedback about what metadata
     propagation rules are most convenient in practice.
 
-The general design rules for propagation of `:note` style metadata are as follows.
+The general design rules for propagation of `:note`-style metadata are as follows.
 
 For operations that take a single data frame as an input:
 * Table level metadata is propagated to the returned data frame object.
-* For column level metadata:
+* For column-level metadata:
   - in all cases when a single column is transformed to
     a single column and the name of the column does
     not change (or is automatically changed e.g. to de-duplicate column names or
     via column renaming in joins)
-    column level metadata is preserved (example operations of this kind are
+    column-level metadata is preserved (example operations of this kind are
     `getindex`, `subset`, joins, `mapcols`).
   - in all cases when a single column is transformed with `identity` or `copy` to a single column,
-    column level metadata is preserved even if column name is changed (example
+    column-level metadata is preserved even if column name is changed (example
     operations of this kind are `rename`, or the `:x => :y` or
     `:x => copy => :y` operation specification in `select`).
 
@@ -214,7 +214,7 @@ pairs are not copied (this is relevant in case of mutable values).
 
 !!! note
 
-    The rules for `:note`-style column level metadata propagation are designed
+    The rules for `:note`-style column-level metadata propagation are designed
     to make the right decision in common cases. In particular, they assume that if
     source and target column name is the same then the metadata for the column is
     not changed. While this is valid for many operations, it is not always true
@@ -228,62 +228,62 @@ pairs are not copied (this is relevant in case of mutable values).
 ### Operations that preserve `:note`-style metadata
 
 Most of the functions in DataFrames.jl just preserve table and column metadata
-that has `:note` style.
+that has `:note`-style.
 Some functions use a more complex logic, even if they follow the general rules
 described above (in particular under any transformation all non-`:note`-style
 metadata is always dropped). These are:
 
 * [`describe`](@ref) drops all metadata.
-* [`hcat`](@ref): propagates table level metadata only for keys which are defined
+* [`hcat`](@ref): propagates table-level metadata only for keys which are defined
   in all passed tables and have the same value;
   column-level metadata is preserved.
-* [`vcat`](@ref): propagates table level metadata only for keys which are defined
+* [`vcat`](@ref): propagates table-level metadata only for keys which are defined
   in all passed tables and have the same value;
-  column level metadata is preserved only for keys which are defined
+  column-level metadata is preserved only for keys which are defined
   in all passed tables that contain this column and have the same value;
-* [`stack`](@ref): propagates table level metadata and column level metadata
+* [`stack`](@ref): propagates table-level metadata and column-level metadata
   for identifier columns.
-* [`stack`](@ref): propagates table level metadata and column level metadata
+* [`stack`](@ref): propagates table-level metadata and column-level metadata
   for row keys columns.
-* [`permutedims`](@ref): propagates table level metadata and drops column level
+* [`permutedims`](@ref): propagates table-level metadata and drops column-level
    metadata.
 * broadcasted assignment does not change target metadata;
   under Julia earlier than 1.7 operation of kind `df.a .= s` does not drop non-`:note`-style
   metadata; under Julia 1.7 or later this operation perserves only `:note`-style
   metadata
-* broadcasting propagates table level metadata if some key is present
+* broadcasting propagates table-level metadata if some key is present
   in all passed data frames and value associated with it is identical in all
-  passed data frames; column level metadata is propagated for columns if some
+  passed data frames; column-level metadata is propagated for columns if some
   key for a given column is present in all passed data frames and value
   associated with it is identical in all passed data frames.
-* `getindex` preserves table level metadata and column level metadata
+* `getindex` preserves table-level metadata and column-level metadata
   for selected columns
-* `setindex!` does not affect table level and column level metadata
+* `setindex!` does not affect table-level and column-level metadata
 * [`push!`](@ref), [`pushfirst!`](@ref), [`insert!`](@ref) do not affect
   table-level nor column-level metadata (even if they add new columns and pushed row is
   a `DataFrameRow` or other value supporting metadata interface)
-* [`append!`](@ref) and [`prepend!`](@ref) do not change table and column level
+* [`append!`](@ref) and [`prepend!`](@ref) do not change table and column-level
   metadata of the destination data frame, except that if new columns are added
   and these columns have metadata in the appended/prepended table then this
   metadata is preserved.
-* [`leftjoin!`](@ref), [`leftjoin`](@ref): table and column level metadata is
+* [`leftjoin!`](@ref), [`leftjoin`](@ref): table and column-level metadata is
   taken from the left table except for non-key columns from right table for which
   metadata is taken from right table;
-* [`rightjoin`](@ref): table and column level metadata is taken from the right
+* [`rightjoin`](@ref): table and column-level metadata is taken from the right
   table except for non-key columns from left table for which metadata is
   taken from left table;
-* [`innerjoin`](@ref), [`outerjoin`](@ref): propagates table level metadata only for keys
+* [`innerjoin`](@ref), [`outerjoin`](@ref): propagates table-level metadata only for keys
   that are defined in all passed data frames and have the same value;
-  column level metadata is propagated for all columns except for key
+  column-level metadata is propagated for all columns except for key
   columns, for which it is propagated only for keys that are defined
   in all passed data frames and have the same value.
-* [`semijoin`](@ref), [`antijoin`](@ref): table and column level metadata is
+* [`semijoin`](@ref), [`antijoin`](@ref): table and column-level metadata is
   taken from the left table.
-* [`crossjoin`](@ref): propagates table level metadata only for keys
+* [`crossjoin`](@ref): propagates table-level metadata only for keys
   that are defined in both passed data frames and have the same value;
-  propagates column level metadata from both passed data frames.
+  propagates column-level metadata from both passed data frames.
 * [`select`]](@ref), [`select!`](@ref), [`transform`](@ref),
-  [`transform!`](@ref), [`combine`]](@ref): propagate table level metadata;
+  [`transform!`](@ref), [`combine`]](@ref): propagate table-level metadata;
   column-level metadata is propagated if:
   a) a single column is transformed to a single column and the name of the column does not change
      (this includes all column selection operations), or

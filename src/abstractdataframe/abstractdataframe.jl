@@ -145,8 +145,8 @@ a vector) then:
 Mixing symbols and strings in `to` and `from` is not allowed.
 
 $METADATA_FIXED
-Column `:note` metadata is considered to be attached to column number:
-when a column is renamed, its `:note` metadata becomes associated to its new name.
+Column `:note`-style metadata is considered to be attached to column number:
+when a column is renamed, its `:note`-style metadata becomes associated to its new name.
 
 See also: [`rename`](@ref)
 
@@ -288,8 +288,9 @@ a vector) then:
 Mixing symbols and strings in `to` and `from` is not allowed.
 
 $METADATA_FIXED
-Column `:note` metadata is considered to be attached to column number:
-when a column is renamed, its `:note` metadata becomes associated to its new name.
+Column `:note`-style metadata is considered to be attached to column number:
+when a column is renamed, its `:note`-style metadata becomes associated to its
+new name.
 
 See also: [`rename!`](@ref)
 
@@ -1036,7 +1037,7 @@ function dropmissing!(df::AbstractDataFrame,
                       disallowmissing::Bool=true)
     inds = completecases(df, cols)
     inds .= .!(inds)
-    deleteat!(df, inds) # drops non :note style metadata
+    deleteat!(df, inds) # drops non :note-style metadata
     disallowmissing && disallowmissing!(df, cols)
     df
 end
@@ -1721,7 +1722,7 @@ the corruption of the other object.
 
 Metadata: `hcat` propagates `:note`-style table-level metadata for keys that are present
 in all passed data frames and have the same value;
-it propagates `:note` style column-level metadata.
+it propagates `:note`-style column-level metadata.
 
 # Example
 ```jldoctest
@@ -1793,17 +1794,18 @@ Vertically concatenate `AbstractDataFrame`s.
 
 The `cols` keyword argument determines the columns of the returned data frame:
 
-* `:setequal`: require all data frames to have the same column names disregarding
-  order. If they appear in different orders, the order of the first provided data
-  frame is used.
-* `:orderequal`: require all data frames to have the same column names and in the
-  same order.
+* `:setequal`: require all data frames to have the same column names
+  disregarding order. If they appear in different orders, the order of the first
+  provided data frame is used.
+* `:orderequal`: require all data frames to have the same column names and in
+  the same order.
 * `:intersect`: only the columns present in *all* provided data frames are kept.
   If the intersection is empty, an empty data frame is returned.
-* `:union`: columns present in *at least one* of the provided data frames are kept.
-  Columns not present in some data frames are filled with `missing` where necessary.
-* A vector of `Symbol`s or strings: only listed columns are kept.
-  Columns not present in some data frames are filled with `missing` where necessary.
+* `:union`: columns present in *at least one* of the provided data frames are
+  kept. Columns not present in some data frames are filled with `missing` where
+  necessary.
+* A vector of `Symbol`s or strings: only listed columns are kept. Columns not
+  present in some data frames are filled with `missing` where necessary.
 
 The `source` keyword argument, if not `nothing` (the default), specifies the
 additional column to be added in the last position in the resulting data frame
@@ -1818,17 +1820,17 @@ The order of columns is determined by the order they appear in the included data
 frames, searching through the header of the first data frame, then the second,
 etc.
 
-The element types of columns are determined using `promote_type`,
-as with `vcat` for `AbstractVector`s.
+The element types of columns are determined using `promote_type`, as with `vcat`
+for `AbstractVector`s.
 
-`vcat` ignores empty data frames when composing the result (except for metadata),
-making it possible to initialize an empty data frame at the beginning of a loop
-and `vcat` onto it.
+`vcat` ignores empty data frames when composing the result (except for
+metadata), making it possible to initialize an empty data frame at the beginning
+of a loop and `vcat` onto it.
 
-Metadata: `vcat` propagates `:note`-style table-level metadata for keys that are present
-in all passed data frames and have the same value.
-`vcat` propagates `:note`-style column-level metadata for keys that are present in all passed
-data frames that contain this column and have the same value.
+Metadata: `vcat` propagates `:note`-style table-level metadata for keys that are
+present in all passed data frames and have the same value. `vcat` propagates
+`:note`-style column-level metadata for keys that are present in all passed data
+frames that contain this column and have the same value.
 
 # Example
 ```jldoctest
@@ -1954,16 +1956,17 @@ Base.vcat(dfs::AbstractDataFrame...;
            source::Union{Nothing, Symbol, AbstractString,
                          Pair{<:Union{Symbol, AbstractString}, <:AbstractVector}}=nothing)
 
-Efficiently reduce the given vector or tuple of `AbstractDataFrame`s with `vcat`.
+Efficiently reduce the given vector or tuple of `AbstractDataFrame`s with
+`vcat`.
 
-The column order, names, and types of the resulting `DataFrame`, and
-the behavior of `cols` and `source` keyword arguments follow the rules specified
-for [`vcat`](@ref) of `AbstractDataFrame`s.
+The column order, names, and types of the resulting `DataFrame`, and the
+behavior of `cols` and `source` keyword arguments follow the rules specified for
+[`vcat`](@ref) of `AbstractDataFrame`s.
 
-Metadata: `vcat` propagates `:note`-style table-level metadata for keys that are present
-in all passed data frames and have the same value.
-`vcat` propagates `:note`-style column-level metadata for keys that are present in all passed
-data frames that contain this column and have the same value.
+Metadata: `vcat` propagates `:note`-style table-level metadata for keys that are
+present in all passed data frames and have the same value. `vcat` propagates
+`:note`-style column-level metadata for keys that are present in all passed data
+frames that contain this column and have the same value.
 
 # Example
 ```jldoctest
@@ -2030,7 +2033,7 @@ function Base.reduce(::typeof(vcat),
                      source::Union{Nothing, SymbolOrString,
                                    Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
     res = _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
-    # only handle table level metadata, as column level metadata was done in _vcat
+    # only handle table-level metadata, as column-level metadata was done in _vcat
     _merge_matching_df_note_metadata!(res, dfs)
 
     if source !== nothing

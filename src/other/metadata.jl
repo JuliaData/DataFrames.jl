@@ -38,10 +38,10 @@ emptycolmetadata!(::T) where {T} =
     metadata(dfc::DataFrameColumns, key::AbstractString; style::Bool=false)
     metadata(dfr::DataFrameRows, key::AbstractString; style::Bool=false)
 
-Return table level metadata value associated with `df` for key `key`.
+Return table-level metadata value associated with `df` for key `key`.
 If `style=true` return a tuple of metadata value and metadata style.
 
-`SubDataFrame` and `DataFrameRow` expose only `:note` style metadata of their
+`SubDataFrame` and `DataFrameRow` expose only `:note`-style metadata of their
 parent.
 
 See also: [`metadatakeys`](@ref), [`metadata!`](@ref),
@@ -80,7 +80,7 @@ metadata(x::Union{DataFrameRows, DataFrameColumns},
 function metadata(x::Union{DataFrameRow, SubDataFrame},
                   key::AbstractString; style::Bool=false)
     meta_value, meta_style = metadata(parent(x), key, style=true)
-    meta_style !== :note && throw(KeyError("$key with :note style"))
+    meta_style !== :note && throw(KeyError("$key with :note-style"))
     return style ? (meta_value, meta_style) : meta_value
 end
 
@@ -90,11 +90,11 @@ end
     metadatakeys(dfc::DataFrameColumns)
     metadatakeys(dfr::DataFrameRows)
 
-Return an iterator of table level metadata keys which are set in the object.
+Return an iterator of table-level metadata keys which are set in the object.
 
 Values can be accessed using [`metadata(df, key)`](@ref).
 
-`SubDataFrame` and `DataFrameRow` expose only `:note` style metadata keys of
+`SubDataFrame` and `DataFrameRow` expose only `:note`-style metadata keys of
 their parent.
 
 See also: [`metadata`](@ref), [`metadata!`](@ref),
@@ -145,7 +145,7 @@ end
     metadata!(dfc::DataFrameColumns, key::AbstractString, value; style)
     metadata!(dfr::DataFrameRows, key::AbstractString, value; style)
 
-Set table level metadata for object `df` for key `key` to have value `value`
+Set table-level metadata for object `df` for key `key` to have value `value`
 and style `style` and return `df`.
 
 For `SubDataFrame` and `DataFrameRow` only `:note`-style is allowed.
@@ -198,14 +198,14 @@ end
 
 function metadata!(x::Union{DataFrameRow, SubDataFrame},
                    key::AbstractString, value::Any; style)
-    style === :note || throw(ArgumentError("only :note style is supported for " *
+    style === :note || throw(ArgumentError("only :note-style is supported for " *
                                            "DataFrameRow and SubDataFrame"))
     df = parent(x)
     meta = getfield(df, :metadata)
     if meta !== nothing && haskey(meta, key) && meta[key][2] !== :note
         throw(ArgumentError("setting metadata for DataFrameRow and SubDataFrame" *
                             "that is already present in the parent and does not " *
-                            "have :note style is not allowed"))
+                            "have :note-style is not allowed"))
     end
     metadata!(df, key, value, style=style)
     return x
@@ -220,7 +220,7 @@ end
 Delete table-level metadata from object `df` for key `key` and return `df`.
 If key does not exist, return `df` without modification.
 
-For `SubDataFrame` and `DataFrameRow` only `:note` style for metadata is deleted.
+For `SubDataFrame` and `DataFrameRow` only `:note`-style for metadata is deleted.
 
 See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`metadata!`](@ref), [`emptymetadata!`](@ref),
@@ -283,7 +283,7 @@ end
 
 Delete all table-level metadata from object `df`.
 
-For `SubDataFrame` and `DataFrameRow` only `:note` style for metadata is deleted.
+For `SubDataFrame` and `DataFrameRow` only `:note`-style for metadata is deleted.
 
 See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`metadata!`](@ref), [`deletemetadata!`](@ref),
@@ -338,9 +338,9 @@ end
     colmetadata(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString; style::Bool=false)
     colmetadata(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString; style::Bool=false)
 
-Return column level metadata value associated with `df` for column `col` and key `key`.
+Return column-level metadata value associated with `df` for column `col` and key `key`.
 
-`SubDataFrame` and `DataFrameRow` expose only `:note` style metadata of their parent.
+`SubDataFrame` and `DataFrameRow` expose only `:note`-style metadata of their parent.
 
 See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`metadata!`](@ref), [`deletemetadata!`](@ref), [`emptymetadata!`](@ref),
@@ -403,7 +403,7 @@ function colmetadata(x::DataFrameRow,
     df = parent(x)
     val_meta, style_meta = colmetadata(df, col_name, key, style=true)
     if style_meta !== :note
-        throw(KeyError("$key for column $col with :note style"))
+        throw(KeyError("$key for column $col with :note-style"))
     end
     return style ? (val_meta, style_meta) : val_meta
 end
@@ -414,7 +414,7 @@ function colmetadata(x::SubDataFrame,
     df = parent(x)
     val_meta, style_meta = colmetadata(df, col_name, key, style=true)
     if style_meta !== :note
-        throw(KeyError("$key for column $col with :note style"))
+        throw(KeyError("$key for column $col with :note-style"))
     end
     return style ? (val_meta, style_meta) : val_meta
 end
@@ -438,14 +438,14 @@ colmetadata(x::SubDataFrame,
     colmetadatakeys(dfc::DataFrameColumns, [col::ColumnIndex])
     colmetadatakeys(dfr::DataFrameRows, [col::ColumnIndex])
 
-If `col` is passed return an iterator of column level metadata keys
+If `col` is passed return an iterator of column-level metadata keys
 which are set for column `col`.
 If `col` is not passed return an iterator of `col => colmetadatakeys(x, col)`
 pairs for all columns that have metadata, where `col` are `Symbol`.
 
 Values can be accessed using [`colmetadata(df, col, key)`](@ref).
 
-`SubDataFrame` and `DataFrameRow` expose only `:note` style metadata of their parent.
+`SubDataFrame` and `DataFrameRow` expose only `:note`-style metadata of their parent.
 
 See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`metadata!`](@ref), [`deletemetadata!`](@ref), [`emptymetadata!`](@ref),
@@ -548,10 +548,10 @@ end
     colmetadata!(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString, value; style)
     colmetadata!(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString, value; style)
 
-Set column level metadata in `df` for column `col` and key `key` to have value `value`
+Set column-level metadata in `df` for column `col` and key `key` to have value `value`
 and style `style` and return `df`.
 
-For `SubDataFrame` and `DataFrameRow` only `:note` style is allowed.
+For `SubDataFrame` and `DataFrameRow` only `:note`-style is allowed.
 Trying to set a key-value pair for which the key already exists in the parent
 data frame with another style throws an error.
 
@@ -637,7 +637,7 @@ end
 function colmetadata!(x::DataFrameRow,
                       col::Int, key::AbstractString, value::Any; style)
     col_name = _names(x)[col]
-    style === :note || throw(ArgumentError("only :note style is supported for " *
+    style === :note || throw(ArgumentError("only :note-style is supported for " *
                                            "DataFrameRow and SubDataFrame"))
     df = parent(x)
     cols_meta = getfield(df, :colmetadata)
@@ -646,7 +646,7 @@ function colmetadata!(x::DataFrameRow,
        haskey(cols_meta[idx], key) && cols_meta[idx][key][2] !== :note
         throw(ArgumentError("setting metadata for DataFrameRow and SubDataFrame" *
                             "that is already present in the parent and does not " *
-                            "have :note style is not allowed"))
+                            "have :note-style is not allowed"))
     end
     colmetadata!(df, idx, key, value, style=style)
     return x
@@ -655,7 +655,7 @@ end
 function colmetadata!(x::SubDataFrame,
                       col::Int, key::AbstractString, value::Any; style)
     col_name = _names(x)[col]
-    style === :note || throw(ArgumentError("only :note style is supported for " *
+    style === :note || throw(ArgumentError("only :note-style is supported for " *
                                            "DataFrameRow and SubDataFrame"))
     df = parent(x)
     cols_meta = getfield(df, :colmetadata)
@@ -664,7 +664,7 @@ function colmetadata!(x::SubDataFrame,
        haskey(cols_meta[idx], key) && cols_meta[idx][key][2] !== :note
         throw(ArgumentError("setting metadata for DataFrameRow and SubDataFrame" *
                             "that is already present in the parent and does not " *
-                            "have :note style is not allowed"))
+                            "have :note-style is not allowed"))
     end
     colmetadata!(df, idx, key, value, style=style)
     return x
@@ -687,9 +687,9 @@ colmetadata!(x::SubDataFrame, col::ColumnIndex, key::AbstractString, value::Any;
     deletecolmetadata!(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString)
     deletecolmetadata!(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString)
 
-Delete column level metadata set in `df` for column `col` and key `key` and return `df`.
+Delete column-level metadata set in `df` for column `col` and key `key` and return `df`.
 
-For `SubDataFrame` and `DataFrameRow` only `:note` style for metadata is deleted.
+For `SubDataFrame` and `DataFrameRow` only `:note`-style for metadata is deleted.
 
 See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`metadata!`](@ref), [`deletemetadata!`](@ref), [`emptymetadata!`](@ref),
@@ -807,9 +807,9 @@ deletecolmetadata!(x::SubDataFrame, col::ColumnIndex, key::AbstractString) =
     emptycolmetadata!(dfc::DataFrameColumns, [col::ColumnIndex])
     emptycolmetadata!(dfr::DataFrameRows, [col::ColumnIndex])
 
-Delete column level metadata set in `df` for column `col` and key `key` and return `df`.
+Delete column-level metadata set in `df` for column `col` and key `key` and return `df`.
 
-For `SubDataFrame` and `DataFrameRow` only `:note` style for metadata is deleted.
+For `SubDataFrame` and `DataFrameRow` only `:note`-style for metadata is deleted.
 
 See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`metadata!`](@ref), [`deletemetadata!`](@ref), [`emptymetadata!`](@ref),
@@ -939,7 +939,7 @@ end
 
 ### Internal utility functions for metadata handling
 
-# copy table level :note metadata from Tables.jl table src to dst
+# copy table-level :note-style metadata from Tables.jl table src to dst
 # discarding previous metadata contents of dst
 function _copy_df_note_metadata!(dst::DataFrame, src)
     emptymetadata!(dst)
@@ -950,7 +950,7 @@ function _copy_df_note_metadata!(dst::DataFrame, src)
     return nothing
 end
 
-# copy column level :note metadata from Tables.jl table src to dst
+# copy column-level :note-style metadata from Tables.jl table src to dst
 # from column src_col to dst_col
 # discarding previous metadata contents of dst
 function _copy_col_note_metadata!(dst::DataFrame, dst_col, src, src_col)
@@ -962,7 +962,7 @@ function _copy_col_note_metadata!(dst::DataFrame, dst_col, src, src_col)
     return nothing
 end
 
-# this is a function used to copy table and column level :note metadata
+# this is a function used to copy table-level and column-level :note-style metadata
 # from Tables.jl table src to dst, discarding previous metadata contents of dst
 function _copy_all_note_metadata!(dst::DataFrame, src)
     _copy_df_note_metadata!(dst, src)
@@ -978,7 +978,7 @@ function _copy_all_note_metadata!(dst::DataFrame, src)
     return nothing
 end
 
-# this is a function used to copy all table and column level metadata
+# this is a function used to copy all table and column-level metadata
 # from Tables.jl table src to dst, discarding previous metadata contents of dst
 function _copy_all_all_metadata!(dst::DataFrame, src)
     emptymetadata!(dst)
@@ -998,7 +998,7 @@ function _copy_all_all_metadata!(dst::DataFrame, src)
     return nothing
 end
 
-# this is a function used to drop table level metadata that is not :note style
+# this is a function used to drop table-level metadata that is not :note-style
 function _drop_df_nonnote_metadata!(df::DataFrame)
     getfield(df, :allnotemetadata) && return nothing
     for key in metadatakeys(df)
@@ -1008,7 +1008,7 @@ function _drop_df_nonnote_metadata!(df::DataFrame)
     return nothing
 end
 
-# this is a function used to drop table and column level metadata that is not :note style
+# this is a function used to drop table and column-level metadata that is not :note-style
 function _drop_all_nonnote_metadata!(df::DataFrame)
     getfield(df, :allnotemetadata) && return nothing
     _drop_df_nonnote_metadata!(df)
@@ -1022,8 +1022,8 @@ function _drop_all_nonnote_metadata!(df::DataFrame)
     return nothing
 end
 
-# this is a function used to merge matching table level metadata that has :note style
-# it removes all table level metadata previously stored in `res`
+# this is a function used to merge matching table-level metadata that has :note-style
+# it removes all table-level metadata previously stored in `res`
 function _merge_matching_df_note_metadata!(res::DataFrame, dfs)
     emptymetadata!(res)
     @assert firstindex(dfs) == 1
@@ -1053,8 +1053,8 @@ function _merge_matching_df_note_metadata!(res::DataFrame, dfs)
     return nothing
 end
 
-# this is a function used to keep only table level :note-style metadata matching between dst and src
-# all other table level metadata is dropped
+# this is a function used to keep only table-level :note-style metadata matching
+# between dst and src all other table-level metadata is dropped
 function _keep_matching_df_note_metadata!(dst::DataFrame, src::AbstractDataFrame)
     _drop_df_nonnote_metadata!(dst)
     src_keys = metadatakeys(src)

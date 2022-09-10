@@ -114,7 +114,7 @@ function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDa
                                    res::DataFrame, kind::Symbol)
     @assert kind == :left || kind == :right || kind == :outer || kind == :inner
 
-    # The steps taken in this function are (all applies only to :note style metadata):
+    # The steps taken in this function are (all applies only to :note-style metadata):
     # We initially copy metadata from left table as left table is always used
     # to populate starting columns of a data frame
     #
@@ -122,13 +122,14 @@ function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDa
     # 1. inner and outer joins treat both tables as equivalent so:
     #    a. for key columns we intersect column metadata from left table with
     #       column metadata from right table
-    #    b. we merge table level metadata
+    #    b. we merge table-level metadata
     # 2. right join treats right table as main so:
-    #    a. for key columns we copy column metadata from right table to left table.
-    #    b. we copy right table table level metadata
+    #    a. for key columns we copy column metadata from right table to left table
+    #       (dropping any previously present metadata).
+    #    b. we copy right table table-level metadata
     # 3. left join treats left table as main so:
-    #    a. column level metadata does not require changing
-    #    b. we copy left table table level metadata
+    #    a. column-level metadata does not require changing
+    #    b. we copy left table table-level metadata
     #
     # We copy non-key column metadata from right table for all cases.
 
@@ -591,7 +592,7 @@ If more than two data frames are passed, the join is performed recursively with
 left associativity. In this case the `validate` keyword argument is applied
 recursively with left associativity.
 
-Metadata: table-level metadata and column level-metadata for key columns
+Metadata: table-level metadata and column-level metadata for key columns
 is preserved only for keys with `:note`-style which are defined in all passed tables
 and have the same value.
 Column-level `:note`-style metadata is preserved for all other columns.
@@ -737,9 +738,9 @@ When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
 
-Metadata: table level and column level `:note` style metadata is taken from `df1`
+Metadata: table-level and column-level `:note`-style metadata is taken from `df1`
 (including key columns), except for columns added to it from `df2`, whose column
-level `:note` style metadata is taken from `df2`.
+level `:note`-style metadata is taken from `df2`.
 
 See also: [`innerjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -888,9 +889,9 @@ When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
 
-Metadata: table level and column level `:note` style metadata is taken from `df2`
+Metadata: table-level and column-level `:note`-style metadata is taken from `df2`
 (including key columns), except for columns added to it from `df1`, whose column
-level `:note` style metadata is taken from `df1`.
+level `:note`-style metadata is taken from `df1`.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -1198,7 +1199,7 @@ When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
 
-Metadata: table level and column level `:note` style metadata are taken from `df1`.
+Metadata: table-level and column-level `:note`-style metadata are taken from `df1`.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -1306,7 +1307,7 @@ When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
 
-Metadata: table-level and column-level `:note` style metadata are taken from `df1`.
+Metadata: table-level and column-level `:note`-style metadata are taken from `df1`.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`semijoin`](@ref), [`crossjoin`](@ref).
@@ -1394,7 +1395,7 @@ recursively with left associativity.
 
 Metadata: table-level metadata is preserved only for keys with `:note`-style
 which are defined in all passed tables and have the same value.
-Column level `:note` style metadata is preserved from both tables.
+Column level `:note`-style metadata is preserved from both tables.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`semijoin`](@ref), [`antijoin`](@ref).

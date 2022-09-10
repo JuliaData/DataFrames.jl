@@ -4,14 +4,13 @@
     append!(df::DataFrame, table; cols::Symbol=:setequal,
             promote::Bool=(cols in [:union, :subset]))
 
-Add the rows of `df2` to the end of `df`. If the second argument `table` is not an
-`AbstractDataFrame` then it is converted using `DataFrame(table, copycols=false)`
-before being appended.
+Add the rows of `df2` to the end of `df`. If the second argument `table` is not
+an `AbstractDataFrame` then it is converted using `DataFrame(table,
+copycols=false)` before being appended.
 
 The exact behavior of `append!` depends on the `cols` argument:
-* If `cols == :setequal` (this is the default)
-  then `df2` must contain exactly the same columns as `df` (but possibly in a
-  different order).
+* If `cols == :setequal` (this is the default) then `df2` must contain exactly
+  the same columns as `df` (but possibly in a different order).
 * If `cols == :orderequal` then `df2` must contain the same columns in the same
   order (for `AbstractDict` this option requires that `keys(row)` matches
   `propertynames(df)` to allow for support of ordered dicts; however, if `df2`
@@ -21,9 +20,9 @@ The exact behavior of `append!` depends on the `cols` argument:
   are used.
 * If `cols == :subset` then `append!` behaves like for `:intersect` but if some
   column is missing in `df2` then a `missing` value is pushed to `df`.
-* If `cols == :union` then `append!` adds columns missing in `df` that are present
-  in `df2`, for columns present in `df` but missing in `df2` a `missing` value
-  is pushed.
+* If `cols == :union` then `append!` adds columns missing in `df` that are
+  present in `df2`, for columns present in `df` but missing in `df2` a `missing`
+  value is pushed.
 
 If `promote=true` and element type of a column present in `df` does not allow
 the type of a pushed argument then a new column with a promoted element type
@@ -37,14 +36,14 @@ The above rule has the following exceptions:
 Please note that `append!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
-Metadata: table-level metadata and column-level metadata with `:note`-style
-for columns present in `df` are preserved.
-If new columns are added their `:note`-style metadata is copied from the appended table.
-Other metadata is dropped.
+Metadata: table-level metadata and column-level metadata with `:note`-style for
+columns present in `df` are preserved. If new columns are added their
+`:note`-style metadata is copied from the appended table. Other metadata is
+dropped.
 
-See also: use [`push!`](@ref) to add individual rows to a data frame, [`prepend!`](@ref)
-to add a table at the beginning, and [`vcat`](@ref) to vertically concatenate
-data frames.
+See also: use [`push!`](@ref) to add individual rows to a data frame,
+[`prepend!`](@ref) to add a table at the beginning, and [`vcat`](@ref) to
+vertically concatenate data frames.
 
 # Examples
 ```jldoctest
@@ -92,13 +91,12 @@ Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
              promote::Bool=(cols in [:union, :subset]))
 
 Add the rows of `df2` to the beginning of `df`. If the second argument `table`
-is not an `AbstractDataFrame` then it is converted using
-`DataFrame(table, copycols=false)` before being prepended.
+is not an `AbstractDataFrame` then it is converted using `DataFrame(table,
+copycols=false)` before being prepended.
 
 The exact behavior of `prepend!` depends on the `cols` argument:
-* If `cols == :setequal` (this is the default)
-  then `df2` must contain exactly the same columns as `df` (but possibly in a
-  different order).
+* If `cols == :setequal` (this is the default) then `df2` must contain exactly
+  the same columns as `df` (but possibly in a different order).
 * If `cols == :orderequal` then `df2` must contain the same columns in the same
   order (for `AbstractDict` this option requires that `keys(row)` matches
   `propertynames(df)` to allow for support of ordered dicts; however, if `df2`
@@ -108,9 +106,9 @@ The exact behavior of `prepend!` depends on the `cols` argument:
   are used.
 * If `cols == :subset` then `append!` behaves like for `:intersect` but if some
   column is missing in `df2` then a `missing` value is pushed to `df`.
-* If `cols == :union` then `append!` adds columns missing in `df` that are present
-  in `df2`, for columns present in `df` but missing in `df2` a `missing` value
-  is pushed.
+* If `cols == :union` then `append!` adds columns missing in `df` that are
+  present in `df2`, for columns present in `df` but missing in `df2` a `missing`
+  value is pushed.
 
 If `promote=true` and element type of a column present in `df` does not allow
 the type of a pushed argument then a new column with a promoted element type
@@ -124,14 +122,14 @@ The above rule has the following exceptions:
 Please note that `prepend!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
-Metadata: table-level metadata and column-level metadata with `:note`-style
-for columns present in `df` are preserved.
-If new columns are added their `:note`-style metadata is copied from the appended table.
-Other metadata is dropped.
+Metadata: table-level metadata and column-level metadata with `:note`-style for
+columns present in `df` are preserved. If new columns are added their
+`:note`-style metadata is copied from the appended table. Other metadata is
+dropped.
 
-See also: use [`pushfirst!`](@ref) to add individual rows at the beginning of a data frame,
-[`append!`](@ref) to add a table at the end, and [`vcat`](@ref)
-to vertically concatenate data frames.
+See also: use [`pushfirst!`](@ref) to add individual rows at the beginning of a
+data frame, [`append!`](@ref) to add a table at the end, and [`vcat`](@ref) to
+vertically concatenate data frames.
 
 # Examples
 ```jldoctest

@@ -565,7 +565,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
 
     # note that Symbol(renamecols(x)) must produce unique column names
     # and names between df1 and df2 must be unique
-    # here df1 gets proper column level metadata with :note style
+    # here df1 gets proper column-level metadata with :note-style
     df1 = df[row_group_row_idxs, g_rowkey.cols]
     df2 = DataFrame(unstacked_val, Symbol[Symbol(renamecols(x)) for x in colref_map],
                     copycols=false)
@@ -584,8 +584,8 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
         res_df = res_df[sortperm(row_group_row_idxs), :]
     end
 
-    # only table level :note style metadata needs to be copied
-    # as column level :note style metadata is already correctly set
+    # only table-level :note-style metadata needs to be copied
+    # as column-level :note-style metadata is already correctly set
     _copy_df_note_metadata!(res_df, df)
 
     return res_df

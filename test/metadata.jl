@@ -2,7 +2,7 @@ module TestMetadata
 
 using Test, DataFrames, Random
 
-@testset "table level metadata" begin
+@testset "table-level metadata" begin
     for x in (DataFrame(), DataFrame(a=1))
         @test isempty(metadatakeys(x))
         @test metadatakeys(x) isa Tuple
@@ -109,7 +109,7 @@ using Test, DataFrames, Random
     @test metadata(df, "name2") == "value2x"
 end
 
-@testset "column level metadata" begin
+@testset "column-level metadata" begin
     for b in (:b, "b", 2, big(2)), a in (:a, "a", 1, big(1))
         x = DataFrame(a=1, b=2)
         @test isempty(colmetadatakeys(x))
@@ -462,7 +462,7 @@ end
     end
 end
 
-@testset "functions that keep all :note metadata" begin
+@testset "functions that keep all :note-style metadata" begin
     # Tested functions:
     #   dropmissing, dropmissing!, filter, filter!, unique, unique!, repeat, repeat!,
     #   disallowmissing, allowmissing, disallowmissing!, allowmissing!, flatten,

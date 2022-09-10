@@ -98,9 +98,9 @@ use the functionality provided by `select`/`transform`/`combine` functions, use
 functions, or provide type assertions to the variables that hold columns
 extracted from a `DataFrame`.
 
-Metadata: this function preserves all table and column level metadata.
+Metadata: this function preserves all table and column-level metadata.
 As a special case if a `GroupedDataFrame` is passed then
-only `:note` style metadata from parent of the `GroupedDataFrame` is preserved.
+only `:note`-style metadata from parent of the `GroupedDataFrame` is preserved.
 
 # Examples
 ```jldoctest
@@ -176,11 +176,11 @@ mutable struct DataFrame <: AbstractDataFrame
     colmetadata::Union{Nothing, Dict{Int, Dict{String, Tuple{Any, Any}}}}
     # This is a helper field for optimizing performance of
     # _drop_all_nonnote_metadata! and _drop_df_nonnote_metadata!
-    # so that if we only have :note metadata these functions are no-op.
+    # so that if we only have :note-style metadata these functions are no-op.
     # The contract is that if allnotemetadata=true then it is guaranteed that
-    # there are only :note style metadata entries in the data frame.
+    # there are only :note-style metadata entries in the data frame.
     # metadata! and colmetadata! functions appropriately set this field if a
-    # non-:note style metadata is added.
+    # non-:note-style metadata is added.
     allnotemetadata::Bool
 
     # the inner constructor should not be used directly
@@ -805,7 +805,7 @@ If `copycols=true` (the default), return a new  `DataFrame` holding
 copies of column vectors in `df`.
 If `copycols=false`, return a new `DataFrame` sharing column vectors with `df`.
 
-Metadata: this function preserves all table and column level metadata.
+Metadata: this function preserves all table and column-level metadata.
 """
 function Base.copy(df::DataFrame; copycols::Bool=true)
     cdf = DataFrame(copy(_columns(df)), copy(index(df)), copycols=copycols)
