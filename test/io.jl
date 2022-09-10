@@ -377,6 +377,72 @@ end
                  "</div>"
 
     io = IOBuffer()
+    show(io, MIME"text/html"(), df, show_row_number=false)
+    str = String(take!(io))
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>2×2 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th style = \"text-align: left;\">Fish</th>" *
+                 "<th style = \"text-align: left;\">Mass</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"text-align: right;\">1.5</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
+
+    io = IOBuffer()
+    show(io, MIME"text/html"(), df[2, :], show_row_number=false)
+    str = String(take!(io))
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>DataFrameRow (2 columns)</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th style = \"text-align: left;\">Fish</th>" *
+                 "<th style = \"text-align: left;\">Mass</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
+
+    io = IOBuffer()
     ENV["DATAFRAMES_COLUMNS"] = 2
     ENV["DATAFRAMES_ROWS"] = 2
     show(IOContext(io, :limit => true), MIME"text/html"(),
