@@ -1445,7 +1445,7 @@ end
 
 # This is not exactly copy! as in general we allow axes to be different
 # Also no table metadata needs to be copied as we use _replace_columns!
-# only in situations when table metadata is kept
+# only in situations when table metadata for `df` must be left as-is
 function _replace_columns!(df::DataFrame, newdf::DataFrame)
     # for DataFrame object here we do not support keep_present keyword argument
     # like for SubDataFrame because here transform! always falls back to select!
