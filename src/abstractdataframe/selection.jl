@@ -14,8 +14,8 @@ const TRANSFORM_METADATA =
       does not change (this includes all column selection operations), or
     b) a single column is transformed with `identity` or `copy` to a single column
        even if column name is changed (this includes column renaming).
-       As a special case for `GroupedDataFrame` if the output replaces
-       a grouping column and `keepkeys=true`, metadata is taken from
+       As a special case for `GroupedDataFrame` if the output has the same name
+       as a grouping column and `keepkeys=true`, metadata is taken from
        original grouping column.
     """
 
