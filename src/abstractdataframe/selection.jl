@@ -858,7 +858,7 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
         end
         _add_multicol_res(res, newdf, df, colnames, allow_resizing_newdf, wfun,
                           col_idx, copycols, newname, column_to_copy)
-        if !isempty(colmetdatakeys(newdf))
+        if !isempty(colmetadatakeys(newdf))
             for cn_multi in colnames
                 emptycolmetadata!(newdf, cn_multi)
             end

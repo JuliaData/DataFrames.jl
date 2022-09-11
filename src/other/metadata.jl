@@ -398,7 +398,7 @@ for T in (DataFrameRow, SubDataFrame)
 end
 
 for T1 in (DataFrameRow, SubDataFrame), T2 in (Symbol, ColumnIndex)
-    @eval colmetadata(x::$T1, col::T2, key::AbstractString; style::Bool=false) =
+    @eval colmetadata(x::$T1, col::$T2, key::AbstractString; style::Bool=false) =
         colmetadata(x, Int(index(x)[col]), key, style=style)
 end
 
@@ -445,9 +445,9 @@ function colmetadatakeys(df::DataFrame, col::Int)
     cols_meta = getfield(df, :colmetadata)
     cols_meta === nothing && return ()
     haskey(cols_meta, idx) || return ()
-    metakeys = keys(cols_meta[idx])
-    @assert !isempty(metakeys) # by design in such cases meta === nothing should be met
-    return metakeys
+    col_meta = keys(cols_meta[idx])
+    @assert !isempty(col_meta) # by design if isempty(col_meta) then cols_meta should not have an entry for idx
+    return col_meta
 end
 
 for T in (Symbol, ColumnIndex)
@@ -478,7 +478,7 @@ for T in (DataFrameRow, SubDataFrame)
         cols_meta === nothing && return ()
         haskey(cols_meta, idx) || return ()
         col_meta = cols_meta[idx]
-        @assert !isempty(col_meta) # by design in such cases meta === nothing should be met
+        @assert !isempty(col_meta) # by design if isempty(col_meta) then cols_meta should not have an entry for idx
         return (k for (k, (_, s)) in pairs(col_meta) if s === :note)
     end
 end
@@ -549,7 +549,7 @@ function colmetadata!(df::DataFrame, col::Int, key::AbstractString, value::Any; 
 end
 
 for T in (Symbol, ColumnIndex)
-    @evalcolmetadata!(df::DataFrame, col::$T, key::AbstractString, value::Any; style) =
+    @eval colmetadata!(df::DataFrame, col::$T, key::AbstractString, value::Any; style) =
         colmetadata!(df, Int(index(df)[col]), key, value; style=style)
 end
 
@@ -582,7 +582,7 @@ for T in (DataFrameRow, SubDataFrame)
 end
 
 for T1 in (DataFrameRow, SubDataFrame), T2 in (Symbol, ColumnIndex)
-    @eval colmetadata!(x::T1, col::T2, key::AbstractString, value::Any; style) =
+    @eval colmetadata!(x::$T1, col::$T2, key::AbstractString, value::Any; style) =
         colmetadata!(x, Int(index(x)[col]), key, value; style=style)
 end
 
