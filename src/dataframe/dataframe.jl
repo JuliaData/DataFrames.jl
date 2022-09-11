@@ -175,7 +175,7 @@ mutable struct DataFrame <: AbstractDataFrame
     metadata::Union{Nothing, Dict{String, Tuple{Any, Any}}}
     colmetadata::Union{Nothing, Dict{Int, Dict{String, Tuple{Any, Any}}}}
     # This is a helper field for optimizing performance of
-    # _drop_all_nonnote_metadata! and _drop_df_nonnote_metadata!
+    # _drop_all_nonnote_metadata! and _drop_table_nonnote_metadata!
     # so that if we only have :note-style metadata these functions are no-op.
     # The contract is that if allnotemetadata=true then it is guaranteed that
     # there are only :note-style metadata entries in the data frame.

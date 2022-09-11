@@ -826,7 +826,7 @@ function _copy_all_all_metadata!(dst::DataFrame, src)
 end
 
 # this is a function used to drop table-level metadata that is not :note-style
-function _drop_df_nonnote_metadata!(df::DataFrame)
+function _drop_table_nonnote_metadata!(df::DataFrame)
     getfield(df, :allnotemetadata) && return nothing
     for key in metadatakeys(df)
         _, style = metadata(df, key, style=true)
@@ -838,7 +838,7 @@ end
 # this is a function used to drop table and column-level metadata that is not :note-style
 function _drop_all_nonnote_metadata!(df::DataFrame)
     getfield(df, :allnotemetadata) && return nothing
-    _drop_df_nonnote_metadata!(df)
+    _drop_table_nonnote_metadata!(df)
     for (col, col_keys) in colmetadatakeys(df)
         for key in col_keys
             _, style = colmetadata(df, col, key, style=true)
@@ -883,7 +883,7 @@ end
 # this is a function used to keep only table-level :note-style metadata matching
 # between dst and src all other table-level metadata is dropped
 function _keep_matching_table_note_metadata!(dst::DataFrame, src::AbstractDataFrame)
-    _drop_df_nonnote_metadata!(dst)
+    _drop_table_nonnote_metadata!(dst)
     src_keys = metadatakeys(src)
 
     # here we know it is only :note-style metadata
