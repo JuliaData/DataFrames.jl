@@ -79,7 +79,7 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
     dfs = AbstractDataFrame[df for df in bcf.args if df isa AbstractDataFrame]
     @assert !isempty(dfs)
 
-    _merge_matching_df_note_metadata!(df, dfs)
+    _merge_matching_table_note_metadata!(df, dfs)
 
     if all(x -> !isempty(colmetadatakeys(x)), dfs)
         for colname in _names(df)

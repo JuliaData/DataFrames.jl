@@ -87,7 +87,7 @@ function _combine_prepare_norm(gd::GroupedDataFrame,
                                       keeprows, renamecols, threads)
 
     pgd = parent(gd)
-    _copy_df_note_metadata!(valscat, pgd)
+    _copy_table_note_metadata!(valscat, pgd)
     @assert ncol(valscat) == length(metacols)
     for (out_col_idx, in_col_idx) in enumerate(metacols)
         in_col_idx > 0 && _copy_col_note_metadata!(valscat, out_col_idx, pgd, in_col_idx)

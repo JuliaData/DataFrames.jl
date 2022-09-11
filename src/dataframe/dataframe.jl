@@ -1200,7 +1200,7 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame;
     u = add_names(index(df1), index(df2), makeunique=makeunique)
 
     _drop_all_nonnote_metadata!(df1)
-    _keep_matching_df_note_metadata!(df1, df2)
+    _keep_matching_table_note_metadata!(df1, df2)
     for i in 1:length(u)
         df1[!, u[i]] = copycols ? df2[:, i] : df2[!, i]
         _copy_col_note_metadata!(df1, u[i], df2, i)

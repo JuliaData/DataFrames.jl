@@ -173,7 +173,7 @@ function stack(df::AbstractDataFrame,
                                        repeat(catnms, inner=nrow(df)),                       # variable
                                        vcat([df[!, c] for c in ints_measure_vars]...)],      # value
                         cnames, copycols=false)
-    _copy_df_note_metadata!(out_df, df)
+    _copy_table_note_metadata!(out_df, df)
     if !isempty(colmetadatakeys(df))
         for (i_out, i_in) in enumerate(ints_id_vars)
             _copy_col_note_metadata!(out_df, i_out, df, i_in)
@@ -203,7 +203,7 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
                                       RepeatedVector(catnms, nrow(df), 1),                       # variable
                                       StackedVector(Any[df[!, c] for c in measure_vars])],       # value
                        cnames, copycols=false)
-    _copy_df_note_metadata!(out_df, df)
+    _copy_table_note_metadata!(out_df, df)
     if !isempty(colmetadatakeys(df))
         for (i_out, i_in) in enumerate(ints_id_vars)
             _copy_col_note_metadata!(out_df, i_out, df, i_in)
@@ -586,7 +586,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
 
     # only table-level :note-style metadata needs to be copied
     # as column-level :note-style metadata is already correctly set
-    _copy_df_note_metadata!(res_df, df)
+    _copy_table_note_metadata!(res_df, df)
 
     return res_df
 end
@@ -805,7 +805,7 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
         df_tmp = rename!(DataFrame(Tables.table(m)), new_col_names, makeunique=makeunique)
     end
     out_df = hcat!(df_permuted, df_tmp, makeunique=makeunique, copycols=false)
-    _copy_df_note_metadata!(out_df, df)
+    _copy_table_note_metadata!(out_df, df)
     return out_df
 end
 

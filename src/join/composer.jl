@@ -172,11 +172,11 @@ function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDa
     end
 
     if kind == :outer || kind == :inner
-        _merge_matching_df_note_metadata!(res, (joiner.dfl, joiner.dfr))
+        _merge_matching_table_note_metadata!(res, (joiner.dfl, joiner.dfr))
     elseif kind == :right
-        _copy_df_note_metadata!(res, joiner.dfr)
+        _copy_table_note_metadata!(res, joiner.dfr)
     else # :left
-        _copy_df_note_metadata!(res, joiner.dfl)
+        _copy_table_note_metadata!(res, joiner.dfl)
     end
 
     return nothing
@@ -1448,7 +1448,7 @@ function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::B
         _copy_col_note_metadata!(res, ncol(df1) + i, df2, i)
     end
 
-    _merge_matching_df_note_metadata!(res, (df1, df2))
+    _merge_matching_table_note_metadata!(res, (df1, df2))
 
     return res
 end

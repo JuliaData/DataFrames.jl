@@ -1793,7 +1793,7 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
                               allow_resizing_newdf, column_to_copy)
         end
     end
-    _copy_df_note_metadata!(newdf, df)
+    _copy_table_note_metadata!(newdf, df)
     return newdf
 end
 

@@ -2035,7 +2035,7 @@ function Base.reduce(::typeof(vcat),
                                    Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
     res = _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
     # only handle table-level metadata, as column-level metadata was done in _vcat
-    _merge_matching_df_note_metadata!(res, dfs)
+    _merge_matching_table_note_metadata!(res, dfs)
 
     if source !== nothing
         len = length(dfs)
