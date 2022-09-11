@@ -145,7 +145,7 @@ a vector) then:
 Mixing symbols and strings in `to` and `from` is not allowed.
 
 $METADATA_FIXED
-Metadata having other styles is dropped from parent data frame.
+Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 Column `:note`-style metadata is considered to be attached to column number:
 when a column is renamed, its `:note`-style metadata becomes associated to its new name.
 
@@ -2637,7 +2637,7 @@ memory but are not identical (e.g. are different views of the same parent
 vector) then `reverse!` result might be incorrect.
 
 $METADATA_FIXED
-Metadata having other styles is dropped from parent data frame.
+Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 # Examples
 
@@ -2800,7 +2800,7 @@ some part of memory but are not identical (e.g. are different views of the same 
 vector) then `permute!` result might be incorrect.
 
 $METADATA_FIXED
-Metadata having other styles is dropped from parent data frame.
+Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 # Examples
 julia> df = DataFrame(a=1:5, b=6:10, c=11:15)
@@ -2839,7 +2839,7 @@ columns share some part of memory but are not identical (e.g. are different view
 of the same parent vector) then `invpermute!` result might be incorrect.
 
 $METADATA_FIXED
-Metadata having other styles is dropped from parent data frame.
+Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 # Examples
 
@@ -2919,7 +2919,7 @@ memory but are not identical (e.g. are different views of the same parent
 vector) then `shuffle!` result might be incorrect.
 
 $METADATA_FIXED
-Metadata having other styles is dropped from parent data frame.
+Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 # Examples
 
@@ -3045,7 +3045,7 @@ Insert a column into a data frame in place. Return the updated data frame.
 $INSERTCOLS_ARGUMENTS
 
 $METADATA_FIXED
-Metadata having other styles is dropped from parent data frame.
+Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 See also [`insertcols`](@ref).
 

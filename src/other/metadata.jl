@@ -46,7 +46,7 @@ const TABLEMETA_EXAMPLE =
 
     julia> metadatakeys(df)
     KeySet for a Dict{String, Tuple{Any, Any}} with 1 entry. Keys:
-    "name"
+      "name"
 
     julia> metadata(df, "name")
     "example"
@@ -75,11 +75,11 @@ const COLMETADATA_EXAMPLE =
 
     julia> collect(colmetadatakeys(df))
     1-element Vector{Pair{Symbol, Base.KeySet{String, Dict{String, Tuple{Any, Any}}}}}:
-    :a => ["name"]
+     :a => ["name"]
 
     julia> colmetadatakeys(df, :a)
     KeySet for a Dict{String, Tuple{Any, Any}} with 1 entry. Keys:
-    "name"
+      "name"
 
     julia> colmetadata(df, :a, "name")
     "example"
@@ -116,7 +116,9 @@ $TABLEMETA_EXAMPLE
 """
 function metadata(df::DataFrame, key::AbstractString; style::Bool=false)
     meta = getfield(df, :metadata)
-    meta === nothing && throw(KeyError(key))
+    if meta === nothing || !haskey(meta, key)
+        throw(ArgumentError("\"$key\" not found in table-level metadata"))
+    end
     return style ? meta[key] : meta[key][1]
 end
 
@@ -127,7 +129,10 @@ metadata(x::Union{DataFrameRows, DataFrameColumns},
 function metadata(x::Union{DataFrameRow, SubDataFrame},
                   key::AbstractString; style::Bool=false)
     meta_value, meta_style = metadata(parent(x), key, style=true)
-    meta_style !== :note && throw(KeyError("$key with :note-style"))
+    if meta_style !== :note
+        throw(ArgumentError("\"$key\" was found in table-level metadata of parent " *
+                            "data frame, but it does not have :note-style"))
+    end
     return style ? (meta_value, meta_style) : meta_value
 end
 
@@ -214,8 +219,10 @@ end
 
 function metadata!(x::Union{DataFrameRow, SubDataFrame},
                    key::AbstractString, value::Any; style)
-    style === :note || throw(ArgumentError("only :note-style is supported for " *
-                                           "DataFrameRow and SubDataFrame"))
+    if style !== :note
+        throw(ArgumentError("only :note-style metadata is supported for " *
+                            "DataFrameRow and SubDataFrame"))
+    end
     df = parent(x)
     meta = getfield(df, :metadata)
     if meta !== nothing && haskey(meta, key) && meta[key][2] !== :note
@@ -265,6 +272,8 @@ end
 function deletemetadata!(x::Union{DataFrameRow, SubDataFrame},
                          key::AbstractString)
     df = parent(x)
+    # key in metadatakeys(df) is more efficient than key in metadatakeys(x)
+    # as it is an O(1) operation
     if key in metadatakeys(df)
         _, s = metadata(df, key, style=true)
         s == :note && deletemetadata!(df, key)
@@ -354,8 +363,15 @@ $COLMETADATA_EXAMPLE
 function colmetadata(df::DataFrame, col::Int, key::AbstractString; style::Bool=false)
     idx = index(df)[col] # bounds checking
     cols_meta = getfield(df, :colmetadata)
-    cols_meta === nothing && throw(KeyError("$key for column $col"))
+    if cols_meta === nothing || !haskey(cols_meta, col)
+        colname = names(df)[idx]
+        throw(ArgumentError("no column-level metadata found for column \"$colname\""))
+    end
     col_meta = cols_meta[idx]
+    if !haskey(col_meta, key)
+        colname = names(df)[idx]
+        throw(ArgumentError("\"$key\" not found in column-level metadata for column \"$colname\""))
+    end
     return style ? col_meta[key] : col_meta[key][1]
 
 end
@@ -377,7 +393,8 @@ for T in (DataFrameRow, SubDataFrame)
         df = parent(x)
         val_meta, style_meta = colmetadata(df, col_name, key, style=true)
         if style_meta !== :note
-            throw(KeyError("$key for column $col with :note-style"))
+            throw(ArgumentError("\"$key\" for column \"$(string(col_name))\" was found in column-level metadata " *
+                                "of parent data frame, but it does not have :note-style"))
         end
         return style ? (val_meta, style_meta) : val_meta
     end
@@ -521,8 +538,10 @@ for T in (DataFrameRow, SubDataFrame)
     @eval function colmetadata!(x::$T,
                         col::Int, key::AbstractString, value::Any; style)
         col_name = _names(x)[col]
-        style === :note || throw(ArgumentError("only :note-style is supported for " *
-                                            "DataFrameRow and SubDataFrame"))
+        if style !== :note
+            throw(ArgumentError("only :note-style metadata is supported for " *
+                                "DataFrameRow and SubDataFrame"))
+        end
         df = parent(x)
         cols_meta = getfield(df, :colmetadata)
         idx = index(df)[col_name]
@@ -591,6 +610,8 @@ for T in (DataFrameRow, SubDataFrame)
         df = parent(x)
         idx = index(df)[col_name]
 
+        # key in colmetadatakeys(df, idx) is more efficient than key in colmetadatakeys(x, idx)
+        # as it is an O(1) operation
         if key in colmetadatakeys(df, idx)
             _, s = colmetadata(df, idx, key, style=true)
             s == :note && deletecolmetadata!(df, idx, key)
