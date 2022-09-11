@@ -32,6 +32,68 @@ emptycolmetadata!(::T) where {T} =
 
 ### Metadata API from DataAPI.jl
 
+const TABLEMETA_EXAMPLE =
+    """
+    # Examples
+
+    ```jldoctest
+    julia> df = DataFrame(a=1, b=2);
+
+    julia> metadatakeys(df)
+    ()
+
+    julia> metadata!(df, "name", "example", style=:note);
+
+    julia> metadatakeys(df)
+    KeySet for a Dict{String, Tuple{Any, Any}} with 1 entry. Keys:
+    "name"
+
+    julia> metadata(df, "name")
+    "example"
+
+    julia> metadata(df, "name", style=true)
+    ("example", :note)
+
+    julia> deletemetadata!(df, "name");
+
+    julia> metadatakeys(df)
+    ()
+    ```
+    """
+
+const COLMETADATA_EXAMPLE =
+    """
+    # Examples
+
+    ```jldoctest
+    julia> df = DataFrame(a=1, b=2);
+
+    julia> colmetadatakeys(df)
+    ()
+
+    julia> colmetadata!(df, :a, "name", "example", style=:note);
+
+    julia> collect(colmetadatakeys(df))
+    1-element Vector{Pair{Symbol, Base.KeySet{String, Dict{String, Tuple{Any, Any}}}}}:
+    :a => ["name"]
+
+    julia> colmetadatakeys(df, :a)
+    KeySet for a Dict{String, Tuple{Any, Any}} with 1 entry. Keys:
+    "name"
+
+    julia> colmetadata(df, :a, "name")
+    "example"
+
+    julia> colmetadata(df, :a, "name", style=true)
+    ("example", :note)
+
+    julia> deletecolmetadata!(df, :a, "name");
+
+    julia> colmetadatakeys(df)
+    ()
+    ```
+    """
+
 """
     metadata(df::AbstractDataFrame, key::AbstractString; style::Bool=false)
     metadata(dfr::DataFrameRow, key::AbstractString; style::Bool=false)
@@ -49,22 +111,7 @@ See also: [`metadatakeys`](@ref), [`metadata!`](@ref),
 [`colmetadata`](@ref), [`colmetadatakeys`](@ref), [`colmetadata!`](@ref),
 [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
-# Examples
-
-```jldoctest
-julia> df = DataFrame(a=1, b=2);
-
-julia> metadatakeys(df)
-()
-
-julia> metadata!(df, "name", "example", style=:note);
-
-julia> metadatakeys(df)
-KeySet for a Dict{String, Tuple{Any, Any}} with 1 entry. Keys:
-  "name"
-
-julia> metadata(df, "name")
-"example"
+$TABLEMETA_EXAMPLE
 ```
 """
 function metadata(df::DataFrame, key::AbstractString; style::Bool=false)
@@ -102,23 +149,7 @@ See also: [`metadata`](@ref), [`metadata!`](@ref),
 [`colmetadata`](@ref), [`colmetadatakeys`](@ref), [`colmetadata!`](@ref),
 [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
-# Examples
-
-```jldoctest
-julia> df = DataFrame(a=1, b=2);
-
-julia> metadatakeys(df)
-()
-
-julia> metadata!(df, "name", "example", style=:note);
-
-julia> metadatakeys(df)
-KeySet for a Dict{String, Tuple{Any, Any}} with 1 entry. Keys:
-  "name"
-
-julia> metadata(df, "name")
-"example"
-```
+$TABLEMETA_EXAMPLE
 """
 function metadatakeys(df::DataFrame)
     meta = getfield(df, :metadata)
@@ -157,22 +188,7 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`colmetadata`](@ref), [`colmetadatakeys`](@ref), [`colmetadata!`](@ref),
 [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
-# Examples
-
-```jldoctest
-julia> df = DataFrame(a=1, b=2);
-
-julia> metadatakeys(df)
-()
-
-julia> metadata!(df, "name", "example", style=:note);
-
-julia> metadatakeys(df)
-KeySet for a Dict{String, Tuple{Any, Any}} with 1 entry. Keys:
-  "name"
-
-julia> metadata(df, "name")
-"example"
+$TABLEMETA_EXAMPLE
 ```
 """
 function metadata!(df::DataFrame, key::AbstractString, value::Any; style)
@@ -220,34 +236,15 @@ end
 Delete table-level metadata from object `df` for key `key` and return `df`.
 If key does not exist, return `df` without modification.
 
-For `SubDataFrame` and `DataFrameRow` only `:note`-style for metadata is deleted.
+For `SubDataFrame` and `DataFrameRow` only `:note`-style metadata from their
+parent can be deleted (as other styles are not propagated to views).
 
 See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`metadata!`](@ref), [`emptymetadata!`](@ref),
 [`colmetadata`](@ref), [`colmetadatakeys`](@ref), [`colmetadata!`](@ref),
 [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
-# Examples
-
-```jldoctest
-julia> df = DataFrame(a=1, b=2);
-
-julia> metadatakeys(df)
-()
-
-julia> metadata!(df, "name", "example", style=:note);
-
-julia> metadatakeys(df)
-KeySet for a Dict{String, Tuple{Any, Any}} with 1 entry. Keys:
-  "name"
-
-julia> metadata(df, "name")
-"example"
-
-julia> deletemetadata!(df, "name");
-
-julia> metadatakeys(df)
-()
+$TABLEMETA_EXAMPLE
 ```
 """
 function deletemetadata!(df::DataFrame, key::AbstractString)
@@ -283,7 +280,8 @@ end
 
 Delete all table-level metadata from object `df`.
 
-For `SubDataFrame` and `DataFrameRow` only `:note`-style for metadata is deleted.
+For `SubDataFrame` and `DataFrameRow` only `:note`-style metadata from their
+parent can be deleted (as other styles are not propagated to views).
 
 See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`metadata!`](@ref), [`deletemetadata!`](@ref),
@@ -306,6 +304,9 @@ KeySet for a Dict{String, Tuple{Any, Any}} with 1 entry. Keys:
 
 julia> metadata(df, "name")
 "example"
+
+julia> metadata(df, "name", style=true)
+("example", :note)
 
 julia> emptymetadata!(df);
 
@@ -347,22 +348,7 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`colmetadatakeys`](@ref), [`colmetadata!`](@ref),
 [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
-# Examples
-
-```jldoctest
-julia> df = DataFrame(a=1, b=2);
-
-julia> colmetadatakeys(df)
-()
-
-julia> colmetadata!(df, :a, "name", "example", style=:note);
-
-julia> collect(colmetadatakeys(df))
-1-element Vector{Pair{Symbol, Base.KeySet{String, Dict{String, Tuple{Any, Any}}}}}:
- :a => ["name"]
-
-julia> colmetadata(df, :a, "name")
-"example"
+$COLMETADATA_EXAMPLE
 ```
 """
 function colmetadata(df::DataFrame, col::Int, key::AbstractString; style::Bool=false)
@@ -422,22 +408,7 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`colmetadata`](@ref), [`colmetadata!`](@ref),
 [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
-# Examples
-
-```jldoctest
-julia> df = DataFrame(a=1, b=2);
-
-julia> colmetadatakeys(df)
-()
-
-julia> colmetadata!(df, :a, "name", "example", style=:note);
-
-julia> collect(colmetadatakeys(df))
-1-element Vector{Pair{Symbol, Base.KeySet{String, Dict{String, Tuple{Any, Any}}}}}:
- :a => ["name"]
-
-julia> colmetadata(df, :a, "name")
-"example"
+$COLMETADATA_EXAMPLE
 ```
 """
 function colmetadatakeys(df::DataFrame, col::Int)
@@ -513,22 +484,7 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`colmetadata`](@ref), [`colmetadatakeys`](@ref),
 [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
-# Examples
-
-```jldoctest
-julia> df = DataFrame(a=1, b=2);
-
-julia> colmetadatakeys(df)
-()
-
-julia> colmetadata!(df, :a, "name", "example", style=:note);
-
-julia> collect(colmetadatakeys(df))
-1-element Vector{Pair{Symbol, Base.KeySet{String, Dict{String, Tuple{Any, Any}}}}}:
- :a => ["name"]
-
-julia> colmetadata(df, :a, "name")
-"example"
+$COLMETADATA_EXAMPLE
 ```
 """
 function colmetadata!(df::DataFrame, col::Int, key::AbstractString, value::Any; style)
@@ -594,32 +550,15 @@ end
 
 Delete column-level metadata set in `df` for column `col` and key `key` and return `df`.
 
-For `SubDataFrame` and `DataFrameRow` only `:note`-style for metadata is deleted.
+For `SubDataFrame` and `DataFrameRow` only `:note`-style metadata from their
+parent can be deleted (as other styles are not propagated to views).
 
 See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`metadata!`](@ref), [`deletemetadata!`](@ref), [`emptymetadata!`](@ref),
 [`colmetadata`](@ref), [`colmetadatakeys`](@ref),
 [`colmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
-# Examples
-
-```jldoctest
-julia> df = DataFrame(a=1, b=2);
-
-julia> colmetadata!(df, :a, "name", "example", style=:note);
-
-julia> collect(colmetadatakeys(df))
-1-element Vector{Pair{Symbol, Base.KeySet{String, Dict{String, Tuple{Any, Any}}}}}:
- :a => ["name"]
-
-julia> colmetadata(df, :a, "name")
-"example"
-
-julia> deletecolmetadata!(df, :a, "name");
-
-julia> colmetadatakeys(df)
-()
-```
+$COLMETADATA_EXAMPLE
 """
 function deletecolmetadata!(df::DataFrame, col::Int, key::AbstractString)
     idx = index(df)[col] # bounds checking
@@ -673,7 +612,8 @@ end
 
 Delete column-level metadata set in `df` for column `col` and key `key` and return `df`.
 
-For `SubDataFrame` and `DataFrameRow` only `:note`-style for metadata is deleted.
+For `SubDataFrame` and `DataFrameRow` only `:note`-style metadata from their
+parent can be deleted (as other styles are not propagated to views).
 
 See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`metadata!`](@ref), [`deletemetadata!`](@ref), [`emptymetadata!`](@ref),
@@ -691,8 +631,15 @@ julia> collect(colmetadatakeys(df))
 1-element Vector{Pair{Symbol, Base.KeySet{String, Dict{String, Tuple{Any, Any}}}}}:
  :a => ["name"]
 
+julia> colmetadatakeys(df, :a)
+KeySet for a Dict{String, Tuple{Any, Any}} with 1 entry. Keys:
+"name"
+
 julia> colmetadata(df, :a, "name")
 "example"
+
+julia> colmetadata(df, :a, "name", style=true)
+("example", :note)
 
 julia> emptycolmetadata!(df, :a);
 
@@ -849,9 +796,14 @@ function _drop_all_nonnote_metadata!(df::DataFrame)
     return nothing
 end
 
-# this is a function used to merge matching table-level metadata that has :note-style
+# this is a function used to merge matching table-level metadata that has
+# :note-style and store it in `res`
 # it removes all table-level metadata previously stored in `res`
-function _merge_matching_table_note_metadata!(res::DataFrame, dfs)
+# key-value metadata pair is matching if it has :note-style and is present
+# in all tables passed in dfs collection
+function _merge_matching_table_note_metadata!(res::DataFrame,
+                                              dfs::Union{AbstractVector{<:AbstractDataFrame},
+                                                         Tuple{AbstractDataFrame, Vararg{AbstractDataFrame}}})
     emptymetadata!(res)
     @assert firstindex(dfs) == 1
     if !isempty(dfs) && all(x -> !isempty(metadatakeys(x)), dfs)
@@ -880,8 +832,10 @@ function _merge_matching_table_note_metadata!(res::DataFrame, dfs)
     return nothing
 end
 
-# this is a function used to keep only table-level :note-style metadata matching
-# between dst and src all other table-level metadata is dropped
+# this is a function used to keep in dst only table-level :note-style metadata
+# matching between dst and src all other table-level metadata is dropped
+# key-value metadata pair is matching if it has :note-style and is present
+# both in dst and src
 function _keep_matching_table_note_metadata!(dst::DataFrame, src::AbstractDataFrame)
     _drop_table_nonnote_metadata!(dst)
     src_keys = metadatakeys(src)

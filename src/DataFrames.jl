@@ -162,7 +162,8 @@ else
     using Compat: ComposedFunction
 end
 
-const METADATA_FIXED = """
+const METADATA_FIXED =
+    """
     Metadata: this function preserves table-level and column-level metadata
     that has `:note`-style.
     """
