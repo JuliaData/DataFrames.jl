@@ -804,7 +804,7 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
         newname === AsTable || throw(ArgumentError("Only DataType supported as target is AsTable"))
     end
     # It is allowed to request a transformation operation into a newname column
-    # only once. This is ensured by the logic related to transformed_cols dictionary
+    # only once. This is ensured by the logic related to transformed_cols set
     # in _manipulate, therefore in select_transform! such a duplicate should not happen
     res = _transformation_helper(df, col_idx, Ref{Any}(fun))
 
