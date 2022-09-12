@@ -99,7 +99,7 @@ Render a data frame to an I/O stream in MIME type `mime`.
 - `df::AbstractDataFrame`: The data frame to print.
 
 Additionally selected MIME types support passing the following keyword arguments:
-- MIME type `"text/plain"` accepts all listed keyword arguments and therir behavior
+- MIME type `"text/plain"` accepts all listed keyword arguments and their behavior
   is identical as for `show(::IO, ::AbstractDataFrame)`
 - MIME type `"text/html"` accepts `summary` keyword argument which
   allows to choose whether to print a brief string summary of the data frame.

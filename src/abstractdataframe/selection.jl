@@ -803,8 +803,8 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
     if newname isa DataType
         newname === AsTable || throw(ArgumentError("Only DataType supported as target is AsTable"))
     end
-    # It is allowed to request a tranformation operation into a newname column
-    # only once. This is ensured by the logic related to transformed_cols dictionaly
+    # It is allowed to request a transformation operation into a newname column
+    # only once. This is ensured by the logic related to transformed_cols set
     # in _manipulate, therefore in select_transform! such a duplicate should not happen
     res = _transformation_helper(df, col_idx, Ref{Any}(fun))
 
@@ -1731,7 +1731,7 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
                 newname = _names(df)[i]
                 # as nc is a multiple column selection without transformations
                 # we allow duplicate column names with selections applied earlier
-                # and ignore them for convinience, to allow for e.g. select(df, :x1, :)
+                # and ignore them for convenience, to allow for e.g. select(df, :x1, :)
                 if !hasproperty(newdf, newname)
                     # allow shortening to 0 rows
                     if allow_resizing_newdf[] && nrow(newdf) == 1

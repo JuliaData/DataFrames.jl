@@ -379,11 +379,11 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
     local I
     Bc = B.chunks
     Bi = 1 # block index
-    i1 = 1 # index of current block beginng in B
+    i1 = 1 # index of current block beginning in B
     i = 1  # index of the _next_ one in I
     c = Bc[1] # current block
 
-    start = -1 # the begining of ones block
+    start = -1 # the beginning of ones block
     stop = -1  # the end of ones block
 
     @inbounds while true # I not materialized
@@ -430,14 +430,14 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
         if c != 0 # mixed ones and zeros in block
             tz = trailing_zeros(c)
             lz = leading_zeros(c)
-            co = c >> tz == (one(UInt64) << (64 - lz - tz)) - 1 # block of countinous ones in c
+            co = c >> tz == (one(UInt64) << (64 - lz - tz)) - 1 # block of continuous ones in c
             if stop != -1  # already found block of ones and zeros, just not materialized
                 I = Vector{Int}(undef, nnzB)
                 for j in 1:i-1
                     I[j] = start + j - 1
                 end
                 break
-            elseif !co # not countinous ones
+            elseif !co # not continuous ones
                 I = Vector{Int}(undef, nnzB)
                 if start != -1
                     for j in 1:i-1
@@ -445,7 +445,7 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
                     end
                 end
                 break
-            else # countinous block of ones
+            else # continuous block of ones
                 if start != -1
                     if tz > 0 # like __1111__ or 111111__
                         I = Vector{Int}(undef, nnzB)
