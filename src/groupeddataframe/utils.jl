@@ -197,7 +197,7 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
     row_group_slots(cols, refpools, refarrays, hash, groups, skipmissing, sort === true)
 end
 
-# Generic fallback method based on open adressing hash table
+# Generic fallback method based on open addressing hash table
 function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
                          refpools::Any,  # Ignored
                          refarrays::Any, # Ignored
