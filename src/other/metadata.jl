@@ -654,7 +654,7 @@ julia> collect(colmetadatakeys(df))
 
 julia> colmetadatakeys(df, :a)
 KeySet for a Dict{String, Tuple{Any, Any}} with 1 entry. Keys:
-"name"
+  "name"
 
 julia> colmetadata(df, :a, "name")
 "example"
