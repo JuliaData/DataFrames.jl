@@ -80,7 +80,7 @@ using Test, DataFrames, Random
         metadata!(x, "name2", "empty2", style=:note)
         @test sort(collect(metadatakeys(x))) == ["name2"]
         @test metadata(x, "name2") == "empty2"
-        @test_throws KeyError metadata(x, "name1")
+        @test_throws ArgumentError metadata(x, "name1")
         deletemetadata!(x, "name2")
         @test isempty(metadatakeys(x))
         deletemetadata!(x, "name3")
@@ -128,7 +128,7 @@ end
         @test Set(colmetadatakeys(x)) == Set([:b => Set(["name1", "name2"]), :a => Set(["name3"])])
         @test colmetadata(x, b, "name1") == "empty1"
         @test colmetadata(x, b, "name1", style=true) == ("empty1", :note)
-        @test_throws KeyError colmetadata(x, b, "namex")
+        @test_throws ArgumentError colmetadata(x, b, "namex")
         @test_throws ArgumentError colmetadata(x, :x, "name")
         emptycolmetadata!(x, a)
         @test isempty(colmetadatakeys(x, a))
@@ -158,7 +158,7 @@ end
                 Set([:b => ["name1", "name2"], :a => ["name3"]])
             @test colmetadata(x, b, "name1") == "empty1"
             @test colmetadata(x, b, "name1", style=true) == ("empty1", :note)
-            @test_throws KeyError colmetadata(x, b, "namex")
+            @test_throws ArgumentError colmetadata(x, b, "namex")
             @test_throws ArgumentError colmetadata(x, :x, "name")
             emptycolmetadata!(x, a)
             @test isempty(colmetadatakeys(x, a))
@@ -187,7 +187,7 @@ end
                 Set([:b => ["name1", "name2"], :a => ["name3"]])
             @test colmetadata(x, b, "name1") == "empty1"
             @test colmetadata(x, b, "name1", style=true) == ("empty1", :none)
-            @test_throws KeyError colmetadata(x, b, "namex")
+            @test_throws ArgumentError colmetadata(x, b, "namex")
             @test_throws ArgumentError colmetadata(x, :x, "name")
             emptycolmetadata!(x, a)
             @test isempty(colmetadatakeys(x, a))
@@ -223,7 +223,7 @@ end
 
             colmetadata!(x, a, "label", "a", style=:note)
             @test colmetadata(x, a, "label") == "a"
-            @test_throws KeyError colmetadata(x, a, "name3")
+            @test_throws ArgumentError colmetadata(x, a, "name3")
             if !("d" in names(x))
                 @test_throws BoundsError colmetadata!(x, "d", "n", "e", style=:note)
             else
