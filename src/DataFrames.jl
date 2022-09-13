@@ -87,59 +87,17 @@ export AbstractDataFrame,
        unstack,
        valuecols
 
-if VERSION >= v"1.1.0-DEV.792"
-    import Base.eachcol, Base.eachrow
-else
-    import Compat.eachcol, Compat.eachrow
-    export eachcol, eachrow
-end
-
-if VERSION < v"1.2"
-    export hasproperty
-end
-
-if isdefined(Base, :only)  # Introduced in 1.4.0
-    import Base.only
-else
-    import Compat.only
-    export only
-end
+import Base.eachcol, Base.eachrow
+import Base.only
+import Base.popat!
+using Base.Threads: @spawn
+using Base: ComposedFunction
 
 if isdefined(Base, :keepat!)  # Introduced in 1.7.0
     import Base.keepat!
 else
     import Compat.keepat!
     export keepat!
-end
-
-if isdefined(Base, :popat!)  # Introduced in 1.5.0
-    import Base.popat!
-else
-    import Compat.popat!
-    export popat!
-end
-
-if VERSION >= v"1.3"
-    using Base.Threads: @spawn
-else
-    # This is the definition of @async in Base
-    macro spawn(expr)
-        thunk = esc(:(()->($expr)))
-        var = esc(Base.sync_varname)
-        quote
-            local task = Task($thunk)
-            if $(Expr(:isdefined, var))
-                push!($var, task)
-            end
-            schedule(task)
-        end
-    end
-end
-
-if isdefined(Base, :ComposedFunction) # Julia >= 1.6.0-DEV.85
-    using Base: ComposedFunction
-else
-    using Compat: ComposedFunction
 end
 
 if VERSION >= v"1.9.0-DEV.1163"

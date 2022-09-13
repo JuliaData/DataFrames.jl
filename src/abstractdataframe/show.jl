@@ -59,15 +59,6 @@ function ourshow(io::IO, x::Markdown.MD, truncstring::Int)
     return print(io, len < length(r) - 1 ? first(r, len)*'…' : first(r, len))
 end
 
-# AbstractChar: https://github.com/JuliaLang/julia/pull/34730 (1.5.0-DEV.261)
-# Irrational: https://github.com/JuliaLang/julia/pull/34741 (1.5.0-DEV.266)
-if VERSION < v"1.5.0-DEV.261" || VERSION < v"1.5.0-DEV.266"
-    function ourshow(io::IO, x::T, truncstring::Int) where T <: Union{AbstractChar, Irrational}
-        io = IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x))
-        show(io, x)
-    end
-end
-
 # For most data frames, especially wide, columns having the same element type
 # occur multiple times. batch_compacttype ensures that we compute string
 # representation of a specific column element type only once and then reuse it.

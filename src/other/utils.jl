@@ -165,48 +165,32 @@ function split_to_chunks(len::Integer, np::Integer)
     return (Int(1 + ((i - 1) * len′) ÷ np):Int((i * len′) ÷ np) for i in 1:np)
 end
 
-if VERSION >= v"1.4"
-    function _spawn_for_chunks_helper(iter, lbody, basesize)
-        lidx = iter.args[1]
-        range = iter.args[2]
-        quote
-            let x = $(esc(range)), basesize = $(esc(basesize))
-                @assert firstindex(x) == 1
+function _spawn_for_chunks_helper(iter, lbody, basesize)
+    lidx = iter.args[1]
+    range = iter.args[2]
+    quote
+        let x = $(esc(range)), basesize = $(esc(basesize))
+            @assert firstindex(x) == 1
 
-                nt = Threads.nthreads()
-                len = length(x)
-                if nt > 1 && len > basesize
-                    tasks = [Threads.@spawn begin
-                                 for i in p
-                                     local $(esc(lidx)) = @inbounds x[i]
-                                     $(esc(lbody))
-                                 end
-                             end
-                             for p in split_indices(len, basesize)]
-                    foreach(wait, tasks)
-                else
-                    for i in eachindex(x)
-                        local $(esc(lidx)) = @inbounds x[i]
-                        $(esc(lbody))
-                    end
-                end
-            end
-            nothing
-        end
-    end
-else
-    function _spawn_for_chunks_helper(iter, lbody, basesize)
-        lidx = iter.args[1]
-        range = iter.args[2]
-        quote
-            let x = $(esc(range))
+            nt = Threads.nthreads()
+            len = length(x)
+            if nt > 1 && len > basesize
+                tasks = [Threads.@spawn begin
+                                for i in p
+                                    local $(esc(lidx)) = @inbounds x[i]
+                                    $(esc(lbody))
+                                end
+                            end
+                            for p in split_indices(len, basesize)]
+                foreach(wait, tasks)
+            else
                 for i in eachindex(x)
                     local $(esc(lidx)) = @inbounds x[i]
                     $(esc(lbody))
                 end
             end
-            nothing
         end
+        nothing
     end
 end
 
@@ -237,7 +221,31 @@ end
 Equivalent to `Threads.@spawn` if `threads === true`,
 otherwise run `expr` and return a `Task` that returns its value.
 """
-macro spawn_or_run_task end
+macro spawn_or_run_task(threads, expr)
+    letargs = Base._lift_one_interp!(expr)
+
+    thunk = esc(:(()->($expr)))
+    var = esc(Base.sync_varname)
+    quote
+        let $(letargs...)
+            if $(esc(threads))
+                local task = Task($thunk)
+                task.sticky = false
+            else
+                # Run expr immediately
+                res = $thunk()
+                # Return a Task that returns the value of expr
+                local task = Task(() -> res)
+                task.sticky = true
+            end
+            if $(Expr(:islocal, var))
+                put!($var, task)
+            end
+            schedule(task)
+            task
+        end
+    end
+end
 
 """
     @spawn_or_run threads expr
@@ -245,83 +253,25 @@ macro spawn_or_run_task end
 Equivalent to `Threads.@spawn` if `threads === true`,
 otherwise run `expr`.
 """
-macro spawn_or_run end
+macro spawn_or_run(threads, expr)
+    letargs = Base._lift_one_interp!(expr)
 
-if VERSION >= v"1.4"
-    macro spawn_or_run_task(threads, expr)
-        letargs = Base._lift_one_interp!(expr)
-
-        thunk = esc(:(()->($expr)))
-        var = esc(Base.sync_varname)
-        quote
-            let $(letargs...)
-                if $(esc(threads))
-                    local task = Task($thunk)
-                    task.sticky = false
-                else
-                    # Run expr immediately
-                    res = $thunk()
-                    # Return a Task that returns the value of expr
-                    local task = Task(() -> res)
-                    task.sticky = true
-                end
+    thunk = esc(:(()->($expr)))
+    var = esc(Base.sync_varname)
+    quote
+        let $(letargs...)
+            if $(esc(threads))
+                local task = Task($thunk)
+                task.sticky = false
                 if $(Expr(:islocal, var))
-                    @static if VERSION >= v"1.5.0"
-                        put!($var, task)
-                    else
-                        push!($var, task)
-                    end
+                    put!($var, task)
                 end
                 schedule(task)
-                task
+            else
+                $thunk()
             end
+            nothing
         end
-    end
-
-    macro spawn_or_run(threads, expr)
-        letargs = Base._lift_one_interp!(expr)
-
-        thunk = esc(:(()->($expr)))
-        var = esc(Base.sync_varname)
-        quote
-            let $(letargs...)
-                if $(esc(threads))
-                    local task = Task($thunk)
-                    task.sticky = false
-                    if $(Expr(:islocal, var))
-                        @static if VERSION >= v"1.5.0"
-                            put!($var, task)
-                        else
-                            push!($var, task)
-                        end
-                    end
-                    schedule(task)
-                else
-                    $thunk()
-                end
-                nothing
-            end
-        end
-    end
-else
-    # Based on the definition of @async in Base
-    macro spawn_or_run_task(threads, expr)
-        thunk = esc(:(()->($expr)))
-        var = esc(Base.sync_varname)
-        quote
-            # Run expr immediately
-            res = $thunk()
-            # Return a Task that returns the value of expr
-            local task = Task(() -> res)
-            if $(Expr(:isdefined, var))
-                push!($var, task)
-            end
-            schedule(task)
-        end
-    end
-
-    macro spawn_or_run(threads, expr)
-        esc(:($expr; nothing))
     end
 end
 

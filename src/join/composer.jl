@@ -116,16 +116,11 @@ function compose_inner_table(joiner::DataFrameJoiner,
                              right_rename::Union{Function, AbstractString, Symbol})
     left_ixs, right_ixs = find_inner_rows(joiner)
 
-    @static if VERSION >= v"1.4"
-        if Threads.nthreads() > 1 && length(left_ixs) >= 1_000_000
-            dfl_task = Threads.@spawn joiner.dfl[left_ixs, :]
-            dfr_noon_task = Threads.@spawn joiner.dfr[right_ixs, Not(joiner.right_on)]
-            dfl = fetch(dfl_task)
-            dfr_noon = fetch(dfr_noon_task)
-        else
-            dfl = joiner.dfl[left_ixs, :]
-            dfr_noon = joiner.dfr[right_ixs, Not(joiner.right_on)]
-        end
+    if Threads.nthreads() > 1 && length(left_ixs) >= 1_000_000
+        dfl_task = Threads.@spawn joiner.dfl[left_ixs, :]
+        dfr_noon_task = Threads.@spawn joiner.dfr[right_ixs, Not(joiner.right_on)]
+        dfl = fetch(dfl_task)
+        dfr_noon = fetch(dfr_noon_task)
     else
         dfl = joiner.dfl[left_ixs, :]
         dfr_noon = joiner.dfr[right_ixs, Not(joiner.right_on)]
@@ -248,46 +243,32 @@ function _compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique
 
     @assert col_idx == ncol(joiner.dfl_on) + 1
 
-    @static if VERSION >= v"1.4"
-        if Threads.nthreads() > 1 && target_nrow >= 1_000_000 && length(cols) > col_idx
-            @sync begin
-                for col in eachcol(dfl_noon)
-                    cols_i = left_idxs[col_idx]
-                    Threads.@spawn _noon_compose_helper!(cols, _similar_left, cols_i,
-                                                         col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
-                    col_idx += 1
-                end
-                @assert col_idx == ncol(joiner.dfl) + 1
-                for col in eachcol(dfr_noon)
-                    cols_i = col_idx
-                    Threads.@spawn _noon_compose_helper!(cols, _similar_right, cols_i, col, target_nrow,
-                                                         right_ixs, lil + loil + 1, rightonly_ixs, roil)
-                    col_idx += 1
-                end
-            end
-        else
+    if Threads.nthreads() > 1 && target_nrow >= 1_000_000 && length(cols) > col_idx
+        @sync begin
             for col in eachcol(dfl_noon)
-                _noon_compose_helper!(cols, _similar_left, left_idxs[col_idx],
-                                      col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
+                cols_i = left_idxs[col_idx]
+                Threads.@spawn _noon_compose_helper!(cols, _similar_left, cols_i,
+                                                        col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
                 col_idx += 1
             end
             @assert col_idx == ncol(joiner.dfl) + 1
             for col in eachcol(dfr_noon)
-                _noon_compose_helper!(cols, _similar_right, col_idx, col, target_nrow,
-                                      right_ixs, lil + loil + 1, rightonly_ixs, roil)
+                cols_i = col_idx
+                Threads.@spawn _noon_compose_helper!(cols, _similar_right, cols_i, col, target_nrow,
+                                                        right_ixs, lil + loil + 1, rightonly_ixs, roil)
                 col_idx += 1
             end
         end
     else
         for col in eachcol(dfl_noon)
             _noon_compose_helper!(cols, _similar_left, left_idxs[col_idx],
-                                  col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
+                                    col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
             col_idx += 1
         end
         @assert col_idx == ncol(joiner.dfl) + 1
         for col in eachcol(dfr_noon)
             _noon_compose_helper!(cols, _similar_right, col_idx, col, target_nrow,
-                                  right_ixs, lil + loil + 1, rightonly_ixs, roil)
+                                    right_ixs, lil + loil + 1, rightonly_ixs, roil)
             col_idx += 1
         end
     end

@@ -25,7 +25,7 @@ Unicode = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [compat]
 CategoricalArrays = "0.10.0"
-Compat = "3.46, 4.2"
+Compat = "4.2"
 DataAPI = "1.10"
 InvertedIndices = "1"
 IteratorInterfaceExtensions = "0.1.1, 1"
@@ -38,7 +38,7 @@ SortingAlgorithms = "0.1, 0.2, 0.3, 1"
 TableTraits = "0.4, 1"
 Tables = "1.8.1"
 Unitful = "1"
-julia = "1"
+julia = "1.6"
 
 [extras]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"

@@ -524,10 +524,6 @@ Base.ndims(::Type{<:GroupedDataFrame}) = 1
 Base.firstindex(gd::GroupedDataFrame) = 1
 Base.lastindex(gd::GroupedDataFrame) = gd.ngroups
 
-if VERSION < v"1.6"
-    Base.firstindex(gd::GroupedDataFrame, i::Integer) = first(axes(gd, i))
-    Base.lastindex(gd::GroupedDataFrame, i::Integer) = last(axes(gd, i))
-end
 Base.axes(gd::GroupedDataFrame, i::Integer) = Base.OneTo(size(gd, i))
 
 Base.first(gd::GroupedDataFrame) = gd[1]
@@ -624,10 +620,6 @@ Base.ndims(::Type{<:GroupKey}) = 1
 Base.firstindex(key::GroupKey) = 1
 Base.lastindex(key::GroupKey) = length(key)
 
-if VERSION < v"1.6"
-    Base.firstindex(key::GroupKey, i::Integer) = first(axes(key, i))
-    Base.lastindex(key::GroupKey, i::Integer) = last(axes(key, i))
-end
 Base.axes(key::GroupKey, i::Integer) = Base.OneTo(size(key, i))
 
 Base.names(key::GroupKey) = string.(parent(key).cols)

@@ -216,7 +216,7 @@ end
 
 @testset "Test colors and non-standard values: missing and nothing" begin
     # TODO: update when https://github.com/KristofferC/Crayons.jl/issues/47 is resolved
-    if VERSION >= v"1.6" && Base.get_have_color()
+    if Base.get_have_color()
         df = DataFrame(Fish=["Suzy", "Amir"], Mass=[1.5, missing])
         @test sprint(show, df, context=:color=>true) == """
             \e[1m2×2 DataFrame\e[0m
@@ -307,21 +307,12 @@ end
 
     # Irrational
     df = DataFrame(a=π)
-    if VERSION < v"1.2.0-DEV.276"
-        @test sprint(show, df) == """
-            1×1 DataFrame
-             Row │ a
-                 │ Irration…
-            ─────┼────────────────────────
-               1 │ π = 3.1415926535897..."""
-    else
-        @test sprint(show, df) == """
-            1×1 DataFrame
-             Row │ a
-                 │ Irration…
-            ─────┼───────────
-               1 │         π"""
-    end
+    @test sprint(show, df) == """
+        1×1 DataFrame
+            Row │ a
+                │ Irration…
+        ─────┼───────────
+            1 │         π"""
 end
 
 @testset "Test using :compact parameter of IOContext" begin

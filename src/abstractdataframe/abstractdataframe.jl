@@ -382,10 +382,6 @@ Return `true` if data frame `df` has zero rows, and `false` otherwise.
 """
 Base.isempty(df::AbstractDataFrame) = nrow(df) == 0
 
-if VERSION < v"1.6"
-    Base.firstindex(df::AbstractDataFrame, i::Integer) = first(axes(df, i))
-    Base.lastindex(df::AbstractDataFrame, i::Integer) = last(axes(df, i))
-end
 Base.axes(df::AbstractDataFrame, i::Integer) = Base.OneTo(size(df, i))
 
 """

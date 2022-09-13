@@ -2814,11 +2814,7 @@ end
     @test res.x1_sum != res.x2_sum # we are large enough to be sure we differ
 
     res = combine(gdf, :x1 => mean, :x2 => mean, :x1 => x -> mean(x), :x2 => x -> mean(x))
-    if VERSION >= v"1.5"
-        @test res.x1_mean ≈ res.x1_function
-    else
-        @test !(res.x1_mean ≈ res.x1_function) # we are large enough to be sure we differ
-    end
+    @test res.x1_mean ≈ res.x1_function
     @test res.x2_mean ≈ res.x2_function
     @test res.x1_mean ≈ res.x2_mean
 
@@ -3552,9 +3548,6 @@ end
 end
 
 @testset "result eltype widening from different tasks" begin
-    if VERSION < v"1.5"
-        Base.convert(::Type{Union{Missing, Nothing, Float64}}, x::Int) = float(x)
-    end
     Random.seed!(1)
     for y in (Any[1, missing, missing, 2, 4],
               Any[1, missing, nothing, 2.1, 'a'],

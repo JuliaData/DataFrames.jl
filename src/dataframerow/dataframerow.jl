@@ -385,10 +385,6 @@ Base.ndims(::Type{<:DataFrameRow}) = 1
 Base.firstindex(r::DataFrameRow) = 1
 Base.lastindex(r::DataFrameRow) = length(r)
 
-if VERSION < v"1.6"
-    Base.firstindex(r::DataFrameRow, i::Integer) = first(axes(r, i))
-    Base.lastindex(r::DataFrameRow, i::Integer) = last(axes(r, i))
-end
 Base.axes(r::DataFrameRow, i::Integer) = Base.OneTo(size(r, i))
 
 Base.iterate(r::DataFrameRow) = iterate(r, 1)
