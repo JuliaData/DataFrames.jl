@@ -440,7 +440,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -516,7 +516,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header headerLastRow\">" *
                  "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *

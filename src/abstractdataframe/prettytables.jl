@@ -31,6 +31,8 @@ const _PRETTY_TABLES_HIGHLIGHTER = Highlighter(_pretty_tables_highlighter_func,
 const _PRETTY_TABLES_HTML_HIGHLIGHTER = HtmlHighlighter(_pretty_tables_highlighter_func,
                                                         HtmlDecoration(font_style = "italic"))
 
+const _PRETTY_TABLES_HTML_TABLE_STYLE = Dict("margin-bottom" => "6px")
+
 # Default DataFrames formatter for text backend.
 #
 # This formatter changes how the following types are presented when rendering

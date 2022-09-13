@@ -64,7 +64,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -105,7 +105,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -145,7 +145,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -185,7 +185,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -225,7 +225,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -253,7 +253,7 @@ end
     show(io, MIME"text/html"(), df, summary=false)
     str = String(take!(io))
     @test str == "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -286,7 +286,7 @@ end
     show(io, MIME"text/html"(), eachrow(df), summary=false)
     str = String(take!(io))
     @test str == "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -319,7 +319,7 @@ end
     show(io, MIME"text/html"(), eachcol(df), summary=false)
     str = String(take!(io))
     @test str == "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -352,7 +352,7 @@ end
     show(io, MIME"text/html"(), df[1, :], summary=false)
     str = String(take!(io))
     @test str == "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -387,7 +387,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th style = \"text-align: left;\">Fish</th>" *
@@ -422,7 +422,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th style = \"text-align: left;\">Fish</th>" *
@@ -459,7 +459,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -507,7 +507,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -583,7 +583,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -759,7 +759,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -886,7 +886,7 @@ end
         "</div>" *
         "</div>" *
         "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-        "<table class = \"data-frame\">" *
+        "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
         "</table>" *
         "</div>"
     @test sprint(show, "text/latex", df[:, 2:1]) ==
@@ -903,7 +903,7 @@ end
         "</div>" *
         "</div>" *
         "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-        "<table class = \"data-frame\">" *
+        "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
         "</table>" *
         "</div>"
     @test sprint(show, "text/latex", @view df[:, 2:1]) ==
@@ -920,7 +920,7 @@ end
         "</div>" *
         "</div>" *
         "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-        "<table class = \"data-frame\">" *
+        "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
         "</table>" *
         "</div>"
     @test sprint(show, "text/latex", df[1, 2:1]) ==
@@ -1044,7 +1044,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -1089,7 +1089,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -1134,7 +1134,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -1179,7 +1179,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header headerLastRow\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -1218,7 +1218,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header headerLastRow\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -1257,7 +1257,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header headerLastRow\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -1378,7 +1378,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -1523,7 +1523,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
@@ -1556,7 +1556,7 @@ end
                  "</div>" *
                  "</div>" *
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"header\">" *
                  "<th class = \"rowNumber\" style = \"font-weight: bold; max-width: 100px; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap;\">Row</th>" *
