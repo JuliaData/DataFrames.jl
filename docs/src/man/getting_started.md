@@ -18,7 +18,7 @@ relevant variables into your current namespace.
     By default DataFrames.jl limits the number of rows and columns when displaying a data frame in a Jupyter
     Notebook to 25 and 100, respectively. You can override this behavior by changing the values of the
     `ENV["DATAFRAMES_COLUMNS"]` and `ENV["DATAFRAMES_ROWS"]` variables to hold the maximum number of columns
-    and rows of the output.
+    and rows of the output. All columns or rows will be printed if those numbers are equal or lower than 0.
 
     Alternatively, you may want to set the maximum number of data frame rows to print to `100` and the maximum
     number of columns to print to `1000` for every Julia session using some Jupyter kernel file (numbers `100`
