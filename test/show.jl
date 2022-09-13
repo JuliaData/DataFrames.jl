@@ -309,10 +309,10 @@ end
     df = DataFrame(a=π)
     @test sprint(show, df) == """
         1×1 DataFrame
-            Row │ a
-                │ Irration…
+         Row │ a
+             │ Irration…
         ─────┼───────────
-            1 │         π"""
+           1 │         π"""
 end
 
 @testset "Test using :compact parameter of IOContext" begin
