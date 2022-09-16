@@ -1130,7 +1130,7 @@ end
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
-_filter_helper(f, cols...)::BitVector = ((x...) -> f(x...)::Bool).(cols...)
+_filter_helper(f, cols...)::AbstractVector{Bool} = ((x...) -> f(x...)::Bool).(cols...)
 
 @inline function Base.filter((cols, f)::Pair{AsTable}, df::AbstractDataFrame;
                              view::Bool=false)
@@ -1144,7 +1144,7 @@ _filter_helper(f, cols...)::BitVector = ((x...) -> f(x...)::Bool).(cols...)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
-_filter_helper_astable(f, nti::Tables.NamedTupleIterator)::BitVector = (x -> f(x)::Bool).(nti)
+_filter_helper_astable(f, nti::Tables.NamedTupleIterator)::AbstractVector{Bool} = (x -> f(x)::Bool).(nti)
 
 """
     filter!(fun, df::AbstractDataFrame)
