@@ -42,7 +42,9 @@ function Base.show(io::IO, gd::GroupedDataFrame;
 
 
         (h, w) = get(io, :displaysize, displaysize(io))
-        h -= 2 # two lines are already used for header
+        0 < h <= 3 && (h = 3) # show in full if h=0; show only headers and columns for small h>0
+
+        h -= 2 # two lines are already used for header and gap between groups
 
         h1 = h2 = h # display heights available for first and last groups
         if N > 1

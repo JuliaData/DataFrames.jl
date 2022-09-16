@@ -260,6 +260,38 @@ end
            3 │ true  true  true
            4 │ true  true  true
            5 │ true  true  true"""
+
+    # height is small but positive -> print squashed
+    for h in 1:5
+        io = IOContext(IOBuffer(), :displaysize=>(h, 40), :limit=>true)
+        show(io, groupby(df, :x), allcols=true)
+        str = String(take!(io.io))
+        @test str == """
+            GroupedDataFrame with 2 groups based on key: x
+            First Group (5 rows): x = false
+             Row │ x      y      z
+                 │ Bool   Bool   Bool
+            ─────┼─────────────────────
+              ⋮  │   ⋮      ⋮      ⋮
+                         5 rows omitted
+            ⋮
+            Last Group (45 rows): x = true
+             Row │ x     y      z
+                 │ Bool  Bool   Bool
+            ─────┼────────────────────
+              ⋮  │  ⋮      ⋮      ⋮
+                       45 rows omitted"""
+    end
+
+    # height is zero or invalid -> print all rows
+    for h in -1:0
+        io = IOContext(IOBuffer(), :displaysize=>(h, 40), :limit=>true)
+        show(io, groupby(df, :x), allcols=true)
+        str_hrows = String(take!(io.io))
+        show(io, groupby(df, :x), allcols=true, allrows=true)
+        str_allrows = String(take!(io.io))
+        @test str_hrows == str_allrows
+    end
 end
 
 
