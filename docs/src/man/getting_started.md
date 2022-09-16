@@ -263,7 +263,7 @@ constructing it all at once, or column by column. For many use-cases this will n
 but for very large `DataFrame`s  this may be a consideration.
 
 If you want to add rows at the beginning of a data frame use [`pushfirst!`](@ref)
-and to insert a row in an arbitrary location use [`insert!`]((@ref)).
+and to insert a row in an arbitrary location use [`insert!`](@ref).
 
 You can also add whole tables to a data frame using the [`append!`](@ref)
 and [`prepend!`](@ref) functions.
