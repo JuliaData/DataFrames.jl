@@ -323,4 +323,48 @@ end
     @test DataFrame === @inferred Tables.materializer(DataFrames.DataFrameColumns)
 end
 
+@testset "Tables.subset" begin
+    df = DataFrame(a=1:3, b=4:6)
+
+    res = Tables.subset(df, :)
+    @test res isa DataFrame
+    @test res == DataFrame(a=1:3, b=4:6)
+    res = Tables.subset(df, :, view=false)
+    @test res isa DataFrame
+    @test res == DataFrame(a=1:3, b=4:6)
+    res = Tables.subset(df, :, view=true)
+    @test res isa SubDataFrame
+    @test res == DataFrame(a=1:3, b=4:6)
+
+    res = Tables.subset(df, [3, 1])
+    @test res isa DataFrame
+    @test res == DataFrame(a=[3, 1], b=[6, 4])
+    res = Tables.subset(df, [3, 1], view=false)
+    @test res isa DataFrame
+    @test res == DataFrame(a=[3, 1], b=[6, 4])
+    res = Tables.subset(df, [3, 1], view=true)
+    @test res isa SubDataFrame
+    @test res == DataFrame(a=[3, 1], b=[6, 4])
+
+    res = Tables.subset(df, [true, false, true])
+    @test res isa DataFrame
+    @test res == DataFrame(a=[1, 3], b=[4, 6])
+    res = Tables.subset(df, [1, 3], view=false)
+    @test res isa DataFrame
+    @test res == DataFrame(a=[1, 3], b=[4, 6])
+    res = Tables.subset(df, [1, 3], view=true)
+    @test res isa SubDataFrame
+    @test res == DataFrame(a=[1, 3], b=[4, 6])
+
+    res = Tables.subset(df, 2)
+    @test res isa DataFrameRow
+    @test res == DataFrame(a=2, b=5)[1, :]
+    res = Tables.subset(df, 2, view=false)
+    @test res isa NamedTuple{(:a, :b), Tuple{Int, Int}}
+    @test res == (a=2, b=5)
+    res = Tables.subset(df, 2, view=true)
+    @test res isa DataFrameRow
+    @test res == DataFrame(a=2, b=5)[1, :]
+end
+
 end # module

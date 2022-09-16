@@ -36,7 +36,7 @@ Reexport = "0.1, 0.2, 1"
 ShiftedArrays = "1"
 SortingAlgorithms = "0.1, 0.2, 0.3, 1"
 TableTraits = "0.4, 1"
-Tables = "1.2"
+Tables = "1.8"
 Unitful = "1"
 julia = "1"
 
