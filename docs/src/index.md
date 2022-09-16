@@ -104,7 +104,7 @@ integrated they are with DataFrames.jl.
       a "grammar of graphics" syntax akin to that of
       [ggplot](https://ggplot2.tidyverse.org/reference/ggplot.html) (in R).
     - [AlgebraOfGraphics.jl](http://juliaplots.org/AlgebraOfGraphics.jl/stable/): A
-      "grammar of graphics" library build upon [Makie.jl](makie.juliaplots.org/).
+      "grammar of graphics" library build upon [Makie.jl](https://docs.makie.org/stable/).
     - [VegaLite.jl](https://www.queryverse.org/VegaLite.jl/stable/): High-level
       plotting library that uses a different "grammar of graphics" syntax and has
       an emphasis on interactive graphics.
