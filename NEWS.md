@@ -64,6 +64,8 @@
   ([#3081](https://github.com/JuliaData/DataFrames.jl/pull/3081))
 * Make `subset` preserves group ordering when `ungroup=false` like `subset!` already does
   ([#3094](https://github.com/JuliaData/DataFrames.jl/pull/3094))
+* Fix overly restrictive type assertion in `filter` and `filter!`
+  ([#3155](https://github.com/JuliaData/DataFrames.jl/pull/3155))
 
 ## Performance
 
