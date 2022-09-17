@@ -407,14 +407,14 @@ DataFrame(vecs::Vector{<:AbstractVector}) =
                         "passing :auto as a second argument to automatically " *
                         "generate column names: `DataFrame(vecs, :auto)`"))
 
-DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
-          nrows::Integer=0; makeunique::Bool=false) where T<:Type =
+DataFrame(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{Symbol},
+          nrows::Integer=0; makeunique::Bool=false) =
     throw(ArgumentError("`DataFrame` constructor with passed eltypes is " *
                         "not supported. Pass explicitly created columns to a " *
                         "`DataFrame` constructor instead."))
 
 DataFrame(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{<:AbstractString},
-          nrows::Integer=0; makeunique::Bool=false) where T<:Type =
+          nrows::Integer=0; makeunique::Bool=false) =
     throw(ArgumentError("`DataFrame` constructor with passed eltypes is " *
                         "not supported. Pass explicitly created columns to a " *
                         "`DataFrame` constructor instead."))

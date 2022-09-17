@@ -393,7 +393,7 @@ julia> permutedims(df1, 1)
 Note that the column indexed by `src_colnames` in the original `df`
 becomes the column names in the permuted result,
 and the column names of the original become a new column.
-Typically, this would be used on columns with homogenous element types,
+Typically, this would be used on columns with homogeneous element types,
 since the element types of the other columns
 are the result of `promote_type` on _all_ the permuted columns.
 Note also that, by default, the new column created from the column names

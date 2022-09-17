@@ -131,7 +131,7 @@ function metadata(x::Union{DataFrameRow, SubDataFrame},
     meta_value, meta_style = metadata(parent(x), key, style=true)
     if meta_style !== :note
         throw(ArgumentError("\"$key\" was found in table-level metadata of parent " *
-                            "data frame, but it does not have :note-style"))
+                            "data frame, but it does not have :note style"))
     end
     return style ? (meta_value, meta_style) : meta_value
 end

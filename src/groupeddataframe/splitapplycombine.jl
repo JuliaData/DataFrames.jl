@@ -327,7 +327,7 @@ function _combine_process_proprow((cs_i,)::Ref{Any},
     end
 end
 
-# move one column without transorming it
+# move one column without transforming it
 function _combine_process_noop(cs_i::Pair{<:Union{Int, AbstractVector{Int}}, Pair{typeof(identity), Symbol}},
                                optional_i::Bool,
                                parentdf::AbstractDataFrame,

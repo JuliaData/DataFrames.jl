@@ -142,7 +142,7 @@ function Sort.lt(o::DFPerm{<:Any, <:Tuple}, a, b)
 end
 
 # get ordering function for the i-th column used for ordering
-col_ordering(o::Ordering, i::Int) where {O<:Ordering} = o
+col_ordering(o::Ordering, ::Int) = o
 col_ordering(o::Tuple{Vararg{Ordering}}, i::Int) = @inbounds o[i]
 
 function unstable_lt(ord::Union{Ordering, Tuple{Vararg{Ordering}}},

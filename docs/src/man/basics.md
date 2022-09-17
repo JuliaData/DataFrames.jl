@@ -279,7 +279,7 @@ german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
 - first we split the directory part from it using `dirname`;
 - then from this directory we need to move to the directory where the `german.csv` file is stored; we use
   `joinpath` as this is a recommended way to compose paths to resources stored on disk in an operating
-  system independent way (remember that Widnows and Unix differ as they use either `/` or `\` as path
+  system independent way (remember that Windows and Unix differ as they use either `/` or `\` as path
   separator; the `joinpath` function ensures we are not running into issues with this);
 - then we read the CSV file; the second argument to `CSV.read` is `DataFrame` to indicate that we want to
   read in the file into a `DataFrame` (as `CSV.read` allows for many different target formats of data it
@@ -556,7 +556,7 @@ julia> describe(german)
                                                                 1 column omitted
 ```
 
-To limit the columns processed by `desribe` use `cols` keyword argument, e.g.:
+To limit the columns processed by `describe` use `cols` keyword argument, e.g.:
 
 ```jldoctest dataframe
 julia> describe(german, cols=1:3)
@@ -824,7 +824,7 @@ julia> german[!, :Sex]
  "male"
 ```
 
-As it was explained earler in this tutorial the difference between using `!` and `:`
+As it was explained earlier in this tutorial the difference between using `!` and `:`
 when passing a row index is that `!` does not perform a copy of columns, while `:` does.
 Therefore `german[!, [:Sex]]` data frame stores the same vector as the source `german` data frame,
 while `german[:, [:Sex]]` stores its copy.
