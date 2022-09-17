@@ -144,7 +144,7 @@ It is recommended to add the header `# Examples` above the doctests.
   commit that might confuse GitHub when displaying the diff of your PR, which makes your changes more 
   difficult to review. Alternatively use conflict resolution tool available at GitHub;
 * Please try to use descriptive commit messages to simplify the review process;
-* Using `git add -p` or `git add -i` can be useful to avoid accidently committing unrelated changes;
+* Using `git add -p` or `git add -i` can be useful to avoid accidentally committing unrelated changes;
 * Maintainers get notified of all changes made on GitHub. However, what is useful is writing a short
   message after a sequence of changes is made summarizing what has changed and that the PR is ready
   for a review;

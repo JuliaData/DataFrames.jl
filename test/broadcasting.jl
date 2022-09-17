@@ -1855,7 +1855,7 @@ end
     @test_throws ArgumentError df[!, [:x1, :x3]] .= "a"
 end
 
-@testset "broadcasting over heterogenous columns" begin
+@testset "broadcasting over heterogeneous columns" begin
     df = DataFrame(x=[1, 1.0, big(1), "1"])
     f_identity(x) = x
     @test df == f_identity.(df)

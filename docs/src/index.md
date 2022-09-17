@@ -67,7 +67,7 @@ integrated they are with DataFrames.jl.
     - [GLM.jl](https://juliastats.org/GLM.jl/stable/manual/): Tools for estimating
       linear and generalized linear models. Tightly integrated with DataFrames.jl.
     - [StatsModels.jl](https://juliastats.org/StatsModels.jl/stable/):
-      For converting heterogeneous `DataFrame` into homogenous matrices for use
+      For converting heterogeneous `DataFrame` into homogeneous matrices for use
       with linear algebra libraries or machine learning applications that don't
       directly support `DataFrame`s. Will do things like convert categorical
       variables into indicators/one-hot-encodings, create interaction terms, etc.
@@ -138,7 +138,7 @@ integrated they are with DataFrames.jl.
 While not all of these libraries are tightly integrated with DataFrames.jl,
 because `DataFrame`s are essentially collections of aligned Julia vectors, so it
 is easy to (a) pull out a vector for use with a non-DataFrames-integrated
-library, or (b) convert your table into a homogenously-typed matrix using the
+library, or (b) convert your table into a homogeneously-typed matrix using the
 `Matrix` constructor or StatsModels.jl.
 
 ### Other Julia Tabular Libraries

@@ -511,7 +511,7 @@
   old `name => function` order is now deprecated
   ([#2401](https://github.com/JuliaData/DataFrames.jl/pull/2401))
 * in joins passing `NaN` or real or imaginary `-0.0` in `on` column now throws an
-  error; passing `missing` thows an error unless `matchmissing=:equal` keyword argument
+  error; passing `missing` throws an error unless `matchmissing=:equal` keyword argument
   is passed ([#2504](https://github.com/JuliaData/DataFrames.jl/pull/2504))
 * `unstack` now produces row and column keys in the order of their first appearance
    and has two new keyword arguments `allowmissing` and `allowduplicates`
@@ -550,7 +550,7 @@
   as a suffix in automatically generated column names
   ([#2397](https://github.com/JuliaData/DataFrames.jl/pull/2397))
 * `filter`, `sort`, `dropmissing`, and `unique` now support a `view` keyword argument
-  which if set to `true` makes them retun a `SubDataFrame` view into the passed
+  which if set to `true` makes them return a `SubDataFrame` view into the passed
   data frame.
 * add `only` method for `AbstractDataFrame` ([#2449](https://github.com/JuliaData/DataFrames.jl/pull/2449))
 * passing empty sets of columns in `filter`/`filter!` and in `select`/`transform`/`combine`
