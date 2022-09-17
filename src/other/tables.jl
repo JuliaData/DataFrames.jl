@@ -106,7 +106,7 @@ TableTraits.isiterabletable(x::AbstractDataFrame) = true
 
 function Tables.subset(df::AbstractDataFrame, inds; view::Union{Bool, Nothing}=nothing)
     res = view === true ? DataFrames.view(df, inds, :) : df[inds, :]
-    if res isa DataFrameRow && view == false
+    if res isa DataFrameRow && view === false
         return copy(res)
     else
         return res
