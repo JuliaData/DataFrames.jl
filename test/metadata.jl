@@ -443,6 +443,8 @@ end
         df2 = fun(df)
         @test getfield(df, :metadata) == getfield(df2, :metadata)
         @test getfield(df, :colmetadata) == getfield(df2, :colmetadata)
+        @test getfield(df, :metadata) !== getfield(df2, :metadata)
+        @test getfield(df, :colmetadata) !== getfield(df2, :colmetadata)
         @test !getfield(df2, :allnotemetadata)
     end
 
@@ -458,6 +460,8 @@ end
         df2 = fun(df)
         @test getfield(df, :metadata) == getfield(df2, :metadata)
         @test getfield(df, :colmetadata) == getfield(df2, :colmetadata)
+        @test getfield(df, :metadata) !== getfield(df2, :metadata)
+        @test getfield(df, :colmetadata) !== getfield(df2, :colmetadata)
         @test getfield(df2, :allnotemetadata)
     end
 end
