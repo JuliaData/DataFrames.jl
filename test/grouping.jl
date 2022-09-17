@@ -3461,7 +3461,9 @@ end
     df = DataFrame(id=[1, 1, 2, 3, 3, 1], x=1:6)
     gdf = groupby_checked(df, :id)
     @test_throws ArgumentError combine(gdf, :x, :x)
-    @test_throws ErrorException combine(gdf, :x => (x -> Dict("a" => [1])) => AsTable)
+    @test_throws ErrorException combine(gdf, :x => (x -> Dict("a" => 1)) => AsTable)
+    # changed in Tables.jl 1.8
+    @test combine(gdf, :x => (x -> Dict("a" => [1])) => AsTable) == DataFrame(id=1:3, a=1)
     @test_throws ErrorException combine(gdf, :x => (x -> Dict(:a => 1)) => AsTable)
     @test_throws ArgumentError combine(gdf, sdf -> sdf.id[1] == 1 ? Ref(1) : [1])
     @test_throws ArgumentError combine(gdf, sdf -> sdf.id[1] == 2 ? Ref(1) : [1])
