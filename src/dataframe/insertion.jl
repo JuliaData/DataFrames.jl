@@ -36,7 +36,7 @@ The above rule has the following exceptions:
 Please note that `append!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
-Metadata: table-level metadata and column-level metadata with `:note`-style for
+Metadata: table-level `:note`-style metadata and column-level `:note`-style metadata for
 columns present in `df` are preserved. If new columns are added their
 `:note`-style metadata is copied from the appended table. Other metadata is
 dropped.
@@ -122,7 +122,7 @@ The above rule has the following exceptions:
 Please note that `prepend!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
-Metadata: table-level metadata and column-level metadata with `:note`-style for
+Metadata: table-level `:note`-style metadata and column-level `:note`-style metadata for
 columns present in `df` are preserved. If new columns are added their
 `:note`-style metadata is copied from the appended table. Other metadata is
 dropped.

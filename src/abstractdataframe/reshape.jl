@@ -39,8 +39,8 @@ that return views into the original data frame.
   as long as it supports conversion from `String`.
   When `view=true`, a `RepeatedVector{T}` is produced.
 
-Metadata: table-level metadata and column-level metadata for identifier columns
-are preserved if they have `:note`-style .
+Metadata: table-level `:note`-style metadata and column-level `:note`-style metadata
+for identifier columns are preserved.
 
 # Examples
 ```jldoctest
@@ -265,8 +265,8 @@ Row and column keys will be ordered in the order of their first appearance.
   Whether or not tasks are actually spawned and their number are determined automatically.
   Set to `false` if `valuestransform` requires serial execution or is not thread-safe.
 
-Metadata: table-level metadata and column-level metadata for row keys columns
-are preserved if they have `:note`-style.
+Metadata: table-level `:note`-style metadata and column-level `:note`-style metadata
+for row keys columns are preserved.
 
 # Examples
 
@@ -565,7 +565,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
 
     # note that Symbol(renamecols(x)) must produce unique column names
     # and names between df1 and df2 must be unique
-    # here df1 gets proper column-level metadata with :note-style
+    # here df1 gets proper column-level metadata with :note style
     df1 = df[row_group_row_idxs, g_rowkey.cols]
     df2 = DataFrame(unstacked_val, Symbol[Symbol(renamecols(x)) for x in colref_map],
                     copycols=false)
@@ -726,7 +726,8 @@ That is, if the source data frame contains `Int` and `Float64` columns,
 resulting columns will have element type `Float64`. If the source has
 `Int` and `String` columns, resulting columns will have element type `Any`.
 
-Metadata: table-level metadata with `:note`-style is preserved and column-level metadata is dropped.
+Metadata: table-level `:note`-style metadata is preserved and
+column-level metadata is dropped.
 
 # Examples
 

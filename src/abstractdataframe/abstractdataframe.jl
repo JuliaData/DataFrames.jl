@@ -146,7 +146,7 @@ Mixing symbols and strings in `to` and `from` is not allowed.
 
 $METADATA_FIXED
 Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
-Column `:note`-style metadata is considered to be attached to column number:
+Column-level `:note`-style metadata is considered to be attached to column number:
 when a column is renamed, its `:note`-style metadata becomes associated to its new name.
 
 See also: [`rename`](@ref)
@@ -289,7 +289,7 @@ a vector) then:
 Mixing symbols and strings in `to` and `from` is not allowed.
 
 $METADATA_FIXED
-Column `:note`-style metadata is considered to be attached to column number:
+Column-level `:note`-style metadata is considered to be attached to column number:
 when a column is renamed, its `:note`-style metadata becomes associated to its
 new name.
 
@@ -1721,9 +1721,9 @@ source (without copying). This option should be used with caution as mutating
 either the columns in sources or in the returned `DataFrame` might lead to
 the corruption of the other object.
 
-Metadata: `hcat` propagates `:note`-style table-level metadata for keys that are present
+Metadata: `hcat` propagates table-level `:note`-style metadata for keys that are present
 in all passed data frames and have the same value;
-it propagates `:note`-style column-level metadata.
+it propagates column-level `:note`-style metadata.
 
 # Example
 ```jldoctest
@@ -1828,9 +1828,9 @@ for `AbstractVector`s.
 metadata), making it possible to initialize an empty data frame at the beginning
 of a loop and `vcat` onto it.
 
-Metadata: `vcat` propagates `:note`-style table-level metadata for keys that are
+Metadata: `vcat` propagates table-level `:note`-style metadata for keys that are
 present in all passed data frames and have the same value. `vcat` propagates
-`:note`-style column-level metadata for keys that are present in all passed data
+column-level `:note`-style metadata for keys that are present in all passed data
 frames that contain this column and have the same value.
 
 # Example
@@ -1964,9 +1964,9 @@ The column order, names, and types of the resulting `DataFrame`, and the
 behavior of `cols` and `source` keyword arguments follow the rules specified for
 [`vcat`](@ref) of `AbstractDataFrame`s.
 
-Metadata: `vcat` propagates `:note`-style table-level metadata for keys that are
+Metadata: `vcat` propagates table-level `:note`-style metadata for keys that are
 present in all passed data frames and have the same value. `vcat` propagates
-`:note`-style column-level metadata for keys that are present in all passed data
+column-level `:note`-style metadata for keys that are present in all passed data
 frames that contain this column and have the same value.
 
 # Example

@@ -50,8 +50,8 @@ functions. In this section collectively these objects will be called
 * objects returned by
   [`eachrow`](@ref) and [`eachcol`](@ref) functions have the same metadata
   as their parent `AbstractDataFrame`;
-* [`SubDataFrame`](@ref) and [`DataFrameRow`](@ref) have only metadata from
-  their parent `DataFrame` that has `:note`-style.
+* [`SubDataFrame`](@ref) and [`DataFrameRow`](@ref) only expose metadata from
+  their parent `DataFrame` whose style is `:note`.
 
 Notably metadata is not supported for [`GroupedDataFrame`](@ref) as it does not
 expose columns directly. You can inspect metadata of the `parent` of a
@@ -214,7 +214,7 @@ pairs are not copied (this is relevant in case of mutable values).
 
 !!! note
 
-    The rules for `:note`-style column-level metadata propagation are designed
+    The rules for column-level `:note`-style metadata propagation are designed
     to make the right decision in common cases. In particular, they assume that if
     source and target column name is the same then the metadata for the column is
     not changed. While this is valid for many operations, it is not always true
@@ -227,8 +227,8 @@ pairs are not copied (this is relevant in case of mutable values).
 
 ### Operations that preserve `:note`-style metadata
 
-Most of the functions in DataFrames.jl just preserve table and column metadata
-that has `:note`-style.
+Most of the functions in DataFrames.jl only preserve table and column metadata
+whose style is `:note`.
 Some functions use a more complex logic, even if they follow the general rules
 described above (in particular under any transformation all non-`:note`-style
 metadata is always dropped). These are:

@@ -228,7 +228,7 @@ function metadata!(x::Union{DataFrameRow, SubDataFrame},
     if meta !== nothing && haskey(meta, key) && meta[key][2] !== :note
         throw(ArgumentError("setting metadata for DataFrameRow and SubDataFrame" *
                             "that is already present in the parent and does not " *
-                            "have :note-style is not allowed"))
+                            "have :note style is not allowed"))
     end
     metadata!(df, key, value, style=style)
     return x
@@ -394,7 +394,7 @@ for T in (DataFrameRow, SubDataFrame)
         val_meta, style_meta = colmetadata(df, col_name, key, style=true)
         if style_meta !== :note
             throw(ArgumentError("\"$key\" for column \"$(string(col_name))\" was found in column-level metadata " *
-                                "of parent data frame, but it does not have :note-style"))
+                                "of parent data frame, but it does not have :note style"))
         end
         return style ? (val_meta, style_meta) : val_meta
     end
@@ -492,7 +492,7 @@ end
 Set column-level metadata in `df` for column `col` and key `key` to have value `value`
 and style `style` and return `df`.
 
-For `SubDataFrame` and `DataFrameRow` only `:note`-style is allowed.
+For `SubDataFrame` and `DataFrameRow` only `:note` style is allowed.
 Trying to set a key-value pair for which the key already exists in the parent
 data frame with another style throws an error.
 
@@ -549,7 +549,7 @@ for T in (DataFrameRow, SubDataFrame)
         haskey(cols_meta[idx], key) && cols_meta[idx][key][2] !== :note
             throw(ArgumentError("setting metadata for DataFrameRow and SubDataFrame" *
                                 "that is already present in the parent and does not " *
-                                "have :note-style is not allowed"))
+                                "have :note style is not allowed"))
         end
         colmetadata!(df, idx, key, value, style=style)
         return x
@@ -818,9 +818,9 @@ function _drop_all_nonnote_metadata!(df::DataFrame)
 end
 
 # this is a function used to merge matching table-level metadata that has
-# :note-style and store it in `res`
+# :note style and store it in `res`
 # it removes all table-level metadata previously stored in `res`
-# key-value metadata pair is matching if it has :note-style and is present
+# key-value metadata pair is matching if it has :note style and is present
 # in all tables passed in dfs collection
 function _merge_matching_table_note_metadata!(res::DataFrame,
                                               dfs::Union{AbstractVector{<:AbstractDataFrame},
@@ -855,7 +855,7 @@ end
 
 # this is a function used to keep in dst only table-level :note-style metadata
 # matching between dst and src all other table-level metadata is dropped
-# key-value metadata pair is matching if it has :note-style and is present
+# key-value metadata pair is matching if it has :note style and is present
 # both in dst and src
 function _keep_matching_table_note_metadata!(dst::DataFrame, src::AbstractDataFrame)
     _drop_table_nonnote_metadata!(dst)

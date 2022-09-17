@@ -164,8 +164,7 @@ end
 
 const METADATA_FIXED =
     """
-    Metadata: this function preserves table-level and column-level metadata
-    that has `:note`-style.
+    Metadata: this function preserves table-level and column-level `:note`-style metadata.
     """
 
 if VERSION >= v"1.9.0-DEV.1163"

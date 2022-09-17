@@ -805,7 +805,7 @@ If `copycols=true` (the default), return a new  `DataFrame` holding
 copies of column vectors in `df`.
 If `copycols=false`, return a new `DataFrame` sharing column vectors with `df`.
 
-Metadata: this function preserves all table and column-level metadata.
+Metadata: this function preserves all table-level and column-level metadata.
 """
 function Base.copy(df::DataFrame; copycols::Bool=true)
     cdf = DataFrame(copy(_columns(df)), copy(index(df)), copycols=copycols)

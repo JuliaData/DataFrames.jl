@@ -592,8 +592,8 @@ If more than two data frames are passed, the join is performed recursively with
 left associativity. In this case the `validate` keyword argument is applied
 recursively with left associativity.
 
-Metadata: table-level metadata and column-level metadata for key columns
-is preserved only for keys with `:note`-style which are defined in all passed tables
+Metadata: table-level `:note`-style metadata and column-level `:note`-style metadata
+for key columns is preserved only for keys which are defined in all passed tables
 and have the same value.
 Column-level `:note`-style metadata is preserved for all other columns.
 
@@ -739,8 +739,8 @@ levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
 
 Metadata: table-level and column-level `:note`-style metadata is taken from `df1`
-(including key columns), except for columns added to it from `df2`, whose column
-level `:note`-style metadata is taken from `df2`.
+(including key columns), except for columns added to it from `df2`, whose
+column-level `:note`-style metadata is taken from `df2`.
 
 See also: [`innerjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -890,8 +890,8 @@ levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
 
 Metadata: table-level and column-level `:note`-style metadata is taken from `df2`
-(including key columns), except for columns added to it from `df1`, whose column
-level `:note`-style metadata is taken from `df1`.
+(including key columns), except for columns added to it from `df1`, whose
+column-level `:note`-style metadata is taken from `df1`.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -1049,8 +1049,8 @@ recursively with left associativity.
 In this case the `indicator` keyword argument is not supported
 and `validate` keyword argument is applied recursively with left associativity.
 
-Metadata: table-level metadata and column-level metadata for key columns
-is preserved only for keys with `:note`-style which are defined in all passed tables
+Metadata: table-level `:note`-style metadata and column-level `:note`-style metadata
+for key columns is preserved only for keys which are defined in all passed tables
 and have the same value.
 Column-level `:note`-style metadata is preserved for all other columns.
 
@@ -1393,9 +1393,9 @@ dimension that changes the fastest.
 If more than two data frames are passed, the join is performed
 recursively with left associativity.
 
-Metadata: table-level metadata is preserved only for keys with `:note`-style
+Metadata: table-level `:note`-style metadata is preserved only for keys
 which are defined in all passed tables and have the same value.
-Column level `:note`-style metadata is preserved from both tables.
+Column-level `:note`-style metadata is preserved from both tables.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`semijoin`](@ref), [`antijoin`](@ref).
