@@ -326,7 +326,7 @@ end
 @testset "Tables.subset" begin
     df = DataFrame(a=1:3, b=4:6)
 
-    res = Tables.subset(df, :)
+    res = @inferred Tables.subset(df, :)
     @test res isa DataFrame
     @test res == DataFrame(a=1:3, b=4:6)
     res = Tables.subset(df, :, view=false)
@@ -336,7 +336,7 @@ end
     @test res isa SubDataFrame
     @test res == DataFrame(a=1:3, b=4:6)
 
-    res = Tables.subset(df, [3, 1])
+    res = @inferred Tables.subset(df, [3, 1])
     @test res isa DataFrame
     @test res == DataFrame(a=[3, 1], b=[6, 4])
     res = Tables.subset(df, [3, 1], view=false)
@@ -346,7 +346,7 @@ end
     @test res isa SubDataFrame
     @test res == DataFrame(a=[3, 1], b=[6, 4])
 
-    res = Tables.subset(df, [true, false, true])
+    res = @inferred Tables.subset(df, [true, false, true])
     @test res isa DataFrame
     @test res == DataFrame(a=[1, 3], b=[4, 6])
     res = Tables.subset(df, [1, 3], view=false)
@@ -356,7 +356,7 @@ end
     @test res isa SubDataFrame
     @test res == DataFrame(a=[1, 3], b=[4, 6])
 
-    res = Tables.subset(df, 2)
+    res = @inferred Tables.subset(df, 2)
     @test res isa DataFrameRow
     @test res == DataFrame(a=2, b=5)[1, :]
     res = Tables.subset(df, 2, view=false)
