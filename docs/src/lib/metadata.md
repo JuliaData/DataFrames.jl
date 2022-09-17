@@ -22,7 +22,7 @@ it.
 In DataFrames.jl the metadata style influences how metadata is propagated when
 `df` is transformed. The following metadata styles are supported:
 
-* `:none`: Metadata having this style is considered to be attached to a concrete
+* `:default`: Metadata having this style is considered to be attached to a concrete
   state of `df`. This means that any operation on this data frame
   invalidates such metadata and it is dropped in the result of such operation.
   Note that this happens even if the operation eventually does not change
@@ -38,7 +38,7 @@ In DataFrames.jl the metadata style influences how metadata is propagated when
   a table or a column that should be propagated under transformations
   (exact propagation rules of such metadata are described below).
 * All other metadata styles are allowed but they are currently treated as having
-  `:none`-style (this might change in the future if other standard metadata
+  `:default`-style (this might change in the future if other standard metadata
   styles are defined).
 
 All DataAPI.jl metadata functions work with [`DataFrame`](@ref),
@@ -61,7 +61,7 @@ expose columns directly. You can inspect metadata of the `parent` of a
 
     DataFrames.jl allows users to extract out columns of a data frame
     and perform operations on them. Such operations will not affect
-    metadata. Therefore, even if some metadata has `:none` style it might
+    metadata. Therefore, even if some metadata has `:default` style it might
     no longer correctly describe the column's contents if the user mutates
     columns directly.
 
@@ -78,9 +78,9 @@ thrown if passed column is not present in a data frame.
 If [`metadata!`](@ref) or [`colmetadata!`](@ref) is used to add metadata
 to a [`SubDataFrame`](@ref) or a [`DataFrameRow`](@ref) then:
 
-* using `:none` style for metadata throws an error;
+* using metadata that has style other than `:note` throws an error;
 * trying to add key-value pair for which a mapping for key already exists
-  with the `:none` style in the parent data frame throws an error.
+  with style other than `:note` in the parent data frame throws an error.
 
 DataFrames.jl is designed so that there is no performance overhead due to metadata support
 when there is no metadata in a data frame. Therefore if you need maximum performance
@@ -221,7 +221,7 @@ pairs are not copied (this is relevant in case of mutable values).
     in general. For example the `:x => ByRow(log) => :x` transformation might
     invalidate metadata if it contained unit of measure of the variable. In such
     cases user must either use a different name for the output column,
-    set metadata style to `:none` before the operation,
+    set metadata style to `:default` before the operation,
     or manually drop or update such metadata from the `:x` column
     after the transformation.
 

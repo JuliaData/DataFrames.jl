@@ -43,7 +43,7 @@ end
         @test isempty(metadatakeys(x))
         @test metadatakeys(x) isa Tuple
         metadata!(x, "name1", "empty1", style=:note)
-        metadata!(x, "name2", "empty2", style=:none)
+        metadata!(x, "name2", "empty2", style=:default)
         @test check_allnotemetadata(x)
         @test sort(collect(metadatakeys(x))) == ["name1", "name2"]
         deletemetadata!(x, "name2")
@@ -95,16 +95,16 @@ end
         @test check_allnotemetadata(x)
         @test_throws ArgumentError metadata(x, "foobar")
         @test isempty(metadatakeys(x))
-        metadata!(x, "name", "empty", style=:none)
+        metadata!(x, "name", "empty", style=:default)
         @test check_allnotemetadata(x)
         @test_throws ArgumentError metadata(x, "foobar")
         @test collect(metadatakeys(x)) == ["name"]
         @test metadata(x, "name") == "empty"
-        @test metadata(x, "name", style=true) == ("empty", :none)
+        @test metadata(x, "name", style=true) == ("empty", :default)
         emptymetadata!(x)
         @test check_allnotemetadata(x)
         @test isempty(metadatakeys(x))
-        metadata!(x, "name1", "empty1", style=:none)
+        metadata!(x, "name1", "empty1", style=:default)
         metadata!(x, "name2", "empty2", style=:note)
         @test check_allnotemetadata(x)
         @test sort(collect(metadatakeys(x))) == ["name1", "name2"]
@@ -124,13 +124,13 @@ end
         @test_throws ArgumentError metadata(x, "foobar")
         @test check_allnotemetadata(x)
         @test isempty(metadatakeys(x))
-        @test_throws ArgumentError metadata!(x, "name", "empty", style=:none)
-        metadata!(parent(x), "name", "empty", style=:none)
+        @test_throws ArgumentError metadata!(x, "name", "empty", style=:default)
+        metadata!(parent(x), "name", "empty", style=:default)
         @test check_allnotemetadata(x)
         @test_throws ArgumentError metadata(x, "foobar")
         @test isempty(metadatakeys(x))
         @test collect(metadatakeys(parent(x))) == ["name"]
-        metadata!(parent(x), "name1", "empty1", style=:none)
+        metadata!(parent(x), "name1", "empty1", style=:default)
         metadata!(x, "name2", "empty2", style=:note)
         @test check_allnotemetadata(x)
         @test_throws ArgumentError metadata(x, "foobar")
@@ -152,7 +152,7 @@ end
 
     df = DataFrame(a = 1:2)
     @test check_allnotemetadata(df)
-    metadata!(df, "name", "value", style=:none)
+    metadata!(df, "name", "value", style=:default)
     metadata!(df, "name2", "value2", style=:note)
     @test check_allnotemetadata(df)
     dfv = view(df, :, :)
@@ -164,7 +164,7 @@ end
 
     df = DataFrame(a = 1:2)
     @test check_allnotemetadata(df)
-    metadata!(df, "name", "value", style=:none)
+    metadata!(df, "name", "value", style=:default)
     metadata!(df, "name2", "value2", style=:note)
     @test check_allnotemetadata(df)
     dfr = df[1, :]
@@ -273,13 +273,13 @@ end
             @test isempty(colmetadatakeys(x, a))
             @test colmetadatakeys(x, a) isa Tuple
             @test_throws ArgumentError colmetadatakeys(x, :c)
-            colmetadata!(x, b, "name1", "empty1", style=:none)
+            colmetadata!(x, b, "name1", "empty1", style=:default)
             @test check_allnotemetadata(x)
             @test_throws ArgumentError colmetadata(x, a, "foobar")
             @test_throws ArgumentError colmetadata(x, b, "foobar")
-            @test_throws ArgumentError colmetadata!(x, :c, "name", "empty", style=:none)
-            colmetadata!(x, b, "name2", "empty2", style=:none)
-            colmetadata!(x, a, "name3", "empty3", style=:none)
+            @test_throws ArgumentError colmetadata!(x, :c, "name", "empty", style=:default)
+            colmetadata!(x, b, "name2", "empty2", style=:default)
+            colmetadata!(x, a, "name3", "empty3", style=:default)
             @test check_allnotemetadata(x)
             @test collect(colmetadatakeys(x, a)) == ["name3"]
             @test sort(collect(colmetadatakeys(x, b))) == ["name1", "name2"]
@@ -287,7 +287,7 @@ end
             @test Set([k => sort(collect(v)) for (k, v) in colmetadatakeys(x)]) ==
                 Set([:b => ["name1", "name2"], :a => ["name3"]])
             @test colmetadata(x, b, "name1") == "empty1"
-            @test colmetadata(x, b, "name1", style=true) == ("empty1", :none)
+            @test colmetadata(x, b, "name1", style=true) == ("empty1", :default)
             @test_throws ArgumentError colmetadata(x, b, "namex")
             @test_throws ArgumentError colmetadata(x, :x, "name")
             emptycolmetadata!(x, a)
@@ -318,14 +318,14 @@ end
             @test isempty(colmetadatakeys(x, a))
             @test colmetadatakeys(x, a) isa Tuple
             @test_throws ArgumentError colmetadatakeys(x, :c)
-            @test_throws ArgumentError colmetadata!(x, b, "name1", "empty1", style=:none)
+            @test_throws ArgumentError colmetadata!(x, b, "name1", "empty1", style=:default)
             @test_throws ArgumentError colmetadata(x, a, "foobar")
             @test_throws ArgumentError colmetadata(x, b, "foobar")
-            @test_throws ArgumentError colmetadata!(x, b, "name2", "empty2", style=:none)
-            @test_throws ArgumentError colmetadata!(x, a, "name3", "empty3", style=:none)
-            colmetadata!(p, b, "name1", "empty1", style=:none)
-            colmetadata!(p, b, "name2", "empty2", style=:none)
-            colmetadata!(p, a, "name3", "empty3", style=:none)
+            @test_throws ArgumentError colmetadata!(x, b, "name2", "empty2", style=:default)
+            @test_throws ArgumentError colmetadata!(x, a, "name3", "empty3", style=:default)
+            colmetadata!(p, b, "name1", "empty1", style=:default)
+            colmetadata!(p, b, "name2", "empty2", style=:default)
+            colmetadata!(p, a, "name3", "empty3", style=:default)
             @test check_allnotemetadata(x)
             @test isempty(colmetadatakeys(x, a))
             @test isempty(colmetadatakeys(x, b))
@@ -354,7 +354,7 @@ end
 
     df = DataFrame(a = 1:2)
     @test check_allnotemetadata(df)
-    colmetadata!(df, 1, "name", "value", style=:none)
+    colmetadata!(df, 1, "name", "value", style=:default)
     colmetadata!(df, 1, "name2", "value2", style=:note)
     @test check_allnotemetadata(df)
     dfv = view(df, :, :)
@@ -366,7 +366,7 @@ end
 
     df = DataFrame(a = 1:2)
     @test check_allnotemetadata(df)
-    colmetadata!(df, 1, "name", "value", style=:none)
+    colmetadata!(df, 1, "name", "value", style=:default)
     colmetadata!(df, 1, "name2", "value2", style=:note)
     @test check_allnotemetadata(df)
     dfr = df[1, :]
@@ -391,7 +391,7 @@ end
     df = DataFrame()
     @test check_allnotemetadata(df)
     metadata!(df, "name", "empty", style=:note)
-    metadata!(df, "drop", "value", style=:none)
+    metadata!(df, "drop", "value", style=:default)
     @test check_allnotemetadata(df)
     df2 = rename(df)
     @test check_allnotemetadata(df2)
@@ -411,12 +411,12 @@ end
     colmetadata!(df, :c, "name", "c", style=:note)
     colmetadata!(df, :e, "name", "e", style=:note)
     colmetadata!(df, :g, "name", "g", style=:note)
-    metadata!(df, "name2", "empty", style=:none)
-    colmetadata!(df, :a, "name2", "a", style=:none)
-    colmetadata!(df, :b, "name2", "b", style=:none)
-    colmetadata!(df, :c, "name2", "c", style=:none)
-    colmetadata!(df, :e, "name2", "e", style=:none)
-    colmetadata!(df, :g, "name2", "g", style=:none)
+    metadata!(df, "name2", "empty", style=:default)
+    colmetadata!(df, :a, "name2", "a", style=:default)
+    colmetadata!(df, :b, "name2", "b", style=:default)
+    colmetadata!(df, :c, "name2", "c", style=:default)
+    colmetadata!(df, :e, "name2", "e", style=:default)
+    colmetadata!(df, :g, "name2", "g", style=:default)
     @test check_allnotemetadata(df)
 
     # other renaming methods rely on the same mechanism as the one tested below
@@ -476,9 +476,9 @@ end
 
     df = DataFrame(a=1, b=2)
     metadata!(df, "name", "empty", style=:note)
-    metadata!(df, "name2", "empty2", style=:none)
+    metadata!(df, "name2", "empty2", style=:default)
     colmetadata!(df, :b, "name", "some", style=:note)
-    colmetadata!(df, :b, "name2", "some2", style=:none)
+    colmetadata!(df, :b, "name2", "some2", style=:default)
     @test check_allnotemetadata(df)
 
     for fun in (x -> similar(x, 2), empty), x in (df, view(df, :, :))
@@ -512,9 +512,9 @@ end
 
         df = DataFrame(a=1, b=2)
         metadata!(df, "name", "empty", style=:note)
-        metadata!(df, "name2", "empty2", style=:none)
+        metadata!(df, "name2", "empty2", style=:default)
         colmetadata!(df, :b, "name", "some", style=:note)
-        colmetadata!(df, :b, "name2", "some2", style=:none)
+        colmetadata!(df, :b, "name2", "some2", style=:default)
         @test check_allnotemetadata(df)
 
         x = fun(df)
@@ -537,9 +537,9 @@ end
 
         df = DataFrame(a=1, b=2)
         metadata!(df, "name", "empty", style=:note)
-        metadata!(df, "name2", "empty2", style=:none)
+        metadata!(df, "name2", "empty2", style=:default)
         colmetadata!(df, :b, "name", "some", style=:note)
-        colmetadata!(df, :b, "name2", "some2", style=:none)
+        colmetadata!(df, :b, "name2", "some2", style=:default)
         @test check_allnotemetadata(df)
         x = fun(df)
         @test check_allnotemetadata(x)
@@ -561,9 +561,9 @@ end
 
     df = DataFrame(a=1, b="x")
     metadata!(df, "name", "empty", style=:note)
-    metadata!(df, "name2", "empty2", style=:none)
+    metadata!(df, "name2", "empty2", style=:default)
     colmetadata!(df, :b, "name", "some", style=:note)
-    colmetadata!(df, :b, "name2", "some2", style=:none)
+    colmetadata!(df, :b, "name2", "some2", style=:default)
     @test check_allnotemetadata(df)
     x = describe(df)
     @test getfield(x, :metadata) === nothing
@@ -574,9 +574,9 @@ end
 @testset "functions that keep all metadata" begin
     df = DataFrame(a=1, b="x")
     metadata!(df, "name", "empty", style=:note)
-    metadata!(df, "name2", "empty2", style=:none)
+    metadata!(df, "name2", "empty2", style=:default)
     colmetadata!(df, :b, "name", "some", style=:note)
-    colmetadata!(df, :b, "name2", "some2", style=:none)
+    colmetadata!(df, :b, "name2", "some2", style=:default)
     @test check_allnotemetadata(df)
 
     for fun in (copy,
@@ -646,9 +646,9 @@ end
 
         df = DataFrame(a=1, b="x")
         metadata!(df, "name", "empty", style=:note)
-        metadata!(df, "name2", "empty2", style=:none)
+        metadata!(df, "name2", "empty2", style=:default)
         colmetadata!(df, :b, "name", "some", style=:note)
-        colmetadata!(df, :b, "name2", "some2", style=:none)
+        colmetadata!(df, :b, "name2", "some2", style=:default)
         @test check_allnotemetadata(df)
         x = fun(df)
         @test check_allnotemetadata(x)
@@ -660,9 +660,9 @@ end
 
         df = DataFrame(a=[1, 2], c=[1, 2], b=["x", missing])
         metadata!(df, "name", "empty", style=:note)
-        metadata!(df, "name2", "empty2", style=:none)
+        metadata!(df, "name2", "empty2", style=:default)
         colmetadata!(df, :b, "name", "some", style=:note)
-        colmetadata!(df, :b, "name2", "some2", style=:none)
+        colmetadata!(df, :b, "name2", "some2", style=:default)
         @test check_allnotemetadata(df)
         x = fun(df)
         @test check_allnotemetadata(x)
@@ -686,11 +686,11 @@ end
 
     df = DataFrame(a=[[1, 2], [3, 4]], b=["x", "y"])
     metadata!(df, "name", "empty", style=:note)
-    metadata!(df, "name2", "empty2", style=:none)
+    metadata!(df, "name2", "empty2", style=:default)
     colmetadata!(df, :a, "name", "a", style=:note)
-    colmetadata!(df, :a, "name2", "a2", style=:none)
+    colmetadata!(df, :a, "name2", "a2", style=:default)
     colmetadata!(df, :b, "name", "b", style=:note)
-    colmetadata!(df, :b, "name2", "b2", style=:none)
+    colmetadata!(df, :b, "name2", "b2", style=:default)
     @test check_allnotemetadata(df)
     x = flatten(df, 1)
     @test check_allnotemetadata(x)
@@ -746,7 +746,7 @@ end
         @test getfield(parent(x), :metadata) === nothing
         @test getfield(parent(x), :colmetadata) === nothing
         metadata!(df, "name", "empty", style=:note)
-        metadata!(df, "name2", "empty2", style=:none)
+        metadata!(df, "name2", "empty2", style=:default)
         @test check_allnotemetadata(df)
         x = fun(df)
         @test check_allnotemetadata(x)
@@ -755,9 +755,9 @@ end
 
         df = DataFrame(a=1, b="x")
         metadata!(df, "name", "empty", style=:note)
-        metadata!(df, "name2", "empty2", style=:none)
+        metadata!(df, "name2", "empty2", style=:default)
         colmetadata!(df, :a, "name", "a", style=:note)
-        colmetadata!(df, :a, "name2", "a2", style=:none)
+        colmetadata!(df, :a, "name2", "a2", style=:default)
         @test check_allnotemetadata(df)
         x = fun(df)
         @test check_allnotemetadata(x)
@@ -769,9 +769,9 @@ end
 
         df = DataFrame(a=[1, missing], b=["x", "y"])
         metadata!(df, "name", "empty", style=:note)
-        metadata!(df, "name2", "empty2", style=:none)
+        metadata!(df, "name2", "empty2", style=:default)
         colmetadata!(df, :a, "name", "a", style=:note)
-        colmetadata!(df, :a, "name2", "a2", style=:none)
+        colmetadata!(df, :a, "name2", "a2", style=:default)
         @test check_allnotemetadata(df)
         x = fun(df)
         @test check_allnotemetadata(x)
@@ -790,9 +790,9 @@ end
                 x -> popat!(x, 2))
         df = DataFrame(a=1:3, b=["x", "y", "z"])
         metadata!(df, "name", "empty", style=:note)
-        metadata!(df, "name2", "empty2", style=:none)
+        metadata!(df, "name2", "empty2", style=:default)
         colmetadata!(df, :a, "name", "a", style=:note)
-        colmetadata!(df, :a, "name2", "a2", style=:none)
+        colmetadata!(df, :a, "name2", "a2", style=:default)
         @test check_allnotemetadata(df)
         fun(df)
         @test check_allnotemetadata(df)
@@ -811,9 +811,9 @@ end
                 x -> x[!, 1:2])
         df = DataFrame(a=1:3, b=["x", "y", "z"])
         metadata!(df, "name", "empty", style=:note)
-        metadata!(df, "name2", "empty2", style=:none)
+        metadata!(df, "name2", "empty2", style=:default)
         colmetadata!(df, :a, "name", "a", style=:note)
-        colmetadata!(df, :a, "name2", "a2", style=:none)
+        colmetadata!(df, :a, "name2", "a2", style=:default)
         @test check_allnotemetadata(df)
         x = fun(df)
         @test check_allnotemetadata(x)
@@ -832,9 +832,9 @@ end
                 x -> x[!, 1:1])
         df = DataFrame(a=1:3)
         metadata!(df, "name", "empty", style=:note)
-        metadata!(df, "name2", "empty2", style=:none)
+        metadata!(df, "name2", "empty2", style=:default)
         colmetadata!(df, :a, "name", "a", style=:note)
-        colmetadata!(df, :a, "name2", "a2", style=:none)
+        colmetadata!(df, :a, "name2", "a2", style=:default)
         @test check_allnotemetadata(df)
         x = fun(df)
         @test check_allnotemetadata(x)
@@ -852,7 +852,7 @@ end
                 x -> x[!, 1:0])
         df = DataFrame()
         metadata!(df, "name", "empty", style=:note)
-        metadata!(df, "name2", "empty2", style=:none)
+        metadata!(df, "name2", "empty2", style=:default)
         @test check_allnotemetadata(df)
         x = fun(df)
         @test check_allnotemetadata(x)
@@ -862,9 +862,9 @@ end
 
     df = DataFrame(a=1:3, b=["x", "y", "z"])
     metadata!(df, "name", "empty", style=:note)
-    metadata!(df, "name2", "empty2", style=:none)
+    metadata!(df, "name2", "empty2", style=:default)
     colmetadata!(df, :a, "name", "a", style=:note)
-    colmetadata!(df, :a, "name2", "a2", style=:none)
+    colmetadata!(df, :a, "name2", "a2", style=:default)
     @test check_allnotemetadata(df)
     df2 = df[:, 2:2]
     @test check_allnotemetadata(df2)
@@ -898,9 +898,9 @@ end
                 x -> (x[!, :] .= [1 "x"; 2 "y"; 3 "z"]))
         df = DataFrame(a=1:3, b=["x", "y", "z"])
         metadata!(df, "name", "empty", style=:note)
-        metadata!(df, "name2", "empty2", style=:none)
+        metadata!(df, "name2", "empty2", style=:default)
         colmetadata!(df, :a, "name", "a", style=:note)
-        colmetadata!(df, :a, "name2", "a2", style=:none)
+        colmetadata!(df, :a, "name2", "a2", style=:default)
         @test check_allnotemetadata(df)
         fun(df)
         @test check_allnotemetadata(df)
@@ -912,9 +912,9 @@ end
 
         df = view(DataFrame(a=1:3, b=["x", "y", "z"]), :, :)
         metadata!(df, "name", "empty", style=:note)
-        metadata!(parent(df), "name2", "empty2", style=:none)
+        metadata!(parent(df), "name2", "empty2", style=:default)
         colmetadata!(df, :a, "name", "a", style=:note)
-        colmetadata!(parent(df), :a, "name2", "a2", style=:none)
+        colmetadata!(parent(df), :a, "name2", "a2", style=:default)
         @test check_allnotemetadata(df)
         fun(df)
         @test check_allnotemetadata(df)
@@ -930,9 +930,9 @@ end
         for fun in (x -> (x.a .= 11:13), x -> (x.a .= 1))
             df = DataFrame(a=1:3, b=["x", "y", "z"])
             metadata!(df, "name", "empty", style=:note)
-            metadata!(df, "name2", "empty2", style=:none)
+            metadata!(df, "name2", "empty2", style=:default)
             colmetadata!(df, :a, "name", "a", style=:note)
-            colmetadata!(df, :a, "name2", "a2", style=:none)
+            colmetadata!(df, :a, "name2", "a2", style=:default)
             @test check_allnotemetadata(df)
             fun(df)
             @test check_allnotemetadata(df)
@@ -944,9 +944,9 @@ end
 
             df = view(DataFrame(a=1:3, b=["x", "y", "z"]), :, :)
             metadata!(df, "name", "empty", style=:note)
-            metadata!(parent(df), "name2", "empty2", style=:none)
+            metadata!(parent(df), "name2", "empty2", style=:default)
             colmetadata!(df, :a, "name", "a", style=:note)
-            colmetadata!(parent(df), :a, "name2", "a2", style=:none)
+            colmetadata!(parent(df), :a, "name2", "a2", style=:default)
             @test check_allnotemetadata(df)
             fun(df)
             @test check_allnotemetadata(df)
@@ -967,9 +967,9 @@ end
         @test check_allnotemetadata(df2)
 
         metadata!(df, "name", "empty", style=:note)
-        metadata!(parent(df), "name2", "empty2", style=:none)
+        metadata!(parent(df), "name2", "empty2", style=:default)
         colmetadata!(df, :y, "name", "y", style=:note)
-        colmetadata!(parent(df), :y, "name2", "y2", style=:none)
+        colmetadata!(parent(df), :y, "name2", "y2", style=:default)
         @test check_allnotemetadata(df)
         df2 = fillcombinations(df, [:x, :y])
         @test check_allnotemetadata(df2)
@@ -997,14 +997,14 @@ end
     @test getfield(res, :colmetadata) === nothing
 
     metadata!(df2, "name", "some", style=:note)
-    metadata!(df2, "name2", "some2", style=:none)
+    metadata!(df2, "name2", "some2", style=:default)
     res = hcat(df1, df2)
     @test check_allnotemetadata(res)
     @test getfield(res, :metadata) === nothing
     @test getfield(res, :colmetadata) === nothing
 
     metadata!(df1,"type", "other", style=:note)
-    metadata!(df1,"type2", "other2", style=:none)
+    metadata!(df1,"type2", "other2", style=:default)
     res = hcat(df1, df2)
     @test check_allnotemetadata(res)
     @test getfield(res, :metadata) === nothing
@@ -1016,7 +1016,7 @@ end
     @test metadata(res, "type") == "other"
     @test getfield(res, :colmetadata) === nothing
 
-    metadata!(df1, "name", "some", style=:none)
+    metadata!(df1, "name", "some", style=:default)
     res = hcat(df1, df2)
     @test check_allnotemetadata(res)
     @test getfield(res, :metadata) === nothing
@@ -1032,8 +1032,8 @@ end
 
     colmetadata!(df1, :b, "m1", "val1", style=:note)
     colmetadata!(df2, :d, "m2", "val2", style=:note)
-    colmetadata!(df1, :a, "n1", "val1", style=:none)
-    colmetadata!(df2, :c, "n2", "val2", style=:none)
+    colmetadata!(df1, :a, "n1", "val1", style=:default)
+    colmetadata!(df2, :c, "n2", "val2", style=:default)
     res = hcat(df1, df2)
     @test check_allnotemetadata(res)
     @test collect(metadatakeys(res)) == ["name"]
@@ -1109,7 +1109,7 @@ end
     @test getfield(res, :metadata) === nothing
     @test getfield(res, :colmetadata) === nothing
 
-    metadata!(df4, "a", 1, style=:none)
+    metadata!(df4, "a", 1, style=:default)
     res = vcat(df1, df2, df3, df4, cols=[:a, :b, :c, :d, :e])
     @test check_allnotemetadata(res)
     @test getfield(res, :metadata) === nothing
@@ -1133,7 +1133,7 @@ end
     @test getfield(res, :colmetadata) === nothing
 
     colmetadata!(df1, :a, "x", "y", style=:note)
-    colmetadata!(df1, :a, "x1", "y1", style=:none)
+    colmetadata!(df1, :a, "x1", "y1", style=:default)
     res = vcat(df1, df2, df3, df4, cols=[:a, :b, :c, :d, :e])
     @test check_allnotemetadata(res)
     @test collect(metadatakeys(res)) == ["a"]
@@ -1168,9 +1168,9 @@ end
     @test colmetadata(res, :a, "x") == "y"
 
     colmetadata!(df3, :a, "x", "y", style=:note)
-    colmetadata!(df3, :a, "x1", "y1", style=:none)
-    colmetadata!(df4, :a, "x", "y", style=:none)
-    colmetadata!(df4, :a, "x1", "y1", style=:none)
+    colmetadata!(df3, :a, "x1", "y1", style=:default)
+    colmetadata!(df4, :a, "x", "y", style=:default)
+    colmetadata!(df4, :a, "x1", "y1", style=:default)
     res = vcat(df1, df2, df3, df4, cols=[:a, :b, :c, :d, :e])
     @test check_allnotemetadata(res)
     @test collect(metadatakeys(res)) == ["a"]
@@ -1272,7 +1272,7 @@ end
     @test getfield(res, :colmetadata) === nothing
 
     metadata!(df, "name", "empty", style=:note)
-    metadata!(df, "name1", "empty1", style=:none)
+    metadata!(df, "name1", "empty1", style=:default)
     res = stack(df, [:c, :d])
     @test check_allnotemetadata(res)
     @test collect(metadatakeys(res)) == ["name"]
@@ -1286,8 +1286,8 @@ end
 
     colmetadata!(df, :e, "name", "e", style=:note)
     colmetadata!(df, :d, "name", "d", style=:note)
-    colmetadata!(df, :e, "name1", "e1", style=:none)
-    colmetadata!(df, :d, "name1", "d1", style=:none)
+    colmetadata!(df, :e, "name1", "e1", style=:default)
+    colmetadata!(df, :d, "name1", "d1", style=:default)
     res = stack(df, [:c, :d])
     @test check_allnotemetadata(res)
     @test collect(metadatakeys(res)) == ["name"]
@@ -1333,13 +1333,13 @@ end
     @test getfield(res, :colmetadata) === nothing
 
     metadata!(long, "name", "empty", style=:note)
-    metadata!(long, "name1", "empty1", style=:none)
+    metadata!(long, "name1", "empty1", style=:default)
     colmetadata!(long, :a, "name", "a", style=:note)
-    colmetadata!(long, :a, "name1", "a1", style=:none)
+    colmetadata!(long, :a, "name1", "a1", style=:default)
     colmetadata!(long, :variable, "var", "var", style=:note)
-    colmetadata!(long, :variable, "var1", "var1", style=:none)
+    colmetadata!(long, :variable, "var1", "var1", style=:default)
     colmetadata!(long, :value, "val", "val", style=:note)
-    colmetadata!(long, :value, "val1", "val1", style=:none)
+    colmetadata!(long, :value, "val1", "val1", style=:default)
 
     res = unstack(long)
     @test check_allnotemetadata(res)
@@ -1380,15 +1380,15 @@ end
     @test getfield(res, :colmetadata) === nothing
 
     metadata!(df, "name", "empty", style=:note)
-    metadata!(df, "name1", "empty1", style=:none)
+    metadata!(df, "name1", "empty1", style=:default)
     colmetadata!(df, :a, "name", "a", style=:note)
-    colmetadata!(df, :a, "name1", "a1", style=:none)
+    colmetadata!(df, :a, "name1", "a1", style=:default)
     colmetadata!(df, :b, "name", "b", style=:note)
-    colmetadata!(df, :b, "name1", "b1", style=:none)
+    colmetadata!(df, :b, "name1", "b1", style=:default)
     colmetadata!(df, :c, "name", "c", style=:note)
-    colmetadata!(df, :c, "name1", "c1", style=:none)
+    colmetadata!(df, :c, "name1", "c1", style=:default)
     colmetadata!(df, :d, "name", "d", style=:note)
-    colmetadata!(df, :d, "name1", "d1", style=:none)
+    colmetadata!(df, :d, "name1", "d1", style=:default)
     res = permutedims(df, 1)
     @test check_allnotemetadata(res)
     @test collect(metadatakeys(res)) == ["name"]
@@ -1406,9 +1406,9 @@ end
     @test getfield(res, :colmetadata) === nothing
 
     metadata!(df1, "name", "some", style=:note)
-    metadata!(df1, "name1", "some1", style=:none)
+    metadata!(df1, "name1", "some1", style=:default)
     colmetadata!(df1, :b, "x", "y", style=:note)
-    colmetadata!(df1, :b, "x1", "y1", style=:none)
+    colmetadata!(df1, :b, "x1", "y1", style=:default)
 
     res = log.(df1)
     @test check_allnotemetadata(res)
@@ -1430,8 +1430,8 @@ end
     @test getfield(res, :metadata) === nothing
     @test getfield(res, :colmetadata) === nothing
 
-    metadata!(df2, "name", "some", style=:none)
-    colmetadata!(df2, :b, "x", "y", style=:none)
+    metadata!(df2, "name", "some", style=:default)
+    colmetadata!(df2, :b, "x", "y", style=:default)
     res = log.(df1) .+ df2
     @test check_allnotemetadata(res)
     @test getfield(res, :metadata) === nothing
@@ -1471,7 +1471,7 @@ end
     colmetadata!(df3, :c, "labelx", "c", style=:note)
     colmetadata!(df1, :d, "label", "b", style=:note)
     colmetadata!(df2, :d, "label", "b", style=:note)
-    colmetadata!(df3, :d, "label", "b", style=:none)
+    colmetadata!(df3, :d, "label", "b", style=:default)
     df4 = df1 .+ df2 .+ df3
     @test check_allnotemetadata(df4)
     @test isempty(metadatakeys(df4))
@@ -1495,8 +1495,8 @@ end
         df2 = DataFrame(a=1:3, b=2:4, c=1:3)
         metadata!(df2, "caption", "other2", style=:note)
         colmetadata!(df2, :c, "name", "c", style=:note)
-        metadata!(df2, "caption1", "other3", style=:none)
-        colmetadata!(df2, :c, "name1", "c2", style=:none)
+        metadata!(df2, "caption1", "other3", style=:default)
+        colmetadata!(df2, :c, "name1", "c2", style=:default)
         dfr = df2[1, :]
 
         fun(df, dfr)
@@ -1506,8 +1506,8 @@ end
 
         metadata!(df, "caption", "some", style=:note)
         colmetadata!(df, :b, "name", "b", style=:note)
-        metadata!(df, "caption1", "some1", style=:none)
-        colmetadata!(df, :b, "name1", "b2", style=:none)
+        metadata!(df, "caption1", "some1", style=:default)
+        colmetadata!(df, :b, "name1", "b2", style=:default)
         fun(df, dfr)
         @test check_allnotemetadata(df)
         @test collect(metadatakeys(df)) == ["caption"]
@@ -1532,8 +1532,8 @@ end
         metadata!(df2, "caption", "other2", style=:note)
         colmetadata!(df2, :a, "name", "a", style=:note)
         colmetadata!(df2, :c, "name", "c", style=:note)
-        metadata!(df2, "caption1", "other3", style=:none)
-        colmetadata!(df2, :c, "name1", "c2", style=:none)
+        metadata!(df2, "caption1", "other3", style=:default)
+        colmetadata!(df2, :c, "name1", "c2", style=:default)
         df = DataFrame(a=1:3, b=2:4)
         fun(df, df2)
         @test check_allnotemetadata(df)
@@ -1546,8 +1546,8 @@ end
         df = DataFrame(a=1:3, b=2:4)
         metadata!(df, "caption", "some", style=:note)
         colmetadata!(df, :b, "name", "b", style=:note)
-        metadata!(df, "caption1", "some1", style=:none)
-        colmetadata!(df, :b, "name1", "b2", style=:none)
+        metadata!(df, "caption1", "some1", style=:default)
+        colmetadata!(df, :b, "name1", "b2", style=:default)
         fun(df, df2)
         @test check_allnotemetadata(df)
         @test collect(metadatakeys(df)) == ["caption"]
@@ -1561,8 +1561,8 @@ end
         df = DataFrame(a=1:3, b=2:4)
         metadata!(df, "caption", "some", style=:note)
         colmetadata!(df, :b, "name", "b", style=:note)
-        metadata!(df, "caption1", "some1", style=:none)
-        colmetadata!(df, :b, "name1", "b2", style=:none)
+        metadata!(df, "caption1", "some1", style=:default)
+        colmetadata!(df, :b, "name1", "b2", style=:default)
         fun(df, eachrow(df2))
         @test check_allnotemetadata(df)
         @test collect(metadatakeys(df)) == ["caption"]
@@ -1576,8 +1576,8 @@ end
         df = DataFrame(a=1:3, b=2:4)
         metadata!(df, "caption", "some", style=:note)
         colmetadata!(df, :b, "name", "b", style=:note)
-        metadata!(df, "caption1", "some1", style=:none)
-        colmetadata!(df, :b, "name1", "b2", style=:none)
+        metadata!(df, "caption1", "some1", style=:default)
+        colmetadata!(df, :b, "name1", "b2", style=:default)
         fun(df, eachcol(df2))
         @test check_allnotemetadata(df)
         @test collect(metadatakeys(df)) == ["caption"]
@@ -1591,8 +1591,8 @@ end
         df = DataFrame(a=1:3, b=2:4)
         metadata!(df, "caption", "some", style=:note)
         colmetadata!(df, :b, "name", "b", style=:note)
-        metadata!(df, "caption1", "some1", style=:none)
-        colmetadata!(df, :b, "name1", "b2", style=:none)
+        metadata!(df, "caption1", "some1", style=:default)
+        colmetadata!(df, :b, "name1", "b2", style=:default)
         fun(df, Tables.rowtable(df2))
         @test check_allnotemetadata(df)
         @test collect(metadatakeys(df)) == ["caption"]
@@ -1605,8 +1605,8 @@ end
         df = DataFrame(a=1:3, b=2:4)
         metadata!(df, "caption", "some", style=:note)
         colmetadata!(df, :b, "name", "b", style=:note)
-        metadata!(df, "caption1", "some1", style=:none)
-        colmetadata!(df, :b, "name1", "b2", style=:none)
+        metadata!(df, "caption1", "some1", style=:default)
+        colmetadata!(df, :b, "name1", "b2", style=:default)
         fun(df, Tables.columntable(df2))
         @test check_allnotemetadata(df)
         @test collect(metadatakeys(df)) == ["caption"]
@@ -1630,9 +1630,9 @@ end
     metadata!(df2, "caption", "some2", style=:note)
     colmetadata!(df2, :a, "name", "a2", style=:note)
     colmetadata!(df2, :c, "name", "c2", style=:note)
-    metadata!(df2, "caption1", "some2x", style=:none)
-    colmetadata!(df2, :a, "name1", "a2x", style=:none)
-    colmetadata!(df2, :c, "name1", "c2x", style=:none)
+    metadata!(df2, "caption1", "some2x", style=:default)
+    colmetadata!(df2, :a, "name1", "a2x", style=:default)
+    colmetadata!(df2, :c, "name1", "c2x", style=:default)
     df = DataFrame(a=1:3, b=2:4)
     leftjoin!(df, df2, on=:a)
     @test check_allnotemetadata(df)
@@ -1646,9 +1646,9 @@ end
     metadata!(df, "caption", "some1", style=:note)
     colmetadata!(df, :a, "name", "a1", style=:note)
     colmetadata!(df, :b, "name", "b1", style=:note)
-    metadata!(df, "caption1", "some1x", style=:none)
-    colmetadata!(df, :a, "name1", "a1x", style=:none)
-    colmetadata!(df, :b, "name1", "b1x", style=:none)
+    metadata!(df, "caption1", "some1x", style=:default)
+    colmetadata!(df, :a, "name1", "a1x", style=:default)
+    colmetadata!(df, :b, "name1", "b1x", style=:default)
     leftjoin!(df, df2, on=:a)
     @test check_allnotemetadata(df)
     @test collect(metadatakeys(df)) == ["caption"]
@@ -1671,9 +1671,9 @@ end
     metadata!(df2, "caption", "some2", style=:note)
     colmetadata!(df2, :a, "name", "a2", style=:note)
     colmetadata!(df2, :b, "name", "c2", style=:note)
-    metadata!(df2, "caption1", "some2x", style=:none)
-    colmetadata!(df2, :a, "name1", "a2x", style=:none)
-    colmetadata!(df2, :b, "name1", "c2x", style=:none)
+    metadata!(df2, "caption1", "some2x", style=:default)
+    colmetadata!(df2, :a, "name1", "a2x", style=:default)
+    colmetadata!(df2, :b, "name1", "c2x", style=:default)
     df = DataFrame(a=1:3, b=2:4)
     leftjoin!(df, df2, on=:a, makeunique=true)
     @test check_allnotemetadata(df)
@@ -1687,9 +1687,9 @@ end
     metadata!(df, "caption", "some1", style=:note)
     colmetadata!(df, :a, "name", "a1", style=:note)
     colmetadata!(df, :b, "name", "b1", style=:note)
-    metadata!(df, "caption1", "some1x", style=:none)
-    colmetadata!(df, :a, "name1", "a1x", style=:none)
-    colmetadata!(df, :b, "name1", "b1x", style=:none)
+    metadata!(df, "caption1", "some1x", style=:default)
+    colmetadata!(df, :a, "name1", "a1x", style=:default)
+    colmetadata!(df, :b, "name1", "b1x", style=:default)
     leftjoin!(df, df2, on=:a, makeunique=true)
     @test check_allnotemetadata(df)
     @test collect(metadatakeys(df)) == ["caption"]
@@ -1716,9 +1716,9 @@ end
         metadata!(df2, "caption", "some2", style=:note)
         colmetadata!(df2, :a, "name", "a2", style=:note)
         colmetadata!(df2, :c, "name", "c2", style=:note)
-        metadata!(df2, "caption1", "some2x", style=:none)
-        colmetadata!(df2, :a, "name1", "a2x", style=:none)
-        colmetadata!(df2, :c, "name1", "c2x", style=:none)
+        metadata!(df2, "caption1", "some2x", style=:default)
+        colmetadata!(df2, :a, "name1", "a2x", style=:default)
+        colmetadata!(df2, :c, "name1", "c2x", style=:default)
         res = fun(df, df2)
         @test check_allnotemetadata(res)
         @test getfield(res, :metadata) === nothing
@@ -1730,9 +1730,9 @@ end
         metadata!(df, "caption", "some1", style=:note)
         colmetadata!(df, :a, "name", "a1", style=:note)
         colmetadata!(df, :b, "name", "b1", style=:note)
-        metadata!(df, "caption1", "some1x", style=:none)
-        colmetadata!(df, :a, "name1", "a1x", style=:none)
-        colmetadata!(df, :b, "name1", "b1x", style=:none)
+        metadata!(df, "caption1", "some1x", style=:default)
+        colmetadata!(df, :a, "name1", "a1x", style=:default)
+        colmetadata!(df, :b, "name1", "b1x", style=:default)
         res = fun(df, df2)
         @test check_allnotemetadata(res)
         @test collect(metadatakeys(res)) == ["caption"]
@@ -1756,9 +1756,9 @@ end
     metadata!(df2, "caption", "some2", style=:note)
     colmetadata!(df2, :a, "name", "a2", style=:note)
     colmetadata!(df2, :b, "name", "c2", style=:note)
-    metadata!(df2, "caption1", "some2x", style=:none)
-    colmetadata!(df2, :a, "name1", "a2x", style=:none)
-    colmetadata!(df2, :b, "name1", "c2x", style=:none)
+    metadata!(df2, "caption1", "some2x", style=:default)
+    colmetadata!(df2, :a, "name1", "a2x", style=:default)
+    colmetadata!(df2, :b, "name1", "c2x", style=:default)
     res = leftjoin(df, df2, on=:a, makeunique=true)
     @test check_allnotemetadata(res)
     @test getfield(res, :metadata) === nothing
@@ -1770,9 +1770,9 @@ end
     metadata!(df, "caption", "some1", style=:note)
     colmetadata!(df, :a, "name", "a1", style=:note)
     colmetadata!(df, :b, "name", "b1", style=:note)
-    metadata!(df, "caption1", "some1x", style=:none)
-    colmetadata!(df, :a, "name1", "a1x", style=:none)
-    colmetadata!(df, :b, "name1", "b1x", style=:none)
+    metadata!(df, "caption1", "some1x", style=:default)
+    colmetadata!(df, :a, "name1", "a1x", style=:default)
+    colmetadata!(df, :b, "name1", "b1x", style=:default)
     res = leftjoin(df, df2, on=:a, makeunique=true)
     @test check_allnotemetadata(res)
     @test collect(metadatakeys(res)) == ["caption"]
@@ -1799,9 +1799,9 @@ end
         metadata!(df, "caption", "some1", style=:note)
         colmetadata!(df, :a, "name", "a1", style=:note)
         colmetadata!(df, :b, "name", "b1", style=:note)
-        metadata!(df, "caption1", "some1x", style=:none)
-        colmetadata!(df, :a, "name1", "a1x", style=:none)
-        colmetadata!(df, :b, "name1", "b1x", style=:none)
+        metadata!(df, "caption1", "some1x", style=:default)
+        colmetadata!(df, :a, "name1", "a1x", style=:default)
+        colmetadata!(df, :b, "name1", "b1x", style=:default)
         res = fun(df, df2)
         @test check_allnotemetadata(res)
         @test getfield(res, :metadata) === nothing
@@ -1813,9 +1813,9 @@ end
         metadata!(df2, "caption", "some2", style=:note)
         colmetadata!(df2, :a, "name", "a2", style=:note)
         colmetadata!(df2, :c, "name", "c2", style=:note)
-        metadata!(df2, "caption1", "some2x", style=:none)
-        colmetadata!(df2, :a, "name1", "a2x", style=:none)
-        colmetadata!(df2, :c, "name1", "c2x", style=:none)
+        metadata!(df2, "caption1", "some2x", style=:default)
+        colmetadata!(df2, :a, "name1", "a2x", style=:default)
+        colmetadata!(df2, :c, "name1", "c2x", style=:default)
         res = fun(df, df2)
         @test check_allnotemetadata(res)
         @test collect(metadatakeys(res)) == ["caption"]
@@ -1839,9 +1839,9 @@ end
     metadata!(df, "caption", "some1", style=:note)
     colmetadata!(df, :a, "name", "a1", style=:note)
     colmetadata!(df, :b, "name", "b1", style=:note)
-    metadata!(df, "caption1", "some1x", style=:none)
-    colmetadata!(df, :a, "name1", "a1x", style=:none)
-    colmetadata!(df, :b, "name1", "b1x", style=:none)
+    metadata!(df, "caption1", "some1x", style=:default)
+    colmetadata!(df, :a, "name1", "a1x", style=:default)
+    colmetadata!(df, :b, "name1", "b1x", style=:default)
     res = rightjoin(df, df2, on=:a, makeunique=true)
     @test check_allnotemetadata(res)
     @test getfield(res, :metadata) === nothing
@@ -1853,9 +1853,9 @@ end
     metadata!(df2, "caption", "some2", style=:note)
     colmetadata!(df2, :a, "name", "a2", style=:note)
     colmetadata!(df2, :b, "name", "c2", style=:note)
-    metadata!(df2, "caption1", "some2x", style=:none)
-    colmetadata!(df2, :a, "name1", "a2x", style=:none)
-    colmetadata!(df2, :b, "name1", "c2x", style=:none)
+    metadata!(df2, "caption1", "some2x", style=:default)
+    colmetadata!(df2, :a, "name1", "a2x", style=:default)
+    colmetadata!(df2, :b, "name1", "c2x", style=:default)
     res = rightjoin(df, df2, on=:a, makeunique=true)
     @test check_allnotemetadata(res)
     @test collect(metadatakeys(res)) == ["caption"]
@@ -1884,15 +1884,15 @@ end
         metadata!(df, "caption", "some1", style=:note)
         colmetadata!(df, :a, "name", "a1", style=:note)
         colmetadata!(df, :b, "name", "b1", style=:note)
-        metadata!(df, "caption1", "some1x", style=:none)
-        colmetadata!(df, :a, "name1", "a1x", style=:none)
-        colmetadata!(df, :b, "name1", "b1x", style=:none)
+        metadata!(df, "caption1", "some1x", style=:default)
+        colmetadata!(df, :a, "name1", "a1x", style=:default)
+        colmetadata!(df, :b, "name1", "b1x", style=:default)
         metadata!(df2, "caption", "some2", style=:note)
         colmetadata!(df2, :a, "name", "a2", style=:note)
         colmetadata!(df2, :c, "name", "c2", style=:note)
-        metadata!(df2, "caption1", "some2x", style=:none)
-        colmetadata!(df2, :a, "name1", "a2x", style=:none)
-        colmetadata!(df2, :c, "name1", "c2x", style=:none)
+        metadata!(df2, "caption1", "some2x", style=:default)
+        colmetadata!(df2, :a, "name1", "a2x", style=:default)
+        colmetadata!(df2, :c, "name1", "c2x", style=:default)
         res = fun(df, df2)
         @test check_allnotemetadata(res)
         @test getfield(res, :metadata) === nothing
@@ -1904,8 +1904,8 @@ end
 
         metadata!(df2, "caption", "some1", style=:note)
         colmetadata!(df2, :a, "name", "a1", style=:note)
-        metadata!(df2, "caption1", "some1x", style=:none)
-        colmetadata!(df2, :a, "name1", "a1x", style=:none)
+        metadata!(df2, "caption1", "some1x", style=:default)
+        colmetadata!(df2, :a, "name1", "a1x", style=:default)
         res = fun(df, df2)
         @test check_allnotemetadata(res)
         @test collect(metadatakeys(res)) == ["caption"]
@@ -1931,15 +1931,15 @@ end
         metadata!(df, "caption", "some1", style=:note)
         colmetadata!(df, :a, "name", "a1", style=:note)
         colmetadata!(df, :b, "name", "b1", style=:note)
-        metadata!(df, "caption1", "some1x", style=:none)
-        colmetadata!(df, :a, "name1", "a1x", style=:none)
-        colmetadata!(df, :b, "name1", "b1x", style=:none)
+        metadata!(df, "caption1", "some1x", style=:default)
+        colmetadata!(df, :a, "name1", "a1x", style=:default)
+        colmetadata!(df, :b, "name1", "b1x", style=:default)
         metadata!(df2, "caption", "some2", style=:note)
         colmetadata!(df2, :a, "name", "a2", style=:note)
         colmetadata!(df2, :b, "name", "c2", style=:note)
-        metadata!(df2, "caption1", "some2x", style=:none)
-        colmetadata!(df2, :a, "name1", "a2x", style=:none)
-        colmetadata!(df2, :b, "name1", "c2x", style=:none)
+        metadata!(df2, "caption1", "some2x", style=:default)
+        colmetadata!(df2, :a, "name1", "a2x", style=:default)
+        colmetadata!(df2, :b, "name1", "c2x", style=:default)
         res = fun(df, df2)
         @test check_allnotemetadata(res)
         @test getfield(res, :metadata) === nothing
@@ -1951,8 +1951,8 @@ end
 
         metadata!(df2, "caption", "some1", style=:note)
         colmetadata!(df2, :a, "name", "a1", style=:note)
-        metadata!(df2, "caption1", "some1x", style=:none)
-        colmetadata!(df2, :a, "name1", "a1x", style=:none)
+        metadata!(df2, "caption1", "some1x", style=:default)
+        colmetadata!(df2, :a, "name1", "a1x", style=:default)
         res = fun(df, df2)
         @test check_allnotemetadata(res)
         @test collect(metadatakeys(res)) == ["caption"]
@@ -1980,9 +1980,9 @@ end
         metadata!(df2, "caption", "some2", style=:note)
         colmetadata!(df2, :a, "name", "a2", style=:note)
         colmetadata!(df2, :c, "name", "c2", style=:note)
-        metadata!(df2, "caption1", "some2x", style=:none)
-        colmetadata!(df2, :a, "name1", "a2x", style=:none)
-        colmetadata!(df2, :c, "name1", "c2x", style=:none)
+        metadata!(df2, "caption1", "some2x", style=:default)
+        colmetadata!(df2, :a, "name1", "a2x", style=:default)
+        colmetadata!(df2, :c, "name1", "c2x", style=:default)
         res = fun(df, df2)
         @test check_allnotemetadata(res)
         @test getfield(res, :metadata) === nothing
@@ -1992,9 +1992,9 @@ end
         metadata!(df, "caption", "some1", style=:note)
         colmetadata!(df, :a, "name", "a1", style=:note)
         colmetadata!(df, :b, "name", "b1", style=:note)
-        metadata!(df, "caption1", "some1x", style=:none)
-        colmetadata!(df, :a, "name1", "a1x", style=:none)
-        colmetadata!(df, :b, "name1", "b1x", style=:none)
+        metadata!(df, "caption1", "some1x", style=:default)
+        colmetadata!(df, :a, "name1", "a1x", style=:default)
+        colmetadata!(df, :b, "name1", "b1x", style=:default)
         res = fun(df, df2)
         @test check_allnotemetadata(res)
         @test collect(metadatakeys(res)) == ["caption"]
@@ -2018,15 +2018,15 @@ end
     metadata!(df, "caption", "some1", style=:note)
     colmetadata!(df, :a, "name", "a1", style=:note)
     colmetadata!(df, :b, "name", "b1", style=:note)
-    metadata!(df, "caption1", "some1x", style=:none)
-    colmetadata!(df, :a, "name1", "a1x", style=:none)
-    colmetadata!(df, :b, "name1", "b1x", style=:none)
+    metadata!(df, "caption1", "some1x", style=:default)
+    colmetadata!(df, :a, "name1", "a1x", style=:default)
+    colmetadata!(df, :b, "name1", "b1x", style=:default)
     metadata!(df2, "caption", "some2", style=:note)
     colmetadata!(df2, :a, "name", "a2", style=:note)
     colmetadata!(df2, :c, "name", "c2", style=:note)
-    metadata!(df2, "caption1", "some2x", style=:none)
-    colmetadata!(df2, :a, "name1", "a2x", style=:none)
-    colmetadata!(df2, :c, "name1", "c2x", style=:none)
+    metadata!(df2, "caption1", "some2x", style=:default)
+    colmetadata!(df2, :a, "name1", "a2x", style=:default)
+    colmetadata!(df2, :c, "name1", "c2x", style=:default)
     res = crossjoin(df, df2, makeunique=true)
     @test check_allnotemetadata(res)
     @test getfield(res, :metadata) === nothing
@@ -2041,8 +2041,8 @@ end
 
     metadata!(df2, "caption", "some1", style=:note)
     colmetadata!(df2, :a, "name", "a1", style=:note)
-    metadata!(df2, "caption1", "some1x", style=:none)
-    colmetadata!(df2, :a, "name1", "a1x", style=:none)
+    metadata!(df2, "caption1", "some1x", style=:default)
+    colmetadata!(df2, :a, "name1", "a1x", style=:default)
     res = crossjoin(df, df2, makeunique=true)
     @test check_allnotemetadata(res)
     @test collect(metadatakeys(res)) == ["caption"]
@@ -2075,11 +2075,11 @@ end
         end
     end
 
-    metadata!(refdf, "name_none", "none", style=:none)
-    colmetadata!(refdf, :id, "name_none", "id_none", style=:none)
-    colmetadata!(refdf, :a, "name_none", "id_none", style=:none)
-    colmetadata!(refdf, :b, "name_none", "id_none", style=:none)
-    colmetadata!(refdf, :c, "name_none", "id_none", style=:none)
+    metadata!(refdf, "name_none", "none", style=:default)
+    colmetadata!(refdf, :id, "name_none", "id_none", style=:default)
+    colmetadata!(refdf, :a, "name_none", "id_none", style=:default)
+    colmetadata!(refdf, :b, "name_none", "id_none", style=:default)
+    colmetadata!(refdf, :c, "name_none", "id_none", style=:default)
 
     for fun in (combine, select, select!, transform, transform!)
         for df in (copy(refdf), @view copy(refdf)[:, :])
@@ -2366,6 +2366,23 @@ end
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(identity, df)
+            @test check_allnotemetadata(res)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
+        end
+        for df in (copy(refdf), @view copy(refdf)[:, :])
+            res = fun(x -> DataFrame(newcol=1:6), df)
+            @test check_allnotemetadata(res)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
+        end
+        for df in (copy(refdf), @view copy(refdf)[:, :])
+            res = fun(df) do x
+                v = DataFrame(newcol=1:6)
+                colmetadata!(v, "newcol", "key", "value", style=:note)
+            end
             @test check_allnotemetadata(res)
             @test collect(metadatakeys(res)) == ["name"]
             @test metadata(res, "name") == "refdf"
@@ -2741,6 +2758,23 @@ end
             @test metadata(res, "name") == "refdf"
             @test getfield(parent(res), :colmetadata) === nothing
         end
+        for df in (copy(refdf), @view copy(refdf)[:, :])
+            res = fun(x -> DataFrame(id=x.id, a=x.a, b=x.b, c=x.c), df)
+            @test check_allnotemetadata(res)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
+        end
+        for df in (copy(refdf), @view copy(refdf)[:, :])
+            res = fun(df) do x
+                v = DataFrame(id=x.id, a=x.a, b=x.b, c=x.c)
+                colmetadata!(v, "a", "key", "value", style=:note)
+            end
+            @test check_allnotemetadata(res)
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test getfield(parent(res), :colmetadata) === nothing
+        end
     end
 end
 
@@ -2762,11 +2796,11 @@ end
         end
     end
 
-    metadata!(refdf, "name_none", "none", style=:none)
-    colmetadata!(refdf, :id, "name_none", "id_none", style=:none)
-    colmetadata!(refdf, :a, "name_none", "id_none", style=:none)
-    colmetadata!(refdf, :b, "name_none", "id_none", style=:none)
-    colmetadata!(refdf, :c, "name_none", "id_none", style=:none)
+    metadata!(refdf, "name_none", "none", style=:default)
+    colmetadata!(refdf, :id, "name_none", "id_none", style=:default)
+    colmetadata!(refdf, :a, "name_none", "id_none", style=:default)
+    colmetadata!(refdf, :b, "name_none", "id_none", style=:default)
+    colmetadata!(refdf, :c, "name_none", "id_none", style=:default)
 
     for fun in (combine, select, select!, transform, transform!)
         for df in (copy(refdf), @view copy(refdf)[:, :])
@@ -3183,6 +3217,33 @@ end
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(identity, groupby(df, :id), ungroup=ug)
+            @test check_allnotemetadata(res)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :a))
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :c))
+        end
+        for df in (copy(refdf), @view copy(refdf)[:, :])
+            res = fun(x -> DataFrame(id=x.id, a=x.a, b=x.b, c=x.c), groupby(df, :id), ungroup=ug)
+            @test check_allnotemetadata(res)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :a))
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :c))
+        end
+        for df in (copy(refdf), @view copy(refdf)[:, :])
+            res = fun(groupby(df, :id), ungroup=ug) do x
+                v = DataFrame(id=x.id, a=x.a, b=x.b, c=x.c)
+                colmetadata!(v, "a", "key", "value", style=:note)
+            end
             @test check_allnotemetadata(res)
             res = parent(parent(res))
             @test collect(metadatakeys(res)) == ["name"]
@@ -3657,6 +3718,33 @@ end
         end
         for df in (copy(refdf), @view copy(refdf)[:, :])
             res = fun(identity, groupby(df, :id), ungroup=ug)
+            @test check_allnotemetadata(res)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :a))
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :c))
+        end
+        for df in (copy(refdf), @view copy(refdf)[:, :])
+            res = fun(x -> DataFrame(id=x.id, a=x.a, b=x.b, c=x.c), groupby(df, :id), ungroup=ug)
+            @test check_allnotemetadata(res)
+            res = parent(parent(res))
+            @test collect(metadatakeys(res)) == ["name"]
+            @test metadata(res, "name") == "refdf"
+            @test collect(colmetadatakeys(res, :id)) == ["name"]
+            @test colmetadata(res, :id, "name") == "id"
+            @test isempty(colmetadatakeys(res, :a))
+            @test isempty(colmetadatakeys(res, :b))
+            @test isempty(colmetadatakeys(res, :c))
+        end
+        for df in (copy(refdf), @view copy(refdf)[:, :])
+            res = fun(groupby(df, :id), ungroup=ug) do x
+                v = DataFrame(id=x.id, a=x.a, b=x.b, c=x.c)
+                colmetadata!(v, "a", "key", "value", style=:note)
+            end
             @test check_allnotemetadata(res)
             res = parent(parent(res))
             @test collect(metadatakeys(res)) == ["name"]
