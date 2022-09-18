@@ -9,6 +9,7 @@ import LinearAlgebra: norm
 using Markdown
 using PrettyTables
 using Random
+using Tables: ByRow
 
 import DataAPI,
        DataAPI.allcombinations,

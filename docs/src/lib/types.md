@@ -126,7 +126,6 @@ without caution because:
 ```@docs
 AbstractDataFrame
 AsTable
-ByRow
 DataFrame
 DataFrameRow
 GroupedDataFrame

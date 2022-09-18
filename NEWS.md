@@ -93,6 +93,11 @@
 * Make `transform!` on `SubDataFrame` faster
   ([#3070](https://github.com/JuliaData/DataFrames.jl/pull/3070))
 
+## Integration changes
+
+* Support `Tables.subset` and move `ByRow` definition to Tables.jl
+  ([#3158](https://github.com/JuliaData/DataFrames.jl/pull/3158))
+
 # DataFrames.jl v1.3.4 Patch Release Notes
 
 ## Bug fixes
