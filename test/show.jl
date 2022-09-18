@@ -261,6 +261,70 @@ end
            4 │ true  true  true
            5 │ true  true  true"""
 
+    show(io, groupby(df, :x), allcols=true, allrows=true) 
+    str = String(take!(io.io))
+    @test str == """
+        GroupedDataFrame with 2 groups based on key: x
+        First Group (5 rows): x = false
+         Row │ x      y      z
+             │ Bool   Bool   Bool
+        ─────┼─────────────────────
+           1 │ false  false  false
+           2 │ false  false  false
+           3 │ false  false  false
+           4 │ false  false  false
+           5 │ false  false  false
+        ⋮
+        Last Group (45 rows): x = true
+         Row │ x     y      z
+             │ Bool  Bool   Bool
+        ─────┼────────────────────
+           1 │ true  false  false
+           2 │ true  false  false
+           3 │ true  false  false
+           4 │ true  false  false
+           5 │ true  false  false
+           6 │ true  false  false
+           7 │ true  false  false
+           8 │ true  false  false
+           9 │ true  false  false
+          10 │ true  false  false
+          11 │ true  false  false
+          12 │ true  false  false
+          13 │ true  false  false
+          14 │ true  false  false
+          15 │ true  false  false
+          16 │ true  false  false
+          17 │ true  false  false
+          18 │ true  false  false
+          19 │ true  false  false
+          20 │ true  false  false
+          21 │ true   true  false
+          22 │ true   true  false
+          23 │ true   true  false
+          24 │ true   true  false
+          25 │ true   true  false
+          26 │ true   true  false
+          27 │ true   true  false
+          28 │ true   true  false
+          29 │ true   true  false
+          30 │ true   true  false
+          31 │ true   true  false
+          32 │ true   true  false
+          33 │ true   true  false
+          34 │ true   true  false
+          35 │ true   true  false
+          36 │ true   true  false
+          37 │ true   true  false
+          38 │ true   true  false
+          39 │ true   true  false
+          40 │ true   true  false
+          41 │ true   true   true
+          42 │ true   true   true
+          43 │ true   true   true
+          44 │ true   true   true
+          45 │ true   true   true"""
+
     # height is small but positive -> print squashed
     for h in 1:5
         io = IOContext(IOBuffer(), :displaysize=>(h, 40), :limit=>true)
@@ -292,6 +356,35 @@ end
         str_allrows = String(take!(io.io))
         @test str_hrows == str_allrows
     end
+
+    # one group
+    io = IOContext(IOBuffer(), :displaysize=>(15, 40), :limit=>true)
+    df = DataFrame(x = 1:15, y = 1)
+    show(io, groupby(df, :y))
+    str = String(take!(io.io))
+    print(str)
+    @test str == """
+        GroupedDataFrame with 1 group based on key: y
+        First Group (15 rows): y = 1
+         Row │ x      y
+             │ Int64  Int64
+        ─────┼──────────────
+           1 │     1      1
+           2 │     2      1
+           3 │     3      1
+          ⋮  │   ⋮      ⋮
+          14 │    14      1
+          15 │    15      1
+             10 rows omitted"""
+
+    # zero groups
+    io = IOContext(IOBuffer())
+    df = DataFrame(x=[], y=Int[])
+    show(io, groupby(df, :x))
+    str = String(take!(io.io))
+    @test str == "GroupedDataFrame with 0 groups based on key: x"
+
+
 end
 
 
