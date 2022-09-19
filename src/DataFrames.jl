@@ -87,9 +87,6 @@ export AbstractDataFrame,
        unstack,
        valuecols
 
-import Base.eachcol, Base.eachrow
-import Base.only
-import Base.popat!
 using Base.Threads: @spawn
 using Base: ComposedFunction
 

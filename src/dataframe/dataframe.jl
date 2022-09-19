@@ -1098,7 +1098,7 @@ julia> df
    2 │     3      6
 ```
 """
-function popat!(df::DataFrame, i::Integer)
+function Base.popat!(df::DataFrame, i::Integer)
     i isa Bool && throw(ArgumentError("Invalid index of type Bool"))
     nt = NamedTuple(df[i, :])
     deleteat!(df, i)
