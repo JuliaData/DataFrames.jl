@@ -50,6 +50,8 @@
 * `completecases` and `nonunique` no longer throw an error when data frame
   with no columns is passed
   ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
+* `describe` now accepts two predefined arguments: `:nnonmissing` and `:nuniqueall`
+  ([#3146](https://github.com/JuliaData/DataFrames.jl/pull/3146))
 
 ## Previously announced breaking changes
 
@@ -97,6 +99,19 @@
 
 * Support `Tables.subset` and move `ByRow` definition to Tables.jl
   ([#3158](https://github.com/JuliaData/DataFrames.jl/pull/3158))
+
+# DataFrames.jl v1.3.6 Patch Release Notes
+
+## Bug fixes
+
+* Fix overly restrictive type assertion in `filter` and `filter!`
+  ([#3155](https://github.com/JuliaData/DataFrames.jl/pull/3155))
+
+# DataFrames.jl v1.3.5 Patch Release Notes
+
+## Integration change
+
+* Allow version 4 of Compat.jl
 
 # DataFrames.jl v1.3.4 Patch Release Notes
 
