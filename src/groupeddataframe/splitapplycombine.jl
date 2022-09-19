@@ -735,18 +735,10 @@ function _combine(gd::GroupedDataFrame,
         try
             wait(t)
         catch e
-            @static if VERSION > v"1.3"
-                if e isa TaskFailedException
-                    throw(t.exception)
-                else
-                    rethrow(e)
-                end
+            if e isa TaskFailedException
+                throw(t.exception)
             else
-                if e isa ErrorException
-                    throw(t.exception)
-                else
-                    rethrow(e)
-                end
+                rethrow(e)
             end
         end
     end

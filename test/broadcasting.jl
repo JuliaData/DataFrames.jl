@@ -1463,7 +1463,7 @@ end
 
     df = copy(refdf)
     v1 = df[!, 1]
-    if isdefined(Base, :dotgetproperty)
+    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
         df.x1 .= 'd'
         @test df.x1 == ['d', 'd', 'd']
         @test eltype(df.x1) === Char
@@ -1479,7 +1479,7 @@ end
         @test v1 == [100.0, 100.0, 100.0]
     end
 
-    if isdefined(Base, :dotgetproperty)
+    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
         df = DataFrame(a=1:4, b=1, c=2)
         df.a .= 'a':'d'
         @test df == DataFrame(a='a':'d', b=1, c=2)
@@ -1500,7 +1500,7 @@ end
     end
 
     df = copy(refdf)
-    if isdefined(Base, :dotgetproperty)
+    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
         df.newcol .= 'd'
         @test df == [refdf DataFrame(newcol=fill('d', 3))]
     else
@@ -1637,7 +1637,7 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    if isdefined(Base, :dotgetproperty)
+    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
         df.x1 .= 'd'
         @test df.x1 == ['d', 'd', 'd']
         @test eltype(df.x1) === Any
@@ -1910,7 +1910,7 @@ end
 
 @testset "broadcasting of getproperty" begin
     df = DataFrame(a=1:4)
-    if isdefined(Base, :dotgetproperty)
+    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
         df.b .= 1
         x = df.b
         df.c .= 4:-1:1
@@ -1945,7 +1945,7 @@ end
 @testset "dotgetproperty on SubDataFrame" begin
     df = DataFrame(a=1:3, b=4:6)
     dfv = @view df[[3, 1], :]
-    if isdefined(Base, :dotgetproperty)
+    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
         dfv.c .= [1, 2]
         @test df ≅ DataFrame(a=1:3, b=4:6, c=[2, missing, 1])
     else

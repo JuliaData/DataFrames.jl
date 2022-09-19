@@ -1747,9 +1747,7 @@ end
     @test_throws ArgumentError df[1:2, 1:1] = DataFrame(b=1:2)
 end
 
-if VERSION >= v"1.4"
-    include("indexing_begin_tests.jl")
-end
+include("indexing_begin_tests.jl")
 
 @testset "unsupported df[col] and df[col] for getindex, view, and setindex!" begin
     @testset "getindex DataFrame" begin
@@ -2021,9 +2019,7 @@ end
     @test_throws BoundsError lastindex(gk, 0)
 end
 
-if VERSION >= v"1.5"
-    include("indexing_offset.jl")
-end
+include("indexing_offset.jl")
 
 @testset "threading correctness tests" begin
     for x in (10, 1_100_000), y in 1:4

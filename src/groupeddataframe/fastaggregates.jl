@@ -162,9 +162,7 @@ function groupreduce!_helper(res::AbstractVector, f, op, condf, adjust, checkemp
                              batches)
     for batch in batches
         # Allow other tasks to do garbage collection while this one runs
-        @static if VERSION >= v"1.4"
-            GC.safepoint()
-        end
+        GC.safepoint()
 
         @inbounds for i in batch
             gix = groups[i]
@@ -194,12 +192,8 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
         counts = Int[]
     end
     groups = gd.groups
-    @static if VERSION >= v"1.4"
-        batchsize = Threads.nthreads() > 1 ? 100_000 : typemax(Int)
-        batches = Iterators.partition(eachindex(incol, groups), batchsize)
-    else
-        batches = (eachindex(incol, groups),)
-    end
+    batchsize = Threads.nthreads() > 1 ? 100_000 : typemax(Int)
+    batches = Iterators.partition(eachindex(incol, groups), batchsize)
 
     groupreduce!_helper(res, f, op, condf, adjust, checkempty,
                              incol, groups, counts, batches)
@@ -253,12 +247,6 @@ groupreduce(f, op, condf::typeof(!ismissing), adjust, checkempty::Bool,
 
 (r::Reduce)(incol::AbstractVector, gd::GroupedDataFrame) =
     groupreduce((x, i) -> x, r.op, r.condf, r.adjust, r.checkempty, incol, gd)
-
-# this definition is missing in Julia 1.0 LTS and is required by aggregation for var
-# TODO: remove this when we drop 1.0 support
-if VERSION < v"1.1"
-    Base.zero(::Type{Missing}) = missing
-end
 
 function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFrame)
     means = groupreduce((x, i) -> x, Base.add_sum, agg.condf, /, false, incol, gd)

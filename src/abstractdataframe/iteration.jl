@@ -72,7 +72,7 @@ julia> eachrow(view(df, [4, 3], [2, 1]))
    2 │    13      3
 ```
 """
-eachrow(df::AbstractDataFrame) = DataFrameRows(df)
+Base.eachrow(df::AbstractDataFrame) = DataFrameRows(df)
 
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
 Base.size(itr::DataFrameRows) = (size(parent(itr), 1), )
@@ -172,7 +172,7 @@ julia> sum.(eachcol(df))
  50
 ```
 """
-eachcol(df::AbstractDataFrame) = DataFrameColumns(df)
+Base.eachcol(df::AbstractDataFrame) = DataFrameColumns(df)
 
 Base.IteratorSize(::Type{<:DataFrameColumns}) = Base.HasShape{1}()
 Base.size(itr::DataFrameColumns) = (size(parent(itr), 2),)
@@ -191,10 +191,6 @@ Base.eltype(::Type{<:DataFrameColumns}) = AbstractVector
 Base.firstindex(itr::DataFrameColumns) = 1
 Base.lastindex(itr::DataFrameColumns) = length(itr)
 
-if VERSION < v"1.6"
-    Base.firstindex(itr::DataFrameColumns, i::Integer) = first(axes(itr, i))
-    Base.lastindex(itr::DataFrameColumns, i::Integer) = last(axes(itr, i))
-end
 Base.axes(itr::DataFrameColumns, i::Integer) = Base.OneTo(size(itr, i))
 
 Base.iterate(itr::DataFrameColumns, i::Integer=1) =

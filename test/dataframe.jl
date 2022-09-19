@@ -450,13 +450,8 @@ end
     @test_throws BoundsError deleteat!(df, [10])
 
     df = DataFrame(a=[])
-    if VERSION >= v"1.1"
-        @test_throws BoundsError deleteat!(df, 10)
-        @test_throws BoundsError deleteat!(df, [10])
-    else
-        @test_throws InexactError deleteat!(df, 10)
-        @test_throws InexactError deleteat!(df, [10])
-    end
+    @test_throws BoundsError deleteat!(df, 10)
+    @test_throws BoundsError deleteat!(df, [10])
 
     df = DataFrame(a=[1, 2, 3], b=[3, 2, 1])
     @test_throws ArgumentError deleteat!(df, [3, 2])
@@ -1604,7 +1599,7 @@ end
     @test x == 1:10
     df.y .= 1
     @test df.y == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    if isdefined(Base, :dotgetproperty)
+    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
         @test y == 1.0:10.0
     else
         @test df.y === y

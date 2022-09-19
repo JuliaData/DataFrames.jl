@@ -1,5 +1,10 @@
 # DataFrames.jl v1.4 Release Notes
 
+## Julia compatibility change
+
+* DataFrames.jl 1.4 requires Julia 1.6
+  ([#3145](https://github.com/JuliaData/DataFrames.jl/pull/3145))
+
 ## New functionalities
 
 * `subset` and `subset!` now allow passing zero column selectors

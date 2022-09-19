@@ -403,10 +403,6 @@ Return `true` if data frame `df` has zero rows, and `false` otherwise.
 """
 Base.isempty(df::AbstractDataFrame) = nrow(df) == 0
 
-if VERSION < v"1.6"
-    Base.firstindex(df::AbstractDataFrame, i::Integer) = first(axes(df, i))
-    Base.lastindex(df::AbstractDataFrame, i::Integer) = last(axes(df, i))
-end
 Base.axes(df::AbstractDataFrame, i::Integer) = Base.OneTo(size(df, i))
 
 """
@@ -514,7 +510,7 @@ If `df` has a single row return it as a `DataFrameRow`; otherwise throw `Argumen
 
 $METADATA_FIXED
 """
-function only(df::AbstractDataFrame)
+function Base.only(df::AbstractDataFrame)
     nrow(df) != 1 && throw(ArgumentError("data frame must contain exactly 1 row"))
     return df[1, :]
 end

@@ -264,12 +264,8 @@ function _combine_rows_with_first!((firstrow,)::Ref{Any},
     # Create up to one task per thread
     # This has lower overhead than creating one task per group,
     # but is optimal only if operations take roughly the same time for all groups
-    if VERSION >= v"1.4" && threads && isthreadsafe(outcols, incols)
-        basesize = max(1, cld(len - 1, Threads.nthreads()))
-        partitions = Iterators.partition(2:len, basesize)
-    else
-        partitions = (2:len,)
-    end
+    basesize = max(1, cld(len - 1, Threads.nthreads()))
+    partitions = Iterators.partition(2:len, basesize)
     widen_type_lock = ReentrantLock()
     outcolsref = Ref{NTuple{<:Any, AbstractVector}}(outcols)
     type_widened = fill(false, length(partitions))
@@ -320,16 +316,9 @@ end
 
 # This needs to be in a separate function
 # to work around a crash due to JuliaLang/julia#29430
-if VERSION >= v"1.1.0-DEV.723"
-    @inline function do_append!(do_it, col, vals)
-        do_it && append!(col, vals)
-        return do_it
-    end
-else
-    @noinline function do_append!(do_it, col, vals)
-        do_it && append!(col, vals)
-        return do_it
-    end
+@inline function do_append!(do_it, col, vals)
+    do_it && append!(col, vals)
+    return do_it
 end
 
 _get_col(rows::AbstractDataFrame, j::Int) = rows[!, j]

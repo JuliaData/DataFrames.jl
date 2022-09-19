@@ -212,15 +212,9 @@ mutable struct DataFrame <: AbstractDataFrame
 
         # we write into columns as we know that it is guaranteed
         # that it was freshly allocated in the outer constructor
-        @static if VERSION >= v"1.4"
-            if copycols && len >= 1_000_000 && length(columns) > 1 && Threads.nthreads() > 1
-                @sync for i in eachindex(columns)
-                    Threads.@spawn columns[i] = _preprocess_column(columns[i], len, copycols)
-                end
-            else
-                for i in eachindex(columns)
-                    columns[i] = _preprocess_column(columns[i], len, copycols)
-                end
+        if copycols && len >= 1_000_000 && length(columns) > 1 && Threads.nthreads() > 1
+            @sync for i in eachindex(columns)
+                Threads.@spawn columns[i] = _preprocess_column(columns[i], len, copycols)
             end
         else
             for i in eachindex(columns)
@@ -564,20 +558,15 @@ function _threaded_getindex(selected_rows::AbstractVector,
                             selected_columns::AbstractVector,
                             df_columns::AbstractVector,
                             idx::AbstractIndex)
-    @static if VERSION >= v"1.4"
-        if length(selected_rows) >= 1_000_000 && Threads.nthreads() > 1
-            new_columns = Vector{AbstractVector}(undef, length(selected_columns))
-            @sync for i in eachindex(new_columns)
-                Threads.@spawn new_columns[i] = df_columns[selected_columns[i]][selected_rows]
-            end
-            return DataFrame(new_columns, idx, copycols=false)
-        else
-            return DataFrame(AbstractVector[df_columns[i][selected_rows] for i in selected_columns],
-                             idx, copycols=false)
+    if length(selected_rows) >= 1_000_000 && Threads.nthreads() > 1
+        new_columns = Vector{AbstractVector}(undef, length(selected_columns))
+        @sync for i in eachindex(new_columns)
+            Threads.@spawn new_columns[i] = df_columns[selected_columns[i]][selected_rows]
         end
+        return DataFrame(new_columns, idx, copycols=false)
     else
         return DataFrame(AbstractVector[df_columns[i][selected_rows] for i in selected_columns],
-                         idx, copycols=false)
+                            idx, copycols=false)
     end
 end
 
@@ -1181,7 +1170,7 @@ julia> df
    2 │     3      6
 ```
 """
-function popat!(df::DataFrame, i::Integer)
+function Base.popat!(df::DataFrame, i::Integer)
     i isa Bool && throw(ArgumentError("Invalid index of type Bool"))
     nt = NamedTuple(df[i, :])
     deleteat!(df, i)

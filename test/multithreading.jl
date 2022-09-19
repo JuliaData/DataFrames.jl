@@ -162,7 +162,7 @@ end
                   [] => (() -> n[] += 1) => :n2,
                   threads=false) ==
         DataFrame(y=1:4, n1=1:4, n2=5:8)
-    if VERSION >= v"1.4" && Threads.nthreads() > 1
+    if Threads.nthreads() > 1
         @test combine(gd, [] => (() -> Threads.threadid()) => :id1,
                       [] => (() -> Threads.threadid()) => :id2,
                       threads=true) !=
@@ -180,7 +180,7 @@ end
                 [] => (() -> n[] += 1) => :n2,
                 threads=false) ==
         select(leftjoin(refdf, DataFrame(y=1:4, n1=1:4, n2=5:8), on=:y), :y, :n1, :n2)
-    if VERSION >= v"1.4" && Threads.nthreads() > 1
+    if Threads.nthreads() > 1
         df = copy(refdf)
         gd = groupby(df, :y)
         @test select(gd, [] => (() -> Threads.threadid()) => :id1,
@@ -204,7 +204,7 @@ end
                 [] => (() -> n[] += 1) => :n2,
                     threads=false) ==
         leftjoin(refdf, DataFrame(y=1:4, n1=1:4, n2=5:8), on=:y)
-    if VERSION >= v"1.4" && Threads.nthreads() > 1
+    if Threads.nthreads() > 1
         df = copy(refdf)
         gd = groupby(df, :y)
         @test transform(gd, [] => (() -> Threads.threadid()) => :id1,

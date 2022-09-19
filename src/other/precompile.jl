@@ -16,8 +16,6 @@
 # * run @warnpcfail check for all=true and all=false both on Julia stable and nightly
 
 function precompile(all=false)
-    VERSION >= v"1.5" || return nothing
-
         all || ccall(:jl_generating_output, Cint, ()) == 1 || return nothing
 
         Base.precompile(Tuple{Aggregate{typeof(std), Nothing},Vector{Union{Missing, Int}},GroupedDataFrame{DataFrame}})

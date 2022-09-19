@@ -1365,7 +1365,7 @@ end
     df = DataFrame(a=1:3)
     sdf = @view df[[3, 2], :]
     sdf.a .= 12.0
-    if isdefined(Base, :dotgetproperty)
+    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
         @test eltype(sdf.a) === Float64
     else
         @test eltype(sdf.a) === Int
@@ -1383,7 +1383,7 @@ end
     sdf = @view df[[3, 2], 1:1]
     @test_throws ArgumentError sdf.c = [5, 6]
     sdf.a .= 12.0
-    if isdefined(Base, :dotgetproperty)
+    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
         @test eltype(sdf.a) === Float64
     else
         @test eltype(sdf.a) === Int

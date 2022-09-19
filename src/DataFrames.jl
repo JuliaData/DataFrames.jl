@@ -107,23 +107,8 @@ export AbstractDataFrame,
        deletecolmetadata!,
        emptycolmetadata!
 
-if VERSION >= v"1.1.0-DEV.792"
-    import Base.eachcol, Base.eachrow
-else
-    import Compat.eachcol, Compat.eachrow
-    export eachcol, eachrow
-end
-
-if VERSION < v"1.2"
-    export hasproperty
-end
-
-if isdefined(Base, :only)  # Introduced in 1.4.0
-    import Base.only
-else
-    import Compat.only
-    export only
-end
+using Base.Threads: @spawn
+using Base: ComposedFunction
 
 if isdefined(Base, :keepat!)  # Introduced in 1.7.0
     import Base.keepat!
@@ -132,47 +117,17 @@ else
     export keepat!
 end
 
-if isdefined(Base, :popat!)  # Introduced in 1.5.0
-    import Base.popat!
-else
-    import Compat.popat!
-    export popat!
-end
-
-if VERSION >= v"1.3"
-    using Base.Threads: @spawn
-else
-    # This is the definition of @async in Base
-    macro spawn(expr)
-        thunk = esc(:(()->($expr)))
-        var = esc(Base.sync_varname)
-        quote
-            local task = Task($thunk)
-            if $(Expr(:isdefined, var))
-                push!($var, task)
-            end
-            schedule(task)
-        end
-    end
-end
-
-if isdefined(Base, :ComposedFunction) # Julia >= 1.6.0-DEV.85
-    using Base: ComposedFunction
-else
-    using Compat: ComposedFunction
-end
-
-const METADATA_FIXED =
-    """
-    Metadata: this function preserves table-level and column-level `:note`-style metadata.
-    """
-
 if VERSION >= v"1.9.0-DEV.1163"
     import Base: stack
 else
     import Compat: stack
     export stack
 end
+
+const METADATA_FIXED =
+    """
+    Metadata: this function preserves table-level and column-level `:note`-style metadata.
+    """
 
 include("other/utils.jl")
 include("other/index.jl")
