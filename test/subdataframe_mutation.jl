@@ -1,4 +1,4 @@
-module TestIndexing
+module TestIndexingSubDataFrame
 
 using Test, DataFrames, CategoricalArrays, PooledArrays
 
