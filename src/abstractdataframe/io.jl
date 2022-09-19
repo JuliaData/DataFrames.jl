@@ -181,7 +181,7 @@ function _show(io::IO,
     types_str = batch_compacttype(types, 9)
     types_str_complete = batch_compacttype(types, 256)
 
-    # For consistency, if `kwargs` has `compact_printng`, we must use it.
+    # For consistency, if `kwargs` has `compact_printing`, we must use it.
     compact_printing::Bool = get(kwargs, :compact_printing, get(io, :compact, true))
 
     num_rows, num_cols = size(df)
@@ -200,7 +200,7 @@ function _show(io::IO,
 
     if get(io, :limit, false)
         # Obtain the maximum number of rows and columns that we can print from
-        # environments variables.
+        # environment variables.
         mxrow = tryparse(Int, get(ENV, "DATAFRAMES_ROWS", "25"))
 
         if isnothing(mxrow)
