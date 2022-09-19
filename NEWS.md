@@ -49,6 +49,14 @@
 * New `threads` argument allows disabling multithreading in
   `combine`, `select`, `select!`, `transform`, `transform!`, `subset` and `subset!`
   ([#3030](https://github.com/JuliaData/DataFrames.jl/pull/3030))
+* Add support for table-level and column-level metadata using
+  DataAPI.jl interface
+  ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
+* `completecases` and `nonunique` no longer throw an error when data frame
+  with no columns is passed
+  ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
+* `describe` now accepts two predefined arguments: `:nnonmissing` and `:nuniqueall`
+  ([#3146](https://github.com/JuliaData/DataFrames.jl/pull/3146))
 
 ## Previously announced breaking changes
 
@@ -57,8 +65,19 @@
   or older it is an in place operation.
   ([#3022](https://github.com/JuliaData/DataFrames.jl/pull/3022))
 
+## Internal changes
+
+* `DataFrame` is now a `mutable struct` and has three new fields
+  `metadata`, `colmetadata`, and `allnotemetadata`;
+  this change makes `DataFrame` objects serialized under
+  earlier versions of DataFrames.jl incompatible with version 1.4
+  ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
+
 ## Bug fixes
 
+* fix dispatch ambiguity in `rename` and `rename!` when only
+  source data frame is passed
+  ([#3055](https://github.com/JuliaData/DataFrames.jl/pull/3055))
 * Make sure that `AsTable` accepts only valid argument
   ([#3064](https://github.com/JuliaData/DataFrames.jl/pull/3064))
 * Make sure we avoid aliasing when repeating the same column
@@ -85,6 +104,19 @@
 
 * Support `Tables.subset` and move `ByRow` definition to Tables.jl
   ([#3158](https://github.com/JuliaData/DataFrames.jl/pull/3158))
+
+# DataFrames.jl v1.3.6 Patch Release Notes
+
+## Bug fixes
+
+* Fix overly restrictive type assertion in `filter` and `filter!`
+  ([#3155](https://github.com/JuliaData/DataFrames.jl/pull/3155))
+
+# DataFrames.jl v1.3.5 Patch Release Notes
+
+## Integration change
+
+* Allow version 4 of Compat.jl
 
 # DataFrames.jl v1.3.4 Patch Release Notes
 

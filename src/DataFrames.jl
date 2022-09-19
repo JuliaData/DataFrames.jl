@@ -26,6 +26,16 @@ import DataAPI,
        DataAPI.crossjoin,
        DataAPI.nrow,
        DataAPI.ncol,
+       DataAPI.metadata,
+       DataAPI.metadatakeys,
+       DataAPI.metadata!,
+       DataAPI.deletemetadata!,
+       DataAPI.emptymetadata!,
+       DataAPI.colmetadata,
+       DataAPI.colmetadatakeys,
+       DataAPI.colmetadata!,
+       DataAPI.deletecolmetadata!,
+       DataAPI.emptycolmetadata!,
        Tables,
        Tables.columnindex,
        Future.copy!
@@ -85,7 +95,17 @@ export AbstractDataFrame,
        transform!,
        unique!,
        unstack,
-       valuecols
+       valuecols,
+       metadata,
+       metadatakeys,
+       metadata!,
+       deletemetadata!,
+       emptymetadata!,
+       colmetadata,
+       colmetadatakeys,
+       colmetadata!,
+       deletecolmetadata!,
+       emptycolmetadata!
 
 using Base.Threads: @spawn
 using Base: ComposedFunction
@@ -103,6 +123,11 @@ else
     import Compat: stack
     export stack
 end
+
+const METADATA_FIXED =
+    """
+    Metadata: this function preserves table-level and column-level `:note`-style metadata.
+    """
 
 include("other/utils.jl")
 include("other/index.jl")
@@ -143,6 +168,7 @@ include("abstractdataframe/sort.jl")
 
 include("other/tables.jl")
 include("other/names.jl")
+include("other/metadata.jl")
 
 include("deprecated.jl")
 

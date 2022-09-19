@@ -1,7 +1,7 @@
 """
     DataFrame <: AbstractDataFrame
 
-An `AbstractDataFrame` that stores a set of named columns
+An `AbstractDataFrame` that stores a set of named columns.
 
 The columns are normally `AbstractVector`s stored in memory,
 particularly a `Vector`, `PooledVector` or `CategoricalVector`.
@@ -98,6 +98,10 @@ use the functionality provided by `select`/`transform`/`combine` functions, use
 functions, or provide type assertions to the variables that hold columns
 extracted from a `DataFrame`.
 
+Metadata: this function preserves all table and column-level metadata.
+As a special case if a `GroupedDataFrame` is passed then
+only `:note`-style metadata from parent of the `GroupedDataFrame` is preserved.
+
 # Examples
 ```jldoctest
 julia> DataFrame((a=[1, 2], b=[3, 4])) # Tables.jl table constructor
@@ -165,15 +169,25 @@ julia> DataFrame([1 0; 2 0], :auto) # matrix constructor
    2 │     2      0
 ```
 """
-struct DataFrame <: AbstractDataFrame
+mutable struct DataFrame <: AbstractDataFrame
     columns::Vector{AbstractVector}
     colindex::Index
+    metadata::Union{Nothing, Dict{String, Tuple{Any, Any}}}
+    colmetadata::Union{Nothing, Dict{Int, Dict{String, Tuple{Any, Any}}}}
+    # This is a helper field for optimizing performance of
+    # _drop_all_nonnote_metadata! and _drop_table_nonnote_metadata!
+    # so that if we only have :note-style metadata these functions are no-op.
+    # The contract is that if allnotemetadata=true then it is guaranteed that
+    # there are only :note-style metadata entries in the data frame.
+    # metadata! and colmetadata! functions appropriately set this field if a
+    # non-:note-style metadata is added.
+    allnotemetadata::Bool
 
     # the inner constructor should not be used directly
     function DataFrame(columns::Union{Vector{Any}, Vector{AbstractVector}},
                        colindex::Index; copycols::Bool=true)
         if length(columns) == length(colindex) == 0
-            return new(AbstractVector[], Index())
+            return new(AbstractVector[], Index(), nothing, nothing, true)
         elseif length(columns) != length(colindex)
             throw(DimensionMismatch("Number of columns ($(length(columns))) and number of " *
                                     "column names ($(length(colindex))) are not equal"))
@@ -212,7 +226,7 @@ struct DataFrame <: AbstractDataFrame
             firstindex(col) != 1 && _onebased_check_error(i, col)
         end
 
-        new(convert(Vector{AbstractVector}, columns), colindex)
+        return new(convert(Vector{AbstractVector}, columns), colindex, nothing, nothing, true)
     end
 end
 
@@ -278,7 +292,12 @@ function DataFrame(d::AbstractDict; copycols::Bool=true)
     colindex = Index(colnames)
     columns = Any[v for v in values(d)]
     df = DataFrame(columns, colindex, copycols=copycols)
-    d isa Dict && select!(df, sort!(propertynames(df)))
+    if d isa Dict
+        select!(df, sort!(propertynames(df)))
+    else
+        # AbstractDict can potentially implement Tables.jl table interface
+        _copy_all_all_metadata!(df, d)
+    end
     return df
 end
 
@@ -489,8 +508,7 @@ _check_consistency(df::AbstractDataFrame) = _check_consistency(parent(df))
             throw(BoundsError(df, (row_ind, col_ind)))
         end
     end
-
-    @inbounds cols[col_ind][row_ind]
+    return @inbounds cols[col_ind][row_ind]
 end
 
 @inline function Base.getindex(df::DataFrame, row_ind::Integer,
@@ -499,7 +517,7 @@ end
     @boundscheck if !checkindex(Bool, axes(df, 1), row_ind)
         throw(BoundsError(df, (row_ind, col_ind)))
     end
-    @inbounds _columns(df)[selected_column][row_ind]
+    return @inbounds _columns(df)[selected_column][row_ind]
 end
 
 # df[MultiRowIndex, SingleColumnIndex] => AbstractVector, copy
@@ -508,16 +526,16 @@ end
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError(df, (row_inds, col_ind)))
     end
-    @inbounds return _columns(df)[selected_column][row_inds]
+    return @inbounds _columns(df)[selected_column][row_inds]
 end
 
 @inline Base.getindex(df::DataFrame, row_inds::Not, col_ind::ColumnIndex) =
     df[axes(df, 1)[row_inds], col_ind]
 
 # df[:, SingleColumnIndex] => AbstractVector
-function Base.getindex(df::DataFrame, row_inds::Colon, col_ind::ColumnIndex)
+function Base.getindex(df::DataFrame, ::Colon, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
-    copy(_columns(df)[selected_column])
+    return copy(_columns(df)[selected_column])
 end
 
 # df[!, SingleColumnIndex] => AbstractVector, the same vector
@@ -526,7 +544,7 @@ end
     @boundscheck if !checkindex(Bool, axes(cols, 1), col_ind)
         throw(BoundsError(df, (!, col_ind)))
     end
-    @inbounds cols[col_ind]
+    return @inbounds cols[col_ind]
 end
 
 function Base.getindex(df::DataFrame, ::typeof(!), col_ind::SymbolOrString)
@@ -566,13 +584,16 @@ end
     idx = Index(lookup, u)
 
     if length(selected_columns) == 1
-        return DataFrame(AbstractVector[_columns(df)[selected_columns[1]][row_inds]],
-                         idx, copycols=false)
+        new_df = DataFrame(AbstractVector[_columns(df)[selected_columns[1]][row_inds]],
+                           idx, copycols=false)
     else
         # Computing integer indices once for all columns is faster
         selected_rows = T === Bool ? _findall(row_inds) : row_inds
-        _threaded_getindex(selected_rows, selected_columns, _columns(df), idx)
+        new_df = _threaded_getindex(selected_rows, selected_columns, _columns(df), idx)
     end
+
+    _copy_all_note_metadata!(new_df, df)
+    return new_df
 end
 
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector{T}, ::Colon) where T
@@ -582,12 +603,15 @@ end
     idx = copy(index(df))
 
     if ncol(df) == 1
-        return DataFrame(AbstractVector[_columns(df)[1][row_inds]], idx, copycols=false)
+        new_df = DataFrame(AbstractVector[_columns(df)[1][row_inds]], idx, copycols=false)
     else
         # Computing integer indices once for all columns is faster
         selected_rows = T === Bool ? _findall(row_inds) : row_inds
-        _threaded_getindex(selected_rows, 1:ncol(df), _columns(df), idx)
+        new_df = _threaded_getindex(selected_rows, 1:ncol(df), _columns(df), idx)
     end
+
+    _copy_all_note_metadata!(new_df, df)
+    return new_df
 end
 
 @inline Base.getindex(df::DataFrame, row_inds::Not, col_inds::MultiColumnIndex) =
@@ -626,12 +650,14 @@ function insert_single_column!(df::DataFrame, v::AbstractVector, col_ind::Column
             throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
         end
     end
+    _drop_all_nonnote_metadata!(df)
     return dv
 end
 
 function insert_single_entry!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)
     if haskey(index(df), col_ind)
         _columns(df)[index(df)[col_ind]][row_ind] = v
+        _drop_all_nonnote_metadata!(df)
         return v
     else
         throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
@@ -678,8 +704,9 @@ for T in MULTICOLUMNINDEX_TUPLE
                                     "collection contains $(length(v)) elements"))
         end
         for (i, x) in zip(idxs, v)
-            df[row_ind, i] = x
+            df[!, i][row_ind] = x
         end
+        _drop_all_nonnote_metadata!(df)
         return df
     end
 end
@@ -696,6 +723,7 @@ for T in (:AbstractVector, :Not, :Colon)
         end
         x = df[!, col_ind]
         x[row_inds] = v
+        _drop_all_nonnote_metadata!(df)
         return df
     end
 end
@@ -712,8 +740,9 @@ for T1 in (:AbstractVector, :Not, :Colon),
             throw(ArgumentError("column names in source and target do not match"))
         end
         for (j, col) in enumerate(idxs)
-            df[row_inds, col] = new_df[!, j]
+            df[!, col][row_inds] = new_df[!, j]
         end
+        _drop_all_nonnote_metadata!(df)
         return df
     end
 end
@@ -729,6 +758,7 @@ for T in MULTICOLUMNINDEX_TUPLE
         end
         for (j, col) in enumerate(idxs)
             # make sure we make a copy on assignment
+            # this will drop metadata appropriately
             df[!, col] = new_df[:, j]
         end
         return df
@@ -749,6 +779,7 @@ for T1 in (:AbstractVector, :Not, :Colon, :(typeof(!))),
                                     "matrix ($(size(mx, 2))) do not match"))
         end
         for (j, col) in enumerate(idxs)
+            # this will drop metadata appropriately
             df[row_inds, col] = (row_inds === !) ? mx[:, j] : view(mx, :, j)
         end
         return df
@@ -762,9 +793,25 @@ Copy data frame `df`.
 If `copycols=true` (the default), return a new  `DataFrame` holding
 copies of column vectors in `df`.
 If `copycols=false`, return a new `DataFrame` sharing column vectors with `df`.
+
+Metadata: this function preserves all table-level and column-level metadata.
 """
 function Base.copy(df::DataFrame; copycols::Bool=true)
-    return DataFrame(copy(_columns(df)), copy(index(df)), copycols=copycols)
+    cdf = DataFrame(copy(_columns(df)), copy(index(df)), copycols=copycols)
+
+    df_metadata = getfield(df, :metadata)
+    if !isnothing(df_metadata)
+        setfield!(cdf, :metadata, copy(df_metadata))
+    end
+    df_colmetadata = getfield(df, :colmetadata)
+    if !isnothing(df_colmetadata)
+        cdf_colmetadata = copy(df_colmetadata)
+        map!(copy, values(cdf_colmetadata))
+        setfield!(cdf, :colmetadata, cdf_colmetadata)
+    end
+    setfield!(cdf, :allnotemetadata, getfield(df, :allnotemetadata))
+
+    return cdf
 end
 
 """
@@ -775,6 +822,8 @@ Delete rows specified by `inds` from a `DataFrame` `df` in place and return it.
 Internally `deleteat!` is called for all columns so `inds` must be:
 a vector of sorted and unique integers, a boolean vector, an integer,
 or `Not` wrapping any valid selector.
+
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -808,6 +857,7 @@ end
 
 function Base.deleteat!(df::DataFrame, inds::AbstractVector)
     if isempty(inds)
+        _drop_all_nonnote_metadata!(df)
         return df
     elseif size(df, 2) == 0
         throw(BoundsError(df, (inds, :)))
@@ -850,12 +900,16 @@ Base.deleteat!(df::DataFrame, inds::Not) =
 
 function _deleteat!_helper(df::DataFrame, drop)
     cols = _columns(df)
-    isempty(cols) && return df
+    if isempty(cols)
+        _drop_all_nonnote_metadata!(df)
+        return df
+    end
 
     n = nrow(df)
     col1 = cols[1]
     deleteat!(col1, drop)
     newn = length(col1)
+    @assert newn <= n
 
     for i in 2:length(cols)
         col = cols[i]
@@ -870,6 +924,7 @@ function _deleteat!_helper(df::DataFrame, drop)
         @assert length(cols[i]) == newn corrupt_msg(df, i)
     end
 
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -882,6 +937,8 @@ in place and return it.
 Internally `deleteat!` is called for all columns so `inds` must be:
 a vector of sorted and unique integers, a boolean vector, an integer,
 or `Not` wrapping any valid selector.
+
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -905,7 +962,10 @@ julia> keepat!(df, [1, 3])
 """
 keepat!(df::DataFrame, inds)
 
-keepat!(df::DataFrame, ::Colon) = df
+function keepat!(df::DataFrame, ::Colon)
+    _drop_all_nonnote_metadata!(df)
+    return df
+end
 
 function keepat!(df::DataFrame, inds::AbstractVector)
     isempty(inds) && return empty!(df)
@@ -939,6 +999,8 @@ keepat!(df::DataFrame, inds::Not) = deleteat!(df, Not(inds))
 
 Remove all rows from `df`, making each of its columns empty.
 
+$METADATA_FIXED
+
 # Examples
 ```jldoctest
 julia> df = DataFrame(a=1:3, b=4:6)
@@ -960,6 +1022,7 @@ julia> df.a, df.b
 """
 function Base.empty!(df::DataFrame)
     foreach(empty!, eachcol(df))
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -967,6 +1030,8 @@ end
     resize!(df::DataFrame, n::Integer)
 
 Resize `df` to have `n` rows by calling `resize!` on all columns of `df`.
+
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -994,6 +1059,7 @@ function Base.resize!(df::DataFrame, n::Integer)
                             "of rows is not zero"))
     end
     foreach(col -> resize!(col, n), eachcol(df))
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -1005,6 +1071,8 @@ Remove the last row from `df` and return a `NamedTuple` created from this row.
 !!! note
 
     Using this method for very wide data frames may lead to expensive compilation.
+
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -1041,6 +1109,8 @@ Remove the first row from `df` and return a `NamedTuple` created from this row.
 
     Using this method for very wide data frames may lead to expensive compilation.
 
+$METADATA_FIXED
+
 # Examples
 ```jldoctest
 julia> df = DataFrame(a=1:3, b=4:6)
@@ -1074,6 +1144,8 @@ Remove the `i`-th row from `df` and return a `NamedTuple` created from this row.
 !!! note
 
     Using this method for very wide data frames may lead to expensive compilation.
+
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -1115,9 +1187,14 @@ end
 function hcat!(df1::DataFrame, df2::AbstractDataFrame;
                makeunique::Bool=false, copycols::Bool=true)
     u = add_names(index(df1), index(df2), makeunique=makeunique)
+
+    _drop_all_nonnote_metadata!(df1)
+    _keep_matching_table_note_metadata!(df1, df2)
     for i in 1:length(u)
         df1[!, u[i]] = copycols ? df2[:, i] : df2[!, i]
+        _copy_col_note_metadata!(df1, u[i], df2, i)
     end
+
     return df1
 end
 
@@ -1138,7 +1215,11 @@ function hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false, copycol
 end
 
 # hcat! for 1-n arguments
-hcat!(df::DataFrame; makeunique::Bool=false, copycols::Bool=true) = df
+function hcat!(df::DataFrame; makeunique::Bool=false, copycols::Bool=true)
+    _drop_all_nonnote_metadata!(df)
+    return df
+end
+
 hcat!(a::DataFrame, b::Union{AbstractDataFrame, AbstractVector},
       c::Union{AbstractDataFrame, AbstractVector}...;
       makeunique::Bool=false, copycols::Bool=true) =
@@ -1159,6 +1240,8 @@ Convert columns `cols` of data frame `df` from element type `T` to
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `cols` is omitted all columns in the data frame are converted.
+
+$METADATA_FIXED
 """
 function allowmissing! end
 
@@ -1171,6 +1254,7 @@ function allowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex})
     for col in cols
         allowmissing!(df, col)
     end
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -1179,6 +1263,7 @@ function allowmissing!(df::DataFrame, cols::AbstractVector{Bool})
     for (col, cond) in enumerate(cols)
         cond && allowmissing!(df, col)
     end
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -1200,6 +1285,8 @@ If `cols` is omitted all columns in the data frame are converted.
 
 If `error=false` then columns containing a `missing` value will be skipped instead
 of throwing an error.
+
+$METADATA_FIXED
 """
 function disallowmissing! end
 
@@ -1221,6 +1308,7 @@ function disallowmissing!(df::DataFrame, col::ColumnIndex; error::Bool=true)
             end
         end
     end
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -1229,6 +1317,7 @@ function disallowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex};
     for col in cols
         disallowmissing!(df, col, error=error)
     end
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -1237,6 +1326,7 @@ function disallowmissing!(df::DataFrame, cols::AbstractVector{Bool}; error::Bool
     for (col, cond) in enumerate(cols)
         cond && disallowmissing!(df, col, error=error)
     end
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 
@@ -1252,6 +1342,8 @@ disallowmissing!(df::DataFrame, cols::Colon=:; error::Bool=true) =
 Update a data frame `df` in-place by repeating its rows. `inner` specifies how many
 times each row is repeated, and `outer` specifies how many times the full set
 of rows is repeated. Columns of `df` are freshly allocated.
+
+$METADATA_FIXED
 
 # Example
 ```jldoctest
@@ -1287,7 +1379,14 @@ julia> df
 function repeat!(df::DataFrame; inner::Integer=1, outer::Integer=1)
     inner < 0 && throw(ArgumentError("inner keyword argument must be non-negative"))
     outer < 0 && throw(ArgumentError("outer keyword argument must be non-negative"))
-    return mapcols!(x -> repeat(x, inner = Int(inner), outer = Int(outer)), df)
+    cols = _columns(df)
+    for (i, col) in enumerate(cols)
+        col_new = repeat(col, inner=Int(inner), outer=Int(outer))
+        firstindex(col_new) != 1 && _onebased_check_error(i, col_new)
+        cols[i] = col_new
+    end
+    _drop_all_nonnote_metadata!(df)
+    return df
 end
 
 """
@@ -1295,6 +1394,8 @@ end
 
 Update a data frame `df` in-place by repeating its rows the number of times
 specified by `count`. Columns of `df` are freshly allocated.
+
+$METADATA_FIXED
 
 # Example
 ```jldoctest
@@ -1319,10 +1420,19 @@ julia> repeat(df, 2)
 """
 function repeat!(df::DataFrame, count::Integer)
     count < 0 && throw(ArgumentError("count must be non-negative"))
-    return mapcols!(x -> repeat(x, Int(count)), df)
+    cols = _columns(df)
+    for (i, col) in enumerate(cols)
+        col_new = repeat(col, count)
+        firstindex(col_new) != 1 && _onebased_check_error(i, col_new)
+        cols[i] = col_new
+    end
+    _drop_all_nonnote_metadata!(df)
+    return df
 end
 
 # This is not exactly copy! as in general we allow axes to be different
+# Also no table metadata needs to be copied as we use _replace_columns!
+# only in situations when table metadata for `df` must be left as-is
 function _replace_columns!(df::DataFrame, newdf::DataFrame)
     # for DataFrame object here we do not support keep_present keyword argument
     # like for SubDataFrame because here transform! always falls back to select!
@@ -1330,6 +1440,17 @@ function _replace_columns!(df::DataFrame, newdf::DataFrame)
     copy!(_columns(df), _columns(newdf))
     copy!(_names(index(df)), _names(newdf))
     copy!(index(df).lookup, index(newdf).lookup)
+
+    emptycolmetadata!(df)
+    for (col, col_keys) in colmetadatakeys(newdf)
+        if hasproperty(df, col)
+            for key in col_keys
+                val, style = colmetadata(newdf, col, key, style=true)
+                style === :note && colmetadata!(df, col, key, val, style=:note)
+            end
+        end
+    end
+    _drop_all_nonnote_metadata!(df)
     return df
 end
 

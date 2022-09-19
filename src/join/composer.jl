@@ -110,6 +110,78 @@ _rename_cols(old_names::AbstractVector{Symbol},
            (renamecols isa Function ? Symbol(renamecols(string(n))) : Symbol(n, renamecols))
            for n in old_names]
 
+function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDataFrame,
+                                   res::DataFrame, kind::Symbol)
+    @assert kind == :left || kind == :right || kind == :outer || kind == :inner
+
+    # The steps taken in this function are (all applies only to :note-style metadata):
+    # We initially copy metadata from left table as left table is always used
+    # to populate starting columns of a data frame
+    #
+    # We copy non-key column-level metadata from right table.
+    # For table-level metadata and column-level metadata for key columns
+    # processing depends on the type of join:
+    # 1. inner and outer joins treat both tables as equivalent so:
+    #    a. for key columns we intersect column metadata from left table with
+    #       column metadata from right table
+    #    b. we merge table-level metadata
+    # 2. right join treats right table as main so:
+    #    a. for key columns we copy column metadata from right table to left table
+    #       (dropping any previously present metadata).
+    #    b. we copy right table table-level metadata
+    # 3. left join treats left table as main so:
+    #    a. column-level metadata does not require changing
+    #    b. we copy left table table-level metadata
+
+    for i in 1:ncol(joiner.dfl)
+        _copy_col_note_metadata!(res, i, joiner.dfl, i)
+    end
+
+    if kind == :outer || kind == :inner
+        for i in eachindex(joiner.left_on, joiner.right_on)
+            l = joiner.left_on[i]
+            l_idx = columnindex(joiner.dfl, l)
+            r = joiner.right_on[i]
+            rkeys = colmetadatakeys(joiner.dfr, r)
+            if isempty(rkeys)
+                emptycolmetadata!(res, l_idx)
+            else
+                for lkey in colmetadatakeys(res, l_idx)
+                    if lkey in rkeys
+                        rval, rstyle = colmetadata(joiner.dfr, r, lkey, style=true)
+                        if !(rstyle === :note && isequal(rval, colmetadata(res, l_idx, lkey)))
+                            deletecolmetadata!(res, l_idx, lkey)
+                        end
+                    else
+                        deletecolmetadata!(res, l_idx, lkey)
+                    end
+                end
+            end
+        end
+    elseif kind == :right
+        for i in eachindex(joiner.left_on, joiner.right_on)
+            l = joiner.left_on[i]
+            l_idx = columnindex(joiner.dfl, l)
+            r = joiner.right_on[i]
+            _copy_col_note_metadata!(res, l_idx, joiner.dfr, r)
+        end
+    end
+
+    for i in 1:ncol(dfr_noon)
+        _copy_col_note_metadata!(res, ncol(joiner.dfl) + i, dfr_noon, i)
+    end
+
+    if kind == :outer || kind == :inner
+        _merge_matching_table_note_metadata!(res, (joiner.dfl, joiner.dfr))
+    elseif kind == :right
+        _copy_table_note_metadata!(res, joiner.dfr)
+    else # :left
+        _copy_table_note_metadata!(res, joiner.dfl)
+    end
+
+    return nothing
+end
+
 function compose_inner_table(joiner::DataFrameJoiner,
                              makeunique::Bool,
                              left_rename::Union{Function, AbstractString, Symbol},
@@ -140,6 +212,7 @@ function compose_inner_table(joiner::DataFrameJoiner,
                      _rename_cols(_names(dfr_noon), right_rename))
     res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
 
+    _propagate_join_metadata!(joiner, dfr_noon, res, :inner)
     return res
 end
 
@@ -278,6 +351,8 @@ function _compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique
     new_names = vcat(_rename_cols(_names(joiner.dfl), left_rename, joiner.left_on),
                      _rename_cols(_names(dfr_noon), right_rename))
     res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
+
+    _propagate_join_metadata!(joiner, dfr_noon, res, kind)
 
     return res, src_indicator
 end
@@ -498,6 +573,11 @@ If more than two data frames are passed, the join is performed recursively with
 left associativity. In this case the `validate` keyword argument is applied
 recursively with left associativity.
 
+Metadata: table-level `:note`-style metadata and column-level `:note`-style metadata
+for key columns is preserved only for keys which are defined in all passed tables
+and have the same value.
+Column-level `:note`-style metadata is preserved for all other columns.
+
 See also: [`leftjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
 
@@ -638,6 +718,10 @@ CategoricalArrays.jl and transform a column containing such values into a
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
+
+Metadata: table-level and column-level `:note`-style metadata is taken from `df1`
+(including key columns), except for columns added to it from `df2`, whose
+column-level `:note`-style metadata is taken from `df2`.
 
 See also: [`innerjoin`](@ref), [`rightjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -785,6 +869,10 @@ CategoricalArrays.jl and transform a column containing such values into a
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
+
+Metadata: table-level and column-level `:note`-style metadata is taken from `df2`
+(including key columns), except for columns added to it from `df1`, whose
+column-level `:note`-style metadata is taken from `df1`.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`outerjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -942,6 +1030,11 @@ recursively with left associativity.
 In this case the `indicator` keyword argument is not supported
 and `validate` keyword argument is applied recursively with left associativity.
 
+Metadata: table-level `:note`-style metadata and column-level `:note`-style metadata
+for key columns is preserved only for keys which are defined in all passed tables
+and have the same value.
+Column-level `:note`-style metadata is preserved for all other columns.
+
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`semijoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
 
@@ -1060,10 +1153,8 @@ The order of rows in the result is undefined and may change in the future releas
   pair can be passed. It is also allowed to perform a join on multiple columns,
   in which case a vector of column names or column name pairs can be passed
   (mixing names and pairs is allowed).
-- `makeunique` : if `false` (the default), an error will be raised
-  if duplicate names are found in columns not joined on;
-  if `true`, duplicate names will be suffixed with `_i`
-  (`i` starting at 1 for the first duplicate).
+- `makeunique` : ignored as no columns are added to `df1` columns
+  (it is provided for consistency with other functions).
 - `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
    column with the given name for whether a row appeared in only `df1` (`"left_only"`),
    only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
@@ -1086,6 +1177,8 @@ CategoricalArrays.jl and transform a column containing such values into a
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
+
+Metadata: table-level and column-level `:note`-style metadata are taken from `df1`.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`antijoin`](@ref), [`crossjoin`](@ref).
@@ -1170,10 +1263,8 @@ The order of rows in the result is undefined and may change in the future releas
   pair can be passed. It is also allowed to perform a join on multiple columns,
   in which case a vector of column names or column name pairs can be passed
   (mixing names and pairs is allowed).
-- `makeunique` : if `false` (the default), an error will be raised
-  if duplicate names are found in columns not joined on;
-  if `true`, duplicate names will be suffixed with `_i`
-  (`i` starting at 1 for the first duplicate).
+- `makeunique` : ignored as no columns are added to `df1` columns
+  (it is provided for consistency with other functions).
 - `validate` : whether to check that columns passed as the `on` argument
    define unique keys in each input data frame (according to `isequal`).
    Can be a tuple or a pair, with the first element indicating whether to
@@ -1192,6 +1283,8 @@ CategoricalArrays.jl and transform a column containing such values into a
 When merging `on` categorical columns that differ in the ordering of their
 levels, the ordering of the left data frame takes precedence over the ordering
 of the right data frame.
+
+Metadata: table-level and column-level `:note`-style metadata are taken from `df1`.
 
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`semijoin`](@ref), [`crossjoin`](@ref).
@@ -1277,6 +1370,10 @@ dimension that changes the fastest.
 If more than two data frames are passed, the join is performed
 recursively with left associativity.
 
+Metadata: table-level `:note`-style metadata is preserved only for keys
+which are defined in all passed tables and have the same value.
+Column-level `:note`-style metadata is preserved from both tables.
+
 See also: [`innerjoin`](@ref), [`leftjoin`](@ref), [`rightjoin`](@ref),
           [`outerjoin`](@ref), [`semijoin`](@ref), [`antijoin`](@ref).
 
@@ -1319,7 +1416,18 @@ function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::B
     colindex = merge(index(df1), index(df2), makeunique=makeunique)
     cols = Any[[repeat(c, inner=r2) for c in eachcol(df1)];
                [repeat(c, outer=r1) for c in eachcol(df2)]]
-    return DataFrame(cols, colindex, copycols=false)
+    res = DataFrame(cols, colindex, copycols=false)
+
+    for i in 1:ncol(df1)
+        _copy_col_note_metadata!(res, i, df1, i)
+    end
+    for i in 1:ncol(df2)
+        _copy_col_note_metadata!(res, ncol(df1) + i, df2, i)
+    end
+
+    _merge_matching_table_note_metadata!(res, (df1, df2))
+
+    return res
 end
 
 crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;

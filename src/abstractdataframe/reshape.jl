@@ -39,6 +39,8 @@ that return views into the original data frame.
   as long as it supports conversion from `String`.
   When `view=true`, a `RepeatedVector{T}` is produced.
 
+Metadata: table-level `:note`-style metadata and column-level `:note`-style metadata
+for identifier columns are preserved.
 
 # Examples
 ```jldoctest
@@ -167,17 +169,24 @@ function stack(df::AbstractDataFrame,
         catnms = simnms isa Vector ? PooledArray(simnms) : simnms
         copyto!(catnms, nms)
     end
-    return DataFrame(AbstractVector[[repeat(df[!, c], outer=N) for c in ints_id_vars]..., # id_var columns
-                                    repeat(catnms, inner=nrow(df)),                       # variable
-                                    vcat([df[!, c] for c in ints_measure_vars]...)],      # value
-                     cnames, copycols=false)
+    out_df =  DataFrame(AbstractVector[[repeat(df[!, c], outer=N) for c in ints_id_vars]..., # id_var columns
+                                       repeat(catnms, inner=nrow(df)),                       # variable
+                                       vcat([df[!, c] for c in ints_measure_vars]...)],      # value
+                        cnames, copycols=false)
+    _copy_table_note_metadata!(out_df, df)
+    if !isempty(colmetadatakeys(df))
+        for (i_out, i_in) in enumerate(ints_id_vars)
+            _copy_col_note_metadata!(out_df, i_out, df, i_in)
+        end
+    end
+    return out_df
 end
 
 function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
-                    id_vars::AbstractVector{Int}; variable_name::Symbol,
+                    ints_id_vars::AbstractVector{Int}; variable_name::Symbol,
                     value_name::Symbol, variable_eltype::Type)
     N = length(measure_vars)
-    cnames = _names(df)[id_vars]
+    cnames = _names(df)[ints_id_vars]
     push!(cnames, variable_name)
     push!(cnames, value_name)
     if variable_eltype === Symbol
@@ -190,10 +199,17 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
         nms = names(df, measure_vars)
         catnms = copyto!(similar(nms, variable_eltype), nms)
     end
-    return DataFrame(AbstractVector[[RepeatedVector(df[!, c], 1, N) for c in id_vars]..., # id_var columns
-                                    RepeatedVector(catnms, nrow(df), 1),                  # variable
-                                    StackedVector(Any[df[!, c] for c in measure_vars])],  # value
-                     cnames, copycols=false)
+    out_df = DataFrame(AbstractVector[[RepeatedVector(df[!, c], 1, N) for c in ints_id_vars]..., # id_var columns
+                                      RepeatedVector(catnms, nrow(df), 1),                       # variable
+                                      StackedVector(Any[df[!, c] for c in measure_vars])],       # value
+                       cnames, copycols=false)
+    _copy_table_note_metadata!(out_df, df)
+    if !isempty(colmetadatakeys(df))
+        for (i_out, i_in) in enumerate(ints_id_vars)
+            _copy_col_note_metadata!(out_df, i_out, df, i_in)
+        end
+    end
+    return out_df
 end
 
 """
@@ -248,6 +264,9 @@ Row and column keys will be ordered in the order of their first appearance.
   can execute in parallel (possibly being applied to multiple groups at the same time).
   Whether or not tasks are actually spawned and their number are determined automatically.
   Set to `false` if `valuestransform` requires serial execution or is not thread-safe.
+
+Metadata: table-level `:note`-style metadata and column-level `:note`-style metadata
+for row keys columns are preserved.
 
 # Examples
 
@@ -452,7 +471,8 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
     g_colkey = groupby(df_op, colkey)
     valuecol = df_op[!, values_out]
     return _unstack(df_op, index(df_op)[rowkeys], index(df_op)[colkey], g_colkey,
-                    valuecol, g_rowkey, renamecols, allowmissing, allowduplicates, fill)
+                    valuecol, g_rowkey, renamecols,
+                    allowmissing, allowduplicates, fill)
 end
 
 function unstack(df::AbstractDataFrame, colkey::ColumnIndex, values::ColumnIndex;
@@ -545,6 +565,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
 
     # note that Symbol(renamecols(x)) must produce unique column names
     # and names between df1 and df2 must be unique
+    # here df1 gets proper column-level metadata with :note style
     df1 = df[row_group_row_idxs, g_rowkey.cols]
     df2 = DataFrame(unstacked_val, Symbol[Symbol(renamecols(x)) for x in colref_map],
                     copycols=false)
@@ -562,6 +583,10 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
     if !issorted(row_group_row_idxs)
         res_df = res_df[sortperm(row_group_row_idxs), :]
     end
+
+    # only table-level :note-style metadata needs to be copied
+    # as column-level :note-style metadata is already correctly set
+    _copy_table_note_metadata!(res_df, df)
 
     return res_df
 end
@@ -701,6 +726,9 @@ That is, if the source data frame contains `Int` and `Float64` columns,
 resulting columns will have element type `Float64`. If the source has
 `Int` and `String` columns, resulting columns will have element type `Any`.
 
+Metadata: table-level `:note`-style metadata is preserved and
+column-level metadata is dropped.
+
 # Examples
 
 ```jldoctest
@@ -777,7 +805,9 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
         m = permutedims(Matrix(df_notsrc))
         df_tmp = rename!(DataFrame(Tables.table(m)), new_col_names, makeunique=makeunique)
     end
-    return hcat!(df_permuted, df_tmp, makeunique=makeunique, copycols=false)
+    out_df = hcat!(df_permuted, df_tmp, makeunique=makeunique, copycols=false)
+    _copy_table_note_metadata!(out_df, df)
+    return out_df
 end
 
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;

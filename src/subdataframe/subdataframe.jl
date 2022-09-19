@@ -294,9 +294,11 @@ Base.deleteat!(df::SubDataFrame, ind) =
 
 function DataFrame(sdf::SubDataFrame; copycols::Bool=true)
     if copycols
-        sdf[:, :]
+        return sdf[:, :]
     else
-        DataFrame(collect(eachcol(sdf)), _names(sdf), copycols=false)
+        new_df = DataFrame(collect(eachcol(sdf)), _names(sdf), copycols=false)
+        _copy_all_note_metadata!(new_df, sdf)
+        return new_df
     end
 end
 
@@ -343,11 +345,26 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame; keep_present::Bo
     # and that operation was allowed.
     # Therefore we need to update the parent of sdf in place to make sure
     # it holds only the required target columns in a correct order.
+    pdf = parent(sdf)
     if !keep_present && !colsmatch
         pdf = parent(sdf)
         @assert pdf isa DataFrame
         select!(pdf, _names(newdf))
     end
+
+    for col in _names(newdf)
+        emptycolmetadata!(pdf, col)
+    end
+
+    for (col, col_keys) in colmetadatakeys(newdf)
+        if hasproperty(pdf, col)
+            for key in col_keys
+                val, style = colmetadata(newdf, col, key, style=true)
+                style === :note && colmetadata!(pdf, col, key, val, style=:note)
+            end
+        end
+    end
+    _drop_all_nonnote_metadata!(pdf)
 
     return sdf
 end

@@ -46,18 +46,20 @@ fromcolumns(x::Tables.CopiedColumns, names; copycols::Union{Nothing, Bool}=nothi
     fromcolumns(Tables.source(x), names; copycols=something(copycols, false))
 
 function DataFrame(x::T; copycols::Union{Nothing, Bool}=nothing) where {T}
-    if !Tables.istable(x) && x isa AbstractVector && !isempty(x)
-        # here we handle eltypes not specific enough to be dispatched
-        # to other DataFrames constructors taking vector of `Pair`s
-        if all(v -> v isa Pair{Symbol, <:AbstractVector}, x) ||
-            all(v -> v isa Pair{<:AbstractString, <:AbstractVector}, x)
-            return DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],
-                             copycols=something(copycols, true))
-        end
+    # here we handle eltypes not specific enough to be dispatched
+    # to other DataFrames constructors taking vector of `Pair`s
+    if !Tables.istable(x) && x isa AbstractVector && !isempty(x) &&
+        (all(v -> v isa Pair{Symbol, <:AbstractVector}, x) ||
+         all(v -> v isa Pair{<:AbstractString, <:AbstractVector}, x))
+        df = DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],
+                        copycols=something(copycols, true))
+    else
+        cols = Tables.columns(x)
+        names = collect(Symbol, Tables.columnnames(cols))
+        df = fromcolumns(cols, names, copycols=copycols)
     end
-    cols = Tables.columns(x)
-    names = collect(Symbol, Tables.columnnames(cols))
-    return fromcolumns(cols, names, copycols=copycols)
+    _copy_all_all_metadata!(df, x)
+    return df
 end
 
 function Base.append!(df::DataFrame, table; cols::Symbol=:setequal,
