@@ -104,7 +104,7 @@ Additionally selected MIME types support passing the following keyword arguments
 - MIME type `"text/html"` accepts the following keywords:
     - `eltypes::Bool = true`: Whether to print the column types under column names.
     - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
-    - `truncate::Int = 0`: If this value is grater then 0, the cells larger than
+    - `truncate::Int = 0`: If greater than 0, the cells larger than
           this number in pixels will be cropped during rendering.
     - `kwargs...`: Any keyword argument supported by the function `pretty_table`
       of PrettyTables.jl can be passed here to customize the output.
@@ -134,7 +134,7 @@ Base.show(io::IO, mime::MIME, df::AbstractDataFrame)
 function Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame;
                    summary::Bool=true, eltypes::Bool=true, truncate::Int=0,
                    kwargs...)
-    _verify_kwargs_for_html(;kwargs...)
+    _verify_kwargs_for_html(; kwargs...)
     return _show(io, mime, df; summary=summary, eltypes=eltypes,
                  truncate=truncate, kwargs...)
 end
