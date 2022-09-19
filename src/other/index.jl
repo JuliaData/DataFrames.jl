@@ -386,13 +386,13 @@ end
         candidates = fuzzymatch(l, idx)
         if isempty(candidates)
             if isempty(l)
-                throw(ArgumentError("column name :$idx not found in the " *
+                throw(ArgumentError("column name \"$idx\" not found in the " *
                                     "data frame since it has no columns"))
             end
             throw(ArgumentError("column name :$idx not found in the data frame"))
         end
-        candidatesstr = join(string.(':', candidates), ", ", " and ")
-        throw(ArgumentError("column name :$idx not found in the data frame; " *
+        candidatesstr = join(string.('"', candidates, '"'), ", ", " and ")
+        throw(ArgumentError("column name \"$idx\" not found in the data frame; " *
                             "existing most similar names are: $candidatesstr"))
     end
     return i
