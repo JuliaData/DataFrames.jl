@@ -1,3 +1,30 @@
+# DataFrames.jl v1.3.6 Patch Release Notes
+
+## Bug fixes
+
+* Fix overly restrictive type assertion in `filter` and `filter!`
+  ([#3155](https://github.com/JuliaData/DataFrames.jl/pull/3155))
+
+# DataFrames.jl v1.3.5 Patch Release Notes
+
+## Integration change
+
+* Allow version 4 of Compat.jl
+
+# DataFrames.jl v1.3.4 Patch Release Notes
+
+## Bug fixes
+
+* Fix handling of `variable_eltype` in `stack`
+  ([#3043](https://github.com/JuliaData/DataFrames.jl/issues/3043))
+
+# DataFrames.jl v1.3.3 Patch Release Notes
+
+## Bug fixes
+
+* Fix handling of `matchmissing` keyword argument in joins
+  ([#3040](https://github.com/JuliaData/DataFrames.jl/issues/3040))
+
 # DataFrames.jl v1.3.2 Patch Release Notes
 
 ## Bug fixes
