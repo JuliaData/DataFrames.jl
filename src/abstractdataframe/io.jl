@@ -306,7 +306,7 @@ function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows; kwargs...
 end
 
 function Base.show(io::IO, mime::MIME"text/html", dfcs::DataFrameColumns; kwargs...)
-    _verify_kwargs_for_html(;kwargs...)
+    _verify_kwargs_for_html(; kwargs...)
     df = parent(dfcs)
     title = "$(nrow(df))×$(ncol(df)) DataFrameColumns"
     _show(io, mime, df; title=title, kwargs...)
@@ -345,10 +345,11 @@ end
 # backend.
 function _verify_kwargs_for_html(; kwargs...)
     haskey(kwargs, :rowid) &&
-        throw(ArgumentError("The keyword `rowid` is reserved and must not be used."))
+        throw(ArgumentError("Keyword argument `rowid` is reserved and must not be used."))
 
     haskey(kwargs, :title) &&
-        throw(ArgumentError("Use the keyword `top_left_str` instead of `title` to change the label above the data frame."))
+        throw(ArgumentError("Use the `top_left_str` keyword argument instead of `title`" *
+                            "to change the label above the data frame."))
 
     return nothing
 end
