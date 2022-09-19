@@ -292,14 +292,14 @@ function _show(io::IO,
 end
 
 function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; kwargs...)
-    _verify_kwargs_for_html(;kwargs...)
+    _verify_kwargs_for_html(; kwargs...)
     r, c = parentindices(dfr)
     title = "DataFrameRow ($(length(dfr)) columns)"
     _show(io, mime, view(parent(dfr), [r], c); rowid=r, title=title, kwargs...)
 end
 
 function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows; kwargs...)
-    _verify_kwargs_for_html(;kwargs...)
+    _verify_kwargs_for_html(; kwargs...)
     df = parent(dfrs)
     title = "$(nrow(df))×$(ncol(df)) DataFrameRows"
     _show(io, mime, df; title=title, kwargs...)
