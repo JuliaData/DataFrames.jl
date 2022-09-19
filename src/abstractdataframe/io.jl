@@ -201,17 +201,8 @@ function _show(io::IO,
     if get(io, :limit, false)
         # Obtain the maximum number of rows and columns that we can print from
         # environment variables.
-        mxrow = tryparse(Int, get(ENV, "DATAFRAMES_ROWS", "25"))
-
-        if isnothing(mxrow)
-            mxrow = 25
-        end
-
-        mxcol = tryparse(Int, get(ENV, "DATAFRAMES_COLUMNS", "100"))
-
-        if isnothing(mxcol)
-            mxcol = 100
-        end
+        mxrow = something(tryparse(Int, get(ENV, "DATAFRAMES_ROWS", "25")), 25)
+        mxcol = something(tryparse(Int, get(ENV, "DATAFRAMES_COLUMNS", "100")), 100)
     else
         mxrow = -1
         mxcol = -1
