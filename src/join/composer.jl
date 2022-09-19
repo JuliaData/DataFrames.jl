@@ -1079,8 +1079,8 @@ The order of rows in the result is undefined and may change in the future releas
   pair can be passed. It is also allowed to perform a join on multiple columns,
   in which case a vector of column names or column name pairs can be passed
   (mixing names and pairs is allowed).
-- `makeunique` : this keyword argument is ignored as no columns are added to `df1` columns
-  (it is provided for consistency with other functions.
+- `makeunique` : ignored as no columns are added to `df1` columns
+  (it is provided for consistency with other functions).
 - `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
    column with the given name for whether a row appeared in only `df1` (`"left_only"`),
    only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
@@ -1187,8 +1187,8 @@ The order of rows in the result is undefined and may change in the future releas
   pair can be passed. It is also allowed to perform a join on multiple columns,
   in which case a vector of column names or column name pairs can be passed
   (mixing names and pairs is allowed).
-- `makeunique` : this keyword argument is ignored as no columns are added to `df1` columns
-  (it is provided for consistency with other functions.
+- `makeunique` : ignored as no columns are added to `df1` columns
+  (it is provided for consistency with other functions).
 - `validate` : whether to check that columns passed as the `on` argument
    define unique keys in each input data frame (according to `isequal`).
    Can be a tuple or a pair, with the first element indicating whether to
