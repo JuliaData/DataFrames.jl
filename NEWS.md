@@ -66,8 +66,6 @@
   ([#3081](https://github.com/JuliaData/DataFrames.jl/pull/3081))
 * Make `subset` preserves group ordering when `ungroup=false` like `subset!` already does
   ([#3094](https://github.com/JuliaData/DataFrames.jl/pull/3094))
-* Fix overly restrictive type assertion in `filter` and `filter!`
-  ([#3155](https://github.com/JuliaData/DataFrames.jl/pull/3155))
 
 ## Performance
 
@@ -84,6 +82,19 @@
 
 * Support `Tables.subset` and move `ByRow` definition to Tables.jl
   ([#3158](https://github.com/JuliaData/DataFrames.jl/pull/3158))
+
+# DataFrames.jl v1.3.6 Patch Release Notes
+
+## Bug fixes
+
+* Fix overly restrictive type assertion in `filter` and `filter!`
+  ([#3155](https://github.com/JuliaData/DataFrames.jl/pull/3155))
+
+# DataFrames.jl v1.3.5 Patch Release Notes
+
+## Integration change
+
+* Allow version 4 of Compat.jl
 
 # DataFrames.jl v1.3.4 Patch Release Notes
 
