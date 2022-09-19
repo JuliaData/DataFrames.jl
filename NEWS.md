@@ -44,6 +44,8 @@
 * New `threads` argument allows disabling multithreading in
   `combine`, `select`, `select!`, `transform`, `transform!`, `subset` and `subset!`
   ([#3030](https://github.com/JuliaData/DataFrames.jl/pull/3030))
+* `describe` now accepts two predefined arguments: `:nnonmissing` and `:nuniqueall`
+  ([#3146](https://github.com/JuliaData/DataFrames.jl/pull/3146))
 
 ## Previously announced breaking changes
 

@@ -550,11 +550,11 @@ where each row represents a variable and each column a summary statistic.
 - `stats::Union{Symbol, Pair}...` : the summary statistics to report.
   Arguments can be:
     - A symbol from the list `:mean`, `:std`, `:min`, `:q25`,
-      `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and
-      `:nmissing`. The default statistics used are `:mean`, `:min`, `:median`,
-      `:max`, `:nmissing`, and `:eltype`.
+      `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:nuniqueall`, `:first`,
+      `:last`, `:nnonmissing`, and `:nmissing`. The default statistics used are
+      `:mean`, `:min`, `:median`, `:max`, `:nmissing`, and `:eltype`.
     - `:detailed` as the only `Symbol` argument to return all statistics
-      except `first` and `last`.
+      except `:first`, `:last`, `:nuniqueall`, and `:nnonmissing`.
     - `:all` as the only `Symbol` argument to return all statistics.
     - A `function => name` pair where `name` is a `Symbol` or string. This will
       create a column of summary statistics with the provided name.
@@ -570,10 +570,12 @@ a fall-back in the case of an error.
 
 When `stats` contains `:nunique`, `describe` will report the
 number of unique values in a column. If a column's base type derives from `Real`,
-`:nunique` will return `nothing`s.
+`:nunique` will return `nothing`s. Use `:nuniqueall` to report the number of
+unique values in all columns.
 
 Missing values are filtered in the calculation of all statistics, however the
-column `:nmissing` will report the number of missing values of that variable.
+column `:nmissing` will report the number of missing values of that variable
+and `:nnonmissing` the number of non-missing values.
 
 If custom functions are provided, they are called repeatedly with the vector
 corresponding to each column as the only argument. For columns allowing for
@@ -632,8 +634,9 @@ DataAPI.describe(df::AbstractDataFrame; cols=:) =
 function _describe(df::AbstractDataFrame, stats::AbstractVector)
     predefined_funs = Symbol[s for s in stats if s isa Symbol]
 
-    allowed_fields = [:mean, :std, :min, :q25, :median, :q75,
-                      :max, :nunique, :nmissing, :first, :last, :eltype]
+    allowed_fields = [:mean, :std, :min, :q25, :median, :q75, :max,
+                      :nunique, :nuniqueall, :nmissing, :nnonmissing,
+                      :first, :last, :eltype]
 
     if predefined_funs == [:all]
         predefined_funs = allowed_fields
@@ -680,6 +683,10 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
 
         if :nmissing in predefined_funs
             d[:nmissing] = count(ismissing, col)
+        end
+
+        if :nnonmissing in predefined_funs
+            d[:nnonmissing] = count(!ismissing, col)
         end
 
         if :first in predefined_funs
@@ -756,6 +763,10 @@ function get_stats(@nospecialize(col::Union{AbstractVector, Base.SkipMissing}),
         else
             d[:nunique] = try length(Set(col)) catch end
         end
+    end
+
+    if :nuniqueall in stats
+        d[:nuniqueall] = try length(Set(col)) catch end
     end
 
     return d
