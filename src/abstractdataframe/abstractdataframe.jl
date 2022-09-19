@@ -23,15 +23,8 @@ A detailed description of `getindex`, `setindex!`, `getproperty`, `setproperty!`
 broadcasting and broadcasting assignment for data frames is given in the
 ["Indexing" section](https://juliadata.github.io/DataFrames.jl/stable/lib/indexing/)
 of the manual.
-
 """
 abstract type AbstractDataFrame end
-
-##############################################################################
-##
-## Basic properties of a DataFrame
-##
-##############################################################################
 
 """
     names(df::AbstractDataFrame, cols=:)
@@ -151,6 +144,11 @@ a vector) then:
 
 Mixing symbols and strings in `to` and `from` is not allowed.
 
+$METADATA_FIXED
+Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
+Column-level `:note`-style metadata is considered to be attached to column number:
+when a column is renamed, its `:note`-style metadata becomes associated to its new name.
+
 See also: [`rename`](@ref)
 
 # Examples
@@ -197,17 +195,23 @@ julia> rename!(uppercase, df)
 function rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol};
                  makeunique::Bool=false)
     rename!(index(df), vals, makeunique=makeunique)
+    # renaming columns of SubDataFrame has to clean non-note metadata in its parent
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
 function rename!(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
                  makeunique::Bool=false)
     rename!(index(df), Symbol.(vals), makeunique=makeunique)
+    # renaming columns of SubDataFrame has to clean non-note metadata in its parent
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
 function rename!(df::AbstractDataFrame, args::AbstractVector{Pair{Symbol, Symbol}})
     rename!(index(df), args)
+    # renaming columns of SubDataFrame has to clean non-note metadata in its parent
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
@@ -220,6 +224,8 @@ function rename!(df::AbstractDataFrame,
                              AbstractDict{<:AbstractString, Symbol},
                              AbstractDict{<:AbstractString, <:AbstractString}})
     rename!(index(df), [Symbol(from) => Symbol(to) for (from, to) in args])
+    # renaming columns of SubDataFrame has to clean non-note metadata in its parent
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
@@ -229,6 +235,14 @@ function rename!(df::AbstractDataFrame,
                              AbstractDict{<:Integer, <:AbstractString},
                              AbstractDict{<:Integer, Symbol}})
     rename!(index(df), [_names(df)[from] => Symbol(to) for (from, to) in args])
+    # renaming columns of SubDataFrame has to clean non-note metadata in its parent
+    _drop_all_nonnote_metadata!(parent(df))
+    return df
+end
+
+ # needed because of dispach ambiguity
+function rename!(df::AbstractDataFrame)
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
@@ -236,6 +250,8 @@ rename!(df::AbstractDataFrame, args::Pair...) = rename!(df, collect(args))
 
 function rename!(f::Function, df::AbstractDataFrame)
     rename!(f, index(df))
+    # renaming columns of SubDataFrame has to clean non-note metadata in its parent
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
@@ -271,6 +287,11 @@ a vector) then:
 * `to` value can be a `Symbol` or an `AbstractString`.
 
 Mixing symbols and strings in `to` and `from` is not allowed.
+
+$METADATA_FIXED
+Column-level `:note`-style metadata is considered to be attached to column number:
+when a column is renamed, its `:note`-style metadata becomes associated to its
+new name.
 
 See also: [`rename!`](@ref)
 
@@ -421,11 +442,15 @@ Base.propertynames(df::AbstractDataFrame, private::Bool=false) = copy(_names(df)
 Create a new `DataFrame` with the same column names and column element types
 as `df`. An optional second argument can be provided to request a number of rows
 that is different than the number of rows present in `df`.
+
+$METADATA_FIXED
 """
 function Base.similar(df::AbstractDataFrame, rows::Integer = size(df, 1))
     rows < 0 && throw(ArgumentError("the number of rows must be non-negative"))
-    DataFrame(AbstractVector[similar(x, rows) for x in eachcol(df)], copy(index(df)),
-              copycols=false)
+    out_df = DataFrame(AbstractVector[similar(x, rows) for x in eachcol(df)], copy(index(df)),
+                       copycols=false)
+    _copy_all_note_metadata!(out_df, df)
+    return out_df
 end
 
 """
@@ -433,14 +458,10 @@ end
 
 Create a new `DataFrame` with the same column names and column element types
 as `df` but with zero rows.
+
+$METADATA_FIXED
 """
 Base.empty(df::AbstractDataFrame) = similar(df, 0)
-
-##############################################################################
-##
-## Equality
-##
-##############################################################################
 
 function Base.:(==)(df1::AbstractDataFrame, df2::AbstractDataFrame)
     size(df1, 2) == size(df2, 2) || return false
@@ -485,16 +506,13 @@ function Base.isapprox(df1::AbstractDataFrame, df2::AbstractDataFrame;
     end
     return all(isapprox.(eachcol(df1), eachcol(df2), atol=atol, rtol=rtol, nans=nans, norm=norm))
 end
-##############################################################################
-##
-## Description
-##
-##############################################################################
 
 """
     only(df::AbstractDataFrame)
 
 If `df` has a single row return it as a `DataFrameRow`; otherwise throw `ArgumentError`.
+
+$METADATA_FIXED
 """
 function only(df::AbstractDataFrame)
     nrow(df) != 1 && throw(ArgumentError("data frame must contain exactly 1 row"))
@@ -505,6 +523,8 @@ end
     first(df::AbstractDataFrame)
 
 Get the first row of `df` as a `DataFrameRow`.
+
+$METADATA_FIXED
 """
 Base.first(df::AbstractDataFrame) = df[1, :]
 
@@ -515,6 +535,8 @@ Get a data frame with the `n` first rows of `df`.
 
 If `view=false` a freshly allocated `DataFrame` is returned.
 If `view=true` then a `SubDataFrame` view into `df` is returned.
+
+$METADATA_FIXED
 """
 @inline Base.first(df::AbstractDataFrame, n::Integer; view::Bool=false) =
     view ? Base.view(df, 1:min(n ,nrow(df)), :) : df[1:min(n, nrow(df)), :]
@@ -523,6 +545,8 @@ If `view=true` then a `SubDataFrame` view into `df` is returned.
     last(df::AbstractDataFrame)
 
 Get the last row of `df` as a `DataFrameRow`.
+
+$METADATA_FIXED
 """
 Base.last(df::AbstractDataFrame) = df[nrow(df), :]
 
@@ -533,6 +557,8 @@ Get a data frame with the `n` last rows of `df`.
 
 If `view=false` a freshly allocated `DataFrame` is returned.
 If `view=true` then a `SubDataFrame` view into `df` is returned.
+
+$METADATA_FIXED
 """
 @inline Base.last(df::AbstractDataFrame, n::Integer; view::Bool=false) =
     view ? Base.view(df, max(1, nrow(df)-n+1):nrow(df), :) : df[max(1, nrow(df)-n+1):nrow(df), :]
@@ -582,6 +608,8 @@ corresponding to each column as the only argument. For columns allowing for
 missing values, the vector is wrapped in a call to `skipmissing`: custom
 functions must therefore support such objects (and not only vectors), and cannot
 access missing values.
+
+Metadata: this function drops all metadata.
 
 # Examples
 ```jldoctest
@@ -779,21 +807,15 @@ function get_stats!(d::Dict, @nospecialize(col::Union{AbstractVector, Base.SkipM
     end
 end
 
-
-##############################################################################
-##
-## Miscellaneous
-##
-##############################################################################
-
 """
     completecases(df::AbstractDataFrame, cols=:)
 
 Return a Boolean vector with `true` entries indicating rows without missing values
 (complete cases) in data frame `df`.
 
-If `cols` is provided, only missing values in the corresponding columns areconsidered.
-`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+If `cols` is provided, only missing values in the corresponding columns are considered.
+`cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR)
+that returns at least one column if `df` has at least one column.
 
 See also: [`dropmissing`](@ref) and [`dropmissing!`](@ref).
 Use `findall(completecases(df))` to get the indices of the rows.
@@ -839,14 +861,19 @@ julia> completecases(df, [:x, :y])
  1
 ```
 """
-function completecases(df::AbstractDataFrame, col::Colon=:)
-    if ncol(df) == 0
-        throw(ArgumentError("Unable to compute complete cases of a " *
-                            "data frame with no columns"))
+function completecases(df::AbstractDataFrame, cols::MultiColumnIndex=:)
+    colsidx = index(df)[cols]
+    length(colsidx) == 1 && return completecases(df, only(colsidx))
+
+    if ncol(df) > 0 && isempty(colsidx)
+        throw(ArgumentError("finding complete cases in data frame when " *
+                            "`cols` selects no columns is not allowed"))
     end
+
     res = trues(size(df, 1))
+    ncol(df) == 0 && return res
     aux = BitVector(undef, size(df, 1))
-    for i in 1:size(df, 2)
+    for i in colsidx
         v = df[!, i]
         if Missing <: eltype(v)
             # Disable fused broadcasting as it happens to be much slower
@@ -868,9 +895,6 @@ function completecases(df::AbstractDataFrame, col::ColumnIndex)
     end
 end
 
-completecases(df::AbstractDataFrame, cols::MultiColumnIndex) =
-    completecases(df[!, cols])
-
 """
     dropmissing(df::AbstractDataFrame, cols=:; view::Bool=false, disallowmissing::Bool=!view)
 
@@ -888,6 +912,8 @@ then columns specified in `cols` will be converted so as not to allow for missin
 values using [`disallowmissing!`](@ref).
 
 See also: [`completecases`](@ref) and [`dropmissing!`](@ref).
+
+$METADATA_FIXED
 
 # Examples
 
@@ -966,6 +992,8 @@ If `cols` is provided, only missing values in the corresponding columns are cons
 If `disallowmissing` is `true` (the default) then the `cols` columns will
 get converted using [`disallowmissing!`](@ref).
 
+$METADATA_FIXED
+
 See also: [`dropmissing`](@ref) and [`completecases`](@ref).
 
 ```jldoctest
@@ -1021,7 +1049,7 @@ function dropmissing!(df::AbstractDataFrame,
                       disallowmissing::Bool=true)
     inds = completecases(df, cols)
     inds .= .!(inds)
-    deleteat!(df, inds)
+    deleteat!(df, inds) # drops non :note-style metadata
     disallowmissing && disallowmissing!(df, cols)
     df
 end
@@ -1055,6 +1083,8 @@ data frames.
     collections, but it is generally recommended to use the [`subset`](@ref)
     function instead as it is consistent with other DataFrames.jl functions
     (as opposed to `filter`).
+
+$METADATA_FIXED
 
 See also: [`filter!`](@ref)
 
@@ -1182,6 +1212,8 @@ data frames.
     collections, but it is generally recommended to use the [`subset!`](@ref)
     function instead as it is consistent with other DataFrames.jl functions
     (as opposed to `filter!`).
+
+$METADATA_FIXED
 
 See also: [`filter`](@ref)
 
@@ -1319,7 +1351,8 @@ See also [`unique`](@ref) and [`unique!`](@ref).
 # Arguments
 - `df` : `AbstractDataFrame`
 - `cols` : a selector specifying the column(s) or their transformations to compare.
-  Can be any column selector or transformation accepted by [`select`](@ref).
+  Can be any column selector or transformation accepted by [`select`](@ref) that
+  returns at least one column if `df` has at least one column.
 
 # Examples
 ```jldoctest
@@ -1371,10 +1404,7 @@ julia> nonunique(df, 2)
 ```
 """
 function nonunique(df::AbstractDataFrame)
-    if ncol(df) == 0
-        throw(ArgumentError("finding duplicate rows in data frame with no " *
-                            "columns is not allowed"))
-    end
+    ncol(df) == 0 && return Bool[]
     gslots = row_group_slots(ntuple(i -> df[!, i], ncol(df)), Val(true), nothing, false, nothing)[3]
     # unique rows are the first encountered group representatives,
     # nonunique are everything else
@@ -1385,7 +1415,15 @@ function nonunique(df::AbstractDataFrame)
     return res
 end
 
-nonunique(df::AbstractDataFrame, cols) = nonunique(select(df, cols, copycols=false))
+function nonunique(df::AbstractDataFrame, cols)
+    udf = select(df, cols, copycols=false)
+    if ncol(df) > 0 && ncol(udf) == 0
+         throw(ArgumentError("finding duplicate rows in data frame when " *
+                             "`cols` selects no columns is not allowed"))
+    else
+        return nonunique(udf)
+    end
+end
 
 """
     unique(df::AbstractDataFrame; view::Bool=false)
@@ -1400,12 +1438,14 @@ selector or transformation accepted by [`select`](@ref).
 If `view=false` a freshly allocated `DataFrame` is returned,
 and if `view=true` then a `SubDataFrame` view into `df` is returned.
 
-See also: [`unique!`](@ref) [`nonunique`](@ref).
-
 # Arguments
 - `df` : the AbstractDataFrame
 - `cols` :  column indicator (`Symbol`, `Int`, `Vector{Symbol}`, `Regex`, etc.)
 specifying the column(s) to compare.
+
+$METADATA_FIXED
+
+See also: [`unique!`](@ref), [`nonunique`](@ref).
 
 # Examples
 ```jldoctest
@@ -1472,12 +1512,14 @@ retaining in each case the first occurrence of a given combination of values
 in selected columns or their transformations. `cols` can be any column
 selector or transformation accepted by [`select`](@ref).
 
-See also: [`unique`](@ref) [`nonunique`](@ref).
-
 # Arguments
 - `df` : the AbstractDataFrame
 - `cols` :  column indicator (`Symbol`, `Int`, `Vector{Symbol}`, `Regex`, etc.)
 specifying the column(s) to compare.
+
+$METADATA_FIXED
+
+See also: [`unique!`](@ref), [`nonunique`](@ref).
 
 # Examples
 ```jldoctest
@@ -1538,6 +1580,8 @@ filled with the `fill` value (`missing` by default).
 If `allowduplicates=false` (the default) `indexcols` may only contain
 unique combinations of `indexcols` values. If `allowduplicates=true`
 duplicates are allowed.
+
+$METADATA_FIXED
 
 # Examples
 ```jldoctest
@@ -1600,7 +1644,9 @@ function fillcombinations(df::AbstractDataFrame, indexcols;
     target_rows = Int(prod(x -> big(length(x)), uniquevals))
     if iszero(target_rows)
         @assert iszero(nrow(df))
-        return copy(df)
+        cdf = copy(df)
+        _drop_all_nonnote_metadata!(cdf)
+        return cdf
     end
 
     # construct expanded columns
@@ -1663,7 +1709,10 @@ function fillcombinations(df::AbstractDataFrame, indexcols;
     end
 
     # keep only columns from the source in their original order
-    return select!(out_df, _names(df))
+    select!(out_df, _names(df))
+    _copy_all_note_metadata!(out_df, df)
+
+    return out_df
 end
 
 """
@@ -1682,6 +1731,10 @@ If `copycols=false` then it will contain columns as they are stored in the
 source (without copying). This option should be used with caution as mutating
 either the columns in sources or in the returned `DataFrame` might lead to
 the corruption of the other object.
+
+Metadata: `hcat` propagates table-level `:note`-style metadata for keys that are present
+in all passed data frames and have the same value;
+it propagates column-level `:note`-style metadata.
 
 # Example
 ```jldoctest
@@ -1721,8 +1774,12 @@ julia> df3.A === df1.A
 true
 ```
 """
-Base.hcat(df::AbstractDataFrame; makeunique::Bool=false, copycols::Bool=true) =
-    DataFrame(df, copycols=copycols)
+function Base.hcat(df::AbstractDataFrame; makeunique::Bool=false, copycols::Bool=true)
+    df = DataFrame(df, copycols=copycols)
+    _drop_all_nonnote_metadata!(df)
+    return df
+end
+
 # TODO: after deprecation remove AbstractVector methods
 Base.hcat(df::AbstractDataFrame, x::AbstractVector; makeunique::Bool=false, copycols::Bool=true) =
     hcat!(DataFrame(df, copycols=copycols), x, makeunique=makeunique, copycols=copycols)
@@ -1749,17 +1806,18 @@ Vertically concatenate `AbstractDataFrame`s.
 
 The `cols` keyword argument determines the columns of the returned data frame:
 
-* `:setequal`: require all data frames to have the same column names disregarding
-  order. If they appear in different orders, the order of the first provided data
-  frame is used.
-* `:orderequal`: require all data frames to have the same column names and in the
-  same order.
+* `:setequal`: require all data frames to have the same column names
+  disregarding order. If they appear in different orders, the order of the first
+  provided data frame is used.
+* `:orderequal`: require all data frames to have the same column names and in
+  the same order.
 * `:intersect`: only the columns present in *all* provided data frames are kept.
   If the intersection is empty, an empty data frame is returned.
-* `:union`: columns present in *at least one* of the provided data frames are kept.
-  Columns not present in some data frames are filled with `missing` where necessary.
-* A vector of `Symbol`s or strings: only listed columns are kept.
-  Columns not present in some data frames are filled with `missing` where necessary.
+* `:union`: columns present in *at least one* of the provided data frames are
+  kept. Columns not present in some data frames are filled with `missing` where
+  necessary.
+* A vector of `Symbol`s or strings: only listed columns are kept. Columns not
+  present in some data frames are filled with `missing` where necessary.
 
 The `source` keyword argument, if not `nothing` (the default), specifies the
 additional column to be added in the last position in the resulting data frame
@@ -1774,11 +1832,17 @@ The order of columns is determined by the order they appear in the included data
 frames, searching through the header of the first data frame, then the second,
 etc.
 
-The element types of columns are determined using `promote_type`,
-as with `vcat` for `AbstractVector`s.
+The element types of columns are determined using `promote_type`, as with `vcat`
+for `AbstractVector`s.
 
-`vcat` ignores empty data frames, making it possible to initialize an empty
-data frame at the beginning of a loop and `vcat` onto it.
+`vcat` ignores empty data frames when composing the result (except for
+metadata), making it possible to initialize an empty data frame at the beginning
+of a loop and `vcat` onto it.
+
+Metadata: `vcat` propagates table-level `:note`-style metadata for keys that are
+present in all passed data frames and have the same value. `vcat` propagates
+column-level `:note`-style metadata for keys that are present in all passed data
+frames that contain this column and have the same value.
 
 # Example
 ```jldoctest
@@ -1904,11 +1968,17 @@ Base.vcat(dfs::AbstractDataFrame...;
            source::Union{Nothing, Symbol, AbstractString,
                          Pair{<:Union{Symbol, AbstractString}, <:AbstractVector}}=nothing)
 
-Efficiently reduce the given vector or tuple of `AbstractDataFrame`s with `vcat`.
+Efficiently reduce the given vector or tuple of `AbstractDataFrame`s with
+`vcat`.
 
-The column order, names, and types of the resulting `DataFrame`, and
-the behavior of `cols` and `source` keyword arguments follow the rules specified
-for [`vcat`](@ref) of `AbstractDataFrame`s.
+The column order, names, and types of the resulting `DataFrame`, and the
+behavior of `cols` and `source` keyword arguments follow the rules specified for
+[`vcat`](@ref) of `AbstractDataFrame`s.
+
+Metadata: `vcat` propagates table-level `:note`-style metadata for keys that are
+present in all passed data frames and have the same value. `vcat` propagates
+column-level `:note`-style metadata for keys that are present in all passed data
+frames that contain this column and have the same value.
 
 # Example
 ```jldoctest
@@ -1975,6 +2045,9 @@ function Base.reduce(::typeof(vcat),
                      source::Union{Nothing, SymbolOrString,
                                    Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
     res = _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
+    # only handle table-level metadata, as column-level metadata was done in _vcat
+    _merge_matching_table_note_metadata!(res, dfs)
+
     if source !== nothing
         len = length(dfs)
         if source isa SymbolOrString
@@ -2074,27 +2147,72 @@ function _vcat(dfs::AbstractVector{AbstractDataFrame};
         header = Symbol.(cols)
     end
 
-    length(header) == 0 && return DataFrame()
-    all_cols = Vector{AbstractVector}(undef, length(header))
-    for (i, name) in enumerate(header)
-        newcols = map(dfs) do df
-            if hasproperty(df, name)
-                return df[!, name]
-            else
-                Iterators.repeated(missing, nrow(df))
+    if isempty(header)
+        out_df = DataFrame()
+    else
+        all_cols = Vector{AbstractVector}(undef, length(header))
+        for (i, name) in enumerate(header)
+            newcols = map(dfs) do df
+                if hasproperty(df, name)
+                    return df[!, name]
+                else
+                    Iterators.repeated(missing, nrow(df))
+                end
+            end
+
+            lens = map(length, newcols)
+            T = mapreduce(eltype, promote_type, newcols)
+            all_cols[i] = Tables.allocatecolumn(T, sum(lens))
+            offset = 1
+            for j in 1:length(newcols)
+                copyto!(all_cols[i], offset, newcols[j])
+                offset += lens[j]
             end
         end
 
-        lens = map(length, newcols)
-        T = mapreduce(eltype, promote_type, newcols)
-        all_cols[i] = Tables.allocatecolumn(T, sum(lens))
-        offset = 1
-        for j in 1:length(newcols)
-            copyto!(all_cols[i], offset, newcols[j])
-            offset += lens[j]
+        out_df = DataFrame(all_cols, header, copycols=false)
+    end
+
+    # here we process column-level metadata, table-level metadata is processed in reduce
+
+    # first check if all data frames do not have column-level metadata
+    # in which case we do not have to do anything
+    all(df -> getfield(parent(df), :colmetadata) === nothing, dfs) && return out_df
+
+    for colname in _names(out_df)
+        if length(dfs) == 1
+            df1 = dfs[1]
+            hasproperty(df1, colname) && _copy_col_note_metadata!(out_df, colname, df1, colname)
+        else
+            start = findfirst(x -> hasproperty(x, colname), dfs)
+            start === nothing && continue
+            df_start = dfs[start]
+            for key_start in colmetadatakeys(df_start, colname)
+                meta_val_start, meta_style_start = colmetadata(df_start, colname, key_start, style=true)
+                if meta_style_start === :note
+                    good_key = true
+                    for i in start+1:length(dfs)
+                        dfi = dfs[i]
+                        if hasproperty(dfi, colname)
+                            if key_start in colmetadatakeys(dfi, colname)
+                                meta_vali, meta_stylei = colmetadata(dfi, colname, key_start, style=true)
+                                if !(meta_stylei === :note && isequal(meta_val_start, meta_vali))
+                                    good_key = false
+                                    break
+                                end
+                            else
+                                good_key = false
+                                break
+                            end
+                        end
+                    end
+                    good_key && colmetadata!(out_df, colname, key_start, meta_val_start, style=:note)
+                end
+            end
         end
     end
-    return DataFrame(all_cols, header, copycols=false)
+
+    return out_df
 end
 
 """
@@ -2103,6 +2221,8 @@ end
 Construct a data frame by repeating rows in `df`. `inner` specifies how many
 times each row is repeated, and `outer` specifies how many times the full set
 of rows is repeated.
+
+$METADATA_FIXED
 
 # Example
 ```jldoctest
@@ -2144,6 +2264,8 @@ end
 
 Construct a data frame by repeating each row in `df` the number of times
 specified by `count`.
+
+$METADATA_FIXED
 
 # Example
 ```jldoctest
@@ -2203,6 +2325,8 @@ If `cols` is omitted all columns in the data frame are converted.
 
 If `error=false` then columns containing a `missing` value will be skipped instead
 of throwing an error.
+
+$METADATA_FIXED
 
 # Examples
 
@@ -2270,7 +2394,10 @@ function Missings.disallowmissing(df::AbstractDataFrame,
             push!(newcols, copy(x))
         end
     end
-    return DataFrame(newcols, _names(df), copycols=false)
+
+    new_df = DataFrame(newcols, _names(df), copycols=false)
+    _copy_all_note_metadata!(new_df, df)
+    return new_df
 end
 
 """
@@ -2282,6 +2409,8 @@ to element type `Union{T, Missing}` from `T` to allow support for missing values
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
 
 If `cols` is omitted all columns in the data frame are converted.
+
+$METADATA_FIXED
 
 # Examples
 
@@ -2316,7 +2445,10 @@ function Missings.allowmissing(df::AbstractDataFrame,
             push!(newcols, copy(x))
         end
     end
-    return DataFrame(newcols, _names(df), copycols=false)
+
+    new_df = DataFrame(newcols, _names(df), copycols=false)
+    _copy_all_note_metadata!(new_df, df)
+    return new_df
 end
 
 """
@@ -2333,6 +2465,8 @@ elements are not copied, and thus if they are mutable changing them in the
 returned `DataFrame` will affect `df`.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+
+$METADATA_FIXED
 
 # Examples
 
@@ -2400,7 +2534,12 @@ function flatten(df::AbstractDataFrame,
     _check_consistency(df)
 
     idxcols = index(df)[cols]
-    isempty(idxcols) && return copy(df)
+    if isempty(idxcols)
+        cdf = copy(df)
+        _drop_all_nonnote_metadata!(cdf)
+        return cdf
+    end
+
     col1 = first(idxcols)
     lengths = length.(df[!, col1])
     for col in idxcols
@@ -2427,6 +2566,7 @@ function flatten(df::AbstractDataFrame,
         insertcols!(new_df, col, _names(df)[col] => flattened_col)
     end
 
+    _copy_all_note_metadata!(new_df, df)
     return new_df
 end
 
@@ -2440,7 +2580,7 @@ function repeat_lengths!(longnew::AbstractVector, shortold::AbstractVector,
     end
 end
 
-# Disallowed operations that are a common mistake
+# Disallowed getindex and setindex! operations that are a common mistake
 
 Base.getindex(::AbstractDataFrame, ::Union{Symbol, Integer, AbstractString}) =
     throw(ArgumentError("syntax df[column] is not supported use df[!, column] instead"))
@@ -2453,6 +2593,8 @@ Base.setindex!(::AbstractDataFrame, ::Any, ::Union{Symbol, Integer, AbstractStri
 
 Return a data frame containing the rows in `df` in reversed order.
 If `start` and `stop` are provided, only rows in the `start:stop` range are affected.
+
+$METADATA_FIXED
 
 # Examples
 
@@ -2504,6 +2646,9 @@ If `start` and `stop` are provided, only rows in the `start:stop` range are affe
 are identical (checked with `===`). Otherwise, if two columns share some part of
 memory but are not identical (e.g. are different views of the same parent
 vector) then `reverse!` result might be incorrect.
+
+$METADATA_FIXED
+Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 # Examples
 
@@ -2558,6 +2703,7 @@ function Base.reverse!(df::AbstractDataFrame, start::Integer=1, stop::Integer=nr
             reverse!(col, start, stop)
         end
     end
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
@@ -2569,7 +2715,10 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
 
     cp = _compile_permutation!(Base.copymutable(p))
 
-    isempty(cp) && return df
+    if isempty(cp)
+        _drop_all_nonnote_metadata!(parent(df))
+        return df
+    end
 
     if fun === Base.invpermute!!
         reverse!(@view cp[1:end-1])
@@ -2583,6 +2732,7 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
         end
     end
 
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
@@ -2660,6 +2810,9 @@ or permutation `p` are identical (checked with `===`). Otherwise, if two columns
 some part of memory but are not identical (e.g. are different views of the same parent
 vector) then `permute!` result might be incorrect.
 
+$METADATA_FIXED
+Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
+
 # Examples
 julia> df = DataFrame(a=1:5, b=6:10, c=11:15)
 5×3 DataFrame
@@ -2695,6 +2848,9 @@ Like [`permute!`](@ref), but the inverse of the given permutation is applied.
 frame or permutation `p` are identical (checked with `===`). Otherwise, if two
 columns share some part of memory but are not identical (e.g. are different views
 of the same parent vector) then `invpermute!` result might be incorrect.
+
+$METADATA_FIXED
+Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 # Examples
 
@@ -2740,6 +2896,8 @@ Base.invpermute!(df::AbstractDataFrame, p::AbstractVector{<:Integer}) =
 Return a copy of `df` with randomly permuted rows.
 The optional `rng` argument specifies a random number generator.
 
+$METADATA_FIXED
+
 # Examples
 
 julia> rng = MersenneTwister(1234);
@@ -2770,6 +2928,9 @@ The optional `rng` argument specifies a random number generator.
 are identical (checked with `===`). Otherwise, if two columns share some part of
 memory but are not identical (e.g. are different views of the same parent
 vector) then `shuffle!` result might be incorrect.
+
+$METADATA_FIXED
+Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 # Examples
 
@@ -2838,6 +2999,8 @@ function and return the newly created data frame.
 
 $INSERTCOLS_ARGUMENTS
 
+$METADATA_FIXED
+
 See also [`insertcols!`](@ref).
 
 # Examples
@@ -2891,6 +3054,9 @@ insertcols(df::AbstractDataFrame, args...;
 Insert a column into a data frame in place. Return the updated data frame.
 
 $INSERTCOLS_ARGUMENTS
+
+$METADATA_FIXED
+Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 See also [`insertcols`](@ref).
 
@@ -3053,6 +3219,8 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Sy
         end
         col_ind += 1
     end
+
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
@@ -3078,8 +3246,9 @@ function insertcols!(df::AbstractDataFrame, col::Int=ncol(df)+1; makeunique::Boo
     end
     if !isempty(name_cols)
         # an explicit error is thrown as keyword argument was supported in the past
-        throw(ArgumentError("inserting colums using a keyword argument is not supported, " *
+        throw(ArgumentError("inserting columns using a keyword argument is not supported, " *
                             "pass a Pair as a positional argument instead"))
     end
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end

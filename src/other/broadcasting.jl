@@ -75,6 +75,42 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{DataFrameStyle})
         end
         df[!, colnames[1][i]] = col
     end
+
+    dfs = AbstractDataFrame[df for df in bcf.args if df isa AbstractDataFrame]
+    @assert !isempty(dfs)
+
+    _merge_matching_table_note_metadata!(df, dfs)
+
+    if all(x -> !isempty(colmetadatakeys(x)), dfs)
+        for colname in _names(df)
+            if length(dfs) == 1
+                _copy_col_note_metadata!(df, colname, only(dfs), colname)
+            else
+                if all(x -> !isempty(colmetadatakeys(x, colname)), dfs)
+                    for key1 in colmetadatakeys(dfs[1], colname)
+                        val1, style1 = colmetadata(dfs[1], colname, key1, style=true)
+                        if style1 === :note
+                            add_meta = true
+                            for i in 2:length(dfs)
+                                if key1 in colmetadatakeys(dfs[i], colname)
+                                    vali, stylei = colmetadata(dfs[i], colname, key1, style=true)
+                                    if !(stylei === :note && isequal(val1, vali))
+                                        add_meta = false
+                                        break
+                                    end
+                                else
+                                    add_meta = false
+                                    break
+                                end
+                            end
+                            add_meta && colmetadata!(df, colname, key1, val1, style=:note)
+                        end
+                    end
+                end
+            end
+        end
+    end
+
     return df
 end
 
@@ -96,12 +132,29 @@ end
 Base.axes(x::ColReplaceDataFrame) = (axes(x.df, 1), Base.OneTo(length(x.cols)))
 Base.ndims(::Type{<:ColReplaceDataFrame}) = 2
 
-Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2}) = df[idx]
-Base.maybeview(df::AbstractDataFrame, row::Integer, col::ColumnIndex) = df[row, col]
-Base.maybeview(df::AbstractDataFrame, rows, cols) = view(df, rows, cols)
+# In the functions below we need to call _drop_all_nonnote_metadata!
+# upfront as the rest of the operations is handled by Base Julia
+
+function Base.maybeview(df::AbstractDataFrame, idx::CartesianIndex{2})
+    _drop_all_nonnote_metadata!(parent(df))
+    return df[idx]
+end
+
+function Base.maybeview(df::AbstractDataFrame, row::Integer, col::ColumnIndex)
+    _drop_all_nonnote_metadata!(parent(df))
+    return df[row, col]
+end
+
+function Base.maybeview(df::AbstractDataFrame, rows, cols)
+    _drop_all_nonnote_metadata!(parent(df))
+    return view(df, rows, cols)
+end
 
 function Base.dotview(df::AbstractDataFrame, ::Colon, cols::ColumnIndex)
-    haskey(index(df), cols) && return view(df, :, cols)
+    if haskey(index(df), cols)
+        _drop_all_nonnote_metadata!(parent(df))
+        return view(df, :, cols)
+    end
     if !(cols isa SymbolOrString)
         throw(ArgumentError("creating new columns using an integer index is disallowed"))
     end
@@ -254,6 +307,7 @@ function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
     for i in axes(df, 2)
         _copyto_helper!(df[!, i], getcolbc(bcf′, i), i)
     end
+    _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 

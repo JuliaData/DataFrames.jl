@@ -4,14 +4,13 @@
     append!(df::DataFrame, table; cols::Symbol=:setequal,
             promote::Bool=(cols in [:union, :subset]))
 
-Add the rows of `df2` to the end of `df`. If the second argument `table` is not an
-`AbstractDataFrame` then it is converted using `DataFrame(table, copycols=false)`
-before being appended.
+Add the rows of `df2` to the end of `df`. If the second argument `table` is not
+an `AbstractDataFrame` then it is converted using `DataFrame(table,
+copycols=false)` before being appended.
 
 The exact behavior of `append!` depends on the `cols` argument:
-* If `cols == :setequal` (this is the default)
-  then `df2` must contain exactly the same columns as `df` (but possibly in a
-  different order).
+* If `cols == :setequal` (this is the default) then `df2` must contain exactly
+  the same columns as `df` (but possibly in a different order).
 * If `cols == :orderequal` then `df2` must contain the same columns in the same
   order (for `AbstractDict` this option requires that `keys(row)` matches
   `propertynames(df)` to allow for support of ordered dicts; however, if `df2`
@@ -21,9 +20,9 @@ The exact behavior of `append!` depends on the `cols` argument:
   are used.
 * If `cols == :subset` then `append!` behaves like for `:intersect` but if some
   column is missing in `df2` then a `missing` value is pushed to `df`.
-* If `cols == :union` then `append!` adds columns missing in `df` that are present
-  in `df2`, for columns present in `df` but missing in `df2` a `missing` value
-  is pushed.
+* If `cols == :union` then `append!` adds columns missing in `df` that are
+  present in `df2`, for columns present in `df` but missing in `df2` a `missing`
+  value is pushed.
 
 If `promote=true` and element type of a column present in `df` does not allow
 the type of a pushed argument then a new column with a promoted element type
@@ -37,9 +36,14 @@ The above rule has the following exceptions:
 Please note that `append!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
-See also: use [`push!`](@ref) to add individual rows to a data frame, [`prepend!`](@ref)
-to add a table at the beginning, and [`vcat`](@ref) to vertically concatenate
-data frames.
+Metadata: table-level `:note`-style metadata and column-level `:note`-style metadata for
+columns present in `df` are preserved. If new columns are added their
+`:note`-style metadata is copied from the appended table. Other metadata is
+dropped.
+
+See also: use [`push!`](@ref) to add individual rows to a data frame,
+[`prepend!`](@ref) to add a table at the beginning, and [`vcat`](@ref) to
+vertically concatenate data frames.
 
 # Examples
 ```jldoctest
@@ -87,13 +91,12 @@ Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
              promote::Bool=(cols in [:union, :subset]))
 
 Add the rows of `df2` to the beginning of `df`. If the second argument `table`
-is not an `AbstractDataFrame` then it is converted using
-`DataFrame(table, copycols=false)` before being prepended.
+is not an `AbstractDataFrame` then it is converted using `DataFrame(table,
+copycols=false)` before being prepended.
 
 The exact behavior of `prepend!` depends on the `cols` argument:
-* If `cols == :setequal` (this is the default)
-  then `df2` must contain exactly the same columns as `df` (but possibly in a
-  different order).
+* If `cols == :setequal` (this is the default) then `df2` must contain exactly
+  the same columns as `df` (but possibly in a different order).
 * If `cols == :orderequal` then `df2` must contain the same columns in the same
   order (for `AbstractDict` this option requires that `keys(row)` matches
   `propertynames(df)` to allow for support of ordered dicts; however, if `df2`
@@ -103,9 +106,9 @@ The exact behavior of `prepend!` depends on the `cols` argument:
   are used.
 * If `cols == :subset` then `append!` behaves like for `:intersect` but if some
   column is missing in `df2` then a `missing` value is pushed to `df`.
-* If `cols == :union` then `append!` adds columns missing in `df` that are present
-  in `df2`, for columns present in `df` but missing in `df2` a `missing` value
-  is pushed.
+* If `cols == :union` then `append!` adds columns missing in `df` that are
+  present in `df2`, for columns present in `df` but missing in `df2` a `missing`
+  value is pushed.
 
 If `promote=true` and element type of a column present in `df` does not allow
 the type of a pushed argument then a new column with a promoted element type
@@ -119,9 +122,14 @@ The above rule has the following exceptions:
 Please note that `prepend!` must not be used on a `DataFrame` that contains
 columns that are aliases (equal when compared with `===`).
 
-See also: use [`pushfirst!`](@ref) to add individual rows at the beginning of a data frame,
-[`append!`](@ref) to add a table at the end, and [`vcat`](@ref)
-to vertically concatenate data frames.
+Metadata: table-level `:note`-style metadata and column-level `:note`-style metadata for
+columns present in `df` are preserved. If new columns are added their
+`:note`-style metadata is copied from the appended table. Other metadata is
+dropped.
+
+See also: use [`pushfirst!`](@ref) to add individual rows at the beginning of a
+data frame, [`append!`](@ref) to add a table at the end, and [`vcat`](@ref) to
+vertically concatenate data frames.
 
 # Examples
 ```jldoctest
@@ -169,9 +177,11 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
                             ":orderequal, :setequal, :intersect, :subset or :union)"))
     end
 
+    _drop_all_nonnote_metadata!(df1)
     if ncol(df1) == 0
         for (n, v) in pairs(eachcol(df2))
             df1[!, n] = copy(v) # make sure df1 does not reuse df2
+            _copy_col_note_metadata!(df1, n, df2, n)
         end
         return df1
     end
@@ -277,21 +287,6 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
             current_col += 1
             @assert length(col) == targetrows
         end
-        if cols == :union
-            for n in setdiff(_names(df2), _names(df1))
-                newcol = similar(df2[!, n], Union{Missing, eltype(df2[!, n])},
-                                 targetrows)
-                firstindex(newcol) != 1 && _onebased_check_error()
-                if atend
-                    newcol[1:nrow1] .= missing
-                    copyto!(newcol, nrow1+1, df2[!, n], 1, targetrows - nrow1)
-                else
-                    newcol[nrow2+1:targetrows] .= missing
-                    copyto!(newcol, 1, df2[!, n], 1, nrow2)
-                end
-                df1[!, n] = newcol
-            end
-        end
     catch err
         # Undo changes in case of error
         for col in _columns(df1)
@@ -305,6 +300,24 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
         @error "Error adding value to column :$(_names(df1)[current_col])."
         rethrow(err)
     end
+
+    if cols == :union
+        for n in setdiff(_names(df2), _names(df1))
+            newcol = similar(df2[!, n], Union{Missing, eltype(df2[!, n])},
+                             targetrows)
+            firstindex(newcol) != 1 && _onebased_check_error()
+            if atend
+                newcol[1:nrow1] .= missing
+                copyto!(newcol, nrow1+1, df2[!, n], 1, targetrows - nrow1)
+            else
+                newcol[nrow2+1:targetrows] .= missing
+                copyto!(newcol, 1, df2[!, n], 1, nrow2)
+            end
+            df1[!, n] = newcol
+            _copy_col_note_metadata!(df1, n, df2, n)
+        end
+    end
+
     return df1
 end
 
@@ -347,6 +360,8 @@ and order.
 
 Please note that this function must not be used on a
 `DataFrame` that contains columns that are aliases (equal when compared with `===`).
+
+$METADATA_FIXED
 """
 
 """
@@ -670,7 +685,8 @@ function _row_inserter!(df::DataFrame, loc::Integer, row::Any,
         @error "Error adding value to column :$(_names(df)[current_col])."
         rethrow(err)
     end
-    df
+    _drop_all_nonnote_metadata!(df)
+    return df
 end
 
 Base.push!(df::DataFrame, row::DataFrameRow;
@@ -734,6 +750,7 @@ function _dfr_row_inserter!(df::DataFrame, loc::Integer, dfr::DataFrameRow,
             mode isa Val{:pushfirst} && pushfirsthelper!(col, r)
             mode isa Val{:insert} && inserthelper!(col, loc, r)
         end
+        _drop_all_nonnote_metadata!(df)
         return df
     end
 
@@ -782,6 +799,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
         for (n, v) in pairs(row)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
         end
+        _drop_all_nonnote_metadata!(df)
         return df
     end
 
@@ -874,6 +892,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
             mode isa Val{:insert} && (newcol[loc] = val)
             df[!, colname] = newcol
         end
+        _drop_all_nonnote_metadata!(df)
         return df
     end
 
@@ -944,5 +963,6 @@ function _row_inserter!(df::DataFrame, loc::Integer,
         @error "Error adding value to column :$(_names(df)[current_col])."
         rethrow(err)
     end
+    _drop_all_nonnote_metadata!(df)
     return df
 end

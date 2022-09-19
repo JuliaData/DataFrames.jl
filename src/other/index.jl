@@ -409,6 +409,9 @@ end
 
 # Helpers
 
+# return Vector{Symbol} of names from add_ind that do not clash with `ind`.
+# if `makeunique=false` error on collision
+# if `makeunique=false` generate new names that are deduplicated
 function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
     u = copy(_names(add_ind))
 

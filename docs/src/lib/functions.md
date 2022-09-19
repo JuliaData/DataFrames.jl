@@ -189,3 +189,17 @@ pairs
 ```@docs
 isapprox
 ```
+
+## Metadata
+```@docs
+metadata
+metadatakeys
+metadata!
+deletemetadata!
+emptymetadata!
+colmetadata
+colmetadatakeys
+colmetadata!
+deletecolmetadata!
+emptycolmetadata!
+```

@@ -43,6 +43,7 @@ my_tests = ["utils.jl",
             "broadcasting.jl",
             "string.jl",
             "multithreading.jl",
+            "metadata.jl",
             "precompile.jl",
             "deprecated.jl"]
 
