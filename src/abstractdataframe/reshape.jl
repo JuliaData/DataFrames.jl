@@ -682,9 +682,14 @@ with name specified by `dest_namescol`.
 
 # Arguments
 - `df` : the `AbstractDataFrame`
-- `src_namescol` : the column that will become the new header. If this argument
-  is not passed then auto-generated header is used with column names
-  `x1`, `x2`, ... and in this case column names from the `df` are dropped.
+- `src_namescol` : the column that will become the new header.
+   Alternatively a vector of strings or `Symbol`s can be passed
+   which will be used as column names in returned data frame.
+   If this argument is not passed then auto-generated header is used with
+   column names `x1`, `x2`, ... and passing `makeunique` keyword argument is
+   not allowed.
+   If this argument is a vector or is skipped then then passing `dest_namescol`
+   and `strict` arguments is not allowed and column names from the `df` are dropped.
 - `dest_namescol` : the name of the first column in the returned `DataFrame`.
   Defaults to the same name as `src_namescol`.
 - `makeunique` : if `false` (the default), an error will be raised
@@ -697,9 +702,9 @@ with name specified by `dest_namescol`.
   the `string` function.
 
 Note: The element types of columns in resulting `DataFrame`
-(other than the first column, which always has element type `String`)
-will depend on the element types of _all_ input columns
-based on the result of `promote_type`.
+(other than the first column if it is created from `df` column names,
+which always has element type `String`) will depend on the element types of
+_all_ input columns based on the result of `promote_type`.
 That is, if the source data frame contains `Int` and `Float64` columns,
 resulting columns will have element type `Float64`. If the source has
 `Int` and `String` columns, resulting columns will have element type `Any`.
@@ -707,6 +712,30 @@ resulting columns will have element type `Float64`. If the source has
 # Examples
 
 ```jldoctest
+julia> df
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     2      4
+
+julia> permutedims(df)
+2×2 DataFrame
+ Row │ x1     x2
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      2
+   2 │     3      4
+
+julia> permutedims(df, [:p, :q])
+2×2 DataFrame
+ Row │ p      q
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      2
+   2 │     3      4
+
 julia> df1 = DataFrame(a=["x", "y"], b=[1.0, 2.0], c=[3, 4], d=[true, false])
 2×4 DataFrame
  Row │ a       b        c      d
@@ -796,3 +825,5 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
 end
 
 Base.permutedims(df::AbstractDataFrame) = DataFrame(permutedims(Matrix(df)), :auto)
+Base.permutedims(df::AbstractDataFrame, cnames::AbstractVector, makeunique::Bool=false) =
+    DataFrame(permutedims(Matrix(df)), cnames, makeunique=makeunique)
