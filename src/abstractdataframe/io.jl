@@ -104,8 +104,10 @@ Additionally selected MIME types support passing the following keyword arguments
 - MIME type `"text/html"` accepts the following keywords:
     - `eltypes::Bool = true`: Whether to print the column types under column names.
     - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
-    - `truncate::Int = 0`: If greater than 0, the cells larger than
-          this number in pixels will be cropped during rendering.
+    - `max_column_width::String = ""`: The maximum column width. It must be a string
+          containing a valid CSS length. For example, passing "100px" will limit the
+          width of all columns to 100 pixels. If empty, the columns will be rendered
+          without limits.
     - `kwargs...`: Any keyword argument supported by the function `pretty_table`
       of PrettyTables.jl can be passed here to customize the output.
 
@@ -132,11 +134,11 @@ julia> show(stdout, MIME("text/csv"), DataFrame(A=1:3, B=["x", "y", "z"]))
 """
 Base.show(io::IO, mime::MIME, df::AbstractDataFrame)
 function Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame;
-                   summary::Bool=true, eltypes::Bool=true, truncate::Int=0,
+                   summary::Bool=true, eltypes::Bool=true, max_column_width::String="",
                    kwargs...)
     _verify_kwargs_for_html(; kwargs...)
     return _show(io, mime, df; summary=summary, eltypes=eltypes,
-                 truncate=truncate, kwargs...)
+                 max_column_width=max_column_width, kwargs...)
 end
 
 Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame; eltypes::Bool=true) =
@@ -172,7 +174,7 @@ function _show(io::IO,
                eltypes::Bool=true,
                rowid::Union{Int, Nothing}=nothing,
                title::String="",
-               truncate::Int=0,
+               max_column_width::String="",
                kwargs...)
     _check_consistency(df)
 
@@ -247,8 +249,6 @@ function _show(io::IO,
         show_row_number = false
     end
 
-    maximum_columns_width = truncate <= 0 ? "" : string(truncate) * "px"
-
     pretty_table(io, df;
                  alignment                 = alignment,
                  backend                   = Val(:html),
@@ -260,7 +260,7 @@ function _show(io::IO,
                  highlighters              = (_PRETTY_TABLES_HTML_HIGHLIGHTER,),
                  max_num_of_columns        = mxcol,
                  max_num_of_rows           = mxrow,
-                 maximum_columns_width     = maximum_columns_width,
+                 maximum_columns_width     = max_column_width,
                  minify                    = true,
                  row_label_column_title    = "Row",
                  row_labels                = row_labels,
@@ -339,8 +339,12 @@ function _verify_kwargs_for_html(; kwargs...)
         throw(ArgumentError("Keyword argument `rowid` is reserved and must not be used."))
 
     haskey(kwargs, :title) &&
-        throw(ArgumentError("Use the `top_left_str` keyword argument instead of `title`" *
+        throw(ArgumentError("Use the `top_left_str` keyword argument instead of `title` " *
                             "to change the label above the data frame."))
+
+    haskey(kwargs, :truncate) &&
+        throw(ArgumentError("`truncate` is not supported in HTML. " *
+                            "Use `max_column_width` to limit the size of the columns in this case."))
 
     return nothing
 end

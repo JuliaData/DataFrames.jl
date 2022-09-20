@@ -333,17 +333,24 @@ julia> show(df, show_row_number=false)
      3  z
 ```
 """
-Base.show(io::IO,
-          df::AbstractDataFrame;
-          allrows::Bool = !get(io, :limit, false),
-          allcols::Bool = !get(io, :limit, false),
-          rowlabel::Symbol = :Row,
-          summary::Bool = true,
-          eltypes::Bool = true,
-          truncate::Int = 32,
-          kwargs...) =
+function Base.show(io::IO,
+                   df::AbstractDataFrame;
+                   allrows::Bool = !get(io, :limit, false),
+                   allcols::Bool = !get(io, :limit, false),
+                   rowlabel::Symbol = :Row,
+                   summary::Bool = true,
+                   eltypes::Bool = true,
+                   truncate::Int = 32,
+                   kwargs...)
+
+    # Check for keywords that are valid in other backends but not here.
+    haskey(kwargs, :max_column_width) &&
+        throw(ArgumentError("`max_column_width` is not supported in text mode. " *
+                            "Use `truncate` to limit the maximum number of characters in the columns."))
+
     _show(io, df; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
           summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
+end
 
 Base.show(df::AbstractDataFrame;
           allrows::Bool = !get(stdout, :limit, true),

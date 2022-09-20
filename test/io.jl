@@ -1647,7 +1647,7 @@ end
     """
 end
 
-@testset "check truncate keyword argument" begin
+@testset "check keywords that limit the column width" begin
     df = DataFrame(x="0123456789"^10)
 
     # no truncation
@@ -1685,7 +1685,7 @@ end
 
     # With truncation
     io = IOBuffer()
-    show(io, MIME("text/html"), df, truncate=100)
+    show(io, MIME("text/html"), df, max_column_width="100px")
     str = String(take!(io))
     @test str == "<div>" *
                  "<div style = \"float: left;\">" *
@@ -1715,6 +1715,9 @@ end
                  "</tbody>" *
                  "</table>" *
                  "</div>"
+
+    # Using truncate in HTML must return an error.
+    @test_throws ArgumentError show(stdout, MIME("text/html"), df, truncate=100)
 
     # no truncation
     io = IOBuffer()
@@ -1799,6 +1802,9 @@ end
         ───────────────────────┼───────────────────────
                              1 │ 01234567890123456789…"""
 
+    # Using `max_column_width` in text must return an error.
+    @test_throws ArgumentError show(stdout, df, max_column_width="100px")
+    @test_throws ArgumentError show(stdout, MIME("text/plain"), df, max_column_width="100px")
 end
 
 end # module
