@@ -671,6 +671,10 @@ end
 
     df = DataFrame(a=1:2, b=3:4)
     @test permutedims(df) = DataFrame(a=[1, 3], b=[2, 4])
+    @test permutedims(df, [:p, :q]) = DataFrame(p=[1, 3], q=[2, 4])
+    @test permutedims(df, ["p", "q"]) = DataFrame(p=[1, 3], q=[2, 4])
+    @test_throws ArgumentError permutedims(df, ["p", "p"]) = DataFrame(p=[1, 3], q=[2, 4])
+    @test permutedims(df, ["p", "p"], makeunique=true) = DataFrame(p=[1, 3], p_1=[2, 4])
 end
 
 @testset "stack view=true additional tests" begin
