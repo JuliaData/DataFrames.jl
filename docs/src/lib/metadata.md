@@ -53,9 +53,9 @@ functions. In this section collectively these objects will be called
 * [`SubDataFrame`](@ref) and [`DataFrameRow`](@ref) only expose metadata from
   their parent `DataFrame` whose style is `:note`.
 
-Notably metadata is not supported for [`GroupedDataFrame`](@ref) as it does not
-expose columns directly. You can inspect metadata of the `parent` of a
-[`GroupedDataFrame`](@ref) or of any of its groups.
+Notably, metadata is not supported for [`GroupedDataFrame`](@ref) and you can't
+add, modify, nor view metadata through the [`GroupedDataFrame`](@ref) itself.
+It is possible only through its `parent`.
 
 !!! note
 
