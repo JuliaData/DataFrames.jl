@@ -683,13 +683,7 @@ with name specified by `dest_namescol`.
 # Arguments
 - `df` : the `AbstractDataFrame`
 - `src_namescol` : the column that will become the new header.
-   Alternatively a vector of strings or `Symbol`s can be passed
-   which will be used as column names in returned data frame.
-   If this argument is not passed then auto-generated header is used with
-   column names `x1`, `x2`, ... and passing `makeunique` keyword argument is
-   not allowed.
-   If this argument is a vector or is skipped then then passing `dest_namescol`
-   and `strict` arguments is not allowed and column names from the `df` are dropped.
+   If omitted then column names `x1`, `x2`, ... are generated automatically.
 - `dest_namescol` : the name of the first column in the returned `DataFrame`.
   Defaults to the same name as `src_namescol`.
 - `makeunique` : if `false` (the default), an error will be raised
