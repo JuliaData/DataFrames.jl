@@ -686,14 +686,17 @@ with name specified by `dest_namescol`.
    If omitted then column names `x1`, `x2`, ... are generated automatically.
 - `dest_namescol` : the name of the first column in the returned `DataFrame`.
   Defaults to the same name as `src_namescol`.
+  Not supported when `src_namescol` is a vector or is omitted.
 - `makeunique` : if `false` (the default), an error will be raised
   if duplicate names are found; if `true`, duplicate names will be suffixed
   with `_i` (`i` starting at 1 for the first duplicate).
+  Not supported when `src_namescol` is omitted.
 - `strict` : if `true` (the default), an error will be raised if the values
   contained in the `src_namescol` are not all `Symbol` or all `AbstractString`,
   or can all be converted to `String` using `convert`. If `false`
   then any values are accepted and the will be changed to strings using
   the `string` function.
+  Not supported when `src_namescol` is a vector or is omitted.
 
 Note: The element types of columns in resulting `DataFrame`
 (other than the first column if it is created from `df` column names,
