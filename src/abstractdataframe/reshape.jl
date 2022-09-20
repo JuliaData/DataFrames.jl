@@ -712,7 +712,7 @@ resulting columns will have element type `Float64`. If the source has
 # Examples
 
 ```jldoctest
-julia> df
+julia> df = DataFrame(a=1:2, b=3:4)
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64
