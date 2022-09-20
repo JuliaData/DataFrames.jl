@@ -670,7 +670,8 @@ Base.transpose(::AbstractDataFrame, args...; kwargs...) =
     throw(ArgumentError("`transpose` not defined for `AbstractDataFrame`s. Try `permutedims` instead"))
 
 """
-    permutedims(df::AbstractDataFrame, src_namescol::Union{Int, Symbol, AbstractString},
+    permutedims(df::AbstractDataFrame,
+                [src_namescol::Union{Int, Symbol, AbstractString}],
                 [dest_namescol::Union{Symbol, AbstractString}];
                 makeunique::Bool=false, strict::Bool=true)
 
@@ -681,7 +682,9 @@ with name specified by `dest_namescol`.
 
 # Arguments
 - `df` : the `AbstractDataFrame`
-- `src_namescol` : the column that will become the new header.
+- `src_namescol` : the column that will become the new header. If this argument
+  is not passed then auto-generated header is used with column names
+  `x1`, `x2`, ... and in this case column names from the `df` are dropped.
 - `dest_namescol` : the name of the first column in the returned `DataFrame`.
   Defaults to the same name as `src_namescol`.
 - `makeunique` : if `false` (the default), an error will be raised
