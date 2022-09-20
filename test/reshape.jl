@@ -668,6 +668,9 @@ end
     @test_throws ArgumentError permutedims(df, 1)
     # but allowed with strict=false
     @test permutedims(df, 1, strict=false) == ref
+
+    df = DataFrame(a=1:2, b=3:4)
+    @test permutedims(df) = DataFrame(a=[1, 3], b=[2, 4])
 end
 
 @testset "stack view=true additional tests" begin
