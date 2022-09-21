@@ -101,7 +101,7 @@ Render a data frame to an I/O stream in MIME type `mime`.
 Additionally selected MIME types support passing the following keyword arguments:
 - MIME type `"text/plain"` accepts all listed keyword arguments and their behavior
   is identical as for `show(::IO, ::AbstractDataFrame)`
-- MIME type `"text/html"` accepts the following keywords:
+- MIME type `"text/html"` accepts the following keyword arguments:
     - `eltypes::Bool = true`: Whether to print the column types under column names.
     - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
     - `max_column_width::String = ""`: The maximum column width. It must be a string
