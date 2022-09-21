@@ -47,7 +47,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
         h -= 2 # two lines are already used for header and gap between groups
 
         h1 = h2 = h # display heights available for first and last groups
-        if !allrows && N > 1
+        if N > 1
             # line height of groups if printed in full (nrows + 3 extra for header)
             g1 = size(gd[1], 1) + 3
             g2 = size(gd[N], 1) + 3
