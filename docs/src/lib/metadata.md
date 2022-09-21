@@ -121,6 +121,9 @@ julia> collect(metadatakeys(df))
 1-element Vector{String}:
  "caption"
 
+julia> "caption" in metadatakeys(df)
+true
+
 julia> metadata(df, "caption")
 "ELO ratings of chess players"
 
@@ -140,6 +143,9 @@ julia> colmetadata!(df, :name, "label", "First and last name of a player", style
 julia> colmetadata!(df, :date, "label", "Rating date in yyyy-u format", style=:note);
 
 julia> colmetadata!(df, :rating, "label", "ELO rating in classical time control", style=:note);
+
+julia> "label" in colmetadatakeys(df, :rating)
+true
 
 julia> colmetadata(df, :rating, "label")
 "ELO rating in classical time control"
@@ -166,6 +172,10 @@ julia> emptycolmetadata!(df);
 julia> colmetadatakeys(df)
 ()
 ```
+
+Note, that to check if some key is present in metadata you can use the `in`
+function in combination with `metdatakeys` function (for table-level metadata)
+and `colmetadatakeys` function (for column-level metadata).
 
 ## Propagation of `:note`-style metadata
 
