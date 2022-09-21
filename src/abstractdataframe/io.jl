@@ -104,10 +104,10 @@ Additionally selected MIME types support passing the following keyword arguments
 - MIME type `"text/html"` accepts the following keyword arguments:
     - `eltypes::Bool = true`: Whether to print the column types under column names.
     - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
-    - `max_column_width::String = ""`: The maximum column width. It must be a string
-          containing a valid CSS length. For example, passing "100px" will limit the
-          width of all columns to 100 pixels. If empty, the columns will be rendered
-          without limits.
+    - `max_column_width::AbstractString = ""`: The maximum column width. It must
+          be a string containing a valid CSS length. For example, passing
+          "100px" will limit the width of all columns to 100 pixels. If empty,
+          the columns will be rendered without limits.
     - `kwargs...`: Any keyword argument supported by the function `pretty_table`
       of PrettyTables.jl can be passed here to customize the output.
 
@@ -134,8 +134,8 @@ julia> show(stdout, MIME("text/csv"), DataFrame(A=1:3, B=["x", "y", "z"]))
 """
 Base.show(io::IO, mime::MIME, df::AbstractDataFrame)
 function Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame;
-                   summary::Bool=true, eltypes::Bool=true, max_column_width::String="",
-                   kwargs...)
+                   summary::Bool=true, eltypes::Bool=true,
+                   max_column_width::AbstractString="", kwargs...)
     _verify_kwargs_for_html(; kwargs...)
     return _show(io, mime, df; summary=summary, eltypes=eltypes,
                  max_column_width=max_column_width, kwargs...)
@@ -174,7 +174,7 @@ function _show(io::IO,
                eltypes::Bool=true,
                rowid::Union{Int, Nothing}=nothing,
                title::String="",
-               max_column_width::String="",
+               max_column_width::AbstractString="",
                kwargs...)
     _check_consistency(df)
 
