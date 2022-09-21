@@ -728,6 +728,7 @@ end
 end
 
 @testset "Invalid keywords in text mode" begin
+    df = DataFrame(a=[1, 1, 2, 2], b=[5, 6, 7, 8], c=1:4)
     @test_throws ArgumentError show(stdout, df, max_column_width="100px")
     @test_throws ArgumentError show(stdout, MIME("text/plain"), df, max_column_width="100px")
 end
