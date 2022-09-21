@@ -727,6 +727,11 @@ end
           12 │  1.3123e-10+1.123e-5im                  100000                   1.0e8        -1.0e6+1.0e-7im"""
 end
 
+@testset "Invalid keywords in text mode" begin
+    @test_throws ArgumentError show(stdout, df, max_column_width="100px")
+    @test_throws ArgumentError show(stdout, MIME("text/plain"), df, max_column_width="100px")
+end
+
 @testset "Issue #2673 - Vertical line when not showing row numbers" begin
     df = DataFrame(a=Int64[10, 20], b=Int64[30, 40], c=Int64[50, 60])
 

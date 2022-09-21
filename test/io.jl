@@ -764,12 +764,15 @@ end
     # Test invalid keywords when printing to HTML.
     @test_throws ArgumentError show(stdout, MIME("text/html"), df, rowid=10)
     @test_throws ArgumentError show(stdout, MIME("text/html"), df, title="title")
+    @test_throws ArgumentError show(stdout, MIME("text/html"), df, truncate=100)
     @test_throws ArgumentError show(stdout, MIME("text/html"), eachcol(df), rowid=10)
     @test_throws ArgumentError show(stdout, MIME("text/html"), eachcol(df), title="title")
     @test_throws ArgumentError show(stdout, MIME("text/html"), eachrow(df), rowid=10)
     @test_throws ArgumentError show(stdout, MIME("text/html"), eachrow(df), title="title")
+    @test_throws ArgumentError show(stdout, MIME("text/html"), eachrow(df), truncate=100)
     @test_throws ArgumentError show(stdout, MIME("text/html"), df[1, :], rowid=10)
     @test_throws ArgumentError show(stdout, MIME("text/html"), df[1, :], title="title")
+    @test_throws ArgumentError show(stdout, MIME("text/html"), df[1, :], truncate=100)
 end
 
 # test limit attribute of IOContext is used
@@ -1716,9 +1719,6 @@ end
                  "</table>" *
                  "</div>"
 
-    # Using truncate in HTML must return an error.
-    @test_throws ArgumentError show(stdout, MIME("text/html"), df, truncate=100)
-
     # no truncation
     io = IOBuffer()
     show(io, MIME("text/latex"), df)
@@ -1801,10 +1801,6 @@ end
                                │ String
         ───────────────────────┼───────────────────────
                              1 │ 01234567890123456789…"""
-
-    # Using `max_column_width` in text must return an error.
-    @test_throws ArgumentError show(stdout, df, max_column_width="100px")
-    @test_throws ArgumentError show(stdout, MIME("text/plain"), df, max_column_width="100px")
 end
 
 end # module

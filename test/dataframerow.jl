@@ -431,6 +431,10 @@ end
     str2 = String(take!(io.io))
     @test str1 == str2
 
+    # Test error when invalid keyword arguments are passed in text backend.
+    @test_throws ArgumentError show(stdout, dfr, max_column_width="100px")
+    @test_throws ArgumentError show(stdout, MIME("text/plain"), dfr, max_column_width="100px")
+
     str = sprint(show, "text/html", dfr)
     @test str == "<div>" *
                  "<div style = \"float: left;\">" *
@@ -463,9 +467,6 @@ end
                  "</tbody>" *
                  "</table>" *
                  "</div>"
-
-    @test_throws ArgumentError show(stdout, MIME("text/html"), dfr, rowid=10)
-    @test_throws ArgumentError show(stdout, MIME("text/html"), dfr, title="title")
 
     @test sprint(show, "text/latex", dfr) == """
         \\begin{tabular}{r|cc}

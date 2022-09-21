@@ -1470,6 +1470,9 @@ end
     str2 = String(take!(io.io))
     @test str1 == str2
 
+    # Test error when invalid keyword arguments are passed in text backend.
+    @test_throws ArgumentError show(stdout, gd, max_column_width="100px")
+
     str = sprint(show, "text/html", gd)
     @test str == "<p>" *
                  "<b>GroupedDataFrame with 4 groups based on key: A</b>" *
