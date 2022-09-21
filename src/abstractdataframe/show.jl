@@ -344,9 +344,7 @@ function Base.show(io::IO,
                    kwargs...)
 
     # Check for keywords that are valid in other backends but not here.
-    haskey(kwargs, :max_column_width) &&
-        throw(ArgumentError("`max_column_width` is not supported in text mode. " *
-                            "Use `truncate` to limit the maximum number of characters in the columns."))
+    _verify_kwargs_for_text(; kwargs...)
 
     _show(io, df; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
           summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
@@ -363,3 +361,12 @@ Base.show(df::AbstractDataFrame;
     show(stdout, df;
          allrows=allrows, allcols=allcols, rowlabel=rowlabel, summary=summary,
          eltypes=eltypes, truncate=truncate, kwargs...)
+
+# Internal function to verify the keywords in show functions using the text
+# backend.
+function _verify_kwargs_for_text(; kwargs...)
+    haskey(kwargs, :max_column_width) &&
+        throw(ArgumentError("`max_column_width` is not supported in text mode. " *
+                            "Use `truncate` to limit the maximum number of characters in the columns."))
+    return nothing
+end

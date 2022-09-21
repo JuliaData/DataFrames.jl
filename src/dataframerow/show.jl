@@ -4,6 +4,9 @@ function Base.show(io::IO, dfr::DataFrameRow;
                    eltypes::Bool = true,
                    truncate::Int = 32,
                    kwargs...)
+    # Check for keywords that are valid in other backends but not here.
+    _verify_kwargs_for_text(; kwargs...)
+
     r, c = parentindices(dfr)
     _show(io, view(parent(dfr), [r], c); allcols=allcols, rowlabel=rowlabel,
           summary=false, rowid=r, eltypes=eltypes, truncate=truncate,
