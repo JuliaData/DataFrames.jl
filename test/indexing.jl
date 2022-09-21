@@ -2027,11 +2027,9 @@ include("indexing_offset.jl")
         df = DataFrame(vecvec, :auto, copycols=false)
         for rowrange in [:, 1:nrow(df)-5, collect(1:nrow(df)-5), axes(df, 1) .< nrow(df)-5],
             colrange in [:, axes(df, 2), collect(axes(df, 2)), 1:ncol(df) - 1]
-            # Equivalent but using less memory than:
-            # @test DataFrame(mat[rowrange, colrange], :auto) == df[rowrange, colrange]
             df2 = df[rowrange, colrange]
             for j in axes(df2, 2)
-                @test df2[!, j] == view(mat, rowrange, j)
+                @test df2[!, j] == view(vecvec[j], rowrange)
             end
         end
     end
