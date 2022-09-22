@@ -17,8 +17,8 @@ Table-level metadata are key-value pairs that are attached to `df`.
 Column-level metadata are key-value pairs that are attached to
 a specific column `col` of `df` data frame.
 
-To check if some key `key` is present in table-level metadata of data frame `df`
-you can write `key in metadatakeys(df)`. Similarly to check if key `key` is present
+To check whether some key `key` is present in table-level metadata of data frame `df`
+you can write `key in metadatakeys(df)`. Similarly to check whether key `key` is present
 in column-level metadata of data frame `df` for column `col` write
 `key in colmetadatakeys(df, col)`.
 
