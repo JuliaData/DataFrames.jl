@@ -17,6 +17,11 @@ Table-level metadata are key-value pairs that are attached to `df`.
 Column-level metadata are key-value pairs that are attached to
 a specific column `col` of `df` data frame.
 
+To check if some key `key` is present in table-level metadata of data frame `df`
+you can write `key in metadatakeys(df)`. Similarly to check if key `key` is present
+in column-level metadata of data frame `df` in column `col` write
+`key in colmetadatakeys(df, col)`.
+
 Additionally each metadata key-value pair has a style information attached to
 it.
 In DataFrames.jl the metadata style influences how metadata is propagated when
@@ -172,10 +177,6 @@ julia> emptycolmetadata!(df);
 julia> colmetadatakeys(df)
 ()
 ```
-
-To check if some key is present in metadata you can use the `in`
-function in combination with the `metadatakeys` function (for table-level metadata)
-and the `colmetadatakeys` function (for column-level metadata).
 
 ## Propagation of `:note`-style metadata
 
