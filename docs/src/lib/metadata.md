@@ -243,7 +243,7 @@ metadata is always dropped). These are:
   in all passed tables that contain this column and have the same value;
 * [`stack`](@ref): propagates table-level metadata and column-level metadata
   for identifier columns.
-* [`stack`](@ref): propagates table-level metadata and column-level metadata
+* [`unstack`](@ref): propagates table-level metadata and column-level metadata
   for row keys columns.
 * [`permutedims`](@ref): propagates table-level metadata and drops column-level
    metadata.
@@ -282,8 +282,8 @@ metadata is always dropped). These are:
 * [`crossjoin`](@ref): propagates table-level metadata only for keys
   that are defined in both passed data frames and have the same value;
   propagates column-level metadata from both passed data frames.
-* [`select`]](@ref), [`select!`](@ref), [`transform`](@ref),
-  [`transform!`](@ref), [`combine`]](@ref): propagate table-level metadata;
+* [`select`](@ref), [`select!`](@ref), [`transform`](@ref),
+  [`transform!`](@ref), [`combine`](@ref): propagate table-level metadata;
   column-level metadata is propagated if:
   a) a single column is transformed to a single column and the name of the column does not change
      (this includes all column selection operations), or
