@@ -19,7 +19,7 @@ a specific column `col` of `df` data frame.
 
 To check if some key `key` is present in table-level metadata of data frame `df`
 you can write `key in metadatakeys(df)`. Similarly to check if key `key` is present
-in column-level metadata of data frame `df` in column `col` write
+in column-level metadata of data frame `df` for column `col` write
 `key in colmetadatakeys(df, col)`.
 
 Additionally each metadata key-value pair has a style information attached to
