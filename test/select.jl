@@ -1,7 +1,8 @@
 module TestSelect
 
 using DataFrames, Test, Random, SparseArrays, Statistics
-using CategoricalArrays, PooledArrays, ShiftedArrays
+using CategoricalArrays, PooledArrays
+using ShiftedArrays: lag, ShiftedVector
 
 const ≅ = isequal
 
