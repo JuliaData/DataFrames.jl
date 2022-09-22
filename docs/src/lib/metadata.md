@@ -173,9 +173,9 @@ julia> colmetadatakeys(df)
 ()
 ```
 
-Note, that to check if some key is present in metadata you can use the `in`
-function in combination with `metdatakeys` function (for table-level metadata)
-and `colmetadatakeys` function (for column-level metadata).
+To check if some key is present in metadata you can use the `in`
+function in combination with the `metadatakeys` function (for table-level metadata)
+and the `colmetadatakeys` function (for column-level metadata).
 
 ## Propagation of `:note`-style metadata
 
