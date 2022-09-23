@@ -17,6 +17,11 @@ Table-level metadata are key-value pairs that are attached to `df`.
 Column-level metadata are key-value pairs that are attached to
 a specific column `col` of `df` data frame.
 
+To check whether some key `key` is present in table-level metadata of data frame `df`
+you can write `key in metadatakeys(df)`. Similarly to check whether key `key` is present
+in column-level metadata of data frame `df` for column `col` write
+`key in colmetadatakeys(df, col)`.
+
 Additionally each metadata key-value pair has a style information attached to
 it.
 In DataFrames.jl the metadata style influences how metadata is propagated when
@@ -53,9 +58,9 @@ functions. In this section collectively these objects will be called
 * [`SubDataFrame`](@ref) and [`DataFrameRow`](@ref) only expose metadata from
   their parent `DataFrame` whose style is `:note`.
 
-Notably metadata is not supported for [`GroupedDataFrame`](@ref) as it does not
-expose columns directly. You can inspect metadata of the `parent` of a
-[`GroupedDataFrame`](@ref) or of any of its groups.
+Notably, metadata is not supported for [`GroupedDataFrame`](@ref) and you can't
+add, modify, nor view metadata through the [`GroupedDataFrame`](@ref) itself.
+It is possible only through its `parent`.
 
 !!! note
 
@@ -121,6 +126,9 @@ julia> collect(metadatakeys(df))
 1-element Vector{String}:
  "caption"
 
+julia> "caption" in metadatakeys(df)
+true
+
 julia> metadata(df, "caption")
 "ELO ratings of chess players"
 
@@ -140,6 +148,9 @@ julia> colmetadata!(df, :name, "label", "First and last name of a player", style
 julia> colmetadata!(df, :date, "label", "Rating date in yyyy-u format", style=:note);
 
 julia> colmetadata!(df, :rating, "label", "ELO rating in classical time control", style=:note);
+
+julia> "label" in colmetadatakeys(df, :rating)
+true
 
 julia> colmetadata(df, :rating, "label")
 "ELO rating in classical time control"
