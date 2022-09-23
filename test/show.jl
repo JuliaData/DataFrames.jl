@@ -221,7 +221,7 @@ end
         @test sprint(show, df, context=:color=>true) == """
             \e[1m2×2 DataFrame\e[0m
             \e[1m Row \e[0m│\e[1m Fish   \e[0m\e[1m Mass      \e[0m
-            \e[1m     \e[0m│\e[90m String \e[0m\e[90m Float64?  \e[0m
+                 │\e[90m String \e[0m\e[90m Float64?  \e[0m
             ─────┼───────────────────
                1 │ Suzy          1.5
                2 │ Amir   \e[90m missing   \e[0m"""
@@ -232,7 +232,7 @@ end
         @test sprint(show, df, context=:color=>true) == """
             \e[1m3×3 DataFrame\e[0m
             \e[1m Row \e[0m│\e[1m A       \e[0m\e[1m B       \e[0m\e[1m C       \e[0m
-            \e[1m     \e[0m│\e[90m Symbol? \e[0m\e[90m String? \e[0m\e[90m Any     \e[0m
+                 │\e[90m Symbol? \e[0m\e[90m String? \e[0m\e[90m Any     \e[0m
             ─────┼───────────────────────────
                1 │ Symbol  \e[90m missing \e[0m missing
                2 │\e[90m missing \e[0m String   missing
@@ -725,6 +725,12 @@ end
           10 │                2123123                    1000                   1.0e6       10000.0+1.0e-5im
           11 │               0.304105                   10000                   1.0e7      100000.0-1.0e-6im
           12 │  1.3123e-10+1.123e-5im                  100000                   1.0e8        -1.0e6+1.0e-7im"""
+end
+
+@testset "Invalid keywords in text mode" begin
+    df = DataFrame(a=[1, 1, 2, 2], b=[5, 6, 7, 8], c=1:4)
+    @test_throws ArgumentError show(stdout, df, max_column_width="100px")
+    @test_throws ArgumentError show(stdout, MIME("text/plain"), df, max_column_width="100px")
 end
 
 @testset "Issue #2673 - Vertical line when not showing row numbers" begin

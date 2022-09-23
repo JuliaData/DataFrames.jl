@@ -15,18 +15,26 @@ relevant variables into your current namespace.
 
 !!! note
 
-    By default Jupyter Notebook will limit the number of rows and columns when displaying a data frame to roughly
-    fit the screen size (like in the REPL).
-
-    You can override this behavior by changing the values of the `ENV["COLUMNS"]` and `ENV["LINES"]`
-    variables to hold the maximum width and height of output in characters respectively.
+    By default DataFrames.jl limits the number of rows and columns when displaying a data frame in a Jupyter
+    Notebook to 25 and 100, respectively. You can override this behavior by changing the values of the
+    `ENV["DATAFRAMES_COLUMNS"]` and `ENV["DATAFRAMES_ROWS"]` variables to hold the maximum number of columns
+    and rows of the output. All columns or rows will be printed if those numbers are equal or lower than 0.
 
     Alternatively, you may want to set the maximum number of data frame rows to print to `100` and the maximum
-    output width in characters to `1000` for every Julia session using some Jupyter kernel file (numbers `100`
-    and `1000` are only examples and can be adjusted). In such case add a `"COLUMNS": "1000", "LINES": "100"`
-    entry to the `"env"` variable in this Jupyter kernel file.
-    See [here](https://jupyter-client.readthedocs.io/en/stable/kernels.html) for information about location
+    number of columns to print to `1000` for every Julia session using some Jupyter kernel file (numbers `100`
+    and `1000` are only examples and can be adjusted). In such case add a
+    `"DATAFRAME_COLUMNS": "1000", "DATAFRAMES_ROWS": "100"` entry to the `"env"` variable in this Jupyter kernel
+    file. See [here](https://jupyter-client.readthedocs.io/en/stable/kernels.html) for information about location
     and specification of Jupyter kernels.
+
+    The package [PrettyTables.jl](https://github.com/ronisbr/PrettyTables.jl) renders the `DataFrame` in the
+    Jupyter notebook. Users can customize the output by passing keywords arguments `kwargs...` to the
+    function `show`: `show(stdout, MIME("text/html"), df; kwargs...)`, where `df` is the `DataFrame`. Any
+    argument supported by PrettyTables.jl in the HTML backend can be used here. Hence, for example, if the user
+    wants to change the color of all numbers smaller than 0 to red in Jupyter, they can execute:
+    `show(stdout, MIME("text/html"), df; highlighters = hl_lt(0, HtmlDecoration(color = "red")))` after
+    `using PrettyTables`. For more information about the available options, check
+    [PrettyTables.jl documentation](https://ronisbr.github.io/PrettyTables.jl/stable/man/usage/).
 
 ## The `DataFrame` Type
 

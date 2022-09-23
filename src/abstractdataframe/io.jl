@@ -101,8 +101,15 @@ Render a data frame to an I/O stream in MIME type `mime`.
 Additionally selected MIME types support passing the following keyword arguments:
 - MIME type `"text/plain"` accepts all listed keyword arguments and their behavior
   is identical as for `show(::IO, ::AbstractDataFrame)`
-- MIME type `"text/html"` accepts `summary` keyword argument which
-  allows to choose whether to print a brief string summary of the data frame.
+- MIME type `"text/html"` accepts the following keyword arguments:
+    - `eltypes::Bool = true`: Whether to print the column types under column names.
+    - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
+    - `max_column_width::AbstractString = ""`: The maximum column width. It must
+          be a string containing a valid CSS length. For example, passing
+          "100px" will limit the width of all columns to 100 pixels. If empty,
+          the columns will be rendered without limits.
+    - `kwargs...`: Any keyword argument supported by the function `pretty_table`
+      of PrettyTables.jl can be passed here to customize the output.
 
 # Examples
 ```jldoctest
@@ -126,9 +133,14 @@ julia> show(stdout, MIME("text/csv"), DataFrame(A=1:3, B=["x", "y", "z"]))
 ```
 """
 Base.show(io::IO, mime::MIME, df::AbstractDataFrame)
-Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame;
-          summary::Bool=true, eltypes::Bool=true) =
-    _show(io, mime, df, summary=summary, eltypes=eltypes)
+function Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame;
+                   summary::Bool=true, eltypes::Bool=true,
+                   max_column_width::AbstractString="", kwargs...)
+    _verify_kwargs_for_html(; kwargs...)
+    return _show(io, mime, df; summary=summary, eltypes=eltypes,
+                 max_column_width=max_column_width, kwargs...)
+end
+
 Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame; eltypes::Bool=true) =
     _show(io, mime, df, eltypes=eltypes)
 Base.show(io::IO, mime::MIME"text/csv", df::AbstractDataFrame) =
@@ -144,15 +156,6 @@ Base.show(io::IO, mime::MIME"text/plain", df::AbstractDataFrame; kwargs...) =
 #
 ##############################################################################
 
-function digitsep(value::Integer)
-    # Adapted from https://github.com/IainNZ/Humanize.jl
-    value = string(abs(value))
-    group_ends = reverse(collect(length(value):-3:1))
-    groups = [value[max(end_index - 2, 1):end_index]
-              for end_index in group_ends]
-    return join(groups, ',')
-end
-
 function html_escape(cell::AbstractString)
     cell = replace(cell, "&"=>"&amp;")
     cell = replace(cell, "<"=>"&lt;")
@@ -164,128 +167,140 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
-               summary::Bool=true, eltypes::Bool=true, rowid::Union{Int, Nothing}=nothing)
+function _show(io::IO,
+               ::MIME"text/html",
+               df::AbstractDataFrame;
+               summary::Bool=true,
+               eltypes::Bool=true,
+               rowid::Union{Int, Nothing}=nothing,
+               title::AbstractString="",
+               max_column_width::AbstractString="",
+               kwargs...)
     _check_consistency(df)
 
-    # we will pass around this buffer to avoid its reallocation in ourstrwidth
-    buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
+    names_str = names(df)
+    types = Any[eltype(c) for c in eachcol(df)]
+    types_str = batch_compacttype(types, 9)
+    types_str_complete = batch_compacttype(types, 256)
 
-    if rowid !== nothing
-        if size(df, 2) == 0
-            rowid = nothing
-        elseif size(df, 1) != 1
-            throw(ArgumentError("rowid may be passed only with a single row data frame"))
+    # For consistency, if `kwargs` has `compact_printing`, we must use it.
+    compact_printing::Bool = get(kwargs, :compact_printing, get(io, :compact, true))
+
+    num_rows, num_cols = size(df)
+
+    # By default, we align the columns to the left unless they are numbers,
+    # which is checked in the following.
+    alignment = fill(:l, num_cols)
+
+    for i = 1:num_cols
+        type_i = nonmissingtype(types[i])
+
+        if type_i <: Number
+            alignment[i] = :r
         end
     end
 
-    mxrow, mxcol = size(df)
     if get(io, :limit, false)
-        tty_rows, tty_cols = displaysize(io)
-        mxrow = min(mxrow, tty_rows)
-        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X, nothing, true, buffer, 0) .+ 2
-        mxcol = min(mxcol, searchsortedfirst(cumsum(maxwidths), tty_cols))
+        # Obtain the maximum number of rows and columns that we can print from
+        # environment variables.
+        mxrow = something(tryparse(Int, get(ENV, "DATAFRAMES_ROWS", "25")), 25)
+        mxcol = something(tryparse(Int, get(ENV, "DATAFRAMES_COLUMNS", "100")), 100)
+    else
+        mxrow = -1
+        mxcol = -1
     end
 
-    cnames = _names(df)[1:mxcol]
-    write(io, "<div class=\"data-frame\">")
+    # Check if the user wants to display a summary about the DataFrame that is
+    # being printed. This will be shown using the `title` option of
+    # `pretty_table`.
     if summary
-        write(io, "<p>$(digitsep(nrow(df))) rows × $(digitsep(ncol(df))) columns")
-        if mxcol < size(df, 2)
-            write(io, " (omitted printing of $(size(df, 2)-mxcol) columns)")
+        if isempty(title)
+            title = Base.summary(df)
         end
-        write(io, "</p>")
+    else
+        title = ""
     end
-    write(io, "<table class=\"data-frame\">")
-    write(io, "<thead>")
-    write(io, "<tr>")
-    write(io, "<th></th>")
-    for column_name in cnames
-        write(io, "<th>$(html_escape(String(column_name)))</th>")
-    end
-    write(io, "</tr>")
-    if eltypes
-        write(io, "<tr>")
-        write(io, "<th></th>")
-        # We put a longer string for the type into the title argument of the <th> element,
-        # which the users can hover over. The limit of 256 characters is arbitrary, but
-        # we want some maximum limit, since the types can sometimes get really-really long.
-        types = Any[eltype(df[!, idx]) for idx in 1:mxcol]
-        ct, ct_title = batch_compacttype(types, 9), batch_compacttype(types, 256)
-        for j in 1:mxcol
-            s = html_escape(ct[j])
-            title = html_escape(ct_title[j])
-            write(io, "<th title=\"$title\">$s</th>")
-        end
-        write(io, "</tr>")
-    end
-    write(io, "</thead>")
-    write(io, "<tbody>")
-    for row in 1:mxrow
-        write(io, "<tr>")
-        if rowid === nothing
-            write(io, "<th>$row</th>")
+
+    # If `rowid` is not `nothing`, then we are printing a data row. In this
+    # case, we will add this information using the row name column of
+    # PrettyTables.jl. Otherwise, we can just use the row number column.
+    if (rowid === nothing) || (ncol(df) == 0)
+        show_row_number::Bool = get(kwargs, :show_row_number, true)
+        row_labels = nothing
+
+        # If the columns with row numbers is not shown, then we should not
+        # display a vertical line after the first column.
+        vlines = fill(1, show_row_number)
+    else
+        nrow(df) != 1 &&
+            throw(ArgumentError("rowid may be passed only with a single row data frame"))
+
+        # In this case, if the user does not want to show the row number, then
+        # we must hide the row name column, which is used to display the
+        # `rowid`.
+        if !get(kwargs, :show_row_number, true)
+            row_labels = nothing
+            vlines = Int[]
         else
-            write(io, "<th>$rowid</th>")
+            row_labels = [string(rowid)]
+            vlines = Int[1]
         end
-        for column_name in cnames
-            if isassigned(df[!, column_name], row)
-                cell_val = df[row, column_name]
-                if ismissing(cell_val)
-                    write(io, "<td><em>missing</em></td>")
-                elseif cell_val isa Markdown.MD
-                    write(io, "<td>")
-                    show(io, "text/html", cell_val)
-                    write(io, "</td>")
-                elseif cell_val isa SHOW_TABULAR_TYPES
-                    write(io, "<td><em>")
-                    cell = sprint(ourshow, cell_val, 0)
-                    write(io, html_escape(cell))
-                    write(io, "</em></td>")
-                else
-                    cell = sprint(ourshow, cell_val, 0)
-                    write(io, "<td>$(html_escape(cell))</td>")
-                end
-            else
-                write(io, "<td><em>#undef</em></td>")
-            end
-        end
-        write(io, "</tr>")
+
+        show_row_number = false
     end
-    if size(df, 1) > mxrow
-        write(io, "<tr>")
-        write(io, "<th>&vellip;</th>")
-        for column_name in cnames
-            write(io, "<td>&vellip;</td>")
-        end
-        write(io, "</tr>")
-    end
-    write(io, "</tbody>")
-    write(io, "</table>")
-    write(io, "</div>")
+
+    pretty_table(io, df;
+                 alignment                 = alignment,
+                 backend                   = Val(:html),
+                 compact_printing          = compact_printing,
+                 formatters                = (_pretty_tables_general_formatter,),
+                 header                    = (names_str, types_str),
+                 header_alignment          = :l,
+                 header_cell_titles        = (nothing, types_str_complete),
+                 highlighters              = (_PRETTY_TABLES_HTML_HIGHLIGHTER,),
+                 max_num_of_columns        = mxcol,
+                 max_num_of_rows           = mxrow,
+                 maximum_columns_width     = max_column_width,
+                 minify                    = true,
+                 row_label_column_title    = "Row",
+                 row_labels                = row_labels,
+                 row_number_alignment      = :r,
+                 row_number_column_title   = "Row",
+                 show_omitted_cell_summary = true,
+                 show_row_number           = show_row_number,
+                 show_subheader            = eltypes,
+                 standalone                = false,
+                 table_class               = "data-frame",
+                 table_div_class           = "data-frame",
+                 table_style               = _PRETTY_TABLES_HTML_TABLE_STYLE,
+                 top_left_str              = String(title),
+                 top_right_str_decoration  = HtmlDecoration(font_style = "italic"),
+                 vcrop_mode                = :middle,
+                 wrap_table_in_div         = true,
+                 kwargs...)
+
+    return nothing
 end
 
-function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow;
-                   summary::Bool=true, eltypes::Bool=true)
+function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; kwargs...)
+    _verify_kwargs_for_html(; kwargs...)
     r, c = parentindices(dfr)
-    summary && write(io, "<p>DataFrameRow ($(length(dfr)) columns)</p>")
-    _show(io, mime, view(parent(dfr), [r], c), summary=false, eltypes=eltypes, rowid=r)
+    title = "DataFrameRow ($(length(dfr)) columns)"
+    _show(io, mime, view(parent(dfr), [r], c); rowid=r, title=title, kwargs...)
 end
 
-function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows;
-                   summary::Bool=true, eltypes::Bool=true)
+function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows; kwargs...)
+    _verify_kwargs_for_html(; kwargs...)
     df = parent(dfrs)
-    summary && write(io, "<p>$(nrow(df))×$(ncol(df)) DataFrameRows</p>")
-    _show(io, mime, df, summary=false, eltypes=eltypes)
+    title = "$(nrow(df))×$(ncol(df)) DataFrameRows"
+    _show(io, mime, df; title=title, kwargs...)
 end
 
-function Base.show(io::IO, mime::MIME"text/html", dfcs::DataFrameColumns;
-                   summary::Bool=true, eltypes::Bool=true)
+function Base.show(io::IO, mime::MIME"text/html", dfcs::DataFrameColumns; kwargs...)
+    _verify_kwargs_for_html(; kwargs...)
     df = parent(dfcs)
-    if summary
-        write(io, "<p>$(nrow(df))×$(ncol(df)) DataFrameColumns</p>")
-    end
-    _show(io, mime, df, summary=false, eltypes=eltypes)
+    title = "$(nrow(df))×$(ncol(df)) DataFrameColumns"
+    _show(io, mime, df; title=title, kwargs...)
 end
 
 function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
@@ -298,29 +313,40 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
         nrows = size(gd[1], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [html_escape(string(col, " = ",
-                                                repr(first(gd[1][!, col]))))
+        identified_groups = [string(col, " = ", repr(first(gd[1][!, col])))
                              for col in gd.cols]
 
-        write(io, "<p><i>First Group ($nrows $rows): ")
-        join(io, identified_groups, ", ")
-        write(io, "</i></p>")
-        show(io, mime, gd[1], summary=false)
+        title = "First Group ($nrows $rows): " * join(identified_groups, ", ")
+        _show(io, mime, gd[1], title=title)
     end
     if N > 1
         nrows = size(gd[N], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [html_escape(string(col, " = ",
-                                                repr(first(gd[N][!, col]))))
+        identified_groups = [string(col, " = ", repr(first(gd[N][!, col])))
                              for col in gd.cols]
 
         write(io, "<p>&vellip;</p>")
-        write(io, "<p><i>Last Group ($nrows $rows): ")
-        join(io, identified_groups, ", ")
-        write(io, "</i></p>")
-        show(io, mime, gd[N], summary=false)
+        title = "Last Group ($nrows $rows): " * join(identified_groups, ", ")
+        _show(io, mime, gd[N], title=title)
     end
+end
+
+# Internal function to verify the keywords in show functions using the HTML
+# backend.
+function _verify_kwargs_for_html(; kwargs...)
+    haskey(kwargs, :rowid) &&
+        throw(ArgumentError("Keyword argument `rowid` is reserved and must not be used."))
+
+    haskey(kwargs, :title) &&
+        throw(ArgumentError("Use the `top_left_str` keyword argument instead of `title` " *
+                            "to change the label above the data frame."))
+
+    haskey(kwargs, :truncate) &&
+        throw(ArgumentError("`truncate` is not supported in HTML. " *
+                            "Use `max_column_width` to limit the size of the columns in this case."))
+
+    return nothing
 end
 
 ##############################################################################

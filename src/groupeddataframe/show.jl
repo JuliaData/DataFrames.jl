@@ -14,6 +14,9 @@ function Base.show(io::IO, gd::GroupedDataFrame;
                    summary::Bool = true,
                    truncate::Int = 32,
                    kwargs...)
+    # Check for keywords that are valid in other backends but not here.
+    _verify_kwargs_for_text(; kwargs...)
+
     N = length(gd)
 
     summary && Base.summary(io, gd)

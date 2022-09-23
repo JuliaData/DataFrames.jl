@@ -56,101 +56,435 @@ end
     io = IOBuffer()
     show(io, "text/html", df)
     str = String(take!(io))
-    @test str == "<div class=\"data-frame\">" *
-                 "<p>2 rows × 2 columns</p>" *
-                 "<table class=\"data-frame\">" *
-                 "<thead><tr><th></th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th title=\"String\">String</th>" *
-                 "<th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead>" *
-                 "<tbody><tr><th>1</th><td>Suzy</td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td>Amir</td><td><em>missing</em></td></tr>" *
-                 "</tbody></table></div>"
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>2×2 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">Fish</th>" *
+                 "<th style = \"text-align: left;\">Mass</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: left;\">Suzy</td>" *
+                 "<td style = \"text-align: right;\">1.5</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"text-align: left;\">Amir</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     df = DataFrame(Fish=Vector{String}(undef, 2), Mass=[1.5, missing])
     io = IOBuffer()
     show(io, "text/html", df)
     str = String(take!(io))
-    @test str == "<div class=\"data-frame\">" *
-                 "<p>2 rows × 2 columns</p>" *
-                 "<table class=\"data-frame\">" *
-                 "<thead><tr><th></th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th title=\"String\">String</th>" *
-                 "<th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead>" *
-                 "<tbody><tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr>" *
-                 "</tbody></table></div>"
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>2×2 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">Fish</th>" *
+                 "<th style = \"text-align: left;\">Mass</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"text-align: right;\">1.5</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     io = IOBuffer()
     show(io, "text/html", eachrow(df))
     str = String(take!(io))
-    @test str == "<p>2×2 DataFrameRows</p>" *
-                 "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
-                 "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table></div>"
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>2×2 DataFrameRows</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">Fish</th>" *
+                 "<th style = \"text-align: left;\">Mass</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"text-align: right;\">1.5</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     io = IOBuffer()
     show(io, "text/html", eachcol(df))
     str = String(take!(io))
-    @test str == "<p>2×2 DataFrameColumns</p>" *
-                 "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
-                 "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table></div>"
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>2×2 DataFrameColumns</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">Fish</th>" *
+                 "<th style = \"text-align: left;\">Mass</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"text-align: right;\">1.5</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     io = IOBuffer()
     show(io, "text/html", df[1, :])
     str = String(take!(io))
-    @test str == "<p>DataFrameRow (2 columns)</p>" *
-                 "<div class=\"data-frame\"><table class=\"data-frame\">" *
-                 "<thead><tr><th></th><th>Fish</th><th>Mass</th></tr><tr><th></th>" *
-                 "<th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody><tr><th>1</th>" *
-                 "<td><em>#undef</em></td><td>1.5</td></tr></tbody></table></div>"
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>DataFrameRow (2 columns)</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">Fish</th>" *
+                 "<th style = \"text-align: left;\">Mass</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"text-align: right;\">1.5</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     io = IOBuffer()
     show(io, MIME"text/html"(), df, summary=false)
     str = String(take!(io))
-    @test str == "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
-                 "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table></div>"
+    @test str == "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">Fish</th>" *
+                 "<th style = \"text-align: left;\">Mass</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"text-align: right;\">1.5</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     io = IOBuffer()
     show(io, MIME"text/html"(), eachrow(df), summary=false)
     str = String(take!(io))
-    @test str == "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
-                 "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table></div>"
+    @test str == "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">Fish</th>" *
+                 "<th style = \"text-align: left;\">Mass</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"text-align: right;\">1.5</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     io = IOBuffer()
     show(io, MIME"text/html"(), eachcol(df), summary=false)
     str = String(take!(io))
-    @test str == "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
-                 "</th><th>Fish</th><th>Mass</th></tr>" *
-                 "<tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td><em>#undef</em></td><td><em>missing</em></td></tr></tbody></table></div>"
+    @test str == "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">Fish</th>" *
+                 "<th style = \"text-align: left;\">Mass</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"text-align: right;\">1.5</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     io = IOBuffer()
     show(io, MIME"text/html"(), df[1, :], summary=false)
     str = String(take!(io))
-    @test str == "<div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th></th><th>Fish</th>" *
-                 "<th>Mass</th></tr><tr><th></th><th title=\"String\">String</th><th title=\"Union{Missing, Float64}\">Float64?</th></tr></thead>" *
-                 "<tbody><tr><th>1</th><td><em>#undef</em></td><td>1.5</td></tr></tbody></table></div>"
+    @test str == "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">Fish</th>" *
+                 "<th style = \"text-align: left;\">Mass</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"text-align: right;\">1.5</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     io = IOBuffer()
-    show(IOContext(io, :limit => true, :displaysize => (10, 10)), MIME"text/html"(),
+    show(io, MIME"text/html"(), df, show_row_number=false)
+    str = String(take!(io))
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>2×2 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th style = \"text-align: left;\">Fish</th>" *
+                 "<th style = \"text-align: left;\">Mass</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"text-align: right;\">1.5</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
+
+    io = IOBuffer()
+    show(io, MIME"text/html"(), df[2, :], show_row_number=false)
+    str = String(take!(io))
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>DataFrameRow (2 columns)</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th style = \"text-align: left;\">Fish</th>" *
+                 "<th style = \"text-align: left;\">Mass</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
+
+    io = IOBuffer()
+    ENV["DATAFRAMES_COLUMNS"] = 2
+    ENV["DATAFRAMES_ROWS"] = 2
+    show(IOContext(io, :limit => true), MIME"text/html"(),
          DataFrame(Int64[1 2 3 4 5 6 7 8 9], :auto))
     str = String(take!(io))
-    @test str == "<div class=\"data-frame\"><p>1 rows × 9 columns (omitted printing of 7 columns)</p>" *
-                 "<table class=\"data-frame\"><thead><tr><th></th><th>x1</th><th>x2</th></tr><tr><th></th>" *
-                 "<th title=\"Int64\">Int64</th><th title=\"Int64\">Int64</th></tr></thead>" *
-                 "<tbody><tr><th>1</th><td>1</td><td>2</td></tr></tbody></table></div>"
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>1×9 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"float: right;\">" *
+                 "<span style = \"font-style: italic;\">7 columns omitted</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">x1</th>" *
+                 "<th style = \"text-align: left;\">x2</th>" *
+                 "<th style = \"text-align: right;\">&ctdot;</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
+                 "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
+                 "<th title = \"Int64\" style = \"text-align: right;\">&ctdot;</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: right;\">1</td>" *
+                 "<td style = \"text-align: right;\">2</td>" *
+                 "<td style = \"text-align: right;\">&ctdot;</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     @test_throws ArgumentError DataFrames._show(stdout, MIME("text/html"),
                                                 DataFrame(ones(2,2), :auto), rowid=10)
@@ -164,16 +498,73 @@ end
             md"*A*b**A**" ]
     )
 
-    @test repr(MIME("text/html"), df) ==
-    "<div class=\"data-frame\"><p>4 rows × 2 columns</p>" *
-    "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th></tr><tr><th></th>" *
-    "<th title=\"Int64\">Int64</th><th title=\"Markdown.MD\">MD</th></tr></thead>" *
-    "<tbody><tr><th>1</th><td>1</td>" *
-    "<td><div class=\"markdown\"><p><a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a></p>\n</div></td></tr>" *
-    "<tr><th>2</th><td>4</td><td><div class=\"markdown\"><p>###A</p>\n</div></td></tr>" *
-    "<tr><th>3</th><td>9</td><td><div class=\"markdown\"><p>&#36;\\frac&#123;A&#125;&#123;B&#125;&#36;</p>\n</div></td></tr>" *
-    "<tr><th>4</th><td>16</td><td><div class=\"markdown\"><p><em>A</em>b<strong>A</strong></p>\n</div></td></tr>" *
-    "</tbody></table></div>"
+    str = repr(MIME("text/html"), df)
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>4×2 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">A</th>" *
+                 "<th style = \"text-align: left;\">B</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
+                 "<th title = \"Markdown.MD\" style = \"text-align: left;\">MD</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: right;\">1</td>" *
+                 "<td style = \"text-align: left;\">" *
+                 "<div class=\"markdown\">" *
+                 "<p>" *
+                 "<a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a>" *
+                 "</p>" *
+                 "</div>" *
+                 "</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"text-align: right;\">4</td>" *
+                 "<td style = \"text-align: left;\">" *
+                 "<div class=\"markdown\">" *
+                 "<p>###A</p>" *
+                 "</div>" *
+                 "</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">3</td>" *
+                 "<td style = \"text-align: right;\">9</td>" *
+                 "<td style = \"text-align: left;\">" *
+                 "<div class=\"markdown\">" *
+                 "<p>&#36;\\frac&#123;A&#125;&#123;B&#125;&#36;</p>" *
+                 "</div>" *
+                 "</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">4</td>" *
+                 "<td style = \"text-align: right;\">16</td>" *
+                 "<td style = \"text-align: left;\">" *
+                 "<div class=\"markdown\">" *
+                 "<p>" *
+                 "<em>A</em>b<strong>A</strong>" *
+                 "</p>" *
+                 "</div>" *
+                 "</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     # Test that single and double quotes get escaped properly
     df = DataFrame(
@@ -184,38 +575,204 @@ end
     io = IOBuffer()
     show(io, "text/html", df)
     str = String(take!(io))
-    @test str ==
-        "<div class=\"data-frame\"><p>3 rows × 3 columns</p>" *
-        "<table class=\"data-frame\"><thead>" *
-            "<tr>" *
-                "<th></th>" *
-                "<th>xs</th>" *
-                "<th>ys</th>" *
-                "<th>zs</th>" *
-            "</tr><tr>" *
-                "<th></th>" *
-                "<th title=\"String\">String</th>" *
-                "<th title=\"Any\">Any</th>" *
-                "<th title=\"QuoteTestType{&apos;&quot;&apos;}\">QuoteTes…</th>" *
-            "</tr>" *
-        "</thead><tbody>" *
-            "<tr>" *
-                "<th>1</th>" *
-                "<td>&apos;</td>" *
-                "<td>QuoteTestType{&apos;\\\\&apos;&apos;}()</td>" *
-                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>" *
-            "</tr><tr>" *
-                "<th>2</th>" *
-                "<td>&quot;</td>" *
-                "<td>QuoteTestType{&apos;&quot;&apos;}</td>" *
-                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>" *
-            "</tr><tr>" *
-                "<th>3</th>" *
-                "<td>&lt;foo&gt;&apos;&lt;/bar&gt;</td>" *
-                "<td>QuoteTestType{Symbol(&quot;\\\\&quot;&apos;&quot;)}()</td>" *
-                "<td>QuoteTestType{&apos;&quot;&apos;}()</td>" *
-            "</tr>" *
-        "</tbody></table></div>"
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>3×3 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">xs</th>" *
+                 "<th style = \"text-align: left;\">ys</th>" *
+                 "<th style = \"text-align: left;\">zs</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "<th title = \"Any\" style = \"text-align: left;\">Any</th>" *
+                 "<th title = \"QuoteTestType{&amp;apos;&amp;quot;&amp;apos;}\" style = \"text-align: left;\">QuoteTes…</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: left;\">&apos;</td>" *
+                 "<td style = \"text-align: left;\">QuoteTestType{&apos;\\\\&apos;&apos;}()</td>" *
+                 "<td style = \"text-align: left;\">QuoteTestType{&apos;&quot;&apos;}()</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"text-align: left;\">&quot;</td>" *
+                 "<td style = \"text-align: left;\">QuoteTestType{&apos;&quot;&apos;}</td>" *
+                 "<td style = \"text-align: left;\">QuoteTestType{&apos;&quot;&apos;}()</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">3</td>" *
+                 "<td style = \"text-align: left;\">&lt;foo&gt;&apos;&lt;/bar&gt;</td>" *
+                 "<td style = \"text-align: left;\">QuoteTestType{Symbol(&quot;\\\\&quot;&apos;&quot;)}()</td>" *
+                 "<td style = \"text-align: left;\">QuoteTestType{&apos;&quot;&apos;}()</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
+
+    # Test invalid data in ENV variables.
+    io = IOBuffer()
+    ENV["DATAFRAMES_COLUMNS"] = "String"
+    ENV["DATAFRAMES_ROWS"] = "String"
+    show(IOContext(io, :limit => true), MIME"text/html"(),
+         DataFrame(a = Int64.(1:26 |> collect)))
+    str = String(take!(io))
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>26×1 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"float: right;\">" *
+                 "<span style = \"font-style: italic;\">1 row omitted</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">a</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: right;\">1</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"text-align: right;\">2</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">3</td>" *
+                 "<td style = \"text-align: right;\">3</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">4</td>" *
+                 "<td style = \"text-align: right;\">4</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">5</td>" *
+                 "<td style = \"text-align: right;\">5</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">6</td>" *
+                 "<td style = \"text-align: right;\">6</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">7</td>" *
+                 "<td style = \"text-align: right;\">7</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">8</td>" *
+                 "<td style = \"text-align: right;\">8</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">9</td>" *
+                 "<td style = \"text-align: right;\">9</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">10</td>" *
+                 "<td style = \"text-align: right;\">10</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">11</td>" *
+                 "<td style = \"text-align: right;\">11</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">12</td>" *
+                 "<td style = \"text-align: right;\">12</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">13</td>" *
+                 "<td style = \"text-align: right;\">13</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td style = \"text-align: right;\">&vellip;</td>" *
+                 "<td style = \"text-align: right;\">&vellip;</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">15</td>" *
+                 "<td style = \"text-align: right;\">15</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">16</td>" *
+                 "<td style = \"text-align: right;\">16</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">17</td>" *
+                 "<td style = \"text-align: right;\">17</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">18</td>" *
+                 "<td style = \"text-align: right;\">18</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">19</td>" *
+                 "<td style = \"text-align: right;\">19</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">20</td>" *
+                 "<td style = \"text-align: right;\">20</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">21</td>" *
+                 "<td style = \"text-align: right;\">21</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">22</td>" *
+                 "<td style = \"text-align: right;\">22</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">23</td>" *
+                 "<td style = \"text-align: right;\">23</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">24</td>" *
+                 "<td style = \"text-align: right;\">24</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">25</td>" *
+                 "<td style = \"text-align: right;\">25</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">26</td>" *
+                 "<td style = \"text-align: right;\">26</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
+
+    # Test invalid keywords when printing to HTML.
+    @test_throws ArgumentError show(stdout, MIME("text/html"), df, rowid=10)
+    @test_throws ArgumentError show(stdout, MIME("text/html"), df, title="title")
+    @test_throws ArgumentError show(stdout, MIME("text/html"), df, truncate=100)
+    @test_throws ArgumentError show(stdout, MIME("text/html"), eachcol(df), rowid=10)
+    @test_throws ArgumentError show(stdout, MIME("text/html"), eachcol(df), title="title")
+    @test_throws ArgumentError show(stdout, MIME("text/html"), eachrow(df), rowid=10)
+    @test_throws ArgumentError show(stdout, MIME("text/html"), eachrow(df), title="title")
+    @test_throws ArgumentError show(stdout, MIME("text/html"), eachrow(df), truncate=100)
+    @test_throws ArgumentError show(stdout, MIME("text/html"), df[1, :], rowid=10)
+    @test_throws ArgumentError show(stdout, MIME("text/html"), df[1, :], title="title")
+    @test_throws ArgumentError show(stdout, MIME("text/html"), df[1, :], truncate=100)
 end
 
 # test limit attribute of IOContext is used
@@ -335,33 +892,126 @@ end
                            "  * γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0"),
         ]
     )
-    @test sprint(show,"text/html",df) ==
-        "<div class=\"data-frame\"><p>8 rows × 2 columns</p>" *
-        "<table class=\"data-frame\"><thead>" *
-            "<tr><th></th><th>A</th><th>B</th></tr>" *
-            "<tr><th></th><th title=\"Int64\">Int64</th><th title=\"Markdown.MD\">MD</th></tr>" *
-        "</thead>" *
-        "<tbody>" *
-        "<tr><th>1</th><td>1</td><td><div class=\"markdown\">" *
-            "<p><a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a></p>\n</div></td></tr>" *
-        "<tr><th>2</th><td>4</td><td><div class=\"markdown\"><p>&#36;\\frac&#123;x^2&#125;&#123;x^2&#43;y^2&#125;&#36;</p>\n</div></td></tr>" *
-        "<tr><th>3</th><td>9</td><td><div class=\"markdown\"><h1>Header</h1>\n</div></td></tr>" *
-        "<tr><th>4</th><td>16</td><td><div class=\"markdown\">" *
-            "<p>This is <em>very</em>, <strong>very</strong>, very, very, very, very, very, very, very long line</p>\n" *
-        "</div></td></tr>" *
-        "<tr><th>5</th><td>25</td><td><div class=\"markdown\"></div></td></tr>" *
-        "<tr><th>6</th><td>36</td><td><div class=\"markdown\">" *
-            "<p>∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0</p>\n" *
-        "</div></td></tr>" *
-        "<tr><th>7</th><td>49</td><td><div class=\"markdown\">" *
-            "<p>∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ</p>\n<ul>\n<li><p>∞7∫αγ</p>\n</li>\n<li><p>∞8∫αγ</p>\n</li>\n<li><p>∞9∫αγ∞0∫α</p>\n</li>\n</ul>\n<p>γ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0</p>\n" *
-        "</div></td></tr>" *
-        "<tr><th>8</th><td>64</td><td><div class=\"markdown\">" *
-            "<p>∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫α</p>" *
-            "\n<ul>\n" *
-                "<li><p>γ∞1∫α</p>\n</li>\n" *
-                "<li><p>γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0</p>\n</li>\n" *
-        "</ul>\n" * "</div></td></tr></tbody></table></div>"
+    str = sprint(show,"text/html",df)
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>8×2 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">A</th>" *
+                 "<th style = \"text-align: left;\">B</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
+                 "<th title = \"Markdown.MD\" style = \"text-align: left;\">MD</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: right;\">1</td>" *
+                 "<td style = \"text-align: left;\">" *
+                 "<div class=\"markdown\">" *
+                 "<p>" *
+                 "<a href=\"http://juliadata.github.io/DataFrames.jl\">DataFrames.jl</a>" *
+                 "</p>" *
+                 "</div>" *
+                 "</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"text-align: right;\">4</td>" *
+                 "<td style = \"text-align: left;\">" *
+                 "<div class=\"markdown\">" *
+                 "<p>&#36;\\frac&#123;x^2&#125;&#123;x^2&#43;y^2&#125;&#36;</p>" *
+                 "</div>" *
+                 "</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">3</td>" *
+                 "<td style = \"text-align: right;\">9</td>" *
+                 "<td style = \"text-align: left;\">" *
+                 "<div class=\"markdown\">" *
+                 "<h1>Header</h1>" *
+                 "</div>" *
+                 "</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">4</td>" *
+                 "<td style = \"text-align: right;\">16</td>" *
+                 "<td style = \"text-align: left;\">" *
+                 "<div class=\"markdown\">" *
+                 "<p>This is <em>very</em>, <strong>very</strong>, very, very, very, very, very, very, very long line</p>" *
+                 "</div>" *
+                 "</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">5</td>" *
+                 "<td style = \"text-align: right;\">25</td>" *
+                 "<td style = \"text-align: left;\">" *
+                 "<div class=\"markdown\">" *
+                 "</div>" *
+                 "</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">6</td>" *
+                 "<td style = \"text-align: right;\">36</td>" *
+                 "<td style = \"text-align: left;\">" *
+                 "<div class=\"markdown\">" *
+                 "<p>∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0</p>" *
+                 "</div>" *
+                 "</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">7</td>" *
+                 "<td style = \"text-align: right;\">49</td>" *
+                 "<td style = \"text-align: left;\">" *
+                 "<div class=\"markdown\">" *
+                 "<p>∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ</p>" *
+                 "<ul>" *
+                 "<li>" *
+                 "<p>∞7∫αγ</p>" *
+                 "</li>" *
+                 "<li>" *
+                 "<p>∞8∫αγ</p>" *
+                 "</li>" *
+                 "<li>" *
+                 "<p>∞9∫αγ∞0∫α</p>" *
+                 "</li>" *
+                 "</ul>" *
+                 "<p>γ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0</p>" *
+                 "</div>" *
+                 "</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">8</td>" *
+                 "<td style = \"text-align: right;\">64</td>" *
+                 "<td style = \"text-align: left;\">" *
+                 "<div class=\"markdown\">" *
+                 "<p>∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫α</p>" *
+                 "<ul>" *
+                 "<li>" *
+                 "<p>γ∞1∫α</p>" *
+                 "</li>" *
+                 "<li>" *
+                 "<p>γ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0</p>" *
+                 "</li>" *
+                 "</ul>" *
+                 "</div>" *
+                 "</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 end
 
 @testset "empty data frame and DataFrameRow" begin
@@ -370,26 +1020,51 @@ end
     @test sprint(show, "text/csv", df[:, 2:1]) == ""
     @test sprint(show, "text/tab-separated-values", df[:, 2:1]) == ""
     @test sprint(show, "text/html", df[:, 2:1]) ==
-          "<div class=\"data-frame\"><p>0 rows × 0 columns</p>" *
-          "<table class=\"data-frame\"><thead><tr><th></th></tr><tr><th></th></tr>" *
-          "</thead><tbody></tbody></table></div>"
+        "<div>" *
+        "<div style = \"float: left;\">" *
+        "<span>0×0 DataFrame</span>" *
+        "</div>" *
+        "<div style = \"clear: both;\">" *
+        "</div>" *
+        "</div>" *
+        "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+        "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+        "</table>" *
+        "</div>"
     @test sprint(show, "text/latex", df[:, 2:1]) ==
           "\\begin{tabular}{r|}\n\t& \\\\\n\t\\hline\n\t& \\\\\n\t\\hline\n\\end{tabular}\n"
 
     @test sprint(show, "text/csv", @view df[:, 2:1]) == ""
     @test sprint(show, "text/tab-separated-values", @view df[:, 2:1]) == ""
     @test sprint(show, "text/html", @view df[:, 2:1]) ==
-          "<div class=\"data-frame\"><p>0 rows × 0 columns</p>" *
-          "<table class=\"data-frame\"><thead><tr><th></th></tr><tr><th></th></tr>" *
-          "</thead><tbody></tbody></table></div>"
+        "<div>" *
+        "<div style = \"float: left;\">" *
+        "<span>0×0 SubDataFrame</span>" *
+        "</div>" *
+        "<div style = \"clear: both;\">" *
+        "</div>" *
+        "</div>" *
+        "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+        "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+        "</table>" *
+        "</div>"
     @test sprint(show, "text/latex", @view df[:, 2:1]) ==
           "\\begin{tabular}{r|}\n\t& \\\\\n\t\\hline\n\t& \\\\\n\t\\hline\n\\end{tabular}\n"
 
     @test sprint(show, "text/csv", df[1, 2:1]) == ""
     @test sprint(show, "text/tab-separated-values", df[1, 2:1]) == ""
     @test sprint(show, "text/html", df[1, 2:1]) ==
-          "<p>DataFrameRow (0 columns)</p><div class=\"data-frame\"><table class=\"data-frame\">" *
-          "<thead><tr><th></th></tr><tr><th></th></tr></thead><tbody></tbody></table></div>"
+        "<div>" *
+        "<div style = \"float: left;\">" *
+        "<span>DataFrameRow (0 columns)</span>" *
+        "</div>" *
+        "<div style = \"clear: both;\">" *
+        "</div>" *
+        "</div>" *
+        "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+        "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+        "</table>" *
+        "</div>"
     @test sprint(show, "text/latex", df[1, 2:1]) ==
           "\\begin{tabular}{r|}\n\t& \\\\\n\t\\hline\n\t& \\\\\n\t\\hline\n\\end{tabular}\n"
 end
@@ -503,55 +1178,254 @@ end
     io = IOBuffer()
     show(io, MIME("text/html"), df, eltypes=true)
     str = String(take!(io))
-    @test str == "<div class=\"data-frame\"><p>3 rows × 2 columns</p>" *
-                 "<table class=\"data-frame\"><thead><tr><th>" *
-                 "</th><th>A</th><th>B</th></tr>" *
-                 "<tr><th></th><th title=\"Int32\">Int32</th><th title=\"String\">String</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td>1</td><td>x</td></tr>" *
-                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table></div>"
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>3×2 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">A</th>" *
+                 "<th style = \"text-align: left;\">B</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"Int32\" style = \"text-align: left;\">Int32</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: right;\">1</td>" *
+                 "<td style = \"text-align: left;\">x</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"text-align: right;\">2</td>" *
+                 "<td style = \"text-align: left;\">y</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">3</td>" *
+                 "<td style = \"text-align: right;\">3</td>" *
+                 "<td style = \"text-align: left;\">z</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     io = IOBuffer()
     show(io, MIME("text/html"), eachcol(df), eltypes=true)
     str = String(take!(io))
-    @test str == "<p>3×2 DataFrameColumns</p><div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
-                 "</th><th>A</th><th>B</th></tr>" *
-                 "<tr><th></th><th title=\"Int32\">Int32</th><th title=\"String\">String</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td>1</td><td>x</td></tr>" *
-                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table></div>"
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>3×2 DataFrameColumns</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">A</th>" *
+                 "<th style = \"text-align: left;\">B</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"Int32\" style = \"text-align: left;\">Int32</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: right;\">1</td>" *
+                 "<td style = \"text-align: left;\">x</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"text-align: right;\">2</td>" *
+                 "<td style = \"text-align: left;\">y</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">3</td>" *
+                 "<td style = \"text-align: right;\">3</td>" *
+                 "<td style = \"text-align: left;\">z</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     io = IOBuffer()
     show(io, MIME("text/html"), eachrow(df), eltypes=true)
     str = String(take!(io))
-    @test str == "<p>3×2 DataFrameRows</p><div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
-                 "</th><th>A</th><th>B</th></tr>" *
-                 "<tr><th></th><th title=\"Int32\">Int32</th><th title=\"String\">String</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td>1</td><td>x</td></tr>" *
-                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table></div>"
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>3×2 DataFrameRows</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">A</th>" *
+                 "<th style = \"text-align: left;\">B</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"Int32\" style = \"text-align: left;\">Int32</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: right;\">1</td>" *
+                 "<td style = \"text-align: left;\">x</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"text-align: right;\">2</td>" *
+                 "<td style = \"text-align: left;\">y</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">3</td>" *
+                 "<td style = \"text-align: right;\">3</td>" *
+                 "<td style = \"text-align: left;\">z</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     io = IOBuffer()
     show(io, MIME("text/html"), df, eltypes=false)
     str = String(take!(io))
-    @test str == "<div class=\"data-frame\"><p>3 rows × 2 columns</p>" *
-                 "<table class=\"data-frame\"><thead><tr><th>" *
-                 "</th><th>A</th><th>B</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td>1</td><td>x</td></tr>" *
-                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table></div>"
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>3×2 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">A</th>" *
+                 "<th style = \"text-align: left;\">B</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: right;\">1</td>" *
+                 "<td style = \"text-align: left;\">x</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"text-align: right;\">2</td>" *
+                 "<td style = \"text-align: left;\">y</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">3</td>" *
+                 "<td style = \"text-align: right;\">3</td>" *
+                 "<td style = \"text-align: left;\">z</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     io = IOBuffer()
     show(io, MIME("text/html"), eachcol(df), eltypes=false)
     str = String(take!(io))
-    @test str == "<p>3×2 DataFrameColumns</p><div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
-                 "</th><th>A</th><th>B</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td>1</td><td>x</td></tr>" *
-                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table></div>"
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>3×2 DataFrameColumns</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">A</th>" *
+                 "<th style = \"text-align: left;\">B</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: right;\">1</td>" *
+                 "<td style = \"text-align: left;\">x</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"text-align: right;\">2</td>" *
+                 "<td style = \"text-align: left;\">y</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">3</td>" *
+                 "<td style = \"text-align: right;\">3</td>" *
+                 "<td style = \"text-align: left;\">z</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     io = IOBuffer()
     show(io, MIME("text/html"), eachrow(df), eltypes=false)
     str = String(take!(io))
-    @test str == "<p>3×2 DataFrameRows</p><div class=\"data-frame\"><table class=\"data-frame\"><thead><tr><th>" *
-                 "</th><th>A</th><th>B</th></tr></thead><tbody>" *
-                 "<tr><th>1</th><td>1</td><td>x</td></tr>" *
-                 "<tr><th>2</th><td>2</td><td>y</td></tr><tr><th>3</th><td>3</td><td>z</td></tr></tbody></table></div>"
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>3×2 DataFrameRows</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">A</th>" *
+                 "<th style = \"text-align: left;\">B</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: right;\">1</td>" *
+                 "<td style = \"text-align: left;\">x</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"text-align: right;\">2</td>" *
+                 "<td style = \"text-align: left;\">y</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">3</td>" *
+                 "<td style = \"text-align: right;\">3</td>" *
+                 "<td style = \"text-align: left;\">z</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     for x in [df, eachcol(df), eachrow(df)]
         io = IOBuffer()
@@ -622,7 +1496,7 @@ end
         @test str == """
         \e[1m9×2 DataFrame\e[0m
         \e[1m Row \e[0m│\e[1m A     \e[0m\e[1m B                                 \e[0m
-        \e[1m     \e[0m│\e[90m Int64 \e[0m\e[90m Any                               \e[0m
+             │\e[90m Int64 \e[0m\e[90m Any                               \e[0m
         ─────┼──────────────────────────────────────────
            1 │     1 \e[90m 9×2 DataFrame                     \e[0m
            2 │     2 \e[90m 2-element DataFrameRow            \e[0m
@@ -638,19 +1512,78 @@ end
     io = IOBuffer()
     show(io, MIME("text/html"), df)
     str = String(take!(io))
-    @test str == "<div class=\"data-frame\"><p>9 rows × 2 columns</p>" *
-                 "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th></tr>" *
-                 "<tr><th></th><th title=\"Int64\">Int64</th><th title=\"Any\">Any</th></tr></thead>" *
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>9×2 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">A</th>" *
+                 "<th style = \"text-align: left;\">B</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
+                 "<th title = \"Any\" style = \"text-align: left;\">Any</th>" *
+                 "</tr>" *
+                 "</thead>" *
                  "<tbody>" *
-                 "<tr><th>1</th><td>1</td><td><em>9×2 DataFrame</em></td></tr>" *
-                 "<tr><th>2</th><td>2</td><td><em>2-element DataFrameRow</em></td></tr>" *
-                 "<tr><th>3</th><td>3</td><td><em>1×2 SubDataFrame</em></td></tr>" *
-                 "<tr><th>4</th><td>4</td><td><em>9-element DataFrameRows</em></td></tr>" *
-                 "<tr><th>5</th><td>5</td><td><em>2-element DataFrameColumns</em></td></tr>" *
-                 "<tr><th>6</th><td>6</td><td><em>GroupedDataFrame with 9 groups based on key: A</em></td></tr>" *
-                 "<tr><th>7</th><td>7</td><td><em>missing</em></td></tr>" *
-                 "<tr><th>8</th><td>8</td><td></td></tr>" *
-                 "<tr><th>9</th><td>9</td><td><em>#undef</em></td></tr></tbody></table></div>"
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">9×2 DataFrame</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"text-align: right;\">2</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">2-element DataFrameRow</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">3</td>" *
+                 "<td style = \"text-align: right;\">3</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">1×2 SubDataFrame</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">4</td>" *
+                 "<td style = \"text-align: right;\">4</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">9-element DataFrameRows</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">5</td>" *
+                 "<td style = \"text-align: right;\">5</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">2-element DataFrameColumns</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">6</td>" *
+                 "<td style = \"text-align: right;\">6</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">GroupedDataFrame with 9 groups based on key: A</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">7</td>" *
+                 "<td style = \"text-align: right;\">7</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">missing</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">8</td>" *
+                 "<td style = \"text-align: right;\">8</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">" *
+                 "</td>" *
+                 "</tr>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">9</td>" *
+                 "<td style = \"text-align: right;\">9</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     io = IOBuffer()
     show(io, MIME("text/latex"), df)
@@ -717,20 +1650,74 @@ end
     """
 end
 
-@testset "check truncate keyword argument" begin
+@testset "check keywords that limit the column width" begin
     df = DataFrame(x="0123456789"^10)
 
     # no truncation
     io = IOBuffer()
     show(io, MIME("text/html"), df)
     str = String(take!(io))
-    @test str == "<div class=\"data-frame\"><p>1 rows × 1 columns</p>" *
-                 "<table class=\"data-frame\"><thead><tr><th></th><th>x</th></tr>" *
-                 "<tr><th></th><th title=\"String\">String</th></tr></thead>" *
-                 "<tbody><tr><th>1</th>" *
-                 "<td>01234567890123456789012345678901234567890123456789" *
-                 "01234567890123456789012345678901234567890123456789</td>"*
-                 "</tr></tbody></table></div>"
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>1×1 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"text-align: left;\">x</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "</th>" *
+                 "<th title = \"String\" style = \"text-align: left;\">String</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"text-align: left;\">0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
+
+    # With truncation
+    io = IOBuffer()
+    show(io, MIME("text/html"), df, max_column_width="100px")
+    str = String(take!(io))
+    @test str == "<div>" *
+                 "<div style = \"float: left;\">" *
+                 "<span>1×1 DataFrame</span>" *
+                 "</div>" *
+                 "<div style = \"clear: both;\">" *
+                 "</div>" *
+                 "</div>" *
+                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+                 "<thead>" *
+                 "<tr class = \"header\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; max-width: 100px; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap;\">Row</th>" *
+                 "<th style = \"max-width: 100px; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap;\">x</th>" *
+                 "</tr>" *
+                 "<tr class = \"subheader headerLastRow\">" *
+                 "<th class = \"rowNumber\" style = \"font-weight: bold; max-width: 100px; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap;\">" *
+                 "</th>" *
+                 "<th title = \"String\" style = \"max-width: 100px; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap;\">String</th>" *
+                 "</tr>" *
+                 "</thead>" *
+                 "<tbody>" *
+                 "<tr>" *
+                 "<td class = \"rowNumber\" style = \"font-weight: bold; max-width: 100px; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap;\">1</td>" *
+                 "<td style = \"max-width: 100px; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap;\">0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789</td>" *
+                 "</tr>" *
+                 "</tbody>" *
+                 "</table>" *
+                 "</div>"
 
     # no truncation
     io = IOBuffer()
@@ -814,7 +1801,6 @@ end
                                │ String
         ───────────────────────┼───────────────────────
                              1 │ 01234567890123456789…"""
-
 end
 
 end # module

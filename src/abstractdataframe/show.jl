@@ -223,7 +223,7 @@ function _show(io::IO,
     # PrettyTables.jl. Otherwise, we can just use the row number column.
     if (rowid === nothing) || (ncol(df) == 0)
         show_row_number::Bool = get(kwargs, :show_row_number, true)
-        row_names = nothing
+        row_labels = nothing
 
         # If the columns with row numbers is not shown, then we should not
         # display a vertical line after the first column.
@@ -236,10 +236,10 @@ function _show(io::IO,
         # we must hide the row name column, which is used to display the
         # `rowid`.
         if !get(kwargs, :show_row_number, true)
-            row_names = nothing
+            row_labels = nothing
             vlines = Int[]
         else
-            row_names = [string(rowid)]
+            row_labels = [string(rowid)]
             vlines = Int[1]
         end
 
@@ -253,7 +253,6 @@ function _show(io::IO,
                  alignment_anchor_regex      = alignment_anchor_regex,
                  compact_printing            = compact_printing,
                  crop                        = crop,
-                 crop_num_lines_at_beginning = 2,
                  ellipsis_line_skip          = 3,
                  formatters                  = (_pretty_tables_general_formatter,),
                  header                      = (names_str, types_str),
@@ -262,14 +261,15 @@ function _show(io::IO,
                  highlighters                = (_PRETTY_TABLES_HIGHLIGHTER,),
                  maximum_columns_width       = maximum_columns_width,
                  newline_at_end              = false,
-                 nosubheader                 = !eltypes,
-                 row_name_alignment          = :r,
-                 row_name_crayon             = Crayon(),
-                 row_name_column_title       = string(rowlabel),
-                 row_names                   = row_names,
+                 reserved_display_lines      = 2,
+                 row_label_alignment         = :r,
+                 row_label_crayon            = Crayon(),
+                 row_label_column_title      = string(rowlabel),
+                 row_labels                  = row_labels,
                  row_number_alignment        = :r,
                  row_number_column_title     = string(rowlabel),
                  show_row_number             = show_row_number,
+                 show_subheader              = eltypes,
                  title                       = title,
                  vcrop_mode                  = :middle,
                  vlines                      = vlines,
@@ -333,17 +333,22 @@ julia> show(df, show_row_number=false)
      3  z
 ```
 """
-Base.show(io::IO,
-          df::AbstractDataFrame;
-          allrows::Bool = !get(io, :limit, false),
-          allcols::Bool = !get(io, :limit, false),
-          rowlabel::Symbol = :Row,
-          summary::Bool = true,
-          eltypes::Bool = true,
-          truncate::Int = 32,
-          kwargs...) =
+function Base.show(io::IO,
+                   df::AbstractDataFrame;
+                   allrows::Bool = !get(io, :limit, false),
+                   allcols::Bool = !get(io, :limit, false),
+                   rowlabel::Symbol = :Row,
+                   summary::Bool = true,
+                   eltypes::Bool = true,
+                   truncate::Int = 32,
+                   kwargs...)
+
+    # Check for keywords that are valid in other backends but not here.
+    _verify_kwargs_for_text(; kwargs...)
+
     _show(io, df; allrows=allrows, allcols=allcols, rowlabel=rowlabel,
           summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
+end
 
 Base.show(df::AbstractDataFrame;
           allrows::Bool = !get(stdout, :limit, true),
@@ -356,3 +361,12 @@ Base.show(df::AbstractDataFrame;
     show(stdout, df;
          allrows=allrows, allcols=allcols, rowlabel=rowlabel, summary=summary,
          eltypes=eltypes, truncate=truncate, kwargs...)
+
+# Internal function to verify the keywords in show functions using the text
+# backend.
+function _verify_kwargs_for_text(; kwargs...)
+    haskey(kwargs, :max_column_width) &&
+        throw(ArgumentError("`max_column_width` is not supported in text mode. " *
+                            "Use `truncate` to limit the maximum number of characters in the columns."))
+    return nothing
+end
