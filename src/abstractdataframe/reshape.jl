@@ -851,6 +851,15 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
                        makeunique=makeunique, strict=strict)
 end
 
-Base.permutedims(df::AbstractDataFrame) = DataFrame(permutedims(Matrix(df)), :auto)
-Base.permutedims(df::AbstractDataFrame, cnames::AbstractVector; makeunique::Bool=false) =
-    DataFrame(permutedims(Matrix(df)), cnames, makeunique=makeunique)
+function Base.permutedims(df::AbstractDataFrame)
+    out_df = DataFrame(permutedims(Matrix(df)), :auto)
+    _copy_table_note_metadata!(out_df, df)
+    return out_df
+end
+
+function Base.permutedims(df::AbstractDataFrame, cnames::AbstractVector;
+                          makeunique::Bool=false)
+    out_df = DataFrame(permutedims(Matrix(df)), cnames, makeunique=makeunique)
+    _copy_table_note_metadata!(out_df, df)
+    return out_df
+end
