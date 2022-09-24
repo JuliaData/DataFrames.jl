@@ -683,7 +683,7 @@ with name specified by `dest_namescol`.
 # Arguments
 - `df` : the `AbstractDataFrame`
 - `src_namescol` : the column that will become the new header.
-   If omitted then column names `x1`, `x2`, ... are generated automatically.
+   If omitted then column names `:x1`, `:x2`, ... are generated automatically.
 - `dest_namescol` : the name of the first column in the returned `DataFrame`.
   Defaults to the same name as `src_namescol`.
   Not supported when `src_namescol` is a vector or is omitted.
