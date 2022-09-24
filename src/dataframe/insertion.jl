@@ -298,7 +298,7 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
             end
         end
         @error "Error adding value to column :$(_names(df1)[current_col]). " *
-               "Maybe you have forgotten to ask for column " *
+               "Maybe it was forgotten to require column " *
                "element type promotion, which can be done " *
                "by passing the promote=true keyword argument."
         rethrow(err)
@@ -686,7 +686,7 @@ function _row_inserter!(df::DataFrame, loc::Integer, row::Any,
             @assert length(col2) == nrows
         end
         @error "Error adding value to column :$(_names(df)[current_col]). " *
-               "Maybe you have forgotten to ask for column element type promotion, " *
+               "Maybe it was forgotten to ask for column element type promotion, " *
                "which can be done by passing the promote=true keyword argument."
         rethrow(err)
     end
@@ -749,7 +749,7 @@ function _dfr_row_inserter!(df::DataFrame, loc::Integer, dfr::DataFrameRow,
                 end
                 colname = _names(df)[col_num]
                 throw(AssertionError("Error adding value to column :$colname. " *
-                                     "Maybe you have forgotten to ask for column " *
+                                     "Maybe it was forgotten to ask for column " *
                                      "element type promotion, which can be done " *
                                      "by passing the promote=true keyword argument."))
             end
@@ -865,7 +865,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
                         @assert length(col2) == nrows
                     end
                     @error "Error adding value to column :$colname. " *
-                           "Maybe you have forgotten to ask for column " *
+                           "Maybe it was forgotten to ask for column " *
                            "element type promotion, which can be done " *
                            "by passing the promote=true keyword argument."
                     rethrow(err)
@@ -972,7 +972,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
             @assert length(col2) == nrows
         end
         @error "Error adding value to column :$(_names(df)[current_col]). " *
-               "Maybe you have forgotten to ask for column " *
+               "Maybe it was forgotten to ask for column " *
                "element type promotion, which can be done " *
                "by passing the promote=true keyword argument."
         rethrow(err)
