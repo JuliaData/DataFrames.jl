@@ -101,7 +101,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
 
         show(io, gd[N]; summary=false,
              allrows=allrows, allcols=allcols, rowlabel=rowlabel,
-             truncate=truncate, kwargs..., display_size=(h2, w))
+             truncate=truncate, display_size=(h2, w), kwargs...)
     end
 end
 
