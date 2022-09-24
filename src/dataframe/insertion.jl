@@ -748,10 +748,7 @@ function _dfr_row_inserter!(df::DataFrame, loc::Integer, dfr::DataFrameRow,
                     @assert length(col2) == nrows
                 end
                 colname = _names(df)[col_num]
-                throw(AssertionError("Error adding value to column :$colname. " *
-                                     "Maybe it was forgotten to ask for column " *
-                                     "element type promotion, which can be done " *
-                                     "by passing the promote=true keyword argument."))
+                throw(AssertionError("Error adding value to column :$colname."))
             end
             # use a function barrier to improve performance
             mode isa Val{:push} && pushhelper!(col, r)
