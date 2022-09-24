@@ -1373,27 +1373,29 @@ end
 end
 
 @testset "permutedims" begin
-    df = DataFrame(a=["x", "y"], b=[1.0, 2.0], c=[3, 4], d=[true, false])
-    res = permutedims(df, 1)
-    @test check_allnotemetadata(res)
-    @test getfield(res, :metadata) === nothing
-    @test getfield(res, :colmetadata) === nothing
+    for fun in (x -> permutedims(x, 1), permutedims, x -> permutedims(x, [:a, :b]))
+        df = DataFrame(a=["x", "y"], b=[1.0, 2.0], c=[3, 4], d=[true, false])
+        res = fun(df)
+        @test check_allnotemetadata(res)
+        @test getfield(res, :metadata) === nothing
+        @test getfield(res, :colmetadata) === nothing
 
-    metadata!(df, "name", "empty", style=:note)
-    metadata!(df, "name1", "empty1", style=:default)
-    colmetadata!(df, :a, "name", "a", style=:note)
-    colmetadata!(df, :a, "name1", "a1", style=:default)
-    colmetadata!(df, :b, "name", "b", style=:note)
-    colmetadata!(df, :b, "name1", "b1", style=:default)
-    colmetadata!(df, :c, "name", "c", style=:note)
-    colmetadata!(df, :c, "name1", "c1", style=:default)
-    colmetadata!(df, :d, "name", "d", style=:note)
-    colmetadata!(df, :d, "name1", "d1", style=:default)
-    res = permutedims(df, 1)
-    @test check_allnotemetadata(res)
-    @test collect(metadatakeys(res)) == ["name"]
-    @test metadata(res, "name") == "empty"
-    @test getfield(res, :colmetadata) === nothing
+        metadata!(df, "name", "empty", style=:note)
+        metadata!(df, "name1", "empty1", style=:default)
+        colmetadata!(df, :a, "name", "a", style=:note)
+        colmetadata!(df, :a, "name1", "a1", style=:default)
+        colmetadata!(df, :b, "name", "b", style=:note)
+        colmetadata!(df, :b, "name1", "b1", style=:default)
+        colmetadata!(df, :c, "name", "c", style=:note)
+        colmetadata!(df, :c, "name1", "c1", style=:default)
+        colmetadata!(df, :d, "name", "d", style=:note)
+        colmetadata!(df, :d, "name1", "d1", style=:default)
+        res = permutedims(df, 1)
+        @test check_allnotemetadata(res)
+        @test collect(metadatakeys(res)) == ["name"]
+        @test metadata(res, "name") == "empty"
+        @test getfield(res, :colmetadata) === nothing
+    end
 end
 
 @testset "broadcasting" begin
