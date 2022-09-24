@@ -668,6 +668,15 @@ end
     @test_throws ArgumentError permutedims(df, 1)
     # but allowed with strict=false
     @test permutedims(df, 1, strict=false) == ref
+
+    df = DataFrame(a=1:2, b=3:4)
+    @test permutedims(df) == DataFrame(x1=[1, 3], x2=[2, 4])
+    @test permutedims(df, [:p, :q]) == DataFrame(p=[1, 3], q=[2, 4])
+    @test permutedims(df, ["p", "q"]) == DataFrame(p=[1, 3], q=[2, 4])
+    @test_throws ArgumentError permutedims(df, ["p", "p"]) == DataFrame(p=[1, 3], q=[2, 4])
+    @test permutedims(df, ["p", "p"], makeunique=true) == DataFrame(p=[1, 3], p_1=[2, 4])
+    @test permutedims(DataFrame()) == permutedims(DataFrame(a=[], b=[])) ==
+          permutedims(DataFrame(), []) == permutedims(DataFrame(a=[], b=[]), []) == DataFrame()
 end
 
 @testset "stack view=true additional tests" begin

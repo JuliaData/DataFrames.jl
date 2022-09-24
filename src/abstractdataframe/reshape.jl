@@ -695,7 +695,8 @@ Base.transpose(::AbstractDataFrame, args...; kwargs...) =
     throw(ArgumentError("`transpose` not defined for `AbstractDataFrame`s. Try `permutedims` instead"))
 
 """
-    permutedims(df::AbstractDataFrame, src_namescol::Union{Int, Symbol, AbstractString},
+    permutedims(df::AbstractDataFrame,
+                [src_namescol::Union{Int, Symbol, AbstractString}],
                 [dest_namescol::Union{Symbol, AbstractString}];
                 makeunique::Bool=false, strict::Bool=true)
 
@@ -707,21 +708,25 @@ with name specified by `dest_namescol`.
 # Arguments
 - `df` : the `AbstractDataFrame`
 - `src_namescol` : the column that will become the new header.
+   If omitted then column names `:x1`, `:x2`, ... are generated automatically.
 - `dest_namescol` : the name of the first column in the returned `DataFrame`.
   Defaults to the same name as `src_namescol`.
+  Not supported when `src_namescol` is a vector or is omitted.
 - `makeunique` : if `false` (the default), an error will be raised
   if duplicate names are found; if `true`, duplicate names will be suffixed
   with `_i` (`i` starting at 1 for the first duplicate).
+  Not supported when `src_namescol` is omitted.
 - `strict` : if `true` (the default), an error will be raised if the values
   contained in the `src_namescol` are not all `Symbol` or all `AbstractString`,
   or can all be converted to `String` using `convert`. If `false`
   then any values are accepted and the will be changed to strings using
   the `string` function.
+  Not supported when `src_namescol` is a vector or is omitted.
 
 Note: The element types of columns in resulting `DataFrame`
-(other than the first column, which always has element type `String`)
-will depend on the element types of _all_ input columns
-based on the result of `promote_type`.
+(other than the first column if it is created from `df` column names,
+which always has element type `String`) will depend on the element types of
+_all_ input columns based on the result of `promote_type`.
 That is, if the source data frame contains `Int` and `Float64` columns,
 resulting columns will have element type `Float64`. If the source has
 `Int` and `String` columns, resulting columns will have element type `Any`.
@@ -732,6 +737,30 @@ column-level metadata is dropped.
 # Examples
 
 ```jldoctest
+julia> df = DataFrame(a=1:2, b=3:4)
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     2      4
+
+julia> permutedims(df)
+2×2 DataFrame
+ Row │ x1     x2
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      2
+   2 │     3      4
+
+julia> permutedims(df, [:p, :q])
+2×2 DataFrame
+ Row │ p      q
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      2
+   2 │     3      4
+
 julia> df1 = DataFrame(a=["x", "y"], b=[1.0, 2.0], c=[3, 4], d=[true, false])
 2×4 DataFrame
  Row │ a       b        c      d
@@ -821,3 +850,7 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
     return permutedims(df, src_namescol, dest_namescol;
                        makeunique=makeunique, strict=strict)
 end
+
+Base.permutedims(df::AbstractDataFrame) = DataFrame(permutedims(Matrix(df)), :auto)
+Base.permutedims(df::AbstractDataFrame, cnames::AbstractVector; makeunique::Bool=false) =
+    DataFrame(permutedims(Matrix(df)), cnames, makeunique=makeunique)
