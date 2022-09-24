@@ -300,7 +300,7 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
         @error "Error adding value to column :$(_names(df1)[current_col]). " *
                "Maybe you have forgotten to ask for column " *
                "element type promotion, which can be done " *
-               "by passing `promote=true` keyword argument."
+               "by passing the promote=true keyword argument."
         rethrow(err)
     end
 
@@ -687,7 +687,7 @@ function _row_inserter!(df::DataFrame, loc::Integer, row::Any,
         end
         @error "Error adding value to column :$(_names(df)[current_col]). " *
                "Maybe you have forgotten to ask for column element type promotion, " *
-               "which can be done by passing `promote=true` keyword argument."
+               "which can be done by passing the promote=true keyword argument."
         rethrow(err)
     end
     _drop_all_nonnote_metadata!(df)
@@ -751,7 +751,7 @@ function _dfr_row_inserter!(df::DataFrame, loc::Integer, dfr::DataFrameRow,
                 throw(AssertionError("Error adding value to column :$colname. " *
                                      "Maybe you have forgotten to ask for column " *
                                      "element type promotion, which can be done " *
-                                     "by passing `promote=true` keyword argument."))
+                                     "by passing the promote=true keyword argument."))
             end
             # use a function barrier to improve performance
             mode isa Val{:push} && pushhelper!(col, r)
@@ -867,7 +867,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
                     @error "Error adding value to column :$colname. " *
                            "Maybe you have forgotten to ask for column " *
                            "element type promotion, which can be done " *
-                           "by passing `promote=true` keyword argument."
+                           "by passing the promote=true keyword argument."
                     rethrow(err)
                 end
             else
@@ -974,7 +974,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
         @error "Error adding value to column :$(_names(df)[current_col]). " *
                "Maybe you have forgotten to ask for column " *
                "element type promotion, which can be done " *
-               "by passing `promote=true` keyword argument."
+               "by passing the promote=true keyword argument."
         rethrow(err)
     end
     _drop_all_nonnote_metadata!(df)
