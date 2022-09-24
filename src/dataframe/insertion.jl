@@ -297,7 +297,10 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
                 deleteat!(col, 1:length(col) - nrow1)
             end
         end
-        @error "Error adding value to column :$(_names(df1)[current_col])."
+        @error "Error adding value to column :$(_names(df1)[current_col]). " *
+               "Maybe it was forgotten to require column " *
+               "element type promotion, which can be done " *
+               "by passing the promote=true keyword argument."
         rethrow(err)
     end
 
@@ -682,7 +685,9 @@ function _row_inserter!(df::DataFrame, loc::Integer, row::Any,
             end
             @assert length(col2) == nrows
         end
-        @error "Error adding value to column :$(_names(df)[current_col])."
+        @error "Error adding value to column :$(_names(df)[current_col]). " *
+               "Maybe it was forgotten to ask for column element type promotion, " *
+               "which can be done by passing the promote=true keyword argument."
         rethrow(err)
     end
     _drop_all_nonnote_metadata!(df)
@@ -743,7 +748,7 @@ function _dfr_row_inserter!(df::DataFrame, loc::Integer, dfr::DataFrameRow,
                     @assert length(col2) == nrows
                 end
                 colname = _names(df)[col_num]
-                throw(AssertionError("Error adding value to column :$colname"))
+                throw(AssertionError("Error adding value to column :$colname."))
             end
             # use a function barrier to improve performance
             mode isa Val{:push} && pushhelper!(col, r)
@@ -828,7 +833,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
                     end
                     @assert length(col2) == nrows
                 end
-                throw(AssertionError("Error adding value to column :$colname"))
+                throw(AssertionError("Error adding value to column :$colname."))
             end
             if haskey(row, colname)
                 val = row[colname]
@@ -856,7 +861,10 @@ function _row_inserter!(df::DataFrame, loc::Integer,
                         end
                         @assert length(col2) == nrows
                     end
-                    @error "Error adding value to column :$colname."
+                    @error "Error adding value to column :$colname. " *
+                           "Maybe it was forgotten to ask for column " *
+                           "element type promotion, which can be done " *
+                           "by passing the promote=true keyword argument."
                     rethrow(err)
                 end
             else
@@ -960,7 +968,10 @@ function _row_inserter!(df::DataFrame, loc::Integer,
             end
             @assert length(col2) == nrows
         end
-        @error "Error adding value to column :$(_names(df)[current_col])."
+        @error "Error adding value to column :$(_names(df)[current_col]). " *
+               "Maybe it was forgotten to ask for column " *
+               "element type promotion, which can be done " *
+               "by passing the promote=true keyword argument."
         rethrow(err)
     end
     _drop_all_nonnote_metadata!(df)
