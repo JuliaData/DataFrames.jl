@@ -85,7 +85,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
 
         show(io, gd[1]; summary=false,
              allrows=allrows, allcols=allcols, rowlabel=rowlabel,
-             truncate=truncate, kwargs..., display_size=(h1, w))
+             truncate=truncate, display_size=(h1, w), kwargs...)
 
         N > 1 || return
 
