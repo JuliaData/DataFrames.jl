@@ -869,7 +869,7 @@ function Base.to_indices(gd::GroupedDataFrame,
                          (idx,)::Tuple{Not{<:Union{BitArray{1}, Vector{Bool}}}})
     if length(idx.skip) != length(gd)
         throw(BoundsError("attempt to index $(length(gd))-group GroupedDataFrame " *
-                          "with $(length(idx.skip))-element boolean vector"))
+                          "with $(length(idx.skip))-element Boolean vector"))
     end
     return (findall(!, idx.skip),)
 end
@@ -877,19 +877,20 @@ function Base.to_indices(gd::GroupedDataFrame,
                          (idx,)::Tuple{Not{<:AbstractVector{Bool}}})
     if length(idx.skip) != length(gd)
         throw(BoundsError("attempt to index $(length(gd))-group GroupedDataFrame " *
-                          "with $(length(idx.skip))-element boolean vector"))
+                          "with $(length(idx.skip))-element Boolean vector"))
     end
     return (findall(!, idx.skip),)
 end
 
+# Needed to avoid ambiguity
 @inline Base.to_indices(gd::GroupedDataFrame, I::Tuple{Not{<:InvertedIndices.NIdx{1}}}) =
-    throw(ArgumentError("attempt to index GroupedDataFrame with $typeof(I)"))
+    throw(ArgumentError("attempt to index GroupedDataFrame with $(typeof(I))"))
 
 @inline Base.to_indices(gd::GroupedDataFrame, I::Tuple{Not{<:InvertedIndices.NIdx}}) =
-    throw(ArgumentError("attempt to index GroupedDataFrame with $typeof(I)"))
+    throw(ArgumentError("attempt to index GroupedDataFrame with $(typeof(I))"))
 
 @inline Base.to_indices(gd::GroupedDataFrame, I::Tuple{Not{<:Union{Array{Bool}, BitArray}}}) =
-    throw(ArgumentError("attempt to index GroupedDataFrame with $typeof(I)"))
+    throw(ArgumentError("attempt to index GroupedDataFrame with $(typeof(I))"))
 
 #
 # Dictionary interface
