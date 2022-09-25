@@ -348,7 +348,7 @@ end
     @test insertcols!(df, "a" => 2, makeunique=true) == DataFrame(a=1, a_1=2)
 end
 
-@testset "insertcols!" begin
+@testset "insertcols! old tests" begin
     df = DataFrame(a=1:3, b=4:6)
     df2 = insertcols(df, :c => 1)
     @test df == DataFrame(a=1:3, b=4:6)
@@ -372,6 +372,7 @@ end
     @test_throws ArgumentError insertcols!(df, 2, after=true)
     @test insertcols!(df) == DataFrame(x=1:2)
     @test insertcols!(df, after=true, makeunique=true, copycols=true) == DataFrame(x=1:2)
+    @test_throws ArgumentError insertcols!(DataFrame(), :b)
 end
 
 @testset "insertcols! after" begin
