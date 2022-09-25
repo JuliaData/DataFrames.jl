@@ -90,7 +90,7 @@
   ([#3094](https://github.com/JuliaData/DataFrames.jl/pull/3094))
 * Fix incorrect behavior of `GroupDataFrame` indexing in corner cases
   ([#3179](https://github.com/JuliaData/DataFrames.jl/pull/3179))
-* Fix incorrect behavior of `insertcols!` when no columns to add are passed
+* Fix errors in `insertcols!` when no columns to add are passed
   ([#3179](https://github.com/JuliaData/DataFrames.jl/pull/3179))
 * Fix incorrect behavior of `minimum` and `maximum` aggregates
   when processing `GroupedDataFrame` with `combine` in corner cases
