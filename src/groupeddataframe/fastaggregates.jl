@@ -17,14 +17,14 @@ check_aggregate(f::typeof(prod), ::AbstractVector{<:Union{Missing, Number}}) =
     Reduce(Base.mul_prod)
 check_aggregate(f::typeof(prod∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
     Reduce(Base.mul_prod, !ismissing)
-check_aggregate(f::typeof(maximum), v::AbstractVector{<:Union{Missing, Real}}) =
-    eltype(v) === Any ? f : Reduce(max)
-check_aggregate(f::typeof(maximum∘skipmissing), v::AbstractVector{<:Union{Missing, Real}}) =
-    eltype(v) === Any ? f : Reduce(max, !ismissing, nothing, true)
-check_aggregate(f::typeof(minimum), v::AbstractVector{<:Union{Missing, Real}}) =
-    eltype(v) === Any ? f : Reduce(min)
-check_aggregate(f::typeof(minimum∘skipmissing), v::AbstractVector{<:Union{Missing, Real}}) =
-    eltype(v) === Any ? f : Reduce(min, !ismissing, nothing, true)
+check_aggregate(f::typeof(maximum), ::AbstractVector{<:Union{Missing, Real}}) =
+    Reduce(max)
+check_aggregate(f::typeof(maximum∘skipmissing), ::AbstractVector{<:Union{Missing, Real}}) =
+    Reduce(max, !ismissing, nothing, true)
+check_aggregate(f::typeof(minimum), ::AbstractVector{<:Union{Missing, Real}}) =
+    Reduce(min)
+check_aggregate(f::typeof(minimum∘skipmissing), ::AbstractVector{<:Union{Missing, Real}}) =
+    Reduce(min, !ismissing, nothing, true)
 check_aggregate(f::typeof(mean), ::AbstractVector{<:Union{Missing, Number}}) =
     Reduce(Base.add_sum, nothing, /)
 check_aggregate(f::typeof(mean∘skipmissing), ::AbstractVector{<:Union{Missing, Number}}) =
