@@ -40,8 +40,8 @@ If `cols` is passed then restrict returned column names to those matching the
 selector (this is useful in particular with regular expressions, `Cols`, `Not`, and `Between`).
 `cols` can be:
 * any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR); these column
-  selectors are documented in [General rules](@ref) section of the [Indexing](@ref)
-  part of the DataFrames.jl documentation
+  selectors are documented in the [General rules](@ref) section of the [Indexing](@ref)
+  part of the DataFrames.jl manual
 * a `Type`, in which case names of columns whose `eltype` is a subtype of `T`
   are returned
 * a `Function` predicate taking the column name as a string and returning `true`
