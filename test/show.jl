@@ -388,8 +388,6 @@ end
     show(io, groupby(df, :x))
     str = String(take!(io.io))
     @test str == "GroupedDataFrame with 0 groups based on key: x"
-
-
 end
 
 @testset "IOContext parameters test" begin
