@@ -106,9 +106,9 @@ IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) =
 IteratorInterfaceExtensions.isiterable(x::AbstractDataFrame) = true
 TableTraits.isiterabletable(x::AbstractDataFrame) = true
 
-@inline function Tables.subset(df::AbstractDataFrame, inds; view::Union{Bool, Nothing}=nothing)
-    res = view === true ? DataFrames.view(df, inds, :) : df[inds, :]
-    if res isa DataFrameRow && view === false
+@inline function Tables.subset(df::AbstractDataFrame, inds; viewhint::Union{Bool, Nothing}=nothing)
+    res = viewhint === true ? view(df, inds, :) : df[inds, :]
+    if res isa DataFrameRow && viewhint === false
         return copy(res)
     else
         return res

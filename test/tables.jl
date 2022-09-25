@@ -329,40 +329,40 @@ end
     res = @inferred Tables.subset(df, :)
     @test res isa DataFrame
     @test res == DataFrame(a=1:3, b=4:6)
-    res = Tables.subset(df, :, view=false)
+    res = Tables.subset(df, :, viewhint=false)
     @test res isa DataFrame
     @test res == DataFrame(a=1:3, b=4:6)
-    res = Tables.subset(df, :, view=true)
+    res = Tables.subset(df, :, viewhint=true)
     @test res isa SubDataFrame
     @test res == DataFrame(a=1:3, b=4:6)
 
     res = @inferred Tables.subset(df, [3, 1])
     @test res isa DataFrame
     @test res == DataFrame(a=[3, 1], b=[6, 4])
-    res = Tables.subset(df, [3, 1], view=false)
+    res = Tables.subset(df, [3, 1], viewhint=false)
     @test res isa DataFrame
     @test res == DataFrame(a=[3, 1], b=[6, 4])
-    res = Tables.subset(df, [3, 1], view=true)
+    res = Tables.subset(df, [3, 1], viewhint=true)
     @test res isa SubDataFrame
     @test res == DataFrame(a=[3, 1], b=[6, 4])
 
     res = @inferred Tables.subset(df, [true, false, true])
     @test res isa DataFrame
     @test res == DataFrame(a=[1, 3], b=[4, 6])
-    res = Tables.subset(df, [1, 3], view=false)
+    res = Tables.subset(df, [1, 3], viewhint=false)
     @test res isa DataFrame
     @test res == DataFrame(a=[1, 3], b=[4, 6])
-    res = Tables.subset(df, [1, 3], view=true)
+    res = Tables.subset(df, [1, 3], viewhint=true)
     @test res isa SubDataFrame
     @test res == DataFrame(a=[1, 3], b=[4, 6])
 
     res = @inferred Tables.subset(df, 2)
     @test res isa DataFrameRow
     @test res == DataFrame(a=2, b=5)[1, :]
-    res = Tables.subset(df, 2, view=false)
+    res = Tables.subset(df, 2, viewhint=false)
     @test res isa NamedTuple{(:a, :b), Tuple{Int, Int}}
     @test res == (a=2, b=5)
-    res = Tables.subset(df, 2, view=true)
+    res = Tables.subset(df, 2, viewhint=true)
     @test res isa DataFrameRow
     @test res == DataFrame(a=2, b=5)[1, :]
 end
