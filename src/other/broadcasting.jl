@@ -14,11 +14,12 @@ Base.Broadcast.BroadcastStyle(::Type{<:AbstractDataFrame}) =
 
 Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::Base.Broadcast.BroadcastStyle) =
     DataFrameStyle()
-Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::Base.Broadcast.Unknown) =
-    DataFrameStyle()
 Base.Broadcast.BroadcastStyle(::Base.Broadcast.BroadcastStyle, ::DataFrameStyle) =
     DataFrameStyle()
 Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::DataFrameStyle) = DataFrameStyle()
+# The method below is added to avoid dispatch ambiguity
+Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::Base.Broadcast.Unknown) =
+    DataFrameStyle()
 
 function copyto_widen!(res::AbstractVector{T}, bc::Base.Broadcast.Broadcasted,
                        pos, col) where T
@@ -227,6 +228,7 @@ function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src)
     return src
 end
 
+# The method below is added to avoid dispatch ambiguity
 Base.Broadcast.broadcast_unalias(::Nothing, src::AbstractDataFrame) = src
 
 function Base.Broadcast.broadcast_unalias(dest, src::AbstractDataFrame)
