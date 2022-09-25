@@ -364,12 +364,14 @@ end
 @testset "insertcols! with no cols" begin
     df = DataFrame(x=1:2)
     @test_throws ArgumentError insertcols!(df, 0)
+    @test insertcols!(df, 2) === df
     @test insertcols!(df, 2) == DataFrame(x=1:2)
     @test insertcols!(df, :x) == DataFrame(x=1:2)
     @test insertcols!(df, "x") == DataFrame(x=1:2)
     @test insertcols!(df, "x", after=true, makeunique=true, copycols=true) == DataFrame(x=1:2)
     @test insertcols!(df, 0, after=true) == DataFrame(x=1:2)
     @test_throws ArgumentError insertcols!(df, 2, after=true)
+    @test insertcols!(df) === df
     @test insertcols!(df) == DataFrame(x=1:2)
     @test insertcols!(df, after=true, makeunique=true, copycols=true) == DataFrame(x=1:2)
     @test_throws ArgumentError insertcols!(DataFrame(), :b)

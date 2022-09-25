@@ -92,7 +92,7 @@
   ([#3179](https://github.com/JuliaData/DataFrames.jl/pull/3179))
 * Fix errors in `insertcols!` when no columns to add are passed
   ([#3179](https://github.com/JuliaData/DataFrames.jl/pull/3179))
-* Fix incorrect behavior of `minimum` and `maximum` aggregates
+* Fix errors behavior of `minimum` and `maximum` aggregates
   when processing `GroupedDataFrame` with `combine` in corner cases
   ([#3179](https://github.com/JuliaData/DataFrames.jl/pull/3179))
 
