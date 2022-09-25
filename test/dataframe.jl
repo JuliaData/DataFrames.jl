@@ -263,7 +263,7 @@ end
     dfc = copy(df)
     @test insertcols!(df, 2) == dfc
     @test_throws ArgumentError insertcols!(df, 10)
-    @test_throws ArgumentError insertcols!(df, 2, a=1, b=2)
+    @test_throws MethodError insertcols!(df, 2, a=1, b=2)
 
     df = DataFrame()
     @test insertcols!(df, 1, :x=>[1]) == DataFrame(x=[1])
