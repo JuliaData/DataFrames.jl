@@ -769,17 +769,17 @@ end
     df = DataFrame(x=[:one, :two, :one], y=[1, 2, 3])
     @test_throws ArgumentError unstack(df, :x, :y)
     @test unstack(df, :x, :y, allowduplicates=true) == DataFrame(one=3, two=2)
-    @test unstack(df, :x, :y, valuestransform=identity) ==
+    @test unstack(df, :x, :y, valuesfunction=identity) ==
           DataFrame(one=[[1, 3]], two=[[2]])
-    @test unstack(df, :x, :y, valuestransform=last) ==
+    @test unstack(df, :x, :y, valuesfunction=last) ==
           DataFrame(one=3, two=2)
-    @test unstack(df, :x, :y, valuestransform=first) ==
+    @test unstack(df, :x, :y, valuesfunction=first) ==
           DataFrame(one=1, two=2)
-    @test unstack(df, :x, :y, valuestransform=length) ==
+    @test unstack(df, :x, :y, valuesfunction=length) ==
           DataFrame(one=2, two=1)
 end
 
-@testset "valuestransform" begin
+@testset "valuesfunction" begin
     df = DataFrame(rowid=[1, 1, 1, 1, 2, 2], colid=[1, 1, 2, 2, 3, 3], values=1:6)
     @test_throws ArgumentError unstack(df, :rowid, :colid, :values)
     @test unstack(df, :rowid, :colid, :values, allowduplicates=true) ≅
@@ -788,42 +788,42 @@ end
     @test unstack(df, :rowid, :colid, :values, allowduplicates=true, fill=0) ==
           DataFrame("rowid" => 1:2, "1" => [2, 0],
                     "2" => [4, 0], "3" => [0, 6])
-    @test unstack(df, :rowid, :colid, :values, valuestransform=identity) ≅
+    @test unstack(df, :rowid, :colid, :values, valuesfunction=identity) ≅
           DataFrame("rowid" => 1:2, "1" => [1:2, missing],
                     "2" => [3:4, missing], "3" => [missing, 5:6])
     @test unstack(df, :rowid, :colid, :values,
-                  valuestransform=identity, fill=Int[]) ==
+                  valuesfunction=identity, fill=Int[]) ==
           DataFrame("rowid" => 1:2, "1" => [1:2, []],
                     "2" => [3:4, []], "3" => [[], 5:6])
-    @test unstack(df, :rowid, :colid, :values, valuestransform=sum) ≅
+    @test unstack(df, :rowid, :colid, :values, valuesfunction=sum) ≅
           DataFrame("rowid" => 1:2, "1" => [3, missing],
                     "2" => [7, missing], "3" => [missing, 11])
-    @test unstack(df, :rowid, :colid, :values, valuestransform=sum, fill=0) ==
+    @test unstack(df, :rowid, :colid, :values, valuesfunction=sum, fill=0) ==
           DataFrame("rowid" => 1:2, "1" => [3, 0],
                     "2" => [7, 0], "3" => [0, 11])
-    @test unstack(df, :rowid, :colid, :values, valuestransform=sum, fill="X") ==
+    @test unstack(df, :rowid, :colid, :values, valuesfunction=sum, fill="X") ==
           DataFrame("rowid" => 1:2, "1" => [3, "X"],
                     "2" => [7, "X"], "3" => ["X", 11])
-    @test unstack(df, :rowid, :colid, :values, valuestransform=length) ≅
+    @test unstack(df, :rowid, :colid, :values, valuesfunction=length) ≅
           DataFrame("rowid" => 1:2, "1" => [2, missing],
                     "2" => [2, missing], "3" => [missing, 2])
-    @test unstack(df, :rowid, :colid, :values, valuestransform=length, fill=0) ==
+    @test unstack(df, :rowid, :colid, :values, valuesfunction=length, fill=0) ==
           DataFrame("rowid" => 1:2, "1" => [2, 0],
                     "2" => [2, 0], "3" => [0, 2])
     @test unstack(df, :rowid, :colid, :values,
-                  valuestransform=x -> isempty(x) ? missing : length(x)) ≅
+                  valuesfunction=x -> isempty(x) ? missing : length(x)) ≅
           DataFrame("rowid" => 1:2, "1" => [2, missing],
                     "2" => [2, missing], "3" => [missing, 2])
     @test unstack(df, :rowid, :colid, :values,
-                  valuestransform=x -> isempty(x) ? missing : x) ≅
+                  valuesfunction=x -> isempty(x) ? missing : x) ≅
           DataFrame("rowid" => 1:2, "1" => [1:2, missing],
                     "2" => [3:4, missing], "3" => [missing, 5:6])
 
     df = DataFrame(rowid=[2, 2, 2, 2, 1, 1], colid=[2, 2, 1, 1, 3, 3], values=1:6)
-    @test unstack(df, :rowid, :colid, :values, valuestransform=identity) ≅
+    @test unstack(df, :rowid, :colid, :values, valuesfunction=identity) ≅
           DataFrame("rowid" => [2,1], "2" => [1:2, missing],
                     "1" => [3:4, missing], "3" => [missing, 5:6])
-    @test unstack(df, :rowid, :colid, :values, valuestransform=identity, fill="X") ==
+    @test unstack(df, :rowid, :colid, :values, valuesfunction=identity, fill="X") ==
           DataFrame("rowid" => [2,1], "2" => [1:2, "X"],
                     "1" => [3:4, "X"], "3" => ["X", 5:6])
 
@@ -831,22 +831,22 @@ end
     # check correctness of row and column ordering
     for _ in 1:10
         df = DataFrame(rowid=rand(1:10, 50), colid=rand(1:10, 50), values=1:50)
-        res = unstack(df, :rowid, :colid, :values, valuestransform=last)
+        res = unstack(df, :rowid, :colid, :values, valuesfunction=last)
         @test res ≅ unstack(df, :rowid, :colid, :values, allowduplicates=true)
         @test res.rowid == unique(df.rowid)
         @test names(res, Not(1)) == string.(unique(df.colid))
-        res = unstack(df, :rowid, :colid, :values, valuestransform=last, fill=0)
+        res = unstack(df, :rowid, :colid, :values, valuesfunction=last, fill=0)
         @test res ≅ unstack(df, :rowid, :colid, :values, allowduplicates=true, fill=0)
         @test res.rowid == unique(df.rowid)
         @test names(res, Not(1)) == string.(unique(df.colid))
 
         df.rowid=categorical(df.rowid, levels=shuffle(unique(df.rowid)))
         df.colid=categorical(df.colid, levels=shuffle(unique(df.colid)))
-        res = unstack(df, :rowid, :colid, :values, valuestransform=last)
+        res = unstack(df, :rowid, :colid, :values, valuesfunction=last)
         @test res ≅ unstack(df, :rowid, :colid, :values, allowduplicates=true)
         @test unwrap.(res.rowid) == unique(df.rowid)
         @test names(res, Not(1)) == string.(unique(df.colid))
-        res = unstack(df, :rowid, :colid, :values, valuestransform=last, fill=0)
+        res = unstack(df, :rowid, :colid, :values, valuesfunction=last, fill=0)
         @test res ≅
             unstack(df, :rowid, :colid, :values, allowduplicates=true, fill=0)
         @test unwrap.(res.rowid) == unique(df.rowid)
@@ -893,7 +893,7 @@ end
         for c in (:a, :b, :c, "a", "b", "c", 1, 2, 3)
             for v in (:a, :b, :c, "a", "b", "c", 1, 2, 3)
                 @test unstack(df, r, c, v) ≅
-                      broadcast(x -> x isa Vector ? only(x) : x, unstack(df, r, c, v, valuestransform=copy))
+                      broadcast(x -> x isa Vector ? only(x) : x, unstack(df, r, c, v, valuesfunction=copy))
             end
         end
     end
@@ -906,7 +906,7 @@ end
                     d=["a", missing, missing],
                     e=[missing, "b", missing],
                     f=[missing, missing, "c"])
-    @test unstack(df, 3, 2, 1, valuestransform=only) ≅
+    @test unstack(df, 3, 2, 1, valuesfunction=only) ≅
           DataFrame(values_out_3490283_11=["g", "h", "i"],
                     d=["a", missing, missing],
                     e=[missing, "b", missing],

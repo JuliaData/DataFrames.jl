@@ -1327,7 +1327,7 @@ end
     @test check_allnotemetadata(res)
     @test getfield(res, :metadata) === nothing
     @test getfield(res, :colmetadata) === nothing
-    res = unstack(long, :a, :variable, :value, valuestransform=copy)
+    res = unstack(long, :a, :variable, :value, valuesfunction=copy)
     @test check_allnotemetadata(res)
     @test getfield(res, :metadata) === nothing
     @test getfield(res, :colmetadata) === nothing
@@ -1361,7 +1361,7 @@ end
     @test isempty(colmetadatakeys(res, :c))
     @test isempty(colmetadatakeys(res, :d))
 
-    res = unstack(long, :a, :variable, :value, valuestransform=copy)
+    res = unstack(long, :a, :variable, :value, valuesfunction=copy)
     @test check_allnotemetadata(res)
     @test collect(metadatakeys(res)) == ["name"]
     @test metadata(res, "name") == "empty"
