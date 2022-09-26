@@ -301,4 +301,10 @@ end
     end
 end
 
+@testset "disallowed use of SubDataFrame constructor" begin
+    df = DataFrame(a=1)
+    sdf = view(df, :, :)
+    @test_throws ArgumentError SubDataFrame(sdf, DataFrames.index(sdf), [1])
+end
+
 end # module
