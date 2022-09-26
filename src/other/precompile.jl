@@ -33,5 +33,5 @@ SnoopPrecompile.@precompile_all_calls begin
     subset(df, :q)
     @view df[1:3, :]
     @view df[:, 1:2]
-    select!(df, :c, [:c :f] .=> [sum, mean, std], :c => :d, [:a, :c] => cor)
+    transform!(df, :c, [:c :f] .=> [sum, mean, std], :c => :d, [:a, :c] => cor)
 end
