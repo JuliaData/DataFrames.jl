@@ -14,6 +14,20 @@ else
     @show Threads.nthreads()
 end
 
+ambiguities_vec = Test.detect_ambiguities(DataFrames, recursive=true)
+if !isempty(ambiguities_vec)
+    @error "Method ambiguities:"
+    display(ambiguities_vec)
+    throw(AssertionError("method dispatch ambiguities found"))
+end
+
+unbound_args_vec = Test.detect_unbound_args(DataFrames, recursive=true)
+if !isempty(unbound_args_vec)
+    @error "Unbound type parameters:"
+    display(unbound_args_vec)
+    throw(AssertionError("unbound type parameters found"))
+end
+
 my_tests = ["utils.jl",
             "cat.jl",
             "data.jl",

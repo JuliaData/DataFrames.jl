@@ -1957,4 +1957,14 @@ end
     @test_throws ArgumentError dfv.c .= [1, 2]
 end
 
+@testset "test coverage for corner cases that are not normally called" begin
+    @test Base.Broadcast.BroadcastStyle(DataFrames.DataFrameStyle(),
+                                        Base.Broadcast.Unknown()) isa DataFrames.DataFrameStyle
+    df = DataFrame(a=1)
+    @test Base.Broadcast.broadcast_unalias(nothing, df) === df
+    @test Base.Broadcast.broadcast_unalias(df[1, :], df) == df
+    @test Base.Broadcast.broadcast_unalias(df[1, :], df) !== df
+    @test Base.Broadcast.broadcast_unalias(copy(df)[1, :], df) === df
+end
+
 end # module

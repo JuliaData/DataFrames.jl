@@ -322,6 +322,7 @@ end
         @test issorted(df, rev=fill(false, ncol(df)))
         @test issorted(df, order=Base.Forward)
         @test issorted(df, order=fill(Base.Forward, ncol(df)))
+        @test_throws ArgumentError issorted(df, Base.Order.Forward)
 
         @test issorted(df, :x, by=identity)
         @test issorted(df, :x, by=[identity])

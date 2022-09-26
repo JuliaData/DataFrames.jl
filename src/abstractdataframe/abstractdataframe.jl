@@ -3097,7 +3097,7 @@ julia> insertcols!(df, :b, :d => 7:9, after=true)
    3 │ c         9      4      5      3
 ```
 """
-function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Symbol, <:Any}...;
+function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Symbol}...;
                      after::Bool=false, makeunique::Bool=false, copycols::Bool=true)
     if !is_column_insertion_allowed(df)
         throw(ArgumentError("insertcols! is only supported for DataFrame, or for " *
@@ -3222,31 +3222,47 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Sy
     return df
 end
 
-insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{<:AbstractString, <:Any}...;
+insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{<:AbstractString}...;
             after::Bool=false, makeunique::Bool=false, copycols::Bool=true) =
     insertcols!(df, col, (Symbol(n) => v for (n, v) in name_cols)...,
                 after=after, makeunique=makeunique, copycols=copycols)
 
-insertcols!(df::AbstractDataFrame, name_cols::Pair{Symbol, <:Any}...;
+insertcols!(df::AbstractDataFrame, name_cols::Pair{Symbol}...;
             after::Bool=false, makeunique::Bool=false, copycols::Bool=true) =
     insertcols!(df, ncol(df)+1, name_cols..., after=after,
                 makeunique=makeunique, copycols=copycols)
 
-insertcols!(df::AbstractDataFrame, name_cols::Pair{<:AbstractString, <:Any}...;
+insertcols!(df::AbstractDataFrame, name_cols::Pair{<:AbstractString}...;
             after::Bool=false, makeunique::Bool=false, copycols::Bool=true) =
     insertcols!(df, (Symbol(n) => v for (n, v) in name_cols)...,
                 after=after, makeunique=makeunique, copycols=copycols)
 
-function insertcols!(df::AbstractDataFrame, col::Int=ncol(df)+1; makeunique::Bool=false, name_cols...)
-    if !(0 < col <= ncol(df) + 1)
+function insertcols!(df::AbstractDataFrame, col::ColumnIndex; after::Bool=false,
+                     makeunique::Bool=false, copycols::Bool=true)
+    if col isa SymbolOrString
+        col_ind = Int(columnindex(df, col))
+        if col_ind == 0
+            throw(ArgumentError("column $col does not exist in data frame"))
+        end
+    else
+        col_ind = Int(col)
+    end
+
+    if after
+        col_ind += 1
+    end
+
+    if !(0 < col_ind <= ncol(df) + 1)
         throw(ArgumentError("attempt to insert a column to a data frame with " *
-                            "$(ncol(df)) columns at index $col"))
+                            "$(ncol(df)) columns at index $col_ind"))
     end
-    if !isempty(name_cols)
-        # an explicit error is thrown as keyword argument was supported in the past
-        throw(ArgumentError("inserting columns using a keyword argument is not supported, " *
-                            "pass a Pair as a positional argument instead"))
-    end
+
+    _drop_all_nonnote_metadata!(parent(df))
+    return df
+end
+
+function insertcols!(df::AbstractDataFrame; after::Bool=false,
+                     makeunique::Bool=false, copycols::Bool=true)
     _drop_all_nonnote_metadata!(parent(df))
     return df
 end

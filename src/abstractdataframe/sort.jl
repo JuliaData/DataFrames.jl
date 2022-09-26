@@ -414,6 +414,10 @@ function Base.issorted(df::AbstractDataFrame, cols=All();
     end
 end
 
+Base.issorted(::AbstractDataFrame, ::Base.Order.Ordering) =
+    throw(ArgumentError("second positional argument of `issorted` on " *
+                        "a data frame must be a column selector"))
+
 """
     sort(df::AbstractDataFrame, cols=All();
          alg::Union{Algorithm, Nothing}=nothing,

@@ -73,6 +73,10 @@ struct SubDataFrame{D<:AbstractDataFrame, S<:AbstractIndex, T<:AbstractVector{In
     rows::T # maps from subdf row indexes to parent row indexes
 end
 
+# this method should be never called by DataFrames.jl code, but is added for safety
+SubDataFrame(parent::SubDataFrame, colindex::AbstractIndex, rows::AbstractVector{Int}) =
+    throw(ArgumentError("Creation of a SubDataFrame from a SubDataFrame is not allowed"))
+
 Base.@propagate_inbounds function SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols)
     @boundscheck if !checkindex(Bool, axes(parent, 1), rows)
         throw(BoundsError(parent, (rows, cols)))

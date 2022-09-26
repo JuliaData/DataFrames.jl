@@ -17,6 +17,9 @@ Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::Base.Broadcast.BroadcastStyle)
 Base.Broadcast.BroadcastStyle(::Base.Broadcast.BroadcastStyle, ::DataFrameStyle) =
     DataFrameStyle()
 Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::DataFrameStyle) = DataFrameStyle()
+# The method below is added to avoid dispatch ambiguity
+Base.Broadcast.BroadcastStyle(::DataFrameStyle, ::Base.Broadcast.Unknown) =
+    DataFrameStyle()
 
 function copyto_widen!(res::AbstractVector{T}, bc::Base.Broadcast.Broadcasted,
                        pos, col) where T
@@ -225,6 +228,9 @@ function Base.Broadcast.broadcast_unalias(dest::AbstractDataFrame, src)
     return src
 end
 
+# The method below is added to avoid dispatch ambiguity
+Base.Broadcast.broadcast_unalias(::Nothing, src::AbstractDataFrame) = src
+
 function Base.Broadcast.broadcast_unalias(dest, src::AbstractDataFrame)
     wascopied = false
     for (i, col) in enumerate(eachcol(src))
@@ -369,6 +375,10 @@ function Base.copyto!(crdf::ColReplaceDataFrame, bc::Base.Broadcast.Broadcasted)
 end
 
 Base.Broadcast.broadcast_unalias(dest::DataFrameRow, src) =
+    Base.Broadcast.broadcast_unalias(parent(dest), src)
+
+# this is currently impossible but is added to avoid potential dispatch ambiguity in the future
+Base.Broadcast.broadcast_unalias(dest::DataFrameRow, src::AbstractDataFrame) =
     Base.Broadcast.broadcast_unalias(parent(dest), src)
 
 function Base.copyto!(dfr::DataFrameRow, bc::Base.Broadcast.Broadcasted)

@@ -88,6 +88,13 @@
   ([#3081](https://github.com/JuliaData/DataFrames.jl/pull/3081))
 * Make `subset` preserves group ordering when `ungroup=false` like `subset!` already does
   ([#3094](https://github.com/JuliaData/DataFrames.jl/pull/3094))
+* Fix incorrect behavior of `GroupDataFrame` indexing in corner cases
+  ([#3179](https://github.com/JuliaData/DataFrames.jl/pull/3179))
+* Fix errors in `insertcols!` when no columns to add are passed
+  ([#3179](https://github.com/JuliaData/DataFrames.jl/pull/3179))
+* Fix errors in `minimum` and `maximum` aggregates
+  when processing `GroupedDataFrame` with `combine` in corner cases
+  ([#3179](https://github.com/JuliaData/DataFrames.jl/pull/3179))
 
 ## Performance
 

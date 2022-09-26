@@ -748,14 +748,13 @@ Base.IndexStyle(::Type{<:GroupKeys}) = IndexLinear()
     return GroupKey(parent(gk), i)
 end
 
-
 #
 # Non-standard indexing
 #
 
 # Non-standard indexing relies on converting to integer indices first
 # The full version (to_indices) is required rather than to_index even though
-# GroupedDataFrame behaves as a 1D array due to the behavior of Colon and Not.
+# GroupedDataFrame behaves as a 1D array due to the behavior of Not.
 # Note that this behavior would be the default if it was <:AbstractArray
 function Base.getindex(gd::GroupedDataFrame, idx...)
     length(idx) == 1 || throw(ArgumentError("GroupedDataFrame requires a single index"))
@@ -766,6 +765,10 @@ end
 const GroupKeyTypes = Union{GroupKey, Tuple, NamedTuple, AbstractDict{Symbol}, AbstractDict{<:AbstractString}}
 # All allowed scalar index types
 const GroupIndexTypes = Union{Integer, GroupKeyTypes}
+
+# GroupedDataFrame is not a multidimensional array, so it does not support cartesian indexing
+Base.to_indices(gd::GroupedDataFrame, (idx,)::Tuple{CartesianIndex}) =
+    throw(ArgumentError("Invalid index: $idx of type $(typeof(idx))"))
 
 # Find integer index for dictionary keys
 function Base.to_index(gd::GroupedDataFrame, key::GroupKey)
@@ -864,13 +867,30 @@ end
 # ambiguity in dispatch
 function Base.to_indices(gd::GroupedDataFrame,
                          (idx,)::Tuple{Not{<:Union{BitArray{1}, Vector{Bool}}}})
-    (findall(!, idx.skip),)
+    if length(idx.skip) != length(gd)
+        throw(BoundsError("attempt to index $(length(gd))-group GroupedDataFrame " *
+                          "with $(length(idx.skip))-element Boolean vector"))
+    end
+    return (findall(!, idx.skip),)
 end
 function Base.to_indices(gd::GroupedDataFrame,
                          (idx,)::Tuple{Not{<:AbstractVector{Bool}}})
-    (findall(!, idx.skip),)
+    if length(idx.skip) != length(gd)
+        throw(BoundsError("attempt to index $(length(gd))-group GroupedDataFrame " *
+                          "with $(length(idx.skip))-element Boolean vector"))
+    end
+    return (findall(!, idx.skip),)
 end
 
+# Needed to avoid ambiguity
+@inline Base.to_indices(gd::GroupedDataFrame, I::Tuple{Not{<:InvertedIndices.NIdx{1}}}) =
+    throw(ArgumentError("attempt to index GroupedDataFrame with $(typeof(I))"))
+
+@inline Base.to_indices(gd::GroupedDataFrame, I::Tuple{Not{<:InvertedIndices.NIdx}}) =
+    throw(ArgumentError("attempt to index GroupedDataFrame with $(typeof(I))"))
+
+@inline Base.to_indices(gd::GroupedDataFrame, I::Tuple{Not{<:Union{Array{Bool}, BitArray}}}) =
+    throw(ArgumentError("attempt to index GroupedDataFrame with $(typeof(I))"))
 
 #
 # Dictionary interface

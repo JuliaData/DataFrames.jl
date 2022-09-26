@@ -4276,4 +4276,40 @@ end
     end
 end
 
+@testset "maximum and minimum on missing" begin
+    df = DataFrame(id=[1,1,2,2], x=fill(missing, 4))
+    gdf = groupby_checked(df, :id)
+    @test combine(gdf, :x => maximum => :x) ≅ DataFrame(id=1:2, x=fill(missing, 2))
+    @test combine(gdf, :x => minimum => :x) ≅ DataFrame(id=1:2, x=fill(missing, 2))
+    @test_throws ArgumentError combine(gdf, :x => maximum∘skipmissing)
+    @test_throws ArgumentError combine(gdf, :x => minimum∘skipmissing)
+end
+
+@testset "corner cases of indexing" begin
+    df = DataFrame(id=1:4)
+    gdf = groupby_checked(df, :id)
+    @test_throws ArgumentError gdf[CartesianIndex(1)]
+    @test_throws ArgumentError gdf[CartesianIndex(1, 1)]
+    @test_throws ArgumentError gdf[[CartesianIndex(1)]]
+    @test_throws ArgumentError gdf[[CartesianIndex(1, 1)]]
+    @test_throws ArgumentError gdf[Any[CartesianIndex(1)]]
+    @test_throws ArgumentError gdf[Any[CartesianIndex(1, 1)]]
+
+    @test_throws ArgumentError gdf[Not(CartesianIndex(1))]
+    @test_throws ArgumentError gdf[Not(CartesianIndex(1, 1))]
+    @test_throws ArgumentError gdf[Not([CartesianIndex(1)])]
+    @test_throws ArgumentError gdf[Not([CartesianIndex(1, 1)])]
+    @test_throws ArgumentError gdf[Not(Any[CartesianIndex(1)])]
+    @test_throws ArgumentError gdf[Not(Any[CartesianIndex(1, 1)])]
+
+    @test_throws BoundsError gdf[[true]]
+    @test_throws BoundsError gdf[Not([true])]
+    @test_throws BoundsError gdf[trues(1)]
+    @test_throws BoundsError gdf[Not(trues(1))]
+    @test_throws BoundsError gdf[view([true], 1:1)]
+    @test_throws BoundsError gdf[Not(view([true], 1:1))]
+    @test_throws BoundsError gdf[[true true true true]]
+    @test_throws ArgumentError gdf[Not([true true true true])]
+end
+
 end # module
