@@ -1,6 +1,6 @@
 import SnoopPrecompile
 
-SnoopPrecompile.@precompile_all_calls @time begin
+SnoopPrecompile.@precompile_all_calls begin
     df = DataFrame(a=[2, 5, 3, 1, 0], b=["a", "b", "c", "a", "b"], c=1:5,
                    p=PooledArray(["a", "b", "c", "a", "b"]),
                    q=[true, false, true, false, true],
