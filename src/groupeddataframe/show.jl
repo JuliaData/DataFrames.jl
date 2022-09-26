@@ -40,32 +40,38 @@ function Base.show(io::IO, gd::GroupedDataFrame;
     else
         N > 0 || return
 
+        (h, w) = displaysize(io)
 
-        (h, w) = get(io, :displaysize, displaysize(io))
-        0 < h <= 3 && (h = 3) # show in full if h=0; show only headers and columns for small h>0
+        if h <= 10 # if too small, then show groups in minimum possible size
+            h1 = h2 = 1
+        elseif h <= 16
+            # when given a height of less than 16/2 = 8 lines, pretty_table displays single tables using
+            # extra lines - but here, we want to control the total height exactly. Empirical workaround:
+            h1 = 2((h - 10)÷2) + 1
+            h2 = 2((h - 11)÷2) + 1
+        else
+            h -= 2 # two lines are already used for header and gap between groups
 
-        h -= 2 # two lines are already used for header and gap between groups
+            h1 = h2 = h # display heights available for first and last groups
+            if N > 1
+                # line height of groups if printed in full (nrows + 3 extra for header)
+                g1 = size(gd[1], 1) + 3
+                g2 = size(gd[N], 1) + 3
 
-        h1 = h2 = h # display heights available for first and last groups
-        if N > 1
-            # line height of groups if printed in full (nrows + 3 extra for header)
-            g1 = size(gd[1], 1) + 3
-            g2 = size(gd[N], 1) + 3
-
-            if g1 + g2 > h # won't fit on screen
-                if g1 < h ÷ 2
-                    h2 = h - g1 - 2 # show first group fully, squash last
-                elseif g2 < h ÷ 2
-                    h1 = h - g2 - 2 # show last group fully, squash first
-                else
-                    # squash both groups
-                    h += 1
-                    h1 = h ÷ 2
-                    h2 = h - h1
+                if g1 + g2 > h # won't fit on screen
+                    if g1 < h ÷ 2
+                        h2 = h - g1 - 2 # show first group fully, squash last
+                    elseif g2 < h ÷ 2
+                        h1 = h - g2 - 2 # show last group fully, squash first
+                    else
+                        # squash both groups
+                        h += 1
+                        h2 = h ÷ 2
+                        h1 = h - h2
+                    end
                 end
             end
         end
-
 
         nrows = size(gd[1], 1)
         rows = nrows > 1 ? "rows" : "row"
@@ -81,9 +87,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
              allrows=allrows, allcols=allcols, rowlabel=rowlabel,
              truncate=truncate, kwargs..., display_size=(h1, w))
 
-
         N > 1 || return
-
 
         nrows = size(gd[N], 1)
         rows = nrows > 1 ? "rows" : "row"
