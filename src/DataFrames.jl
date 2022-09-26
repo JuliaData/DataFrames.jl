@@ -10,6 +10,7 @@ using Markdown
 using PrettyTables
 using Random
 using Tables: ByRow
+import SnoopPrecompile
 
 import DataAPI,
        DataAPI.allcombinations,
@@ -173,6 +174,5 @@ include("other/metadata.jl")
 include("deprecated.jl")
 
 include("other/precompile.jl")
-precompile()
 
 end # module DataFrames
