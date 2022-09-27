@@ -1510,7 +1510,7 @@ end
     @test m1[!, :a] == m2[!, :a]
 end
 
-if Int == Int64
+if Sys.WORD_SIZE == 64
     @testset "threaded correctness" begin
         df1 = DataFrame(id=[1:10^6; 10^7+1:10^7+2])
         df1.left_row = axes(df1, 1)
