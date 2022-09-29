@@ -261,7 +261,7 @@ end
            4 │ true  true  true
            5 │ true  true  true"""
 
-    show(io, groupby(df, :x), allcols=true, allrows=true) 
+    show(io, groupby(df, :x), allcols=true, allrows=true)
     str = String(take!(io.io))
     @test str == """
         GroupedDataFrame with 2 groups based on key: x
@@ -336,12 +336,24 @@ end
     end
 
     # printed height always matches desired height, above a reasonable minimum
-    for h in 15:40
+    for a in 1:50, b in 1:50, h in 15:40
+        df = DataFrame(x = [fill(1, a); fill(2, b)])
         io = IOContext(IOBuffer(), :displaysize=>(h, 40), :limit=>true)
         show(io, groupby(df, :x), allcols=true)
         str = String(take!(io.io))
         nlines = length(split(str, '\n'))
-        desired = h - 3 # leave one line for last REPL prompt at top, two for new prompt
+        desired = min(a + b + 10, h - 3) # leave one line for last REPL prompt at top, two for new prompt
+        # (this is the same behavior as ungrouped data frames)
+        @test nlines == desired
+    end
+
+    for a in 1:50, h in 15:40
+        df = DataFrame(x = fill(1, a))
+        io = IOContext(IOBuffer(), :displaysize=>(h, 40), :limit=>true)
+        show(io, groupby(df, :x), allcols=true)
+        str = String(take!(io.io))
+        nlines = length(split(str, '\n'))
+        desired = min(a + 5, h - 3) # leave one line for last REPL prompt at top, two for new prompt
         # (this is the same behavior as ungrouped data frames)
         @test nlines == desired
     end
@@ -351,7 +363,6 @@ end
     df = DataFrame(x = 1:15, y = 1)
     show(io, groupby(df, :y))
     str = String(take!(io.io))
-    print(str)
     @test str == """
         GroupedDataFrame with 1 group based on key: y
         First Group (15 rows): y = 1

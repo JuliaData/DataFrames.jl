@@ -42,30 +42,42 @@ function Base.show(io::IO, gd::GroupedDataFrame;
 
         (h, w) = displaysize(io)
 
+        # in the code below we accept that output for desired height less
+        # than 15 does not have to always exactly math the passed value
         if h > 0
-            h -= 2 # two lines are already used for header and gap between groups
-            h <= 5 && (h = 5) # if too small to fit, print fully compact
-        end
+            # 2 lines for header and gap between groups, 3 lines for prompts;
+            # correcting for this allow at least 8 lines (4 for each group)
+            h = max(h - 5, 8)
 
-        h1 = h2 = h # display heights available for first and last groups
-        if N > 1 && h > 0
-
-            # line height of groups if printed in full (nrows + 3 extra for header)
-            g1 = size(gd[1], 1) + 3
-            g2 = size(gd[N], 1) + 3
-
-            if g1 + g2 > h # won't fit on screen
-                if g1 < h ÷ 2
-                    h2 = h - g1 - 2 # show first group fully, squash last
-                elseif g2 < h ÷ 2
-                    h1 = h - g2 - 2 # show last group fully, squash first
+            if N == 1
+                h1 = h + 3 # add two lines for prompts and one line as there no gap between groups
+                h2 = 0 # not used
+            else
+                # line height of groups if printed in full; 4 lines for header
+                # we assume scenario where eltype is printed for simplicity
+                g1 = size(gd[1], 1) + 4
+                g2 = size(gd[N], 1) + 4
+                # below +2 is for 2 lines for prompts as we do not print summary
+                if g1 + g2 > h # won't fit on screen
+                    if g1 <= h ÷ 2
+                        h1 = g1 + 2
+                        h2 = h - g1 + 2 # show first group fully, squash last
+                    elseif g2 <= h ÷ 2
+                        h1 = h - g2 + 2 # show last group fully, squash first
+                        h2 = g2 + 2
+                    else
+                        # squash both groups
+                        h2 = h ÷ 2 + 2
+                        h1 = h - h2 + 4
+                    end
                 else
-                    # squash both groups
-                    h += 1
-                    h2 = h ÷ 2
-                    h1 = h - h2
+                    h1 = g1 + 2
+                    h2 = g2 + 2
                 end
             end
+        else
+            h1 = h # no limit
+            h2 = h # no limit
         end
 
         nrows = size(gd[1], 1)
