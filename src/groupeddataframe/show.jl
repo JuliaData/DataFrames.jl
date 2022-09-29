@@ -42,33 +42,28 @@ function Base.show(io::IO, gd::GroupedDataFrame;
 
         (h, w) = displaysize(io)
 
-        if h <= 10 # if too small, then show groups in minimum possible size
-            h1 = h2 = 1
-        elseif h <= 16
-            # when given a height of less than 16/2 = 8 lines, pretty_table displays single tables using
-            # extra lines - but here, we want to control the total height exactly. Empirical workaround:
-            h1 = 2((h - 10)÷2) + 1
-            h2 = 2((h - 11)÷2) + 1
-        else
+        if h > 0
             h -= 2 # two lines are already used for header and gap between groups
+            h <= 5 && (h = 5) # if too small to fit, print fully compact
+        end
 
-            h1 = h2 = h # display heights available for first and last groups
-            if N > 1
-                # line height of groups if printed in full (nrows + 3 extra for header)
-                g1 = size(gd[1], 1) + 3
-                g2 = size(gd[N], 1) + 3
+        h1 = h2 = h # display heights available for first and last groups
+        if N > 1 && h > 0
 
-                if g1 + g2 > h # won't fit on screen
-                    if g1 < h ÷ 2
-                        h2 = h - g1 - 2 # show first group fully, squash last
-                    elseif g2 < h ÷ 2
-                        h1 = h - g2 - 2 # show last group fully, squash first
-                    else
-                        # squash both groups
-                        h += 1
-                        h2 = h ÷ 2
-                        h1 = h - h2
-                    end
+            # line height of groups if printed in full (nrows + 3 extra for header)
+            g1 = size(gd[1], 1) + 3
+            g2 = size(gd[N], 1) + 3
+
+            if g1 + g2 > h # won't fit on screen
+                if g1 < h ÷ 2
+                    h2 = h - g1 - 2 # show first group fully, squash last
+                elseif g2 < h ÷ 2
+                    h1 = h - g2 - 2 # show last group fully, squash first
+                else
+                    # squash both groups
+                    h += 1
+                    h2 = h ÷ 2
+                    h1 = h - h2
                 end
             end
         end

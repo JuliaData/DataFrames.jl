@@ -335,24 +335,8 @@ end
         @test str_hrows == str_allrows
     end
 
-    # height is small but positive -> print fully compact
-    for h in 1:10
-        io = IOContext(IOBuffer(), :displaysize=>(h, 40), :limit=>true)
-        show(io, groupby(df, :x), allcols=true)
-        str = String(take!(io.io))
-        @test str == """
-            GroupedDataFrame with 2 groups based on key: x
-            First Group (5 rows): x = false
-             Row │ x  y  z
-             5 rows omitted
-            ⋮
-            Last Group (45 rows): x = true
-             Row │ x  y  z
-            45 rows omitted"""
-    end
-
-    # printed height always matches desired height
-    for h in 11:40
+    # printed height always matches desired height, above a reasonable minimum
+    for h in 15:40
         io = IOContext(IOBuffer(), :displaysize=>(h, 40), :limit=>true)
         show(io, groupby(df, :x), allcols=true)
         str = String(take!(io.io))
