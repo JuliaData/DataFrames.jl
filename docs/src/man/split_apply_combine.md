@@ -215,22 +215,10 @@ First Group (50 rows): Species = "Iris-setosa"
 ─────┼───────────────────────────────────────────────────────────────
    1 │         5.1         3.5          1.4         0.2  Iris-setosa
    2 │         4.9         3.0          1.4         0.2  Iris-setosa
-   3 │         4.7         3.2          1.3         0.2  Iris-setosa
-   4 │         4.6         3.1          1.5         0.2  Iris-setosa
-   5 │         5.0         3.6          1.4         0.2  Iris-setosa
-   6 │         5.4         3.9          1.7         0.4  Iris-setosa
-   7 │         4.6         3.4          1.4         0.3  Iris-setosa
-   8 │         5.0         3.4          1.5         0.2  Iris-setosa
   ⋮  │      ⋮           ⋮            ⋮           ⋮            ⋮
-  43 │         4.4         3.2          1.3         0.2  Iris-setosa
-  44 │         5.0         3.5          1.6         0.6  Iris-setosa
-  45 │         5.1         3.8          1.9         0.4  Iris-setosa
-  46 │         4.8         3.0          1.4         0.3  Iris-setosa
-  47 │         5.1         3.8          1.6         0.2  Iris-setosa
-  48 │         4.6         3.2          1.4         0.2  Iris-setosa
   49 │         5.3         3.7          1.5         0.2  Iris-setosa
   50 │         5.0         3.3          1.4         0.2  Iris-setosa
-                                                      34 rows omitted
+                                                      46 rows omitted
 ⋮
 Last Group (50 rows): Species = "Iris-virginica"
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
@@ -238,22 +226,9 @@ Last Group (50 rows): Species = "Iris-virginica"
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         6.3         3.3          6.0         2.5  Iris-virginica
    2 │         5.8         2.7          5.1         1.9  Iris-virginica
-   3 │         7.1         3.0          5.9         2.1  Iris-virginica
-   4 │         6.3         2.9          5.6         1.8  Iris-virginica
-   5 │         6.5         3.0          5.8         2.2  Iris-virginica
-   6 │         7.6         3.0          6.6         2.1  Iris-virginica
-   7 │         4.9         2.5          4.5         1.7  Iris-virginica
-   8 │         7.3         2.9          6.3         1.8  Iris-virginica
   ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
-  43 │         5.8         2.7          5.1         1.9  Iris-virginica
-  44 │         6.8         3.2          5.9         2.3  Iris-virginica
-  45 │         6.7         3.3          5.7         2.5  Iris-virginica
-  46 │         6.7         3.0          5.2         2.3  Iris-virginica
-  47 │         6.3         2.5          5.0         1.9  Iris-virginica
-  48 │         6.5         3.0          5.2         2.0  Iris-virginica
-  49 │         6.2         3.4          5.4         2.3  Iris-virginica
   50 │         5.9         3.0          5.1         1.8  Iris-virginica
-                                                         34 rows omitted
+                                                         47 rows omitted
 
 julia> combine(gdf, :PetalLength => mean)
 3×2 DataFrame
@@ -520,22 +495,10 @@ First Group (50 rows): Species = "Iris-setosa"
 ─────┼───────────────────────────────────────────────────────────────
    1 │         5.1         3.5          1.4         0.2  Iris-setosa
    2 │         4.9         3.0          1.4         0.2  Iris-setosa
-   3 │         4.7         3.2          1.3         0.2  Iris-setosa
-   4 │         4.6         3.1          1.5         0.2  Iris-setosa
-   5 │         5.0         3.6          1.4         0.2  Iris-setosa
-   6 │         5.4         3.9          1.7         0.4  Iris-setosa
-   7 │         4.6         3.4          1.4         0.3  Iris-setosa
-   8 │         5.0         3.4          1.5         0.2  Iris-setosa
   ⋮  │      ⋮           ⋮            ⋮           ⋮            ⋮
-  43 │         4.4         3.2          1.3         0.2  Iris-setosa
-  44 │         5.0         3.5          1.6         0.6  Iris-setosa
-  45 │         5.1         3.8          1.9         0.4  Iris-setosa
-  46 │         4.8         3.0          1.4         0.3  Iris-setosa
-  47 │         5.1         3.8          1.6         0.2  Iris-setosa
-  48 │         4.6         3.2          1.4         0.2  Iris-setosa
   49 │         5.3         3.7          1.5         0.2  Iris-setosa
   50 │         5.0         3.3          1.4         0.2  Iris-setosa
-                                                      34 rows omitted
+                                                      46 rows omitted
 ⋮
 Last Group (50 rows): Species = "Iris-virginica"
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
@@ -543,22 +506,9 @@ Last Group (50 rows): Species = "Iris-virginica"
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         6.3         3.3          6.0         2.5  Iris-virginica
    2 │         5.8         2.7          5.1         1.9  Iris-virginica
-   3 │         7.1         3.0          5.9         2.1  Iris-virginica
-   4 │         6.3         2.9          5.6         1.8  Iris-virginica
-   5 │         6.5         3.0          5.8         2.2  Iris-virginica
-   6 │         7.6         3.0          6.6         2.1  Iris-virginica
-   7 │         4.9         2.5          4.5         1.7  Iris-virginica
-   8 │         7.3         2.9          6.3         1.8  Iris-virginica
   ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
-  43 │         5.8         2.7          5.1         1.9  Iris-virginica
-  44 │         6.8         3.2          5.9         2.3  Iris-virginica
-  45 │         6.7         3.3          5.7         2.5  Iris-virginica
-  46 │         6.7         3.0          5.2         2.3  Iris-virginica
-  47 │         6.3         2.5          5.0         1.9  Iris-virginica
-  48 │         6.5         3.0          5.2         2.0  Iris-virginica
-  49 │         6.2         3.4          5.4         2.3  Iris-virginica
   50 │         5.9         3.0          5.1         1.8  Iris-virginica
-                                                         34 rows omitted
+                                                         47 rows omitted
 
 julia> combine(gd, valuecols(gd) .=> mean)
 3×5 DataFrame

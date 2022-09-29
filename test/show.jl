@@ -164,6 +164,216 @@ end
                                2 columns omitted"""
 end
 
+@testset "GroupedDataFrame displaysize test" begin
+    df = DataFrame(x = (1:50) .> 5, y = (1:50) .> 25, z = (1:50) .> 45)
+    io = IOContext(IOBuffer(), :displaysize=>(30, 40), :limit=>true)
+
+    show(io, groupby(df, :x), allcols=true)
+    str = String(take!(io.io))
+    @test str == """
+        GroupedDataFrame with 2 groups based on key: x
+        First Group (5 rows): x = false
+         Row │ x      y      z
+             │ Bool   Bool   Bool
+        ─────┼─────────────────────
+           1 │ false  false  false
+           2 │ false  false  false
+           3 │ false  false  false
+           4 │ false  false  false
+           5 │ false  false  false
+        ⋮
+        Last Group (45 rows): x = true
+         Row │ x     y      z
+             │ Bool  Bool   Bool
+        ─────┼────────────────────
+           1 │ true  false  false
+           2 │ true  false  false
+           3 │ true  false  false
+           4 │ true  false  false
+           5 │ true  false  false
+          ⋮  │  ⋮      ⋮      ⋮
+          41 │ true   true   true
+          42 │ true   true   true
+          43 │ true   true   true
+          44 │ true   true   true
+          45 │ true   true   true
+                   35 rows omitted"""
+
+    show(io, groupby(df, :y), allcols=true)
+    str = String(take!(io.io))
+    @test str == """
+        GroupedDataFrame with 2 groups based on key: y
+        First Group (25 rows): y = false
+         Row │ x      y      z
+             │ Bool   Bool   Bool
+        ─────┼─────────────────────
+           1 │ false  false  false
+           2 │ false  false  false
+           3 │ false  false  false
+           4 │ false  false  false
+          ⋮  │   ⋮      ⋮      ⋮
+          23 │  true  false  false
+          24 │  true  false  false
+          25 │  true  false  false
+                    18 rows omitted
+        ⋮
+        Last Group (25 rows): y = true
+         Row │ x     y     z
+             │ Bool  Bool  Bool
+        ─────┼───────────────────
+           1 │ true  true  false
+           2 │ true  true  false
+           3 │ true  true  false
+          ⋮  │  ⋮     ⋮      ⋮
+          23 │ true  true   true
+          24 │ true  true   true
+          25 │ true  true   true
+                  19 rows omitted"""
+
+    show(io, groupby(df, :z), allcols=true)
+    str = String(take!(io.io))
+    @test str == """
+        GroupedDataFrame with 2 groups based on key: z
+        First Group (45 rows): z = false
+         Row │ x      y      z
+             │ Bool   Bool   Bool
+        ─────┼─────────────────────
+           1 │ false  false  false
+           2 │ false  false  false
+           3 │ false  false  false
+           4 │ false  false  false
+           5 │ false  false  false
+          ⋮  │   ⋮      ⋮      ⋮
+          41 │  true   true  false
+          42 │  true   true  false
+          43 │  true   true  false
+          44 │  true   true  false
+          45 │  true   true  false
+                    35 rows omitted
+        ⋮
+        Last Group (5 rows): z = true
+         Row │ x     y     z
+             │ Bool  Bool  Bool
+        ─────┼──────────────────
+           1 │ true  true  true
+           2 │ true  true  true
+           3 │ true  true  true
+           4 │ true  true  true
+           5 │ true  true  true"""
+
+    show(io, groupby(df, :x), allcols=true, allrows=true) 
+    str = String(take!(io.io))
+    @test str == """
+        GroupedDataFrame with 2 groups based on key: x
+        First Group (5 rows): x = false
+         Row │ x      y      z
+             │ Bool   Bool   Bool
+        ─────┼─────────────────────
+           1 │ false  false  false
+           2 │ false  false  false
+           3 │ false  false  false
+           4 │ false  false  false
+           5 │ false  false  false
+        ⋮
+        Last Group (45 rows): x = true
+         Row │ x     y      z
+             │ Bool  Bool   Bool
+        ─────┼────────────────────
+           1 │ true  false  false
+           2 │ true  false  false
+           3 │ true  false  false
+           4 │ true  false  false
+           5 │ true  false  false
+           6 │ true  false  false
+           7 │ true  false  false
+           8 │ true  false  false
+           9 │ true  false  false
+          10 │ true  false  false
+          11 │ true  false  false
+          12 │ true  false  false
+          13 │ true  false  false
+          14 │ true  false  false
+          15 │ true  false  false
+          16 │ true  false  false
+          17 │ true  false  false
+          18 │ true  false  false
+          19 │ true  false  false
+          20 │ true  false  false
+          21 │ true   true  false
+          22 │ true   true  false
+          23 │ true   true  false
+          24 │ true   true  false
+          25 │ true   true  false
+          26 │ true   true  false
+          27 │ true   true  false
+          28 │ true   true  false
+          29 │ true   true  false
+          30 │ true   true  false
+          31 │ true   true  false
+          32 │ true   true  false
+          33 │ true   true  false
+          34 │ true   true  false
+          35 │ true   true  false
+          36 │ true   true  false
+          37 │ true   true  false
+          38 │ true   true  false
+          39 │ true   true  false
+          40 │ true   true  false
+          41 │ true   true   true
+          42 │ true   true   true
+          43 │ true   true   true
+          44 │ true   true   true
+          45 │ true   true   true"""
+
+    # height is zero or invalid -> print all rows
+    for h in -1:0
+        io = IOContext(IOBuffer(), :displaysize=>(h, 40), :limit=>true)
+        show(io, groupby(df, :x), allcols=true)
+        str_hrows = String(take!(io.io))
+        show(io, groupby(df, :x), allcols=true, allrows=true)
+        str_allrows = String(take!(io.io))
+        @test str_hrows == str_allrows
+    end
+
+    # printed height always matches desired height, above a reasonable minimum
+    for h in 15:40
+        io = IOContext(IOBuffer(), :displaysize=>(h, 40), :limit=>true)
+        show(io, groupby(df, :x), allcols=true)
+        str = String(take!(io.io))
+        nlines = length(split(str, '\n'))
+        desired = h - 3 # leave one line for last REPL prompt at top, two for new prompt
+        # (this is the same behavior as ungrouped data frames)
+        @test nlines == desired
+    end
+
+    # one group
+    io = IOContext(IOBuffer(), :displaysize=>(15, 40), :limit=>true)
+    df = DataFrame(x = 1:15, y = 1)
+    show(io, groupby(df, :y))
+    str = String(take!(io.io))
+    print(str)
+    @test str == """
+        GroupedDataFrame with 1 group based on key: y
+        First Group (15 rows): y = 1
+         Row │ x      y
+             │ Int64  Int64
+        ─────┼──────────────
+           1 │     1      1
+           2 │     2      1
+           3 │     3      1
+          ⋮  │   ⋮      ⋮
+          14 │    14      1
+          15 │    15      1
+             10 rows omitted"""
+
+    # zero groups
+    io = IOContext(IOBuffer())
+    df = DataFrame(x=[], y=Int[])
+    show(io, groupby(df, :x))
+    str = String(take!(io.io))
+    @test str == "GroupedDataFrame with 0 groups based on key: x"
+end
+
 @testset "IOContext parameters test" begin
     df = DataFrame(A=Int64[1:4;], B=["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
                    C=Float32[1.0, 2.0, 3.0, 4.0])
