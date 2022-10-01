@@ -18,9 +18,10 @@
   for a more flexible handling of values stored in a column that will
   become a new header
   ([#3004](https://github.com/JuliaData/DataFrames.jl/issues/3004))
-* `unstack` now allows passing a function in `valuesfunction` keyword argument;
+* `unstack` now allows passing a function in `combine` keyword argument;
   this allows for a convenient creation of two dimensional pivot tables
-  ([#2998](https://github.com/JuliaData/DataFrames.jl/issues/2998))
+  ([#2998](https://github.com/JuliaData/DataFrames.jl/issues/2998),
+   [#3185](https://github.com/JuliaData/DataFrames.jl/pull/3185))
 * `filter` for `GroupedDataFrame` now accepts `ungroup` keyword argument
   ([#3021](https://github.com/JuliaData/DataFrames.jl/issues/3021))
 * Add special syntax for `eachindex`, `groupindices`, and `proprow`
@@ -64,6 +65,12 @@
   into an existing column of a data frame replaces it. Under Julia 1.6
   or older it is an in place operation.
   ([#3022](https://github.com/JuliaData/DataFrames.jl/pull/3022))
+
+# Deprecations
+
+* `allowduplicates` keyword argument in `unstack` is deprecated, use
+  `combine` should be used instead
+  ([#3185](https://github.com/JuliaData/DataFrames.jl/pull/3185))
 
 ## Internal changes
 

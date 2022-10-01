@@ -140,4 +140,19 @@ end
     @test df == DataFrame(x=1, y=1:4)
 end
 
+@testset "deprecated allowduplicates in unstack" begin
+    df = DataFrame(row=[1, 1, 2, 2], variable=["x", "x", "y", "y"], value=1:4)
+    @test_throws ArgumentError unstack(df, :row, :variable, :value)
+    @test unstack(df, :row, :variable, :value, allowduplicates=true) ≅
+          DataFrame(row=1:2, x=[2, missing], y=[missing, 4])
+    @test unstack(df, :variable, :value, allowduplicates=true) ≅
+          DataFrame(row=1:2, x=[2, missing], y=[missing, 4])
+    @test unstack(df, allowduplicates=true) ≅
+          DataFrame(row=1:2, x=[2, missing], y=[missing, 4])
+    @test unstack(df, :variable, :value, allowduplicates=true) ≅
+          DataFrame(row=1:2, x=[2, missing], y=[missing, 4])
+    @test unstack(df, :row, :variable, :value, allowduplicates=true) ≅
+          unstack(df, :row, :variable, :value, combine=last)
+end
+
 end # module
