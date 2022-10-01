@@ -344,7 +344,7 @@ end
         nlines = length(split(str, '\n'))
         # leave one line for last REPL prompt at top, two for new prompt
         # (this is the same behavior as ungrouped data frames)
-        desired = min(a + b + 10, h - 3) 
+        desired = min(a + b + 10, h - 3)
         @test nlines == desired
     end
 
@@ -362,7 +362,7 @@ end
 
     # one group
     io = IOContext(IOBuffer(), :displaysize=>(15, 40), :limit=>true)
-    df = DataFrame(x = 1:15, y = 1)
+    df = DataFrame(x = Int64.(1:15), y = Int64(1))
     show(io, groupby(df, :y))
     str = String(take!(io.io))
     @test str == """
