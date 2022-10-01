@@ -43,10 +43,10 @@ function Base.show(io::IO, gd::GroupedDataFrame;
         (h, w) = displaysize(io)
 
         # in the code below we accept that output for desired height less
-        # than 15 does not have to always exactly math the passed value
+        # than 15 does not have to always exactly match the passed value
         if h > 0
             # 2 lines for header and gap between groups, 3 lines for prompts;
-            # correcting for this allow at least 8 lines (4 for each group)
+            # correcting for this allows at least 8 lines (4 for each group)
             h = max(h - 5, 8)
 
             if N == 1

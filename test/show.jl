@@ -342,8 +342,9 @@ end
         show(io, groupby(df, :x), allcols=true)
         str = String(take!(io.io))
         nlines = length(split(str, '\n'))
-        desired = min(a + b + 10, h - 3) # leave one line for last REPL prompt at top, two for new prompt
+        # leave one line for last REPL prompt at top, two for new prompt
         # (this is the same behavior as ungrouped data frames)
+        desired = min(a + b + 10, h - 3) 
         @test nlines == desired
     end
 
@@ -353,8 +354,9 @@ end
         show(io, groupby(df, :x), allcols=true)
         str = String(take!(io.io))
         nlines = length(split(str, '\n'))
-        desired = min(a + 5, h - 3) # leave one line for last REPL prompt at top, two for new prompt
+        # leave one line for last REPL prompt at top, two for new prompt
         # (this is the same behavior as ungrouped data frames)
+        desired = min(a + 5, h - 3)
         @test nlines == desired
     end
 
