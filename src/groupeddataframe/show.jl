@@ -50,7 +50,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
             h = max(h - 5, 8)
 
             if N == 1
-                h1 = h + 3 # add two lines for prompts and one line as there no gap between groups
+                h1 = h + 3 # add two lines for prompts and one line as there is no gap between groups
                 h2 = 0 # not used
             else
                 # line height of groups if printed in full; 4 lines for header
