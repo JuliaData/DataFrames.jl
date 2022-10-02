@@ -68,7 +68,7 @@
 
 # Deprecations
 
-* `allowduplicates` keyword argument in `unstack` is deprecated, use
+* `allowduplicates` keyword argument in `unstack` is deprecated,
   `combine` should be used instead
   ([#3185](https://github.com/JuliaData/DataFrames.jl/pull/3185))
 
