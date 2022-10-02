@@ -263,6 +263,12 @@ Row and column keys are ordered in the order of their first appearance.
 Metadata: table-level `:note`-style metadata and column-level `:note`-style
 metadata for row keys columns are preserved.
 
+# Deprecations
+
+- `allowduplicates` keyword argument is deprecated; instead use `combine`
+  keyword argument; an equivalent to `allowduplicates=true` is `combine=last`
+  and to `allowduplicates=false` is `combine=only` (the default);
+
 # Examples
 
 ```jldoctest
