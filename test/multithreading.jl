@@ -236,16 +236,13 @@ end
     l = Ref(0)
     m = Ref(0)
     n = Ref(0)
-    unstack(df,
-            allowduplicates=true, valuestransform=x -> (l[] += 1),
+    unstack(df, combine=x -> (l[] += 1),
             threads=false) ==
             DataFrame(id=1:3, a=[1, 3, 5], b=[2, 4, 6]) ==
-    unstack(df, :variable, :value,
-            allowduplicates=true, valuestransform=x -> (m[] += 1),
+    unstack(df, :variable, :value, combine=x -> (m[] += 1),
             threads=false) ==
             DataFrame(id=1:3, a=[1, 3, 5], b=[2, 4, 6]) ==
-    unstack(df, :id, :variable, :value,
-            allowduplicates=true, valuestransform=x -> (n[] += 1),
+    unstack(df, :id, :variable, :value, combine=x -> (n[] += 1),
             threads=false) ==
             DataFrame(id=1:3, a=[1, 3, 5], b=[2, 4, 6])
 

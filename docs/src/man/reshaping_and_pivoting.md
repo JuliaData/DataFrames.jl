@@ -297,7 +297,7 @@ Id columns -- `RepeatedVector`
 This repeats the original columns N times where N is the number of columns stacked.
 
 To do aggregation, use the split-apply-combine functions in combination with
-`unstack` or use the `valuestransform` keyword argument in `unstack`. Here is an example:
+`unstack` or use the `combine` keyword argument in `unstack`. Here is an example:
 
 ```jldoctest reshape
 julia> using Statistics
@@ -357,7 +357,7 @@ julia> unstack(agg, :variable, :Species, :vmean)
    4 │ PetalWidth         0.244            1.326           2.026
    5 │ id                25.5             75.5           125.5
 
-julia> unstack(d, :variable, :Species, :value, valuestransform=mean)
+julia> unstack(d, :variable, :Species, :value, combine=mean)
 5×4 DataFrame
  Row │ variable     Iris-setosa  Iris-versicolor  Iris-virginica
      │ String       Float64?     Float64?         Float64?
