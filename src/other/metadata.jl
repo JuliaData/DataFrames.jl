@@ -1,5 +1,19 @@
 ### Metadata API from DataAPI.jl
 
+# private type that is passed as a default value in metadata and colmetadata
+# do detect the fact that no default was passed
+struct MetadataMissingDefault end
+
+# DataAPI.metadatasupport and DataAPI.colmetadatasupport are not exported
+DataAPI.metadatasupport(::Type{<:AbstractDataFrame}) = (read=true, write=true)
+DataAPI.metadatasupport(::Type{<:DataFrameRow}) = (read=true, write=true)
+DataAPI.metadatasupport(::Type{<:DataFrameRows}) = (read=true, write=true)
+DataAPI.metadatasupport(::Type{<:DataFrameColumns}) = (read=true, write=true)
+DataAPI.colmetadatasupport(::Type{<:AbstractDataFrame}) = (read=true, write=true)
+DataAPI.colmetadatasupport(::Type{<:DataFrameRow}) = (read=true, write=true)
+DataAPI.colmetadatasupport(::Type{<:DataFrameRows}) = (read=true, write=true)
+DataAPI.colmetadatasupport(::Type{<:DataFrameColumns}) = (read=true, write=true)
+
 const TABLEMETA_EXAMPLE =
     """
     # Examples
@@ -63,16 +77,19 @@ const COLMETADATA_EXAMPLE =
     """
 
 """
-    metadata(df::AbstractDataFrame, key::AbstractString; style::Bool=false)
-    metadata(dfr::DataFrameRow, key::AbstractString; style::Bool=false)
-    metadata(dfc::DataFrameColumns, key::AbstractString; style::Bool=false)
-    metadata(dfr::DataFrameRows, key::AbstractString; style::Bool=false)
+    metadata(df::AbstractDataFrame, key::AbstractString, [default]; style::Bool=false)
+    metadata(dfr::DataFrameRow, key::AbstractString, [default]; style::Bool=false)
+    metadata(dfc::DataFrameColumns, key::AbstractString, [default]; style::Bool=false)
+    metadata(dfr::DataFrameRows, key::AbstractString, [default]; style::Bool=false)
 
 Return table-level metadata value associated with `df` for key `key`.
 If `style=true` return a tuple of metadata value and metadata style.
 
 `SubDataFrame` and `DataFrameRow` expose only `:note`-style metadata of their
 parent.
+
+If `default` is passed then return it if `key` does not exist;
+if `style=true` return `(default, :default)`.
 
 See also: [`metadatakeys`](@ref), [`metadata!`](@ref),
 [`deletemetadata!`](@ref), [`emptymetadata!`](@ref),
@@ -82,22 +99,29 @@ See also: [`metadatakeys`](@ref), [`metadata!`](@ref),
 $TABLEMETA_EXAMPLE
 ```
 """
-function metadata(df::DataFrame, key::AbstractString; style::Bool=false)
+function metadata(df::DataFrame, key::AbstractString,
+                  default=MetadataMissingDefault(); style::Bool=false)
     meta = getfield(df, :metadata)
     if meta === nothing || !haskey(meta, key)
-        throw(ArgumentError("\"$key\" not found in table-level metadata"))
+        if default === MetadataMissingDefault()
+            throw(ArgumentError("\"$key\" not found in table-level metadata"))
+        else
+            return style ? (default, :default) : default
+        end
     end
     return style ? meta[key] : meta[key][1]
 end
 
-metadata(x::Union{DataFrameRows, DataFrameColumns},
-         key::AbstractString; style::Bool=false) =
-    metadata(parent(x), key, style=style)
+metadata(x::Union{DataFrameRows, DataFrameColumns}, key::AbstractString,
+         default=MetadataMissingDefault(); style::Bool=false) =
+    metadata(parent(x), key, default, style=style)
 
-function metadata(x::Union{DataFrameRow, SubDataFrame},
-                  key::AbstractString; style::Bool=false)
-    meta_value, meta_style = metadata(parent(x), key, style=true)
-    if meta_style !== :note
+function metadata(x::Union{DataFrameRow, SubDataFrame}, key::AbstractString,
+                  default=MetadataMissingDefault(); style::Bool=false)
+    meta_value, meta_style = metadata(parent(x), key, default, style=true)
+    # the `key in metadatakeys(parent(x))` check
+    # allows returning default value as it has :default style
+    if meta_style !== :note && key in metadatakeys(parent(x))
         throw(ArgumentError("\"$key\" was found in table-level metadata of parent " *
                             "data frame, but it does not have :note style"))
     end
@@ -311,14 +335,18 @@ function emptymetadata!(x::Union{DataFrameRow, SubDataFrame})
 end
 
 """
-    colmetadata(df::AbstractDataFrame, col::ColumnIndex, key::AbstractString; style::Bool=false)
-    colmetadata(dfr::DataFrameRow, col::ColumnIndex, key::AbstractString; style::Bool=false)
-    colmetadata(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString; style::Bool=false)
-    colmetadata(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString; style::Bool=false)
+    colmetadata(df::AbstractDataFrame, col::ColumnIndex, key::AbstractString, [default]; style::Bool=false)
+    colmetadata(dfr::DataFrameRow, col::ColumnIndex, key::AbstractString, [default]; style::Bool=false)
+    colmetadata(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString, [default]; style::Bool=false)
+    colmetadata(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString, [default]; style::Bool=false)
 
 Return column-level metadata value associated with `df` for column `col` and key `key`.
 
 `SubDataFrame` and `DataFrameRow` expose only `:note`-style metadata of their parent.
+
+If `default` is passed then return it if `key` does not exist for column `col`;
+if `style=true` return `(default, :default)`.
+If `col` does not exist in `df` always throw an error.
 
 See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`metadata!`](@ref), [`deletemetadata!`](@ref), [`emptymetadata!`](@ref),
@@ -328,49 +356,47 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 $COLMETADATA_EXAMPLE
 ```
 """
-function colmetadata(df::DataFrame, col::Int, key::AbstractString; style::Bool=false)
-    idx = index(df)[col] # bounds checking
+function colmetadata(df::DataFrame, col::ColumnIndex, key::AbstractString,
+                     default=MetadataMissingDefault(); style::Bool=false)
+    idx = index(df)[col] # check if column exists and get its integer number
     cols_meta = getfield(df, :colmetadata)
-    if cols_meta === nothing || !haskey(cols_meta, col)
-        colname = names(df)[idx]
-        throw(ArgumentError("no column-level metadata found for column \"$colname\""))
+    if cols_meta === nothing || !haskey(cols_meta, idx)
+        if default === MetadataMissingDefault()
+            colname = names(df)[idx]
+            throw(ArgumentError("no column-level metadata found for column \"$colname\""))
+        else
+            return style ? (default, :default) : default
+        end
     end
     col_meta = cols_meta[idx]
     if !haskey(col_meta, key)
-        colname = names(df)[idx]
-        throw(ArgumentError("\"$key\" not found in column-level metadata for column \"$colname\""))
+        if default === MetadataMissingDefault()
+            colname = names(df)[idx]
+            throw(ArgumentError("\"$key\" not found in column-level metadata for column \"$colname\""))
+        else
+            return style ? (default, :default) : default
+        end
     end
     return style ? col_meta[key] : col_meta[key][1]
-
 end
 
-# here and similar definitions below are added to avoid dispatch ambiguity
-for T in (Symbol, ColumnIndex)
-    @eval colmetadata(df::DataFrame, col::$T, key::AbstractString; style::Bool=false) =
-        colmetadata(df, Int(index(df)[col]), key, style=style)
-end
+colmetadata(x::Union{DataFrameRows, DataFrameColumns}, col::ColumnIndex,
+            key::AbstractString, default=MetadataMissingDefault(); style::Bool=false) =
+    colmetadata(parent(x), col, key, default; style=style)
 
-for T1 in (DataFrameRows, DataFrameColumns), T2 in (Int, Symbol, ColumnIndex)
-    @eval colmetadata(x::$T1, col::$T2, key::AbstractString; style::Bool=false) =
-        colmetadata(parent(x), col, key; style=style)
-end
 
-for T in (DataFrameRow, SubDataFrame)
-    @eval function colmetadata(x::$T, col::Int, key::AbstractString; style::Bool=false)
-        col_name = _names(x)[col]
-        df = parent(x)
-        val_meta, style_meta = colmetadata(df, col_name, key, style=true)
-        if style_meta !== :note
-            throw(ArgumentError("\"$key\" for column \"$(string(col_name))\" was found in column-level metadata " *
-                                "of parent data frame, but it does not have :note style"))
-        end
-        return style ? (val_meta, style_meta) : val_meta
+function colmetadata(x::Union{DataFrameRow, SubDataFrame}, col::ColumnIndex,
+                     key::AbstractString, default=MetadataMissingDefault(); style::Bool=false)
+    col_name = _names(x)[index(x)[col]]
+    df = parent(x)
+    meta_value, meta_style = colmetadata(df, col_name, key, default, style=true)
+    # the `key in colmetadatakeys(parent(x), col)` check
+    # allows returning default value as it has :default style
+    if meta_style !== :note && key in colmetadatakeys(parent(x), col)
+        throw(ArgumentError("\"$key\" for column \"$(string(col_name))\" was found in column-level metadata " *
+                            "of parent data frame, but it does not have :note style"))
     end
-end
-
-for T1 in (DataFrameRow, SubDataFrame), T2 in (Symbol, ColumnIndex)
-    @eval colmetadata(x::$T1, col::$T2, key::AbstractString; style::Bool=false) =
-        colmetadata(x, Int(index(x)[col]), key, style=style)
+    return style ? (meta_value, meta_style) : meta_value
 end
 
 """
@@ -396,8 +422,8 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 $COLMETADATA_EXAMPLE
 ```
 """
-function colmetadatakeys(df::DataFrame, col::Int)
-    idx = index(df)[col] # bounds checking
+function colmetadatakeys(df::DataFrame, col::ColumnIndex)
+    idx = index(df)[col] # check if column exists and get its integer index
     cols_meta = getfield(df, :colmetadata)
     cols_meta === nothing && return ()
     haskey(cols_meta, idx) || return ()
@@ -406,42 +432,28 @@ function colmetadatakeys(df::DataFrame, col::Int)
     return col_meta
 end
 
-for T in (Symbol, ColumnIndex)
-    @eval colmetadatakeys(df::DataFrame, col::$T) =
-        colmetadatakeys(df, Int(index(df)[col]))
-end
-
 function colmetadatakeys(df::DataFrame)
     cols_meta = getfield(df, :colmetadata)
     cols_meta === nothing && return ()
     return (_names(df)[idx] => colmetadatakeys(df, idx) for idx in keys(cols_meta))
 end
 
-for T1 in (DataFrameRows, DataFrameColumns), T2 in (Int, Symbol, ColumnIndex)
-    @eval colmetadatakeys(x::$T1, col::$T2) =
-        colmetadatakeys(parent(x), col)
-end
+colmetadatakeys(x::Union{DataFrameRows, DataFrameColumns}, col::ColumnIndex) =
+    colmetadatakeys(parent(x), col)
 
 colmetadatakeys(x::Union{DataFrameRows, DataFrameColumns}) =
     colmetadatakeys(parent(x))
 
-for T in (DataFrameRow, SubDataFrame)
-    @eval function colmetadatakeys(x::$T, col::Int)
-        col_name = _names(x)[col]
-        df = parent(x)
-        idx = index(df)[col_name]
-        cols_meta = getfield(df, :colmetadata)
-        cols_meta === nothing && return ()
-        haskey(cols_meta, idx) || return ()
-        col_meta = cols_meta[idx]
-        @assert !isempty(col_meta) # by design if isempty(col_meta) then cols_meta should not have an entry for idx
-        return (k for (k, (_, s)) in pairs(col_meta) if s === :note)
-    end
-end
-
-for T1 in (DataFrameRow, SubDataFrame), T2 in (Symbol, ColumnIndex)
-    @eval colmetadatakeys(x::$T1, col::$T2) =
-        colmetadatakeys(x, Int(index(x)[col]))
+function colmetadatakeys(x::Union{DataFrameRow, SubDataFrame}, col::ColumnIndex)
+    col_name = _names(x)[index(x)[col]]
+    df = parent(x)
+    idx = index(df)[col_name]
+    cols_meta = getfield(df, :colmetadata)
+    cols_meta === nothing && return ()
+    haskey(cols_meta, idx) || return ()
+    col_meta = cols_meta[idx]
+    @assert !isempty(col_meta) # by design if isempty(col_meta) then cols_meta should not have an entry for idx
+    return (k for (k, (_, s)) in pairs(col_meta) if s === :note)
 end
 
 function colmetadatakeys(x::Union{DataFrameRow, SubDataFrame})
@@ -472,8 +484,8 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 $COLMETADATA_EXAMPLE
 ```
 """
-function colmetadata!(df::DataFrame, col::Int, key::AbstractString, value::Any; style)
-    idx = index(df)[col] # bounds checking
+function colmetadata!(df::DataFrame, col::ColumnIndex, key::AbstractString, value::Any; style)
+    idx = index(df)[col] # check if column exists and get its integer index
     pre_cols_meta = getfield(df, :colmetadata)
     if pre_cols_meta === nothing
         cols_meta = Dict{Int, Dict{String,Tuple{Any, Any}}}()
@@ -489,44 +501,30 @@ function colmetadata!(df::DataFrame, col::Int, key::AbstractString, value::Any; 
     return df
 end
 
-for T in (Symbol, ColumnIndex)
-    @eval colmetadata!(df::DataFrame, col::$T, key::AbstractString, value::Any; style) =
-        colmetadata!(df, Int(index(df)[col]), key, value; style=style)
+function colmetadata!(x::Union{DataFrameRows, DataFrameColumns},
+                      col::ColumnIndex, key::AbstractString, value::Any; style)
+    colmetadata!(parent(x), col, key, value; style=style)
+    return x
 end
 
-for T1 in (DataFrameRows, DataFrameColumns), T2 in (Int, Symbol, ColumnIndex)
-    @eval function colmetadata!(x::$T1,
-                                col::$T2, key::AbstractString, value::Any; style)
-        colmetadata!(parent(x), col, key, value; style=style)
-        return x
+function colmetadata!(x::Union{DataFrameRow, SubDataFrame},
+                      col::ColumnIndex, key::AbstractString, value::Any; style)
+    col_name = _names(x)[index(x)[col]]
+    if style !== :note
+        throw(ArgumentError("only :note-style metadata is supported for " *
+                            "DataFrameRow and SubDataFrame"))
     end
-end
-
-for T in (DataFrameRow, SubDataFrame)
-    @eval function colmetadata!(x::$T,
-                        col::Int, key::AbstractString, value::Any; style)
-        col_name = _names(x)[col]
-        if style !== :note
-            throw(ArgumentError("only :note-style metadata is supported for " *
-                                "DataFrameRow and SubDataFrame"))
-        end
-        df = parent(x)
-        cols_meta = getfield(df, :colmetadata)
-        idx = index(df)[col_name]
-        if cols_meta !== nothing && haskey(cols_meta, idx) &&
+    df = parent(x)
+    cols_meta = getfield(df, :colmetadata)
+    idx = index(df)[col_name]
+    if cols_meta !== nothing && haskey(cols_meta, idx) &&
         haskey(cols_meta[idx], key) && cols_meta[idx][key][2] !== :note
-            throw(ArgumentError("setting metadata for DataFrameRow and SubDataFrame" *
-                                "that is already present in the parent and does not " *
-                                "have :note style is not allowed"))
-        end
-        colmetadata!(df, idx, key, value, style=style)
-        return x
+        throw(ArgumentError("setting metadata for DataFrameRow and SubDataFrame" *
+                            "that is already present in the parent and does not " *
+                            "have :note style is not allowed"))
     end
-end
-
-for T1 in (DataFrameRow, SubDataFrame), T2 in (Symbol, ColumnIndex)
-    @eval colmetadata!(x::$T1, col::$T2, key::AbstractString, value::Any; style) =
-        colmetadata!(x, Int(index(x)[col]), key, value; style=style)
+    colmetadata!(df, idx, key, value, style=style)
+    return x
 end
 
 """
@@ -547,8 +545,8 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 
 $COLMETADATA_EXAMPLE
 """
-function deletecolmetadata!(df::DataFrame, col::Int, key::AbstractString)
-    idx = index(df)[col] # bounds checking
+function deletecolmetadata!(df::DataFrame, col::ColumnIndex, key::AbstractString)
+    idx = index(df)[col] # check if column exists and get its integer index
     cols_meta = getfield(df, :colmetadata)
     # if metadata is nothing or key is missing in metadata this is a no-op
     cols_meta === nothing && return df
@@ -560,37 +558,25 @@ function deletecolmetadata!(df::DataFrame, col::Int, key::AbstractString)
     return df
 end
 
-for T in (Symbol, ColumnIndex)
-    @eval deletecolmetadata!(df::DataFrame, col::$T, key::AbstractString) =
-        deletecolmetadata!(df, Int(index(df)[col]), key)
+function deletecolmetadata!(x::Union{DataFrameRows, DataFrameColumns},
+                                  col::ColumnIndex, key::AbstractString)
+    deletecolmetadata!(parent(x), col, key)
+    return x
 end
 
-for T1 in (DataFrameRows, DataFrameColumns), T2 in (Int, Symbol, ColumnIndex)
-    @eval function deletecolmetadata!(x::$T1, col::$T2, key::AbstractString)
-        deletecolmetadata!(parent(x), col, key)
-        return x
+function deletecolmetadata!(x::Union{DataFrameRow, SubDataFrame},
+                            col::ColumnIndex, key::AbstractString)
+    col_name = _names(x)[index(x)[col]]
+    df = parent(x)
+    idx = index(df)[col_name]
+
+    # key in colmetadatakeys(df, idx) is more efficient than key in colmetadatakeys(x, idx)
+    # as it is an O(1) operation
+    if key in colmetadatakeys(df, idx)
+        _, s = colmetadata(df, idx, key, style=true)
+        s == :note && deletecolmetadata!(df, idx, key)
     end
-end
-
-for T in (DataFrameRow, SubDataFrame)
-    @eval function deletecolmetadata!(x::$T, col::Int, key::AbstractString)
-        col_name = _names(x)[col]
-        df = parent(x)
-        idx = index(df)[col_name]
-
-        # key in colmetadatakeys(df, idx) is more efficient than key in colmetadatakeys(x, idx)
-        # as it is an O(1) operation
-        if key in colmetadatakeys(df, idx)
-            _, s = colmetadata(df, idx, key, style=true)
-            s == :note && deletecolmetadata!(df, idx, key)
-        end
-        return x
-    end
-end
-
-for T1 in (DataFrameRow, SubDataFrame), T2 in (Symbol, ColumnIndex)
-    @eval deletecolmetadata!(x::$T1, col::$T2, key::AbstractString) =
-        deletecolmetadata!(x, Int(index(x)[col]), key)
+    return x
 end
 
 """
@@ -636,8 +622,8 @@ julia> colmetadatakeys(df)
 ()
 ```
 """
-function emptycolmetadata!(df::DataFrame, col::Int)
-    idx = index(df)[col] # bounds checking
+function emptycolmetadata!(df::DataFrame, col::ColumnIndex)
+    idx = index(df)[col] # check if column exists and get its integer index
     cols_meta = getfield(df, :colmetadata)
     cols_meta === nothing && return df
     delete!(cols_meta, idx)
@@ -645,21 +631,14 @@ function emptycolmetadata!(df::DataFrame, col::Int)
     return df
 end
 
-for T in (Symbol, ColumnIndex)
-    @eval emptycolmetadata!(df::DataFrame, col::$T) =
-        emptycolmetadata!(df, Int(index(df)[col]))
-end
-
 function emptycolmetadata!(df::DataFrame)
     setfield!(df, :colmetadata, nothing)
     return df
 end
 
-for T1 in (DataFrameRows, DataFrameColumns), T2 in (Int, Symbol, ColumnIndex)
-    @eval function emptycolmetadata!(x::$T1, col::$T2)
-        emptycolmetadata!(parent(x), col)
-        return x
-    end
+function emptycolmetadata!(x::Union{DataFrameRows, DataFrameColumns}, col::ColumnIndex)
+    emptycolmetadata!(parent(x), col)
+    return x
 end
 
 function emptycolmetadata!(x::Union{DataFrameRows, DataFrameColumns})
@@ -667,23 +646,16 @@ function emptycolmetadata!(x::Union{DataFrameRows, DataFrameColumns})
     return x
 end
 
-for T in (DataFrameRow, SubDataFrame)
-    @eval function emptycolmetadata!(x::$T, col::Int)
-        col_name = _names(x)[col]
-        df = parent(x)
-        idx = index(df)[col_name]
+function emptycolmetadata!(x::Union{DataFrameRow, SubDataFrame}, col::ColumnIndex)
+    col_name = _names(x)[index(x)[col]]
+    df = parent(x)
+    idx = index(df)[col_name]
 
-        for key in colmetadatakeys(df, idx)
-            _, s = colmetadata(df, idx, key, style=true)
-            s == :note && deletecolmetadata!(df, idx, key)
-        end
-        return x
+    for key in colmetadatakeys(df, idx)
+        _, s = colmetadata(df, idx, key, style=true)
+        s == :note && deletecolmetadata!(df, idx, key)
     end
-end
-
-for T1 in (DataFrameRow, SubDataFrame), T2 in (Symbol, ColumnIndex)
-    @eval emptycolmetadata!(x::$T1, col::$T2) =
-        emptycolmetadata!(x, Int(index(x)[col]))
+    return x
 end
 
 function emptycolmetadata!(x::DataFrameRow)
@@ -706,9 +678,11 @@ end
 # discarding previous metadata contents of dst
 function _copy_table_note_metadata!(dst::DataFrame, src)
     emptymetadata!(dst)
-    for key in metadatakeys(src)
-        val, style = metadata(src, key, style=true)
-        style === :note && metadata!(dst, key, val, style=:note)
+    if DataAPI.metadatasupport(typeof(src)).read
+        for key in metadatakeys(src)
+            val, style = metadata(src, key, style=true)
+            style === :note && metadata!(dst, key, val, style=:note)
+        end
     end
     return nothing
 end
@@ -718,9 +692,11 @@ end
 # discarding previous metadata contents of dst
 function _copy_col_note_metadata!(dst::DataFrame, dst_col, src, src_col)
     emptycolmetadata!(dst, dst_col)
-    for key in colmetadatakeys(src, src_col)
-        val, style = colmetadata(src, src_col, key, style=true)
-        style === :note && colmetadata!(dst, dst_col, key, val, style=:note)
+    if DataAPI.colmetadatasupport(typeof(src)).read
+        for key in colmetadatakeys(src, src_col)
+            val, style = colmetadata(src, src_col, key, style=true)
+            style === :note && colmetadata!(dst, dst_col, key, val, style=:note)
+        end
     end
     return nothing
 end
@@ -730,11 +706,13 @@ end
 function _copy_all_note_metadata!(dst::DataFrame, src)
     _copy_table_note_metadata!(dst, src)
     emptycolmetadata!(dst)
-    for (col, col_keys) in colmetadatakeys(src)
-        if hasproperty(dst, col)
-            for key in col_keys
-                val, style = colmetadata(src, col, key, style=true)
-                style === :note && colmetadata!(dst, col, key, val, style=:note)
+    if DataAPI.colmetadatasupport(typeof(src)).read
+        for (col, col_keys) in colmetadatakeys(src)
+            if hasproperty(dst, col)
+                for key in col_keys
+                    val, style = colmetadata(src, col, key, style=true)
+                    style === :note && colmetadata!(dst, col, key, val, style=:note)
+                end
             end
         end
     end
@@ -745,16 +723,20 @@ end
 # from Tables.jl table src to dst, discarding previous metadata contents of dst
 function _copy_all_all_metadata!(dst::DataFrame, src)
     emptymetadata!(dst)
-    for key in metadatakeys(src)
-        val, style = metadata(src, key, style=true)
-        metadata!(dst, key, val, style=style)
+    if DataAPI.metadatasupport(typeof(src)).read
+        for key in metadatakeys(src)
+            val, style = metadata(src, key, style=true)
+            metadata!(dst, key, val, style=style)
+        end
     end
     emptycolmetadata!(dst)
-    for (col, col_keys) in colmetadatakeys(src)
-        if hasproperty(dst, col)
-            for key in col_keys
-                val, style = colmetadata(src, col, key, style=true)
-                colmetadata!(dst, col, key, val, style=style)
+    if DataAPI.colmetadatasupport(typeof(src)).read
+        for (col, col_keys) in colmetadatakeys(src)
+            if hasproperty(dst, col)
+                for key in col_keys
+                    val, style = colmetadata(src, col, key, style=true)
+                    colmetadata!(dst, col, key, val, style=style)
+                end
             end
         end
     end

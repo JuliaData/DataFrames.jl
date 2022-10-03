@@ -1,6 +1,6 @@
 module TestMetadata
 
-using Test, DataFrames, Random
+using Test, DataFrames, Random, DataAPI
 
 function check_allnotemetadata(x::Union{AbstractDataFrame,
                                         DataFrameRow,
@@ -24,15 +24,69 @@ function check_allnotemetadata(x::Union{AbstractDataFrame,
     return true
 end
 
+@testset "metadatasupport" begin
+    df = DataFrame(a=1)
+
+    @test DataAPI.metadatasupport(typeof(df)) ==
+          (read=true, write=true)
+    @test DataAPI.metadatasupport(typeof(view(df, :, :))) ==
+          (read=true, write=true)
+    @test DataAPI.metadatasupport(typeof(view(df, :, 1:1))) ==
+          (read=true, write=true)
+    @test DataAPI.metadatasupport(typeof(view(df, 1, :))) ==
+          (read=true, write=true)
+    @test DataAPI.metadatasupport(typeof(view(df, 1, 1:1))) ==
+          (read=true, write=true)
+    @test DataAPI.metadatasupport(typeof(eachrow(df))) ==
+          (read=true, write=true)
+    @test DataAPI.metadatasupport(typeof(eachrow(view(df, :, :)))) ==
+          (read=true, write=true)
+    @test DataAPI.metadatasupport(typeof(eachcol(df))) ==
+          (read=true, write=true)
+    @test DataAPI.metadatasupport(typeof(eachcol(view(df, :, :)))) ==
+          (read=true, write=true)
+    @test DataAPI.metadatasupport(typeof(groupby(df, 1))) ==
+          (read=false, write=false)
+    @test DataAPI.metadatasupport(typeof(groupby(view(df, :, :), 1))) ==
+          (read=false, write=false)
+
+    @test DataAPI.colmetadatasupport(typeof(df)) ==
+          (read=true, write=true)
+    @test DataAPI.colmetadatasupport(typeof(view(df, :, :))) ==
+          (read=true, write=true)
+    @test DataAPI.colmetadatasupport(typeof(view(df, :, 1:1))) ==
+          (read=true, write=true)
+    @test DataAPI.colmetadatasupport(typeof(view(df, 1, :))) ==
+          (read=true, write=true)
+    @test DataAPI.colmetadatasupport(typeof(view(df, 1, 1:1))) ==
+          (read=true, write=true)
+    @test DataAPI.colmetadatasupport(typeof(eachrow(df))) ==
+          (read=true, write=true)
+    @test DataAPI.colmetadatasupport(typeof(eachrow(view(df, :, :)))) ==
+          (read=true, write=true)
+    @test DataAPI.colmetadatasupport(typeof(eachcol(df))) ==
+          (read=true, write=true)
+    @test DataAPI.colmetadatasupport(typeof(eachcol(view(df, :, :)))) ==
+          (read=true, write=true)
+    @test DataAPI.colmetadatasupport(typeof(groupby(df, 1))) ==
+          (read=false, write=false)
+    @test DataAPI.colmetadatasupport(typeof(groupby(view(df, :, :), 1))) ==
+          (read=false, write=false)
+end
+
 @testset "table-level metadata" begin
     for x in (DataFrame(), DataFrame(a=1))
         @test_throws ArgumentError metadata(x, "foobar")
+        @test metadata(x, "foobar", 12) == 12
+        @test metadata(x, "foobar", 12, style=true) == (12, :default)
         @test check_allnotemetadata(x)
         @test isempty(metadatakeys(x))
         @test metadatakeys(x) isa Tuple
         @test check_allnotemetadata(x)
         metadata!(x, "name", "empty", style=:some)
         @test_throws ArgumentError metadata(x, "foobar")
+        @test metadata(x, "foobar", 12) == 12
+        @test metadata(x, "foobar", 12, style=true) == (12, :default)
         @test check_allnotemetadata(x)
         @test collect(metadatakeys(x)) == ["name"]
         @test metadatakeys(x) isa Base.KeySet
@@ -64,10 +118,14 @@ end
         x = fun(DataFrame(a=1))
         @test check_allnotemetadata(x)
         @test_throws ArgumentError metadata(x, "foobar")
+        @test metadata(x, "foobar", 12) == 12
+        @test metadata(x, "foobar", 12, style=true) == (12, :default)
         @test isempty(metadatakeys(x))
         metadata!(x, "name", "empty", style=:note)
         @test check_allnotemetadata(x)
         @test_throws ArgumentError metadata(x, "foobar")
+        @test metadata(x, "foobar", 12) == 12
+        @test metadata(x, "foobar", 12, style=true) == (12, :default)
         @test collect(metadatakeys(x)) == ["name"]
         @test metadata(x, "name") == "empty"
         @test metadata(x, "name", style=true) == ("empty", :note)
@@ -94,10 +152,14 @@ end
         x = fun(DataFrame(a=1))
         @test check_allnotemetadata(x)
         @test_throws ArgumentError metadata(x, "foobar")
+        @test metadata(x, "foobar", 12) == 12
+        @test metadata(x, "foobar", 12, style=true) == (12, :default)
         @test isempty(metadatakeys(x))
         metadata!(x, "name", "empty", style=:default)
         @test check_allnotemetadata(x)
         @test_throws ArgumentError metadata(x, "foobar")
+        @test metadata(x, "foobar", 12) == 12
+        @test metadata(x, "foobar", 12, style=true) == (12, :default)
         @test collect(metadatakeys(x)) == ["name"]
         @test metadata(x, "name") == "empty"
         @test metadata(x, "name", style=true) == ("empty", :default)
@@ -122,12 +184,16 @@ end
     for fun in (x -> x[1, :], x -> @view x[:, :])
         x = fun(DataFrame(a=1))
         @test_throws ArgumentError metadata(x, "foobar")
+        @test metadata(x, "foobar", 12) == 12
+        @test metadata(x, "foobar", 12, style=true) == (12, :default)
         @test check_allnotemetadata(x)
         @test isempty(metadatakeys(x))
         @test_throws ArgumentError metadata!(x, "name", "empty", style=:default)
         metadata!(parent(x), "name", "empty", style=:default)
         @test check_allnotemetadata(x)
         @test_throws ArgumentError metadata(x, "foobar")
+        @test metadata(x, "foobar", 12) == 12
+        @test metadata(x, "foobar", 12, style=true) == (12, :default)
         @test isempty(metadatakeys(x))
         @test collect(metadatakeys(parent(x))) == ["name"]
         metadata!(parent(x), "name1", "empty1", style=:default)
@@ -182,6 +248,9 @@ end
         @test_throws ArgumentError colmetadata(x, a, "foobar")
         @test_throws BoundsError colmetadata(x, 10, "foobar")
         @test_throws ArgumentError colmetadata(x, "x", "foobar")
+        @test colmetadata(x, a, "foobar", 12) == 12
+        @test colmetadata(x, a, "foobar", 12, style=true) == (12, :default)
+        @test_throws ArgumentError colmetadata(x, "x", "foobar", 12)
         @test isempty(colmetadatakeys(x))
         @test colmetadatakeys(x) isa Tuple
         @test isempty(colmetadatakeys(x, a))
@@ -192,6 +261,9 @@ end
         @test_throws ArgumentError colmetadata(x, a, "foobar")
         @test_throws ArgumentError colmetadata(x, b, "foobar")
         @test_throws ArgumentError colmetadata!(x, :c, "name", "empty", style=:note)
+        @test colmetadata(x, a, "foobar", 12) == 12
+        @test colmetadata(x, a, "foobar", 12, style=true) == (12, :default)
+        @test_throws ArgumentError colmetadata(x, "x", "foobar", 12)
         colmetadata!(x, b, "name2", "empty2", style=:note)
         colmetadata!(x, a, "name3", "empty3", style=:note)
         @test check_allnotemetadata(x)
@@ -225,6 +297,9 @@ end
             @test_throws ArgumentError colmetadata(x, a, "foobar")
             @test_throws BoundsError colmetadata(x, 10, "foobar")
             @test_throws ArgumentError colmetadata(x, "x", "foobar")
+            @test colmetadata(x, a, "foobar", 12) == 12
+            @test colmetadata(x, a, "foobar", 12, style=true) == (12, :default)
+            @test_throws ArgumentError colmetadata(x, "x", "foobar", 12)
             @test isempty(colmetadatakeys(x))
             @test colmetadatakeys(x) isa Tuple
             @test isempty(colmetadatakeys(x, a))
@@ -235,6 +310,9 @@ end
             @test_throws ArgumentError colmetadata(x, a, "foobar")
             @test_throws ArgumentError colmetadata(x, b, "foobar")
             @test_throws ArgumentError colmetadata!(x, :c, "name", "empty", style=:note)
+            @test colmetadata(x, a, "foobar", 12) == 12
+            @test colmetadata(x, a, "foobar", 12, style=true) == (12, :default)
+            @test_throws ArgumentError colmetadata(x, "x", "foobar", 12)
             colmetadata!(x, b, "name2", "empty2", style=:note)
             colmetadata!(x, a, "name3", "empty3", style=:note)
             @test check_allnotemetadata(x)
@@ -268,6 +346,9 @@ end
             @test_throws ArgumentError colmetadata(x, a, "foobar")
             @test_throws BoundsError colmetadata(x, 10, "foobar")
             @test_throws ArgumentError colmetadata(x, "x", "foobar")
+            @test colmetadata(x, a, "foobar", 12) == 12
+            @test colmetadata(x, a, "foobar", 12, style=true) == (12, :default)
+            @test_throws ArgumentError colmetadata(x, "x", "foobar", 12)
             @test isempty(colmetadatakeys(x))
             @test colmetadatakeys(x) isa Tuple
             @test isempty(colmetadatakeys(x, a))
@@ -278,6 +359,9 @@ end
             @test_throws ArgumentError colmetadata(x, a, "foobar")
             @test_throws ArgumentError colmetadata(x, b, "foobar")
             @test_throws ArgumentError colmetadata!(x, :c, "name", "empty", style=:default)
+            @test colmetadata(x, a, "foobar", 12) == 12
+            @test colmetadata(x, a, "foobar", 12, style=true) == (12, :default)
+            @test_throws ArgumentError colmetadata(x, "x", "foobar", 12)
             colmetadata!(x, b, "name2", "empty2", style=:default)
             colmetadata!(x, a, "name3", "empty3", style=:default)
             @test check_allnotemetadata(x)
@@ -312,6 +396,9 @@ end
             @test_throws ArgumentError colmetadata(x, a, "foobar")
             @test_throws BoundsError colmetadata(x, 10, "foobar")
             @test_throws ArgumentError colmetadata(x, "x", "foobar")
+            @test colmetadata(x, a, "foobar", 12) == 12
+            @test colmetadata(x, a, "foobar", 12, style=true) == (12, :default)
+            @test_throws ArgumentError colmetadata(x, "x", "foobar", 12)
             p = parent(x)
             @test isempty(colmetadatakeys(x))
             @test colmetadatakeys(x) isa Tuple
@@ -321,6 +408,9 @@ end
             @test_throws ArgumentError colmetadata!(x, b, "name1", "empty1", style=:default)
             @test_throws ArgumentError colmetadata(x, a, "foobar")
             @test_throws ArgumentError colmetadata(x, b, "foobar")
+            @test colmetadata(x, a, "foobar", 12) == 12
+            @test colmetadata(x, a, "foobar", 12, style=true) == (12, :default)
+            @test_throws ArgumentError colmetadata(x, "x", "foobar", 12)
             @test_throws ArgumentError colmetadata!(x, b, "name2", "empty2", style=:default)
             @test_throws ArgumentError colmetadata!(x, a, "name3", "empty3", style=:default)
             colmetadata!(p, b, "name1", "empty1", style=:default)
@@ -346,6 +436,9 @@ end
                 @test colmetadata(x, "d", "n") == "e"
             end
             @test check_allnotemetadata(x)
+            @test colmetadata(x, a, "foobar", 12) == 12
+            @test colmetadata(x, a, "foobar", 12, style=true) == (12, :default)
+            @test_throws ArgumentError colmetadata(x, "x", "foobar", 12)
             # this is just a no-op like for dictionaries
             @test deletecolmetadata!(x, a, "foobar") === x
             @test_throws ArgumentError deletecolmetadata!(x, :invalid, "foobar")
