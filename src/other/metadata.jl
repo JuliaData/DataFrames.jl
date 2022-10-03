@@ -678,10 +678,11 @@ end
 # discarding previous metadata contents of dst
 function _copy_table_note_metadata!(dst::DataFrame, src)
     emptymetadata!(dst)
-    DataAPI.metadatasupport(typeof(src)).read || return nothing
-    for key in metadatakeys(src)
-        val, style = metadata(src, key, style=true)
-        style === :note && metadata!(dst, key, val, style=:note)
+    if DataAPI.metadatasupport(typeof(src)).read
+        for key in metadatakeys(src)
+            val, style = metadata(src, key, style=true)
+            style === :note && metadata!(dst, key, val, style=:note)
+        end
     end
     return nothing
 end
@@ -691,10 +692,11 @@ end
 # discarding previous metadata contents of dst
 function _copy_col_note_metadata!(dst::DataFrame, dst_col, src, src_col)
     emptycolmetadata!(dst, dst_col)
-    DataAPI.colmetadatasupport(typeof(src)).read || return nothing
-    for key in colmetadatakeys(src, src_col)
-        val, style = colmetadata(src, src_col, key, style=true)
-        style === :note && colmetadata!(dst, dst_col, key, val, style=:note)
+    if DataAPI.colmetadatasupport(typeof(src)).read
+        for key in colmetadatakeys(src, src_col)
+            val, style = colmetadata(src, src_col, key, style=true)
+            style === :note && colmetadata!(dst, dst_col, key, val, style=:note)
+        end
     end
     return nothing
 end
@@ -704,12 +706,13 @@ end
 function _copy_all_note_metadata!(dst::DataFrame, src)
     _copy_table_note_metadata!(dst, src)
     emptycolmetadata!(dst)
-    DataAPI.colmetadatasupport(typeof(src)).read || return nothing
-    for (col, col_keys) in colmetadatakeys(src)
-        if hasproperty(dst, col)
-            for key in col_keys
-                val, style = colmetadata(src, col, key, style=true)
-                style === :note && colmetadata!(dst, col, key, val, style=:note)
+    if DataAPI.colmetadatasupport(typeof(src)).read
+        for (col, col_keys) in colmetadatakeys(src)
+            if hasproperty(dst, col)
+                for key in col_keys
+                    val, style = colmetadata(src, col, key, style=true)
+                    style === :note && colmetadata!(dst, col, key, val, style=:note)
+                end
             end
         end
     end
@@ -727,12 +730,13 @@ function _copy_all_all_metadata!(dst::DataFrame, src)
         end
     end
     emptycolmetadata!(dst)
-    DataAPI.colmetadatasupport(typeof(src)).read || return nothing
-    for (col, col_keys) in colmetadatakeys(src)
-        if hasproperty(dst, col)
-            for key in col_keys
-                val, style = colmetadata(src, col, key, style=true)
-                colmetadata!(dst, col, key, val, style=style)
+    if DataAPI.colmetadatasupport(typeof(src)).read
+        for (col, col_keys) in colmetadatakeys(src)
+            if hasproperty(dst, col)
+                for key in col_keys
+                    val, style = colmetadata(src, col, key, style=true)
+                    colmetadata!(dst, col, key, val, style=style)
+                end
             end
         end
     end
