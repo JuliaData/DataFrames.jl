@@ -1,6 +1,6 @@
 module TestMetadata
 
-using Test, DataFrames, Random
+using Test, DataFrames, Random, DataAPI
 
 function check_allnotemetadata(x::Union{AbstractDataFrame,
                                         DataFrameRow,

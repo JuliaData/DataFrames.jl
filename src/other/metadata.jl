@@ -361,7 +361,7 @@ function colmetadata(df::DataFrame, col::ColumnIndex, key::AbstractString,
                      default=MetadataMissingDefault(); style::Bool=false)
     idx = index(df)[col] # check if column exists and get its integer number
     cols_meta = getfield(df, :colmetadata)
-    if cols_meta === nothing || !haskey(cols_meta, col)
+    if cols_meta === nothing || !haskey(cols_meta, idx)
         if default === MetadataMissingDefault()
             colname = names(df)[idx]
             throw(ArgumentError("no column-level metadata found for column \"$colname\""))
@@ -680,6 +680,7 @@ end
 # discarding previous metadata contents of dst
 function _copy_table_note_metadata!(dst::DataFrame, src)
     emptymetadata!(dst)
+    DataAPI.metadatasupport(typeof(src)).read || return nothing
     for key in metadatakeys(src)
         val, style = metadata(src, key, style=true)
         style === :note && metadata!(dst, key, val, style=:note)
@@ -692,6 +693,7 @@ end
 # discarding previous metadata contents of dst
 function _copy_col_note_metadata!(dst::DataFrame, dst_col, src, src_col)
     emptycolmetadata!(dst, dst_col)
+    DataAPI.colmetadatasupport(typeof(src)).read || return nothing
     for key in colmetadatakeys(src, src_col)
         val, style = colmetadata(src, src_col, key, style=true)
         style === :note && colmetadata!(dst, dst_col, key, val, style=:note)
@@ -704,6 +706,7 @@ end
 function _copy_all_note_metadata!(dst::DataFrame, src)
     _copy_table_note_metadata!(dst, src)
     emptycolmetadata!(dst)
+    DataAPI.colmetadatasupport(typeof(src)).read || return nothing
     for (col, col_keys) in colmetadatakeys(src)
         if hasproperty(dst, col)
             for key in col_keys
@@ -719,11 +722,14 @@ end
 # from Tables.jl table src to dst, discarding previous metadata contents of dst
 function _copy_all_all_metadata!(dst::DataFrame, src)
     emptymetadata!(dst)
-    for key in metadatakeys(src)
-        val, style = metadata(src, key, style=true)
-        metadata!(dst, key, val, style=style)
+    if DataAPI.metadatasupport(typeof(src)).read
+        for key in metadatakeys(src)
+            val, style = metadata(src, key, style=true)
+            metadata!(dst, key, val, style=style)
+        end
     end
     emptycolmetadata!(dst)
+    DataAPI.colmetadatasupport(typeof(src)).read || return nothing
     for (col, col_keys) in colmetadatakeys(src)
         if hasproperty(dst, col)
             for key in col_keys
