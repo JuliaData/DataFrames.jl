@@ -423,7 +423,7 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
                  combine=only, fill=missing, threads::Bool=true)
     if allowduplicates
         Base.depwarn("allowduplicates keyword argument is deprecated. " *
-                     "Pass `combine=last` instead of allowduplicates=true.", :unstack)
+                     "Pass `combine=last` instead of `allowduplicates=true`.", :unstack)
         combine = last
     end
     # first make sure that rowkeys are unique and
