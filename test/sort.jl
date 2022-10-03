@@ -10,6 +10,7 @@ using DataFrames, Random, Test, CategoricalArrays
 
     d = DataFrame(dv1=dv1, dv2=dv2, dv3=dv3, cv1=cv1)
 
+    @test sort(DataFrame()) == DataFrame()
     @test sortperm(d) == sortperm(dv1)
     @test sortperm(d[:, [:dv3, :dv1]]) == sortperm(dv3)
     @test sort(d, :dv1)[!, :dv3] == sort(d, "dv1")[!, "dv3"] == sortperm(dv1)

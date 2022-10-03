@@ -1,7 +1,7 @@
 ### Metadata API from DataAPI.jl
 
-# private type that is passed as a default value in metadata and colmetadata
-# do detect the fact that no default was passed
+# private type that is passed as a default value in the metadata and colmetadata
+# functions to detect the fact that no default was passed
 struct MetadataMissingDefault end
 
 # DataAPI.metadatasupport and DataAPI.colmetadatasupport are not exported
