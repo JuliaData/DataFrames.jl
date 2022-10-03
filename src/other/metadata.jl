@@ -86,10 +86,10 @@ Return table-level metadata value associated with `df` for key `key`.
 If `style=true` return a tuple of metadata value and metadata style.
 
 `SubDataFrame` and `DataFrameRow` expose only `:note`-style metadata of their
-parent (except if `default` is passed and `key` does not exist).
+parent.
 
-If `default` is passed then return it if reading metadata is supported but
-mapping for `key` is missing. If `style=true` return `(default, :default)`.
+If `default` is passed then return it if `key` does not exist;
+if `style=true` return `(default, :default)`.
 
 See also: [`metadatakeys`](@ref), [`metadata!`](@ref),
 [`deletemetadata!`](@ref), [`emptymetadata!`](@ref),
@@ -113,7 +113,7 @@ function metadata(df::DataFrame, key::AbstractString,
 end
 
 metadata(x::Union{DataFrameRows, DataFrameColumns}, key::AbstractString,
-                  default=MetadataMissingDefault(); style::Bool=false) =
+         default=MetadataMissingDefault(); style::Bool=false) =
     metadata(parent(x), key, default, style=style)
 
 function metadata(x::Union{DataFrameRow, SubDataFrame}, key::AbstractString,
@@ -342,11 +342,10 @@ end
 
 Return column-level metadata value associated with `df` for column `col` and key `key`.
 
-`SubDataFrame` and `DataFrameRow` expose only `:note`-style metadata of their parent
- (except if `default` is passed and `key` for column `col` does not exist).
+`SubDataFrame` and `DataFrameRow` expose only `:note`-style metadata of their parent.
 
-If `default` is passed then return it if reading metadata is supported but
-mapping for `key` in column `col` is missing. If `style=true` return `(default, :default)`.
+If `default` is passed then return it if `key` does not exist for column `col`;
+if `style=true` return `(default, :default)`.
 If `col` does not exist in `df` always throw an error.
 
 See also: [`metadata`](@ref), [`metadatakeys`](@ref),
@@ -379,12 +378,11 @@ function colmetadata(df::DataFrame, col::ColumnIndex, key::AbstractString,
         end
     end
     return style ? col_meta[key] : col_meta[key][1]
-
 end
 
 colmetadata(x::Union{DataFrameRows, DataFrameColumns}, col::ColumnIndex,
             key::AbstractString, default=MetadataMissingDefault(); style::Bool=false) =
-        colmetadata(parent(x), col, key, default; style=style)
+    colmetadata(parent(x), col, key, default; style=style)
 
 
 function colmetadata(x::Union{DataFrameRow, SubDataFrame}, col::ColumnIndex,
@@ -425,7 +423,7 @@ $COLMETADATA_EXAMPLE
 ```
 """
 function colmetadatakeys(df::DataFrame, col::ColumnIndex)
-    idx = index(df)[col] # check if column exists and get its integer number
+    idx = index(df)[col] # check if column exists and get its integer index
     cols_meta = getfield(df, :colmetadata)
     cols_meta === nothing && return ()
     haskey(cols_meta, idx) || return ()
@@ -487,7 +485,7 @@ $COLMETADATA_EXAMPLE
 ```
 """
 function colmetadata!(df::DataFrame, col::ColumnIndex, key::AbstractString, value::Any; style)
-    idx = index(df)[col] # check if column exists and get its integer number
+    idx = index(df)[col] # check if column exists and get its integer index
     pre_cols_meta = getfield(df, :colmetadata)
     if pre_cols_meta === nothing
         cols_meta = Dict{Int, Dict{String,Tuple{Any, Any}}}()
@@ -510,7 +508,7 @@ function colmetadata!(x::Union{DataFrameRows, DataFrameColumns},
 end
 
 function colmetadata!(x::Union{DataFrameRow, SubDataFrame},
-                    col::ColumnIndex, key::AbstractString, value::Any; style)
+                      col::ColumnIndex, key::AbstractString, value::Any; style)
     col_name = _names(x)[index(x)[col]]
     if style !== :note
         throw(ArgumentError("only :note-style metadata is supported for " *
@@ -520,7 +518,7 @@ function colmetadata!(x::Union{DataFrameRow, SubDataFrame},
     cols_meta = getfield(df, :colmetadata)
     idx = index(df)[col_name]
     if cols_meta !== nothing && haskey(cols_meta, idx) &&
-    haskey(cols_meta[idx], key) && cols_meta[idx][key][2] !== :note
+        haskey(cols_meta[idx], key) && cols_meta[idx][key][2] !== :note
         throw(ArgumentError("setting metadata for DataFrameRow and SubDataFrame" *
                             "that is already present in the parent and does not " *
                             "have :note style is not allowed"))
@@ -548,7 +546,7 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 $COLMETADATA_EXAMPLE
 """
 function deletecolmetadata!(df::DataFrame, col::ColumnIndex, key::AbstractString)
-    idx = index(df)[col] # check if column exists and get its integer number
+    idx = index(df)[col] # check if column exists and get its integer index
     cols_meta = getfield(df, :colmetadata)
     # if metadata is nothing or key is missing in metadata this is a no-op
     cols_meta === nothing && return df
@@ -625,7 +623,7 @@ julia> colmetadatakeys(df)
 ```
 """
 function emptycolmetadata!(df::DataFrame, col::ColumnIndex)
-    idx = index(df)[col] # check if column exists and get its integer number
+    idx = index(df)[col] # check if column exists and get its integer index
     cols_meta = getfield(df, :colmetadata)
     cols_meta === nothing && return df
     delete!(cols_meta, idx)

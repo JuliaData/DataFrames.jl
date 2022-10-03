@@ -24,7 +24,7 @@ function check_allnotemetadata(x::Union{AbstractDataFrame,
     return true
 end
 
-@testset "metadata support" begin
+@testset "metadatasupport" begin
     df = DataFrame(a=1)
 
     @test DataAPI.metadatasupport(typeof(df)) ==
