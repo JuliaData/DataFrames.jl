@@ -223,4 +223,17 @@ end
     @test er2 == er[1:2]
 end
 
+@testset "test unaliasing of index" begin
+    df = DataFrame(a=1:4)
+    er = eachrow(df)
+    idx = [2, 3]
+    er2 = er[idx]
+    p = parent(er2)
+    @test p isa SubDataFrame
+    @test parentindices(p)[1] == idx
+    @test parentindices(p)[1] !== idx
+    empty!(idx)
+    @test length(er2) == 2
+end
+
 end # module
