@@ -2904,6 +2904,8 @@ $METADATA_FIXED
 # Examples
 
 ```jldoctest
+julia> using Random
+
 julia> rng = MersenneTwister(1234);
 
 julia> shuffle(rng, DataFrame(a=1:5, b=1:5))
@@ -2940,6 +2942,8 @@ Metadata having other styles is dropped (from parent data frame when `df` is a `
 # Examples
 
 ```jldoctest
+julia> using Random
+
 julia> rng = MersenneTwister(1234);
 
 julia> shuffle!(rng, DataFrame(a=1:5, b=1:5))
