@@ -50,6 +50,7 @@ selector (this is useful in particular with regular expressions, `Cols`, `Not`, 
 See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
 
 # Examples
+
 ```jldoctest
 julia> df = DataFrame(x1=[1, missing, missing], x2=[3, 2, 4], x3=[3, missing, 2], x4=Union{Int, Missing}[2, 4, 4])
 3×4 DataFrame
@@ -154,6 +155,7 @@ when a column is renamed, its `:note`-style metadata becomes associated to its n
 See also: [`rename`](@ref)
 
 # Examples
+
 ```jldoctest
 julia> df = DataFrame(i=1, x=2, y=3)
 1×3 DataFrame
@@ -298,6 +300,7 @@ new name.
 See also: [`rename!`](@ref)
 
 # Examples
+
 ```jldoctest
 julia> df = DataFrame(i=1, x=2, y=3)
 1×3 DataFrame
@@ -359,6 +362,7 @@ and `2` corresponds to columns.
 See also: [`nrow`](@ref), [`ncol`](@ref)
 
 # Examples
+
 ```jldoctest
 julia> df = DataFrame(a=1:3, b='a':'c');
 
@@ -610,6 +614,7 @@ access missing values.
 Metadata: this function drops all metadata.
 
 # Examples
+
 ```jldoctest
 julia> df = DataFrame(i=1:10, x=0.1:0.1:1.0, y='a':'j');
 
@@ -1087,6 +1092,7 @@ $METADATA_FIXED
 See also: [`filter!`](@ref)
 
 # Examples
+
 ```jldoctest
 julia> df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
 4×2 DataFrame
@@ -1216,6 +1222,7 @@ $METADATA_FIXED
 See also: [`filter`](@ref)
 
 # Examples
+
 ```jldoctest
 julia> df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
 4×2 DataFrame
@@ -1353,6 +1360,7 @@ See also [`unique`](@ref) and [`unique!`](@ref).
   returns at least one column if `df` has at least one column.
 
 # Examples
+
 ```jldoctest
 julia> df = DataFrame(i=1:4, x=[1, 2, 1, 2])
 4×2 DataFrame
@@ -1446,6 +1454,7 @@ $METADATA_FIXED
 See also: [`unique!`](@ref), [`nonunique`](@ref).
 
 # Examples
+
 ```jldoctest
 julia> df = DataFrame(i=1:4, x=[1, 2, 1, 2])
 4×2 DataFrame
@@ -1520,6 +1529,7 @@ $METADATA_FIXED
 See also: [`unique!`](@ref), [`nonunique`](@ref).
 
 # Examples
+
 ```jldoctest
 julia> df = DataFrame(i=1:4, x=[1, 2, 1, 2])
 4×2 DataFrame
@@ -1582,6 +1592,7 @@ duplicates are allowed.
 $METADATA_FIXED
 
 # Examples
+
 ```jldoctest
 julia> df = DataFrame(x=1:2, y='a':'b', z=["x", "y"])
 2×3 DataFrame
