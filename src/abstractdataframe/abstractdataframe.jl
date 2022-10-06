@@ -2812,6 +2812,7 @@ $METADATA_FIXED
 Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 # Examples
+
 ```jldoctest
 julia> df = DataFrame(a=1:5, b=6:10, c=11:15)
 5×3 DataFrame
@@ -2853,6 +2854,7 @@ $METADATA_FIXED
 Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 # Examples
+
 ```jldoctest
 julia> df = DataFrame(a=1:5, b=6:10, c=11:15)
 5×3 DataFrame
@@ -2900,6 +2902,7 @@ The optional `rng` argument specifies a random number generator.
 $METADATA_FIXED
 
 # Examples
+
 ```jldoctest
 julia> rng = MersenneTwister(1234);
 
@@ -2935,6 +2938,7 @@ $METADATA_FIXED
 Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 # Examples
+
 ```jldoctest
 julia> rng = MersenneTwister(1234);
 
