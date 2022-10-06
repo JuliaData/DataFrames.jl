@@ -2812,6 +2812,7 @@ $METADATA_FIXED
 Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 # Examples
+```jldoctest
 julia> df = DataFrame(a=1:5, b=6:10, c=11:15)
 5×3 DataFrame
  Row │ a      b      c
@@ -2833,6 +2834,7 @@ julia> permute!(df, [5, 3, 1, 2, 4])
    3 │     1      6     11
    4 │     2      7     12
    5 │     4      9     14
+```
 """
 Base.permute!(df::AbstractDataFrame, p::AbstractVector{<:Integer}) =
     _permutation_helper!(Base.permute!!, df, p)
@@ -2851,7 +2853,7 @@ $METADATA_FIXED
 Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 # Examples
-
+```jldoctest
 julia> df = DataFrame(a=1:5, b=6:10, c=11:15)
 5×3 DataFrame
  Row │ a      b      c
@@ -2884,6 +2886,7 @@ julia> invpermute!(df, [5, 3, 1, 2, 4])
    3 │     3      8     13
    4 │     4      9     14
    5 │     5     10     15
+```
 """
 Base.invpermute!(df::AbstractDataFrame, p::AbstractVector{<:Integer}) =
     _permutation_helper!(Base.invpermute!!, df, p)
@@ -2897,7 +2900,7 @@ The optional `rng` argument specifies a random number generator.
 $METADATA_FIXED
 
 # Examples
-
+```jldoctest
 julia> rng = MersenneTwister(1234);
 
 julia> shuffle(rng, DataFrame(a=1:5, b=1:5))
@@ -2910,6 +2913,7 @@ julia> shuffle(rng, DataFrame(a=1:5, b=1:5))
    3 │     4      4
    4 │     3      3
    5 │     5      5
+```
 """
 Random.shuffle(df::AbstractDataFrame) =
     df[randperm(nrow(df)), :]
@@ -2931,7 +2935,7 @@ $METADATA_FIXED
 Metadata having other styles is dropped (from parent data frame when `df` is a `SubDataFrame`).
 
 # Examples
-
+```jldoctest
 julia> rng = MersenneTwister(1234);
 
 julia> shuffle!(rng, DataFrame(a=1:5, b=1:5))
@@ -2944,6 +2948,7 @@ julia> shuffle!(rng, DataFrame(a=1:5, b=1:5))
    3 │     4      4
    4 │     3      3
    5 │     5      5
+```
 """
 Random.shuffle!(df::AbstractDataFrame) =
     permute!(df, randperm(nrow(df)))
