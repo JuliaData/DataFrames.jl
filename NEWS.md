@@ -1,3 +1,11 @@
+# DataFrames.jl v1.4.1 Patch Release Notes
+
+## Bug fixes
+
+* Make sure we always copy the indexing value when calling `getindex` on
+  `DataFrameRows` object
+  ([#3192](https://github.com/JuliaData/DataFrames.jl/issues/3192))
+
 # DataFrames.jl v1.4 Release Notes
 
 ## Julia compatibility change

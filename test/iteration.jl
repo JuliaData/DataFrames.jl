@@ -223,4 +223,30 @@ end
     @test er2 == er[1:2]
 end
 
+@testset "test unaliasing of index" begin
+    for idx in ([2, 3], [0x2, 0x3], 2:3, Not([1, 4]),
+                [false, true, true, false], big.([2, 3]), big.(2:3), :)
+        df = DataFrame(a=1:4)
+        er = eachrow(df)
+        er2 = er[idx]
+        len = length(er2)
+        @test len == (idx === Colon() ? 4 : 2)
+        p = parent(er2)
+        @test p isa SubDataFrame
+        @test parentindices(p)[1] == (1:4)[idx]
+        if !(idx isa UnitRange)
+            @test parentindices(p)[1] !== idx
+        end
+        if idx isa Vector
+            empty!(idx)
+        end
+        @test length(er2) == len
+
+        er3 = filter(x -> x.a <= 2, er)
+        @test length(er3) == 2
+        @test parent(er3) isa SubDataFrame
+        @test parentindices(parent(er3))[1] == 1:2
+    end
+end
+
 end # module
