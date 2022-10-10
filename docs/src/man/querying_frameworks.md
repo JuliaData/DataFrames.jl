@@ -1,7 +1,7 @@
 # Data manipulation frameworks
 
 Three frameworks provide convenience methods to manipulate `DataFrame`s:
-DataFramesMeta.jl, Query.jl and DataFrameMacros.jl. They implement a functionality similar to
+DataFramesMeta.jl, DataFrameMacros.jl and Query.jl. They implement a functionality similar to
 [dplyr](https://dplyr.tidyverse.org/) or
 [LINQ](https://en.wikipedia.org/wiki/Language_Integrated_Query).
 
@@ -116,6 +116,84 @@ julia> @chain df begin
 
 You can find more details about how this package can be used on the
 [DataFramesMeta.jl GitHub page](https://github.com/JuliaData/DataFramesMeta.jl).
+
+## DataFrameMacros.jl
+
+[DataFrameMacros.jl](https://github.com/jkrumbiegel/DataFrameMacros.jl) is
+an alternative to DataFramesMeta.jl with an additional focus on convenient
+solutions for the transformation of multiple columns at once.
+The instructions below are for version 0.3 of DataFrameMacros.jl.
+
+First, install the DataFrameMacros.jl package:
+
+```julia
+using Pkg
+Pkg.add("DataFrameMacros")
+```
+
+In DataFrameMacros.jl, all but the `@combine` macro are row-wise by default.
+There is also a `@groupby` that works like a `@transform` with `groupby` together,
+for grouping by new columns without writing them out twice.
+
+In the below example, you can also see some of DataFrameMacros.jl' multi-column
+features, where `mean` is applied to both age columns at once by selecting
+them with the `r"age"` regex. The new column names are then derived using the
+`"{}"` shortcut which splices the transformed column names into a string.
+
+```jldoctest dataframemacros
+julia> using DataFrames, DataFrameMacros, Chain, Statistics
+
+julia> df = DataFrame(name=["John", "Sally", "Roger"],
+                             age=[54.0, 34.0, 79.0],
+                             children=[0, 2, 4])
+3×3 DataFrame
+ Row │ name    age      children 
+     │ String  Float64  Int64    
+─────┼───────────────────────────
+   1 │ John       54.0         0
+   2 │ Sally      34.0         2
+   3 │ Roger      79.0         4
+
+julia> @chain df begin
+           @transform :age_months = :age * 12
+           @groupby :has_child = :children > 0
+           @combine "mean_{}" = mean({r"age"})
+       end
+2×3 DataFrame
+ Row │ has_child  mean_age  mean_age_months 
+     │ Bool       Float64   Float64         
+─────┼──────────────────────────────────────
+   1 │     false      54.0            648.0
+   2 │      true      56.5            678.0
+```
+
+There's also the capability to reference a group of multiple columns as a single unit,
+for example to run aggregations over them, with the `{{ }}` syntax.
+In the following example, the first quarter is compared to the maximum of the other three:
+
+```jldoctest dataframemacros
+julia> df = DataFrame(
+           q1 = [12.0, 0.4, 42.7],
+           q2 = [6.4, 2.3, 40.9],
+           q3 = [9.5, 0.2, 13.6],
+           q4 = [6.3, 5.4, 39.3])
+3×4 DataFrame
+ Row │ q1       q2       q3       q4      
+     │ Float64  Float64  Float64  Float64 
+─────┼────────────────────────────────────
+   1 │    12.0      6.4      9.5      6.3
+   2 │     0.4      2.3      0.2      5.4
+   3 │    42.7     40.9     13.6     39.3
+
+julia> @transform df :q1_best = :q1 > maximum({{Not(:q1)}})
+3×5 DataFrame
+ Row │ q1       q2       q3       q4       q1_best 
+     │ Float64  Float64  Float64  Float64  Bool    
+─────┼─────────────────────────────────────────────
+   1 │    12.0      6.4      9.5      6.3     true
+   2 │     0.4      2.3      0.2      5.4    false
+   3 │    42.7     40.9     13.6     39.3     true
+```
 
 ## Query.jl
 
@@ -247,81 +325,3 @@ These examples only scratch the surface of what one can do with
 referred to the [Query.jl
 documentation](http://www.queryverse.org/Query.jl/stable/) for more
 information.
-
-## DataFrameMacros.jl
-
-[DataFrameMacros.jl](https://github.com/jkrumbiegel/DataFrameMacros.jl) is
-an alternative to DataFramesMeta.jl with an additional focus on convenient
-solutions for the transformation of multiple columns at once.
-The instructions below are for version 0.3 of DataFrameMacros.jl.
-
-First, install the DataFrameMacros.jl package:
-
-```julia
-using Pkg
-Pkg.add("DataFrameMacros")
-```
-
-In DataFrameMacros.jl, all but the `@combine` macro are row-wise by default.
-There is also a `@groupby` that works like a `@transform` with `groupby` together,
-for grouping by new columns without writing them out twice.
-
-In the below example, you can also see some of DataFrameMacros.jl' multi-column
-features, where `mean` is applied to both age columns at once by selecting
-them with the `r"age"` regex. The new column names are then derived using the
-`"{}"` shortcut which splices the transformed column names into a string.
-
-```jldoctest dataframemacros
-julia> using DataFrames, DataFrameMacros, Chain, Statistics
-
-julia> df = DataFrame(name=["John", "Sally", "Roger"],
-                             age=[54.0, 34.0, 79.0],
-                             children=[0, 2, 4])
-3×3 DataFrame
- Row │ name    age      children 
-     │ String  Float64  Int64    
-─────┼───────────────────────────
-   1 │ John       54.0         0
-   2 │ Sally      34.0         2
-   3 │ Roger      79.0         4
-
-julia> @chain df begin
-           @transform :age_months = :age * 12
-           @groupby :has_child = :children > 0
-           @combine "mean_{}" = mean({r"age"})
-       end
-2×3 DataFrame
- Row │ has_child  mean_age  mean_age_months 
-     │ Bool       Float64   Float64         
-─────┼──────────────────────────────────────
-   1 │     false      54.0            648.0
-   2 │      true      56.5            678.0
-```
-
-There's also the capability to reference a group of multiple columns as a single unit,
-for example to run aggregations over them, with the `{{ }}` syntax.
-In the following example, the first quarter is compared to the maximum of the other three:
-
-```jldoctest dataframemacros
-julia> df = DataFrame(
-           q1 = [12.0, 0.4, 42.7],
-           q2 = [6.4, 2.3, 40.9],
-           q3 = [9.5, 0.2, 13.6],
-           q4 = [6.3, 5.4, 39.3])
-3×4 DataFrame
- Row │ q1       q2       q3       q4      
-     │ Float64  Float64  Float64  Float64 
-─────┼────────────────────────────────────
-   1 │    12.0      6.4      9.5      6.3
-   2 │     0.4      2.3      0.2      5.4
-   3 │    42.7     40.9     13.6     39.3
-
-julia> @transform df :q1_best = :q1 > maximum({{Not(:q1)}})
-3×5 DataFrame
- Row │ q1       q2       q3       q4       q1_best 
-     │ Float64  Float64  Float64  Float64  Bool    
-─────┼─────────────────────────────────────────────
-   1 │    12.0      6.4      9.5      6.3     true
-   2 │     0.4      2.3      0.2      5.4    false
-   3 │    42.7     40.9     13.6     39.3     true
-```
