@@ -738,6 +738,9 @@ operations:
 - the [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl)
   package provides interfaces similar to LINQ and
   [dplyr](https://dplyr.tidyverse.org)
+- the [DataFrameMacros.jl](https://github.com/jkrumbiegel/DataFrameMacros.jl)
+  package provides macros for most standard functions from DataFrames.jl,
+  with convenient syntax for the manipulation of multiple columns at once.
 
 See the [Data manipulation frameworks](@ref) section for more information.
 

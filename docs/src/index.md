@@ -120,7 +120,10 @@ integrated they are with DataFrames.jl.
       DataFrames.jl, other tabular data libraries (more on those below), and even
       non-tabular data. Provides many convenience functions analogous to those in
       dplyr in R or [LINQ](https://en.wikipedia.org/wiki/Language_Integrated_Query).
-    - You can find more on both of these packages in the
+    - [DataFrameMacros.jl](https://github.com/jkrumbiegel/DataFrameMacros.jl):
+      Provides macro versions of the common DataFrames functions similar to DataFramesMeta,
+      with convenient syntax for the manipulation of multiple columns at once.
+    - You can find more information on these packages in the
       [Data manipulation frameworks](@ref) section of this manual.
 - **And More!**
     - [Graphs.jl](https://github.com/JuliaGraphs/Graphs.jl): A pure-Julia,
