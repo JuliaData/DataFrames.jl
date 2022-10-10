@@ -121,7 +121,7 @@ integrated they are with DataFrames.jl.
       non-tabular data. Provides many convenience functions analogous to those in
       dplyr in R or [LINQ](https://en.wikipedia.org/wiki/Language_Integrated_Query).
     - [DataFrameMacros.jl](https://github.com/jkrumbiegel/DataFrameMacros.jl):
-      Provides macro versions of the common DataFrames functions similar to DataFramesMeta,
+      Provides macro versions of the common DataFrames.jl functions similar to DataFramesMeta.jl,
       with convenient syntax for the manipulation of multiple columns at once.
     - You can find more information on these packages in the
       [Data manipulation frameworks](@ref) section of this manual.

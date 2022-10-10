@@ -251,7 +251,7 @@ information.
 ## DataFrameMacros.jl
 
 [DataFrameMacros.jl](https://github.com/jkrumbiegel/DataFrameMacros.jl) is
-an alternative to `DataFramesMeta.jl` with an additional focus on convenient
+an alternative to DataFramesMeta.jl with an additional focus on convenient
 solutions for the transformation of multiple columns at once.
 The instructions below are for version 0.3 of DataFrameMacros.jl.
 
@@ -266,13 +266,13 @@ In DataFrameMacros.jl, all but the `@combine` macro are row-wise by default.
 There is also a `@groupby` that works like a `@transform` with `groupby` together,
 for grouping by new columns without writing them out twice.
 
-In the below example, you can also see some of DataFrameMacros' multi-column
+In the below example, you can also see some of DataFrameMacros.jl' multi-column
 features, where `mean` is applied to both age columns at once by selecting
 them with the `r"age"` regex. The new column names are then derived using the
 `"{}"` shortcut which splices the transformed column names into a string.
 
 ```jldoctest dataframemacros
-using DataFrames, DataFrameMacros, Chain, Statistics
+julia> using DataFrames, DataFrameMacros, Chain, Statistics
 
 julia> df = DataFrame(name=["John", "Sally", "Roger"],
                              age=[54.0, 34.0, 79.0],
