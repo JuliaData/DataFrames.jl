@@ -2568,10 +2568,11 @@ function flatten(df::AbstractDataFrame,
     length(idxcols) > 1 && sort!(idxcols)
     for col in idxcols
         col_to_flatten = df[!, col]
-        flattened_col = col_to_flatten isa AbstractVector{<:AbstractVector} ?
+        fast_path = eltype(col_to_flatten) isa AbstractVector &&
+                    !isempty(col_to_flatten)
+        flattened_col = fast_path ?
             reduce(vcat, col_to_flatten) :
             collect(Iterators.flatten(col_to_flatten))
-
         insertcols!(new_df, col, _names(df)[col] => flattened_col)
     end
 

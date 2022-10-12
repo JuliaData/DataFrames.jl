@@ -367,10 +367,13 @@ end
 @testset "flatten single column" begin
     df_vec = DataFrame(a=[1, 2], b=[[1, 2], [3, 4]])
     df_tup = DataFrame(a=[1, 2], b=[(1, 2), (3, 4)])
+    @test flatten(empty(df_vec), :b) == DataFrame(a=[], b=[])
+    @test flatten(empty(df_tup), :b) == DataFrame(a=[], b=[])
     ref = DataFrame(a=[1, 1, 2, 2], b=[1, 2, 3, 4])
     @test flatten(df_vec, :b) == flatten(df_tup, :b) == ref
     @test flatten(df_vec, "b") == flatten(df_tup, "b") == ref
     df_mixed_types = DataFrame(a=[1, 2], b=[[1, 2], ["x", "y"]])
+    @test flatten(empty(df_mixed_types), :b) == DataFrame(a=[], b=[])
     ref_mixed_types = DataFrame(a=[1, 1, 2, 2], b=[1, 2, "x", "y"])
     @test flatten(df_mixed_types, :b) == ref_mixed_types
     df_three = DataFrame(a=[1, 2, 3], b=[[1, 2], [10, 20], [100, 200, 300]])
@@ -382,6 +385,7 @@ end
     @test flatten(df_gen, :b) == ref_gen
     @test flatten(df_gen, "b") == ref_gen
     df_miss = DataFrame(a=[1, 2], b=[Union{Missing, Int}[1, 2], Union{Missing, Int}[3, 4]])
+    @test flatten(empty(df_miss), :b) == DataFrame(a=[], b=[])
     ref = DataFrame(a=[1, 1, 2, 2], b=[1, 2, 3, 4])
     @test flatten(df_miss, :b) == ref
     @test flatten(df_miss, "b") == ref
@@ -389,10 +393,12 @@ end
     v2 = [[5, 6], [7, 8]]
     v = [v1, v2]
     df_vec_vec = DataFrame(a=[1, 2], b=v)
+    @test flatten(empty(df_vec_vec), :b) == DataFrame(a=[], b=[])
     ref_vec_vec = DataFrame(a=[1, 1, 2, 2], b=[v1 ; v2])
     @test flatten(df_vec_vec, :b) == ref_vec_vec
     @test flatten(df_vec_vec, "b") == ref_vec_vec
     df_cat = DataFrame(a=[1, 2], b=[CategoricalArray([1, 2]), CategoricalArray([1, 2])])
+    @test flatten(empty(df_cat), :b) == DataFrame(a=[], b=[])
     df_flat_cat = flatten(df_cat, :b)
     ref_cat = DataFrame(a=[1, 1, 2, 2], b=[1, 2, 1, 2])
     @test df_flat_cat == ref_cat
@@ -401,6 +407,9 @@ end
 
 @testset "flatten multiple columns" begin
     df = DataFrame(a=[1, 2], b=[[1, 2], [3, 4]], c=[[5, 6], [7, 8]])
+    @test flatten(empty(df), []) == DataFrame(a=[], b=[], c=[])
+    @test flatten(empty(df), [:b, :c]) == DataFrame(a=[], b=[], c=[])
+    @test flatten(empty(df), All()) == DataFrame(a=[], b=[], c=[])
     @test flatten(df, []) == df
     ref = DataFrame(a=[1, 1, 2, 2], b=[1, 2, 3, 4], c=[5, 6, 7, 8])
     @test flatten(df, [:b, :c]) == ref
@@ -418,6 +427,8 @@ end
     @test flatten(df_allcols, :) == ref_allcols
     df_bad = DataFrame(a=[1, 2], b=[[1, 2], [3, 4]], c=[[5, 6], [7]])
     @test_throws ArgumentError flatten(df_bad, [:b, :c])
+    @test flatten(DataFrame(), []) == DataFrame()
+    @test flatten(DataFrame(), All()) == DataFrame()
 end
 
 @testset "stack categorical test" begin
