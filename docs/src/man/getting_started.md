@@ -57,13 +57,14 @@ julia> df = DataFrame(A=1:4, B=["M", "F", "F", "M"])
 ```
 
 Columns can be directly (i.e. without copying) accessed via `df.col`,
-`df."col"`, `df[!, :col]` or `df[!, "col"]`. The two latter syntaxes are more
-flexible as they allow passing a variable holding the name of the column, and
-not only a literal name. Note that column names can be either symbols (written
-as `:col`, `:var"col"` or `Symbol("col")`) or strings (written as `"col"`). Note
-that in the forms `df."col"` and `:var"col"` variable interpolation into a
-string using `$` does not work. Columns can also be accessed using an integer
-index specifying their position.
+`df."col"`, `df[!, :col]` or `df[!, "col"]` (this rule applies to getting
+data from a data frame, not writing data to a data frame).
+The two latter syntaxes are more flexible as they allow passing a variable
+holding the name of the column, and not only a literal name. Note that column
+names can be either symbols (written as `:col`, `:var"col"` or `Symbol("col")`)
+or strings (written as `"col"`). Note that in the forms `df."col"` and
+`:var"col"` variable interpolation into a string using `$` does not work.
+Columns can also be accessed using an integer index specifying their position.
 
 Since `df[!, :col]` does not make a copy, changing the elements of the column
 vector returned by this syntax will affect the values stored in the original
@@ -169,7 +170,6 @@ julia> propertynames(df)
     is slightly faster and should generally be preferred, if not generating them
     via string manipulation.
 
-
 ### Constructing Column by Column
 
 It is also possible to start with an empty `DataFrame` and add columns to it one by one:
@@ -181,7 +181,7 @@ julia> df = DataFrame()
 julia> df.A = 1:8
 1:8
 
-julia> df.B = ["M", "F", "F", "M", "F", "M", "M", "F"]
+julia> df[:, :B] = ["M", "F", "F", "M", "F", "M", "M", "F"]
 8-element Vector{String}:
  "M"
  "F"
@@ -192,22 +192,33 @@ julia> df.B = ["M", "F", "F", "M", "F", "M", "M", "F"]
  "M"
  "F"
 
+julia> df[!, :C] .= 0
+8-element Vector{Int64}:
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+
 julia> df
-8×2 DataFrame
- Row │ A      B
-     │ Int64  String
-─────┼───────────────
-   1 │     1  M
-   2 │     2  F
-   3 │     3  F
-   4 │     4  M
-   5 │     5  F
-   6 │     6  M
-   7 │     7  M
-   8 │     8  F
+8×3 DataFrame
+ Row │ A      B       C
+     │ Int64  String  Int64
+─────┼──────────────────────
+   1 │     1  M           0
+   2 │     2  F           0
+   3 │     3  F           0
+   4 │     4  M           0
+   5 │     5  F           0
+   6 │     6  M           0
+   7 │     7  M           0
+   8 │     8  F           0
 ```
 
-The `DataFrame` we build in this way has 8 rows and 2 columns.
+The `DataFrame` we build in this way has 8 rows and 3 columns.
 This can be checked using the `size` function:
 
 ```jldoctest dataframe
@@ -215,12 +226,30 @@ julia> size(df, 1)
 8
 
 julia> size(df, 2)
-2
+3
 
 julia> size(df)
-(8, 2)
-
+(8, 3)
 ```
+
+The rules of assigning data to columns of a data frame are as follows:
+* if assignment is used (e.g. `df.col = ...`)
+    * when `df.col` or `df[!, :col]` is put on a left-hand side then right-hand
+      side must be a vector and it is stored in a data frame without copying
+      (except for ranges which are collected to a `Vector`)
+    * when `df[:, :col]` is put on a left-hand side then right-hand side
+      side must be a vector and it is copied to an existing column `:col`.
+      If `:col` does not exist in `df` then right hand side is copied before it is
+      stored in a data frame (except for ranges which are collected to a `Vector`)
+* if broadcasting assignment is used (e.g. `df.col .= ...`)
+    * when `df.col` or `df[!, :col]` is put on a left-hand side then broadcasting
+      assignment is performed of right-hand side to a freshly allocated vector
+      having as many elements as there are rows in `df` and then this vector
+      is stored in column `:col` in `df`.
+    * when `df[:, :col]` is put on a left-hand side then broadcasting
+      assignment is performed of right-hand side to a existing column `:col`
+      if it exists in `df`. If `:col` does not exist in `df` the behavior
+      is the same as for `df.col` and `df[!, :col]`.
 
 ### Constructing Row by Row
 
