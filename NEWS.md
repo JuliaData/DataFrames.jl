@@ -1,3 +1,10 @@
+# DataFrames.jl v1.4.2 Patch Release Notes
+
+## Bug fixes
+
+* Make sure `flatten` works correctly on a data frame with zero rows
+  ([#3198](https://github.com/JuliaData/DataFrames.jl/issues/3198))
+
 # DataFrames.jl v1.4.1 Patch Release Notes
 
 ## Bug fixes
