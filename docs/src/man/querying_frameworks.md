@@ -132,8 +132,9 @@ Pkg.add("DataFrameMacros")
 ```
 
 In DataFrameMacros.jl, all but the `@combine` macro are row-wise by default.
-There is also a `@groupby` that works like a `@transform` with `groupby` together,
-for grouping by new columns without writing them out twice.
+There is also a `@groupby` which allows creating grouping columns on the fly
+using the same syntax as `@transform`, for grouping by new columns
+without writing them out twice.
 
 In the example below, you can also see some of DataFrameMacros.jl' multi-column
 features, where `mean` is applied to both age columns at once by selecting
