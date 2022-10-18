@@ -136,7 +136,7 @@ There is also a `@groupby` which allows creating grouping columns on the fly
 using the same syntax as `@transform`, for grouping by new columns
 without writing them out twice.
 
-In the example below, you can also see some of DataFrameMacros.jl' multi-column
+In the example below, you can also see some of DataFrameMacros.jl's multi-column
 features, where `mean` is applied to both age columns at once by selecting
 them with the `r"age"` regex. The new column names are then derived using the
 `"{}"` shortcut which splices the transformed column names into a string.
@@ -145,8 +145,8 @@ them with the `r"age"` regex. The new column names are then derived using the
 julia> using DataFrames, DataFrameMacros, Chain, Statistics
 
 julia> df = DataFrame(name=["John", "Sally", "Roger"],
-                             age=[54.0, 34.0, 79.0],
-                             children=[0, 2, 4])
+                      age=[54.0, 34.0, 79.0],
+                      children=[0, 2, 4])
 3×3 DataFrame
  Row │ name    age      children 
      │ String  Float64  Int64    
@@ -173,11 +173,10 @@ for example to run aggregations over them, with the `{{ }}` syntax.
 In the following example, the first quarter is compared to the maximum of the other three:
 
 ```jldoctest dataframemacros
-julia> df = DataFrame(
-           q1 = [12.0, 0.4, 42.7],
-           q2 = [6.4, 2.3, 40.9],
-           q3 = [9.5, 0.2, 13.6],
-           q4 = [6.3, 5.4, 39.3])
+julia> df = DataFrame(q1 = [12.0, 0.4, 42.7],
+                      q2 = [6.4, 2.3, 40.9],
+                      q3 = [9.5, 0.2, 13.6],
+                      q4 = [6.3, 5.4, 39.3])
 3×4 DataFrame
  Row │ q1       q2       q3       q4      
      │ Float64  Float64  Float64  Float64 
