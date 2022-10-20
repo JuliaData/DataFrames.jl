@@ -115,12 +115,15 @@ integrated they are with DataFrames.jl.
       A range of convenience functions for DataFrames.jl that augment `select` and
       `transform` to provide a user experience similar to that provided by
       [dplyr](https://dplyr.tidyverse.org/) in R.
+    - [DataFrameMacros.jl](https://github.com/jkrumbiegel/DataFrameMacros.jl):
+      Provides macro versions of the common DataFrames.jl functions similar to DataFramesMeta.jl,
+      with convenient syntax for the manipulation of multiple columns at once.
     - [Query.jl](https://github.com/queryverse/Query.jl): Query.jl provides a single
       framework for data wrangling that works with a range of libraries, including
       DataFrames.jl, other tabular data libraries (more on those below), and even
       non-tabular data. Provides many convenience functions analogous to those in
       dplyr in R or [LINQ](https://en.wikipedia.org/wiki/Language_Integrated_Query).
-    - You can find more on both of these packages in the
+    - You can find more information on these packages in the
       [Data manipulation frameworks](@ref) section of this manual.
 - **And More!**
     - [Graphs.jl](https://github.com/JuliaGraphs/Graphs.jl): A pure-Julia,
