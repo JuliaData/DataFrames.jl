@@ -232,24 +232,63 @@ julia> size(df)
 (8, 3)
 ```
 
-The rules of assigning data to columns of a data frame are as follows:
-* if assignment is used (e.g. `df.col = ...`)
-    * when `df.col` or `df[!, :col]` is put on a left-hand side then right-hand
-      side must be a vector and it is stored in a data frame without copying
-      (except for ranges which are collected to a `Vector`)
-    * when `df[:, :col]` is put on a left-hand side then right-hand side
-      side must be a vector and it is copied to an existing column `:col`.
-      If `:col` does not exist in `df` then right hand side is copied before it is
-      stored in a data frame (except for ranges which are collected to a `Vector`)
-* if broadcasting assignment is used (e.g. `df.col .= ...`)
-    * when `df.col` or `df[!, :col]` is put on a left-hand side then broadcasting
-      assignment is performed of right-hand side to a freshly allocated vector
-      having as many elements as there are rows in `df` and then this vector
-      is stored in column `:col` in `df`.
-    * when `df[:, :col]` is put on a left-hand side then broadcasting
-      assignment is performed of right-hand side to a existing column `:col`
-      if it exists in `df`. If `:col` does not exist in `df` the behavior
-      is the same as for `df.col` and `df[!, :col]`.
+In the above example notice that the `df[!, :C] .= 0` expression created a new
+column in a data frame by broadcasting a scalar.
+
+When setting a column of a data frame the `df[!, :C]` and `df.C` syntaxes are
+equivalent and they would replace (or create) the `:C` column in `df`. This
+is different from using `df[:, :C]` to set a column in a data frame, which
+updates the contents of column in-place if it already exists.
+
+Here is an example showing this difference. Let us convert the `:B` column
+to a binary variable.
+
+```jldoctest dataframe
+julia> df[:, :B] = df.B .== "F"
+ERROR: MethodError: Cannot `convert` an object of type Bool to an object of type String
+
+julia> df[:, :B] .= df.B .== "F"
+ERROR: MethodError: Cannot `convert` an object of type Bool to an object of type String
+```
+
+The above operations did not work because when you use `:` as row selector the
+`:B` column is updated in-place, and it only supports storing of strings.
+
+On the other hand the following works:
+
+```jldoctest dataframe
+julia> df.B = df.B .== "F"
+8-element BitVector:
+ 0
+ 1
+ 1
+ 0
+ 1
+ 0
+ 0
+ 1
+
+julia> df
+8×3 DataFrame
+ Row │ A      B      C
+     │ Int64  Bool   Int64
+─────┼─────────────────────
+   1 │     1  false      0
+   2 │     2   true      0
+   3 │     3   true      0
+   4 │     4  false      0
+   5 │     5   true      0
+   6 │     6  false      0
+   7 │     7  false      0
+   8 │     8   true      0
+```
+
+As you can see because we used `df.B` on the right-hand side of the assignment
+the `:B` column was replaced. The same effect would be achieved if we used
+`df[!, :B]` instead or if we used broadcasted assignment `.=`.
+
+In the [Indexing](@ref) section of the manual you can find all details about all
+the available indexing options.
 
 ### Constructing Row by Row
 
