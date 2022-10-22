@@ -1513,32 +1513,96 @@ julia> german[Not(5), r"S"]
 
 ## Basic Usage of Transformation Functions
 
-In DataFrames.jl we have five functions that we can be used to perform transformations of columns
-of a data frame:
+In DataFrames.jl there are seven functions that can be used to transform data frame columns:
 
-- `combine`: creates a new data frame populated with columns that are results of transformation
-  applied to the source data frame columns, potentially combining its rows;
-- `select`: creates a new data frame that has the same number of rows as the source data frame
-  populated with columns that are results of transformations applied to the source data frame
-  columns;
-- `select!`: the same as `select` but updates the passed data frame in place;
-- `transform`: the same as `select` but keeps the columns that were already present in the data frame
-  (note though that these columns can be potentially modified by the transformation passed to `transform`);
-- `transform!`: the same as `transform` but updates the passed data frame in place.
+| Function     | Memory Usage                     | Column Retention                             | Row Retention                                       |
+| ------------ | -------------------------------- | -------------------------------------------- | --------------------------------------------------- |
+| `transform`  | Creates a new data frame.        | Retains both source and transformed columns. | Retains same number of rows as source data frame.   |
+| `transform!` | Modifies an existing data frame. | Retains both source and transformed columns. | Retains same number of rows as source data frame.   |
+| `select`     | Creates a new data frame.        | Retains only transformed columns.            | Retains same number of rows as source data frame.   |
+| `select!`    | Modifies an existing data frame. | Retains only transformed columns.            | Retains same number of rows as source data frame.   |
+| `subset`     | Creates a new data frame.        | Retains both source and transformed columns. | Number of rows is determined by the transformation. |
+| `subset!`    | Modifies an existing data frame. | Retains both source and transformed columns. | Number of rows is determined by the transformation. |
+| `combine`    | Creates a new data frame.        | Retains only transformed columns.            | Number of rows is determined by the transformation. |
 
-The fundamental ways to specify a transformation are:
+### Constructing Transformation Pairs
+All of the functions above use the same syntax which is commonly
+`transformation_function(source_dataframe, transformation)`.
+The `transformation` argument is a `Pair` which defines the
+transformation to be applied to the `source_dataframe`,
+and it can take any of the forms listed below:
 
-- `source_column => transformation => target_column_name`;
-  In this scenario the `source_column` is passed as an argument to `transformation` function
-  and stored in `target_column_name` column.
-- `source_column => transformation`;
-  In this scenario we apply the transformation function to `source_column` and the
-  target column names is automatically generated.
-- `source_column => target_column_name` renames the `source_column` to `target_column_name`.
-- `source_column` just keep the source column as is in the result without any transformation;
+- `source_column_selector => function`
+  - passes source column(s) to function
+  - automatically names the resulting column(s)
+- `source_column_selector => function => new_column_names`
+  - passes source column(s) to function
+  - names the resulting column(s) `new_column_names`
+    - *cannot be used with `subset` or `subset!`*
+- `source_column_selector => new_column_names`
+  - renames source column
+    - *may only select one column unless broadcasting*
+    - *may be used to split a column containing collections into multiple columns*
+    - *cannot be used with `subset` or `subset!`*
+- `source_column_selector`
+  - selects source column(s) without transforming them
+    - *often used with `select` or `select!` for isolating or moving columns*
 
-These rules are typically called transformation mini-language.
+#### `source_column_selector`
+The most basic `source_column_selector` is a column name,
+but there are many more ways to select columns as explained
+in the first section of the [Indexing](@ref) API.
 
+#### `function`
+Here `function` is a function which operates on an entire data frame
+column passed as a vector.
+If you instead want to apply a function to each element in the column,
+then you can wrap your element-wise function in `ByRow` like
+`ByRow(my_elementwise_function)`.
+This will apply `my_elementwise_function` to every element in the column
+and then collect the results back into a vector.
+
+When multiple columns are selected by `source_column_selector`,
+the `function` will receive the columns as multiple positional arguments in the
+order they are selected like `f(column1, column2, column3)`.
+Slurping and splatting with `...` can be used to define a function which can
+accept any number of columns returned by `source_column_selector`.
+For example, the function `f(columns...) = max.(columns...)` will return a new column
+containing the largest element from each row for any number of input columns.
+
+#### `new_column_names`
+The results of the transformation will be placed into new columns
+with names defined by `new_column_names`.
+`new_column_names` may be a string, a symbol, a vector of strings,
+or a vector of symbols.
+In the `source_column_selector => function => new_column_names` transformation form,
+`new_column_names` may additionally be a renaming function which operates on a string
+or a vector of strings to create the destination column names programmatically.
+
+In the `source_column_selector => function` transformation form,
+`new_column_names` will be generated automatically as the function name
+appended to the source column name with an underscore.
+However, if keyword argument `renamecols=false` is passed
+to the transformation function,
+then the new columns will retain their original source names
+instead of using automatically generated names.
+
+#### More Information
+This transformation pair syntax is sometimes referred to as a mini-language.
+More details and examples of the transformation mini-language can be found in
+[this blog post](https://bkamins.github.io/julialang/2020/12/24/minilanguage.html).
+
+!!! Note Notes
+    - Multiple transformations may be applied at once using any of the following:
+      - `transformation_function(source_dataframe, transformation1, transformation2)`
+      - `transformation_function(source_dataframe, [transformation1, transformation2])`
+      - `transformation_function(source_dataframe, [transformation1 transformation2])`
+    - Any of the `transformation` pair syntax forms shown above can also use
+      broadcasting with `.=>` to apply multiple transformations at once.
+      See the next section for more information on
+      [Broadcasting with Transformation Functions](@ref).
+
+#### Examples
 Let us move to the examples of application of these rules
 
 ```jldoctest dataframe
@@ -2071,3 +2135,215 @@ options of the transformation mini-language. More advanced examples, in particul
 showing how to pass or produce multiple columns using the `AsTable` operation
 (which you might have seen in some DataFrames.jl demos) are given in the later
 sections of the manual.
+
+## Broadcasting with Transformation Functions
+
+[Broadcasting](https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting)
+is a convenient way to apply multiple transformations
+within one call to a transformation function.
+Broadcasting within the `Pair` of a `transformation` is no different than
+broadcasting in base Julia.
+The broadcasting `.=>` will be expanded into a vector of pairs,
+and this expansion will occur before the tranformation function is invoked.
+
+To illustrate these concepts, let us first examine the `Type` of a basic `Pair`.
+In DataFrames, a `Symbol`, `String`, or `Integer`
+may be used to select a single column.
+Some examples of `Pair`s of these types are below.
+
+```julia
+julia> typeof(:x => :a)
+Pair{Symbol, Symbol}
+
+julia> typeof("x" => "a")
+Pair{String, String}
+
+julia> typeof(1 => "a")
+Pair{Int64, String}
+```
+
+Any of the `Pair`s above could be used to rename the first column
+of the data frame below to `a`.
+
+```julia
+julia> df = DataFrame(x = 1:3, y = 4:6)
+3×2 DataFrame
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> select(df, :x => :a)
+3×1 DataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+
+```
+
+What should we do if we want to keep and rename both the `x` and `y` column?
+One option is to supply a `Vector` of transformation `Pair`s to `select`.
+`select` will process all of these transformations in order.
+
+```julia
+julia> ["x" => "a", "y" => "b"]
+2-element Vector{Pair{String, String}}:
+ "x" => "a"
+ "y" => "b"
+
+julia> select(df, ["x" => "a", "y" => "b"])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+```
+
+We can use broadcasting to simplify the syntax above.
+
+```julia
+julia> ["x", "y"] .=> ["a", "b"]
+2-element Vector{Pair{String, String}}:
+ "x" => "a"
+ "y" => "b"
+
+julia> select(df, ["x", "y"] .=> ["a", "b"])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+```
+
+Note that `select` sees the same `Vector{Pair{String, String}}` argument
+whether the individual pairs are written out explicitly or
+constructed with broadcasting.
+The broadcasting is applied before the call to `select`.
+
+If a function is used as part of a transformation `Pair`,
+like in the `source_column_selector => function => new_column_names` form,
+then the function is repeated in each pair of the resultant vector.
+This is an easy way to apply a function to multiple columns at the same time.
+
+```julia
+julia> f(x) = 2 * x
+f (generic function with 1 method)
+
+julia> ["x", "y"] .=> f .=> ["a", "b"]
+2-element Vector{Pair{String, Pair{typeof(f), String}}}:
+ "x" => (f => "a")
+ "y" => (f => "b")
+
+julia> select(df, ["x", "y"] .=> f .=> ["a", "b"])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      8
+   2 │     4     10
+   3 │     6     12
+ ```
+
+A renaming function can be applied to multiple columns in the same way.
+
+```julia
+julia> newname(s::String) = s * "_new"
+newname (generic function with 1 method)
+
+julia> ["x", "y"] .=> f .=> newname
+2-element Vector{Pair{String, Pair{typeof(f), typeof(newname)}}}:
+ "x" => (f => newname)
+ "y" => (f => newname)
+
+julia> select(df, ["x", "y"] .=> f .=> newname)
+3×2 DataFrame
+ Row │ x_new  y_new
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      8
+   2 │     4     10
+   3 │     6     12
+```
+
+This broadcasting approach is even more useful if we use column selectors which
+generate a vector of column names for us rather than writing them all out manually.
+Consider a data frame with temperature data at three different locations taken over time.
+
+```julia
+julia> df = DataFrame(Time = 1:4,
+                      Temperature1 = [20, 23, 25, 28],
+                      Temperature2 = [33, 37, 41, 44],
+                      Temperature3 = [15, 10, 4, 0])
+4×4 DataFrame
+ Row │ Time   Temperature1  Temperature2  Temperature3
+     │ Int64  Int64         Int64         Int64
+─────┼─────────────────────────────────────────────────
+   1 │     1            20            33            15
+   2 │     2            23            37            10
+   3 │     3            25            41             4
+   4 │     4            28            44             0
+```
+
+To convert all of the temperature data in one transformation,
+we just need to define a conversion function and broadcast
+all of the rows except for `Time` to it.
+
+```julia
+julia> celsius_to_kelvin(x) = x + 273
+celsius_to_kelvin (generic function with 1 method)
+
+julia> transform(df, Not("Time") .=> ByRow(celsius_to_kelvin), renamecols = false)
+4×4 DataFrame
+ Row │ Time   Temperature1  Temperature2  Temperature3
+     │ Int64  Int64         Int64         Int64
+─────┼─────────────────────────────────────────────────
+   1 │     1           293           306           288
+   2 │     2           296           310           283
+   3 │     3           298           314           277
+   4 │     4           301           317           273
+```
+
+The function `celsius_to_kelvin` above was defined to operate on scalar values.
+Recall that functions inside DataFrame transformations
+must be defined to operate on vectors.
+The `ByRow` function can be wrapped around a scalar function as a convient way
+to allow a function to operate on data frame columns.
+Without the `ByRow` wrapper, we would get an error
+because addition of a vector (`x`) and a scalar (`273`) is not defined.
+
+```julia
+julia> transform(df, Not("Time") .=> celsius_to_kelvin, renamecols = false)
+ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)
+```
+
+Alternatively, we could use a broadcasting dot `.` in the definition of our function
+so that it can accept vector or scalar inputs.
+`.+` indicates that the addition should be performed element-by-element.
+Then the `ByRow` wrapper would not be needed.
+
+```julia
+julia> celsius_to_kelvin2(x) = x .+ 273
+celsius_to_kelvin2 (generic function with 1 method)
+
+julia> transform(df, Not("Time") .=> celsius_to_kelvin2, renamecols = false)
+4×4 DataFrame
+ Row │ Time   Temperature1  Temperature2  Temperature3
+     │ Int64  Int64         Int64         Int64
+─────┼─────────────────────────────────────────────────
+   1 │     1           293           306           288
+   2 │     2           296           310           283
+   3 │     3           298           314           277
+   4 │     4           301           317           273
+```
+
+Broadcasting is a simple but powerful tool
+that can be used in any of the transformation functions.
