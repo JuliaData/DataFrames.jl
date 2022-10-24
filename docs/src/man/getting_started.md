@@ -233,14 +233,14 @@ julia> size(df)
 ```
 
 In the above example notice that the `df[!, :C] .= 0` expression created a new
-column in a data frame by broadcasting a scalar.
+column in the data frame by broadcasting a scalar.
 
 When setting a column of a data frame the `df[!, :C]` and `df.C` syntaxes are
 equivalent and they would replace (or create) the `:C` column in `df`. This
 is different from using `df[:, :C]` to set a column in a data frame, which
 updates the contents of column in-place if it already exists.
 
-Here is an example showing this difference. Let us convert the `:B` column
+Here is an example showing this difference. Let us try changing the `:B` column
 to a binary variable.
 
 ```jldoctest dataframe
@@ -252,7 +252,7 @@ ERROR: MethodError: Cannot `convert` an object of type Bool to an object of type
 ```
 
 The above operations did not work because when you use `:` as row selector the
-`:B` column is updated in-place, and it only supports storing of strings.
+`:B` column is updated in-place, and it only supports storing strings.
 
 On the other hand the following works:
 
