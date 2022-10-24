@@ -303,7 +303,7 @@ In this way we can always easily restore our data even if we mess up the
 
 ### Basic Operations on Data Frames
 
-To access the columns of a data frame for reading directly (i.e. without copying)
+To extract the columns of a data frame directly (i.e. without copying)
 you can use one of the following syntaxes:
 `german.Sex`, `german."Sex"`, `german[!, :Sex]` or `german[!, "Sex"]`.
 
@@ -362,8 +362,8 @@ julia> german[!, colname]
  "male"
 ```
 
-Since `german.Sex` does not make a copy when reading data from the data frame,
-changing the elements of the column vector returned by this operation will
+Since `german.Sex` does not make a copy when extracting a column from the data
+frame, changing the elements of the vector returned by this operation will
 affect the values stored in the original `german` data frame. To get a *copy* of
 the column you can use `german[:, :Sex]` or `german[:, "Sex"]`. In this case
 changing the vector returned by this operation does not affect the data stored

@@ -56,15 +56,15 @@ julia> df = DataFrame(A=1:4, B=["M", "F", "F", "M"])
    4 │     4  M
 ```
 
-Columns can be directly (i.e. without copying) accessed via `df.col`,
-`df."col"`, `df[!, :col]` or `df[!, "col"]` (this rule applies to getting
-data from a data frame, not writing data to a data frame).
-The two latter syntaxes are more flexible as they allow passing a variable
-holding the name of the column, and not only a literal name. Note that column
-names can be either symbols (written as `:col`, `:var"col"` or `Symbol("col")`)
-or strings (written as `"col"`). Note that in the forms `df."col"` and
-`:var"col"` variable interpolation into a string using `$` does not work.
-Columns can also be accessed using an integer index specifying their position.
+Columns can be directly (i.e. without copying) extracted using `df.col`,
+`df."col"`, `df[!, :col]` or `df[!, "col"]` (this rule applies to getting data
+from a data frame, not writing data to a data frame). The two latter syntaxes
+are more flexible as they allow passing a variable holding the name of the
+column, and not only a literal name. Note that column names can be either
+symbols (written as `:col`, `:var"col"` or `Symbol("col")`) or strings (written
+as `"col"`). In the forms `df."col"` and `:var"col"` variable interpolation into
+a string using `$` does not work. Columns can also be extracted using an integer
+index specifying their position.
 
 Since `df[!, :col]` does not make a copy, changing the elements of the column
 vector returned by this syntax will affect the values stored in the original
