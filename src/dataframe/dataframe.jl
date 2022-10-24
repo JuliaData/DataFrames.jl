@@ -232,7 +232,7 @@ end
 
 function _preprocess_column(col::Any, len::Integer, copycols::Bool)
     if col isa AbstractRange
-        return collect(col)
+        return copycols ? collect(col) : col
     elseif col isa AbstractVector
         return copycols ? copy(col) : col
     elseif col isa Union{AbstractArray{<:Any, 0}, Ref}

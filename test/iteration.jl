@@ -73,7 +73,7 @@ end
     df = DataFrame(a=1)
     df = mapcols(x -> 2:2, df)
     @test df == DataFrame(a=2)
-    @test df.a isa Vector{Int}
+    @test df.a isa AbstractRange{Int}
 end
 
 @testset "mapcols!" begin

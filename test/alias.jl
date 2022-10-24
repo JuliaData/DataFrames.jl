@@ -8,6 +8,7 @@ const ≅ = isequal
         dfr = DataFrame(init, :auto)
         @testset "$v" for v in [
                 [1,2,3],
+                1:3,
                 ]
             @testset "df.x2 = v" begin
                 df = copy(dfr)
