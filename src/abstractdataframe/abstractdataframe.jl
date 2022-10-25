@@ -3223,7 +3223,7 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Sy
         firstindex(item_new) != 1 && _onebased_check_error()
 
         if ncol(dfp) == 0
-            dfp[!, name] = item_new
+            @alias dfp[!, name] = item_new
         else
             if hasproperty(dfp, name)
                 @assert makeunique

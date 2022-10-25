@@ -217,8 +217,8 @@ end
     # this works because 2:5 is immutable
     df = DataFrame()
     x = [10:-1:1;]
-    df.x1 = view(x, 2:5)
-    df.x2 = view(x, 2:5)
+    @alias df.x1 = view(x, 2:5)
+    @alias df.x2 = view(x, 2:5)
     sort!(df)
     @test issorted(df)
     @test x == [10, 6, 7, 8, 9, 5, 4, 3, 2, 1]
@@ -226,8 +226,8 @@ end
 
     df = DataFrame()
     x = [10:-1:1;]
-    df.x1 = view(x, 2:5)
-    df.x2 = view(x, [2:5;])
+    @alias df.x1 = view(x, 2:5)
+    @alias df.x2 = view(x, [2:5;])
     sort!(df)
     @test_broken issorted(df)
     @test_broken x == [10, 6, 7, 8, 9, 5, 4, 3, 2, 1]
@@ -235,8 +235,8 @@ end
 
     df = DataFrame()
     x = [10:-1:1;]
-    df.x1 = view(x, 2:5)
-    df.x2 = view(x, 2:5)
+    @alias df.x1 = view(x, 2:5)
+    @alias df.x2 = view(x, 2:5)
     dfv = view(df, 2:4, :)
     sort!(dfv)
     @test issorted(dfv)
@@ -245,8 +245,8 @@ end
 
     df = DataFrame()
     x = [10:-1:1;]
-    df.x1 = view(x, [2:5;])
-    df.x2 = view(x, 2:5)
+    @alias df.x1 = view(x, [2:5;])
+    @alias df.x2 = view(x, 2:5)
     dfv = view(df, 2:4, :)
     sort!(dfv)
     @test_broken issorted(dfv)
@@ -256,16 +256,16 @@ end
     # unsafe aliasing test
     df = DataFrame()
     x = [10:-1:1;]
-    df.x1 = view(x, 2:5)
-    df.x2 = view(x, 3:6)
+    @alias df.x1 = view(x, 2:5)
+    @alias df.x2 = view(x, 3:6)
     sort!(df)
     @test_broken x == 10:-1:1
     @test_broken df == DataFrame(x1=9:-1:6, x2=8:-1:5)
 
     df = DataFrame()
     x = [10:-1:1;]
-    df.x1 = view(x, 2:5)
-    df.x2 = view(x, 3:6)
+    @alias df.x1 = view(x, 2:5)
+    @alias df.x2 = view(x, 3:6)
     dfv = view(df, 2:4, :)
     sort!(dfv)
     @test_broken x == 10:-1:1
@@ -366,7 +366,7 @@ end
         sort!(sdf)
         @test df == dfc
         sort!(df, :id)
-        df.d = df.a
+        @alias df.d = df.a
         sort!(sdf)
         @test df[:, 1:4] == dfc
     end
@@ -385,18 +385,18 @@ end
     @test df == DataFrame(a=[3, 2, 1, 4, 5], b=[4, 5, 6, 3, 2])
 
     df = DataFrame(x1=rand(10))
-    df.x2 = df.x1
-    df.x3 = df.x1
-    df.x4 = df.x1
-    df.x5 = df.x1
+    @alias df.x2 = df.x1
+    @alias df.x3 = df.x1
+    @alias df.x4 = df.x1
+    @alias df.x5 = df.x1
     sort!(df, :x4)
     @test issorted(df)
 
     df = DataFrame(x1=rand(10))
-    df.x2 = df.x1
-    df.x3 = df.x1
-    df.x4 = df.x1
-    df.x5 = df.x1
+    @alias df.x2 = df.x1
+    @alias df.x3 = df.x1
+    @alias df.x4 = df.x1
+    @alias df.x5 = df.x1
     dfv = @view df[1:5, 1:4]
     sort!(dfv, :x4)
     @test issorted(dfv)

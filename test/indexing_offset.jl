@@ -18,7 +18,7 @@ using Test, DataFrames, OffsetArrays
     DataFrames._columns(df)[1] = ov2
     DataFrames._check_consistency(df)
 
-    @test_throws ArgumentError df.b = ov1
+    @test_throws ArgumentError @alias df.b = ov1
     @test_throws ArgumentError insertcols!(df, :b => ov1)
     @test_throws DimensionMismatch df[!, :b] .= ov1
 

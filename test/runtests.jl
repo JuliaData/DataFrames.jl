@@ -56,6 +56,7 @@ my_tests = ["utils.jl",
             "string.jl",
             "multithreading.jl",
             "metadata.jl",
+            "alias.jl",
             "deprecated.jl"]
 
 println("Running tests:")

@@ -1858,9 +1858,11 @@ end
     df = DataFrame(a=1)
 
     dfv = @view df[:, :]
+    @test_throws MethodError @alias dfv.a = [5]
     dfv.a = [5]
     @test df == DataFrame(a=5)
     @test eltype(df.a) === Int
+    @test_throws MethodError @alias dfv."a" = [6]
     dfv."a" = [6]
     @test df == DataFrame(a=6)
     @test eltype(df.a) === Int

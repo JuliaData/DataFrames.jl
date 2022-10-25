@@ -1197,7 +1197,7 @@ end
 @testset "make sure select! is safe on error" begin
     a = [1]
     df = DataFrame()
-    df.a = a
+    @alias df.a = a
     @test_throws DomainError select!(df, :a => x -> sqrt(-1))
     @test df.a === a
     @test propertynames(df) == [:a, ]
@@ -2620,7 +2620,7 @@ end
 
     # multialias detection
     df = DataFrame(a=1:3)
-    df.b = df.a
+    @alias df.b = df.a
     df2 = select(df, [:a, :b] => ((x, y) -> x) => :c, :a, :b, copycols=false)
     @test df2.c === df.a === df.b
     @test df2.a == df2.b == df.a

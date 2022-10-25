@@ -632,7 +632,7 @@ Base.getindex(df::DataFrame, row_ind::typeof(!), col_inds::MultiColumnIndex) =
 ##############################################################################
 
 # Will automatically add a new column if needed
-function insert_single_column!(df::DataFrame, v::Any, col_ind::ColumnIndex; copycols = false)
+function insert_single_column!(df::DataFrame, v::Any, col_ind::ColumnIndex; copycols = true)
     dv = _preprocess_column(v, nrow(df), copycols)
     if ncol(df) != 0 && nrow(df) != length(dv)
         throw(ArgumentError("New columns must have the same length as old columns"))
@@ -664,6 +664,12 @@ function insert_single_entry!(df::DataFrame, v::Any, row_ind::Integer, col_ind::
     end
 end
 
+# df[!, SingleColumnIndex] = AbstractVector
+function Base.setindex!(df::DataFrame, v::AbstractVector, ::typeof(!), col_ind::ColumnIndex; copycols = true)
+    insert_single_column!(df, v, col_ind; copycols)
+    return df
+end
+
 # df[!, SingleColumnIndex] = value
 function Base.setindex!(df::DataFrame, v::Any, ::typeof(!), col_ind::ColumnIndex)
     insert_single_column!(df, v, col_ind)
@@ -672,10 +678,10 @@ end
 
 # df.col = value
 # separate methods are needed due to dispatch ambiguity
-Base.setproperty!(df::DataFrame, col_ind::Symbol, v::AbstractVector) =
-    (df[!, col_ind] = v)
-Base.setproperty!(df::DataFrame, col_ind::AbstractString, v::AbstractVector) =
-    (df[!, col_ind] = v)
+Base.setproperty!(df::DataFrame, col_ind::Symbol, v::AbstractVector; copycols = true) =
+    setindex!(df, v, !, col_ind; copycols)
+Base.setproperty!(df::DataFrame, col_ind::AbstractString, v::AbstractVector; copycols = true) =
+    setindex!(df, v, !, col_ind; copycols)
 Base.setproperty!(df::DataFrame, col_ind::Symbol, v::Any) =
     (df[!, col_ind] = v)
 Base.setproperty!(df::DataFrame, col_ind::AbstractString, v::Any) =
@@ -716,7 +722,7 @@ for T in (:AbstractVector, :Not, :Colon)
                                   row_inds::$T,
                                   col_ind::ColumnIndex)
         if row_inds isa Colon && !haskey(index(df), col_ind)
-            df[!, col_ind] = copy(v)
+            df[!, col_ind] = v
             return df
         end
         x = df[!, col_ind]
@@ -1211,7 +1217,11 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame;
     _drop_all_nonnote_metadata!(df1)
     _keep_matching_table_note_metadata!(df1, df2)
     for i in 1:length(u)
-        df1[!, u[i]] = copycols ? df2[:, i] : df2[!, i]
+        if copycols
+            df1[!, u[i]] = df2[!, i]
+        else
+            @alias df1[!, u[i]] = df2[!, i]
+        end
         _copy_col_note_metadata!(df1, u[i], df2, i)
     end
 

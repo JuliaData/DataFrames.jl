@@ -1159,7 +1159,7 @@ end
         df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         for i in 1:100
-            df2[!, rand(1:100)] = df1[!, i]
+            @alias df2[!, rand(1:100)] = df1[!, i]
         end
         df3 = copy(df2)
         df1 .= df2
@@ -1171,7 +1171,7 @@ end
         df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         for i in 1:100
-            df2[!, rand(1:100)] = df1[!, i]
+            @alias df2[!, rand(1:100)] = df1[!, i]
         end
         df3 = copy(df2)
         df1 .= view(df2, :, :)
@@ -1183,7 +1183,7 @@ end
         df1 = DataFrame(rand(100, 100), :auto)
         df2 = copy(df1)
         for i in 1:100
-            df2[!, rand(1:100)] = df1[!, i]
+            @alias df2[!, rand(1:100)] = df1[!, i]
         end
         df3 = copy(df2)
         view(df1, :, :) .= df2
@@ -1196,8 +1196,8 @@ end
         df2 = copy(df1)
         df3 = copy(df1)
         for i in 1:100
-            df2[!, rand(1:100)] = df1[!, i]
-            df3[!, rand(1:100)] = df1[!, i]
+            @alias df2[!, rand(1:100)] = df1[!, i]
+            @alias df3[!, rand(1:100)] = df1[!, i]
         end
         df6 = copy(df2)
         df7 = copy(df3)
@@ -1214,8 +1214,8 @@ end
         df2 = copy(df1)
         df3 = copy(df1)
         for i in 1:100
-            df2[!, rand(1:100)] = df1[!, i]
-            df3[!, rand(1:100)] = df1[!, i]
+            @alias df2[!, rand(1:100)] = df1[!, i]
+            @alias df3[!, rand(1:100)] = df1[!, i]
         end
         df6 = copy(df2)
         df7 = copy(df3)
@@ -1232,8 +1232,8 @@ end
         df2 = copy(df1)
         df3 = copy(df1)
         for i in 1:100
-            df2[!, rand(1:100)] = df1[!, i]
-            df3[!, rand(1:100)] = df1[!, i]
+            @alias df2[!, rand(1:100)] = df1[!, i]
+            @alias df3[!, rand(1:100)] = df1[!, i]
         end
         df6 = copy(df2)
         df7 = copy(df3)
@@ -1937,6 +1937,10 @@ end
     @test df.z == fill("abc", 3)
     @test_throws ArgumentError df[:, 6] .= z
     @test_throws MethodError df[:, 1] .= z
+    dz = df.z
+    df[:, "z"] .= z
+    @test dz === df.z
+    @test dz == df[:, "z"]
 
     df = DataFrame(ones(3, 4), :auto)
     z = fill("abc", 1, 1, 2)
@@ -1944,14 +1948,22 @@ end
 
     df = DataFrame(ones(3, 4), :auto)
     z = ["a", "b", "c"]
-    df[:, "z"] .= z
+    df[:, "z"] = z
     @test df.z == z
     @test df.z !== z
+    dz = df.z
+    df[:, "z"] .= z
+    @test dz === df.z
+    @test dz == df[:, "z"]
 
     df = DataFrame(ones(3, 4), :auto)
     z = "abc"
     df[:, "z"] .= z
     @test df.z == fill("abc", 3)
+    dz = df.z
+    df[:, "z"] .= z
+    @test dz === df.z
+    @test dz == df[:, "z"]
 
     df = DataFrame(ones(3, 4), :auto)
     z = fill("abc", 1, 1, 2)
