@@ -20,7 +20,7 @@ using Test, DataFrames, OffsetArrays
 
     @test_throws ArgumentError @alias df.b = ov1
     @test_throws ArgumentError insertcols!(df, :b => ov1)
-    @test_throws DimensionMismatch df[!, :b] .= ov1
+    @test_throws ArgumentError df.b = ov1
 
     # this is consequence of the fact that OffsetArrays wrap AbstractRange in this case
     # Base.CanonicalIndexError is not available in Julia 1.7 or earlier

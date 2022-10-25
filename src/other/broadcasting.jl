@@ -170,38 +170,19 @@ function Base.dotview(df::AbstractDataFrame, ::Colon, cols::ColumnIndex)
 end
 
 # df[!, cols] .= ...
-function Base.dotview(df::AbstractDataFrame, ::typeof(!), cols)
-    if !(cols isa ColumnIndex)
-        return ColReplaceDataFrame(df, convert(Vector{Int}, index(df)[cols]))
-    end
-    if haskey(index(df), cols)
-        _drop_all_nonnote_metadata!(parent(df))
-        return view(df, :, cols)
-    end
-    if cols isa SymbolOrString
-        if columnindex(df, cols) == 0 && !is_column_insertion_allowed(df)
-            throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
-                                "columns of its parent data frame is disallowed"))
-        end
-    elseif !(1 <= cols <= ncol(df))
-        throw(ArgumentError("creating new columns using an integer index is disallowed"))
-    end
-    return LazyNewColDataFrame(df, cols isa AbstractString ? Symbol(cols) : cols)
+function Base.dotview(df::AbstractDataFrame, ::typeof(!), cols::Any)
+    return ColReplaceDataFrame(df, convert(Vector{Int}, index(df)[cols]))
+end
+function Base.dotview(df::AbstractDataFrame, ::typeof(!), cols::ColumnIndex)
+    _drop_all_nonnote_metadata!(parent(df))
+    return df[!, cols]
 end
 
 if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
     # df.col .= ...
     function Base.dotgetproperty(df::AbstractDataFrame, col::SymbolOrString)
-        if haskey(index(df), col)
-            _drop_all_nonnote_metadata!(parent(df))
-            return df[!, col]
-        end
-
-        if columnindex(df, col) == 0 && !is_column_insertion_allowed(df)
-            throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
-                                "columns of its parent data frame is disallowed"))
-        end
-        return LazyNewColDataFrame(df, Symbol(col))
+        _drop_all_nonnote_metadata!(parent(df))
+        return df[!, col]
     end
 end
 

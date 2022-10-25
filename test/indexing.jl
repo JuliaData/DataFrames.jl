@@ -582,7 +582,7 @@ end
     @test dfr isa DataFrameRow
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     @test parent(dfr) === df2
-    df2[!, :y] .= 100
+    df2[!, :y] = 100
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 100]
     df2[!, "y"] .= 1000
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 1000]
@@ -592,7 +592,7 @@ end
     @test dfr isa DataFrameRow
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     @test parent(dfr) === df2
-    df2[!, :y] .= 100
+    df2[!, :y] = 100
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     df2[!, "y"] .= 1000
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
@@ -649,7 +649,7 @@ end
     @test dfr isa DataFrameRow
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     @test parent(dfr) === df2
-    df2[!, :y] .= 100
+    df2[!, :y] = 100
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 100]
     df2[!, "y"] .= 1000
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 1000]
@@ -659,7 +659,7 @@ end
     @test dfr isa DataFrameRow
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     @test parent(dfr) === df2
-    df2[!, :y] .= 100
+    df2[!, :y] = 100
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     df2[!, "y"] .= 1000
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
@@ -728,7 +728,7 @@ end
     @test dfr isa DataFrameRow
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     @test parent(dfr) === df2
-    df2[!, :y] .= 100
+    df2[!, :y] = 100
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 100]
     df2[!, "y"] .= 1000
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 1000]
@@ -738,7 +738,7 @@ end
     @test dfr isa DataFrameRow
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     @test parent(dfr) === df2
-    df2[!, :y] .= 100
+    df2[!, :y] = 100
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     df2[!, "y"] .= 1000
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
@@ -811,7 +811,7 @@ end
     @test dfr isa DataFrameRow
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     @test parent(dfr) === df2
-    df2[!, :y] .= 100
+    df2[!, :y] = 100
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 100]
     df2[!, "y"] .= 1000
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5, 1000]
@@ -821,7 +821,7 @@ end
     @test dfr isa DataFrameRow
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     @test parent(dfr) === df2
-    df2[!, :y] .= 100
+    df2[!, :y] = 100
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]
     df2[!, "y"] .= 1000
     @test Vector(dfr) == [2.5, 6.5, 10.5, 14.5]

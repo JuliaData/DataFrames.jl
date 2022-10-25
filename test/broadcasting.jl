@@ -755,15 +755,15 @@ end
                          10.0   10.0   10.0   10.0  10.0]
 end
 
-@testset "extending data frame in broadcasted assignment - one column" begin
+@testset "extending data frame in assignment - one column" begin
     df = copy(refdf)
-    df[!, :a] .= 1
+    df[!, :a] = 1
     @test Matrix(df) == [1.5  4.5  7.5  10.5  13.5  1.0
                          2.5  5.5  8.5  11.5  14.5  1.0
                          3.5  6.5  9.5  12.5  15.5  1.0]
     @test names(df)[end] == "a"
     @test df[:, 1:end-1] == refdf
-    df[!, :b] .= [1, 2, 3]
+    df[!, :b] = [1, 2, 3]
     @test Matrix(df) == [1.5  4.5  7.5  10.5  13.5  1.0 1.0
                          2.5  5.5  8.5  11.5  14.5  1.0 2.0
                          3.5  6.5  9.5  12.5  15.5  1.0 3.0]
@@ -785,15 +785,29 @@ end
     @test df[:, 1:end-2] == refdf
 
     cdf = copy(df)
-    @test_throws DimensionMismatch df[!, :c] .= ones(1, 3)
+    @test_throws DimensionMismatch df[!, :a] .= ones(1, 3)
+    @test_throws DimensionMismatch df.a .= ones(1, 3)
+    @test_throws ArgumentError df[!, :c] .= ones(1, 3)
+    @test_throws ArgumentError df.c .= ones(1, 3)
     @test df == cdf
-    @test_throws DimensionMismatch df[!, :x] .= ones(4)
+    @test_throws ArgumentError df[!, :d] .= 1
+    @test_throws ArgumentError df.d .= 1
     @test df == cdf
-    @test_throws ArgumentError df[!, 10] .= ones(3)
+    @test_throws DimensionMismatch df[!, :a] .= ones(4)
+    @test_throws DimensionMismatch df.a .= ones(4)
+    @test_throws ArgumentError df[!, :x] .= ones(4)
+    @test_throws DimensionMismatch df[!, :x] = ones(4)
+    @test_throws ArgumentError df.x .= ones(4)
+    @test_throws DimensionMismatch df.x = ones(4)
+    @test_throws ArgumentError df[!, :x] .= ones(4)
+    @test df == cdf
+    @test_throws BoundsError df[!, 10] .= ones(3)
+    @test_throws ArgumentError df[!, 10] = ones(3)
     @test df == cdf
 
     dfv = @view df[1:2, 2:end]
-    @test_throws ArgumentError dfv[!, 10] .= ones(3)
+    @test_throws BoundsError dfv[!, 10] .= ones(3)
+    @test_throws ArgumentError dfv[!, 10] = ones(3)
     @test_throws ArgumentError dfv[!, :z] .= ones(3)
     @test df == cdf
     dfr = df[1, 3:end]
@@ -808,10 +822,10 @@ end
     @test df == DataFrame(x=Int[], b=Float64[], c=Float64[])
 
     df = DataFrame()
-    @test_throws DimensionMismatch df[!, :a] .= sin.(1:3)
-    df[!, :b] .= sin.(1)
-    df[!, :c] .= sin(1) .+ 1
-    @test df == DataFrame(b=Float64[], c=Float64[])
+    df[!, :a] = sin.(1:3)
+    df[!, :b] = sin.(1)
+    df[!, :c] = sin(1) .+ 1
+    @test size(df) == (3, 3)
 
     df = copy(refdf)
     df[!, "a"] = 1
@@ -820,22 +834,26 @@ end
                          3.5  6.5  9.5  12.5  15.5  1.0]
     @test names(df)[end] == "a"
     @test df[:, 1:end-1] == refdf
-    df[!, "b"] .= [1, 2, 3]
+    df[!, "b"] = [1, 2, 3]
     @test Matrix(df) == [1.5  4.5  7.5  10.5  13.5  1.0 1.0
                          2.5  5.5  8.5  11.5  14.5  1.0 2.0
                          3.5  6.5  9.5  12.5  15.5  1.0 3.0]
     @test names(df)[end] == "b"
     @test df[:, 1:end-2] == refdf
     cdf = copy(df)
-    @test_throws DimensionMismatch df[!, "c"] .= ones(1, 3)
+    @test_throws ArgumentError df[!, "c"] .= ones(1, 3)
     @test df == cdf
-    @test_throws DimensionMismatch df[!, "x"] .= ones(4)
+    @test_throws ArgumentError df[!, "d"] .= 1
     @test df == cdf
-    @test_throws ArgumentError df[!, 10] .= ones(3)
+    @test_throws ArgumentError df[!, "x"] .= ones(4)
+    @test df == cdf
+    @test_throws BoundsError df[!, 10] .= ones(3)
+    @test_throws ArgumentError df[!, 10] = ones(3)
     @test df == cdf
 
     dfv = @view df[1:2, 2:end]
-    @test_throws ArgumentError dfv[!, 10] .= ones(3)
+    @test_throws BoundsError dfv[!, 10] .= ones(3)
+    @test_throws ArgumentError dfv[!, 10] = ones(3)
     @test_throws ArgumentError dfv[!, "z"] .= ones(3)
     @test df == cdf
     dfr = df[1, 3:end]
@@ -844,58 +862,50 @@ end
     @test df == cdf
 
     df = DataFrame()
-    @test_throws DimensionMismatch df[!, "a"] .= sin.(1:3)
-    df[!, "b"] .= sin.(1)
-    df[!, "c"] .= sin(1) .+ 1
-    @test df == DataFrame(b=Float64[], c=Float64[])
+    df[!, "a"] = sin.(1:3)
+    df[!, "b"] = sin.(1)
+    df[!, "c"] = sin(1) .+ 1
+    @test df != DataFrame(b=Float64[], c=Float64[])
+    @test size(df) == (3, 3)
 end
 
 @testset "empty data frame corner case" begin
     df = DataFrame()
-    @test_throws ArgumentError df[!, 1] .= 1
-    @test_throws ArgumentError df[!, 2] .= 1
+    @test_throws BoundsError df[!, 1] .= 1
+    @test_throws ArgumentError df[!, 1] = 1
+    @test_throws BoundsError df[!, 2] .= 1
+    @test_throws ArgumentError df[!, 2] = 1
     @test_throws ArgumentError df[!, [:a, :b]] .= [1]
     @test_throws ArgumentError df[!, [:a, :b]] .= 1
-    @test_throws DimensionMismatch df[!, :a] .= [1 2]
-    @test_throws DimensionMismatch df[!, :a] .= [1, 2]
-    @test_throws DimensionMismatch df[!, :a] .= sin.(1) .+ [1, 2]
+    @test_throws ArgumentError df[!, :a] .= [1 2]
+    @test_throws ArgumentError df[!, :a] .= [1, 2]
+    @test_throws ArgumentError df[!, :a] .= sin.(1) .+ [1, 2]
     @test_throws ArgumentError df[!, ["a", "b"]] .= [1]
     @test_throws ArgumentError df[!, ["a", "b"]] .= 1
-    @test_throws DimensionMismatch df[!, "a"] .= [1 2]
-    @test_throws DimensionMismatch df[!, "a"] .= [1, 2]
-    @test_throws DimensionMismatch df[!, "a"] .= sin.(1) .+ [1, 2]
+    @test_throws ArgumentError df[!, "a"] .= [1 2]
+    @test_throws ArgumentError df[!, "a"] .= [1, 2]
+    @test_throws ArgumentError df[!, "a"] .= sin.(1) .+ [1, 2]
+
     @testset "$rhs" for rhs in [1, [1], Int[], "abc", ["abc"]]
         n = rhs isa AbstractVector ? length(rhs) : 0
 
         df = DataFrame()
-        df[!, :a] .= rhs
-        @test size(df) == (0, 1)
+        @test_throws ArgumentError df.a .= rhs
+        df.a = rhs
+        @test size(df) == (n, 1)
         @test eltype(df[!, 1]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
 
         df = DataFrame()
-        df[!, :a] .= length.(rhs)
-        @test size(df) == (0, 1)
-        @test eltype(df[!, 1]) == Int
-
-        df = DataFrame()
-        df[!, :a] .= length.(rhs) .+ 1
-        @test size(df) == (0, 1)
-        @test eltype(df[!, 1]) == Int
-
-        df = DataFrame()
-        df[!, :a] .= length.(rhs)
-        @test size(df) == (0, 1)
-        @test eltype(df[!, 1]) == Int
-
-        df = DataFrame()
-        df[!, :a] = length.(rhs)
+        @test_throws ArgumentError df.a .= length.(rhs)
+        df.a = length.(rhs)
         @test size(df) == (n, 1)
         @test eltype(df[!, 1]) == Int
 
         df = DataFrame()
-        df[!, :a] .= length.(rhs) .+ 1
-        @test size(df) == (0, 1)
-        @test eltype(df[!, 1]) == Int
+        @test_throws ArgumentError df[!, :a] .= rhs
+        df[!, :a] = rhs
+        @test size(df) == (n, 1)
+        @test eltype(df[!, 1]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
 
         df = DataFrame()
         df[!, :a] = length.(rhs) .+ 1
@@ -903,7 +913,38 @@ end
         @test eltype(df[!, 1]) == Int
 
         df = DataFrame()
-        @. df[!, :a] = length(rhs) + 1
+        @test_throws ArgumentError df[!, :a] .= length.(rhs)
+        df[!, :a] = length.(rhs)
+        @test size(df) == (n, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
+        @test_throws ArgumentError df[!, :a] .= length.(rhs) .+ 1
+        df[!, :a] = length.(rhs) .+ 1
+        @test size(df) == (n, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
+        @test_throws ArgumentError df[!, :a] .= length.(rhs)
+        df[!, :a] = length.(rhs)
+        @test size(df) == (n, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
+        @test_throws ArgumentError df[!, :a] .= length.(rhs)
+        df[!, :a] = length.(rhs)
+        @test size(df) == (n, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
+        @test_throws ArgumentError df[!, :a] .= length.(rhs) .+ 1
+        df[!, :a] = length.(rhs) .+ 1
+        @test size(df) == (n, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
+        @test_throws ArgumentError @. df[!, :a] = length(rhs) + 1
+        df[!, :a] = length(rhs) + 1
         @test size(df) == (0, 1)
         @test eltype(df[!, 1]) == Int
 
@@ -918,62 +959,118 @@ end
         end
 
         df = DataFrame(x=Int[])
-        df[!, :a] .= rhs
-        @test size(df) == (0, 2)
-        @test eltype(df[!, 2]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
+        df[!, :x] .= length.(rhs)
+        if rhs isa AbstractVector && length(rhs) != 0
+            @test_throws DimensionMismatch df[!, :a] = length.(rhs)
+        else
+            df[!, :a] = length.(rhs)
+            @test size(df) == (n, 2)
+            @test eltype(df[!, 2]) == Int
+        end
 
         df = DataFrame(x=Int[])
-        df[!, :a] .= length.(rhs)
-        @test size(df) == (0, 2)
-        @test eltype(df[!, 2]) == Int
+        if rhs isa AbstractVector || rhs isa Int
+            df[!, :x] .= rhs
+        end
+        if rhs isa AbstractVector && length(rhs) != 0
+            @test_throws DimensionMismatch df[!, :a] = rhs
+        else
+            df[!, :a] = rhs
+            @test size(df) == (n, 2)
+            @test eltype(df[!, 2]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
+        end
 
         df = DataFrame(x=Int[])
-        df[!, :a] .= length.(rhs) .+ 1
-        @test size(df) == (0, 2)
-        @test eltype(df[!, 2]) == Int
+        df[!, :x] .= length.(rhs)
+        if rhs isa AbstractVector && length(rhs) != 0
+            @test_throws DimensionMismatch df[!, :a] = length.(rhs)
+        else
+            df[!, :a] = length.(rhs)
+            @test size(df) == (n, 2)
+            @test eltype(df[!, 2]) == Int
+        end
 
         df = DataFrame(x=Int[])
-        @. df[!, :a] = length(rhs) + 1
+        if rhs isa AbstractVector && length(rhs) != 0
+            @test_throws DimensionMismatch df[!, :a] = length.(rhs) .+ 1
+        else
+            df[!, :a] = length.(rhs) .+ 1
+            @test size(df) == (n, 2)
+            @test eltype(df[!, 2]) == Int
+        end
+
+        df = DataFrame(x=Int[])
+        @test_throws ArgumentError @. df[!, :a] = length(rhs) + 1
+        df[!, :a] = length(rhs) + 1
         @test size(df) == (0, 2)
         @test eltype(df[!, 2]) == Int
 
         df = DataFrame()
-        df[!, "a"] .= rhs
-        @test size(df) == (0, 1)
+        @test_throws ArgumentError df[!, "a"] .= rhs
+        df[!, "a"] = rhs
+        @test size(df) == (n, 1)
         @test eltype(df[!, 1]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
 
         df = DataFrame()
-        df[!, "a"] .= length.(rhs)
-        @test size(df) == (0, 1)
+        @test_throws ArgumentError df[!, "a"] .= length.(rhs)
+        @test size(df) == (0, 0)
+        df[!, "a"] = length.(rhs)
+        @test size(df) == (n, 1)
         @test eltype(df[!, 1]) == Int
 
         df = DataFrame()
-        df[!, "a"] .= length.(rhs) .+ 1
-        @test size(df) == (0, 1)
+        @test_throws ArgumentError df[!, "a"] .= length.(rhs) .+ 1
+        @test size(df) == (0, 0)
+        df[!, "a"] = length.(rhs) .+ 1
+        @test size(df) == (n, 1)
         @test eltype(df[!, 1]) == Int
 
         df = DataFrame()
-        @. df[!, "a"] = length(rhs) + 1
+        @test_throws ArgumentError @. df[!, "a"] = length(rhs) + 1
+        @test size(df) == (0, 0)
+        df[!, "a"] = length(rhs) + 1
         @test size(df) == (0, 1)
         @test eltype(df[!, 1]) == Int
+        @test eltype(df.a) == Int
+        @test_throws ArgumentError eltype(df.b)
 
         df = DataFrame(x=Int[])
-        df[!, "a"] .= rhs
-        @test size(df) == (0, 2)
-        @test eltype(df[!, 2]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
+        @test_throws ArgumentError df[!, "a"] .= rhs
+        @test size(df) == (0, 1)
+        if rhs isa AbstractVector && length(rhs) != 0
+            @test_throws DimensionMismatch df[!, "a"] = rhs
+        else
+            df[!, "a"] = rhs
+            @test size(df) == (n, 2)
+            @test eltype(df[!, 2]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
+        end
 
         df = DataFrame(x=Int[])
-        df[!, "a"] .= length.(rhs)
-        @test size(df) == (0, 2)
-        @test eltype(df[!, 2]) == Int
+        @test_throws ArgumentError df[!, "a"] .= length.(rhs)
+        @test size(df) == (0, 1)
+        if rhs isa AbstractVector && length(rhs) != 0
+            @test_throws DimensionMismatch df[!, "a"] = length.(rhs)
+        else
+            df[!, "a"] = length.(rhs)
+            @test size(df) == (n, 2)
+            @test eltype(df[!, 2]) == Int
+        end
 
         df = DataFrame(x=Int[])
-        df[!, "a"] .= length.(rhs) .+ 1
-        @test size(df) == (0, 2)
-        @test eltype(df[!, 2]) == Int
+        @test_throws ArgumentError df[!, "a"] .= length.(rhs) .+ 1
+        @test size(df) == (0, 1)
+        if rhs isa AbstractVector && length(rhs) != 0
+            @test_throws DimensionMismatch df[!, "a"] = length.(rhs) .+ 1
+        else
+            df[!, "a"] = length.(rhs) .+ 1
+            @test size(df) == (n, 2)
+            @test eltype(df[!, 2]) == Int
+        end
 
         df = DataFrame(x=Int[])
-        @. df[!, "a"] = length(rhs) + 1
+        @test_throws ArgumentError @. df[!, "a"] = length(rhs) + 1
+        @test size(df) == (0, 1)
+        df[!, "a"] = length(rhs) + 1
         @test size(df) == (0, 2)
         @test eltype(df[!, 2]) == Int
     end
@@ -989,7 +1086,8 @@ end
     @test_throws DimensionMismatch df .= ones(1, 2, 1)
 
     df = DataFrame(a=[])
-    df[!, :b] .= sin.(1)
+    @test_throws ArgumentError df[!, :b] .= sin.(1)
+    df[!, :b] = sin.(1)
     @test eltype(df.b) == Float64
     df[!, :b] .= [1]
     @test eltype(df.b) == Float64
@@ -1004,14 +1102,16 @@ end
 
     c = categorical(["a", "b", "c"])
     df = DataFrame()
-    @test_throws DimensionMismatch df[!, :a] .= c
+    @test_throws ArgumentError df[!, :a] .= c
 
-    df[!, :b] .= c[1]
+    @test_throws ArgumentError df[!, :b] .= c[1]
+    df[!, :b] = c[1]
     @test nrow(df) == 0
     @test df.b isa CategoricalVector{String}
 
     df = DataFrame(a=[])
-    df[!, "b"] .= sin.(1)
+    @test_throws ArgumentError df[!, "b"] .= sin.(1)
+    df[!, "b"] = sin.(1)
     @test eltype(df."b") == Float64
     df[!, "b"] = sin.(1)
     @test eltype(df."b") == Float64
@@ -1027,9 +1127,10 @@ end
 
     c = categorical(["a", "b", "c"])
     df = DataFrame()
-    @test_throws DimensionMismatch df[!, "a"] .= c
+    @test_throws ArgumentError df[!, "a"] .= c
 
-    df[!, "b"] .= c[1]
+    @test_throws ArgumentError df[!, "b"] .= c[1]
+    df[!, "b"] = c[1]
     @test nrow(df) == 0
     @test df."b" isa CategoricalVector{String}
 end
@@ -1040,29 +1141,29 @@ end
                  categorical(["1", "2", "3"]), categorical(["1", "2", missing]),
                  categorical([missing, "1", "2"])]
         df = copy(refdf)
-        df[!, :c1] .= v
+        df[:, :c1] = v
         @test df.c1 ≅ v
         @test df.c1 !== v
         @test df.c1 isa CategoricalVector
         @test levels(df.c1) == levels(v)
         @test levels(df.c1) !== levels(v)
-        df[!, :c2] .= v[2]
+        df[!, :c2] = v[2]
         @test df.c2 == fill(v[2], 3)
         @test df.c2 isa CategoricalVector
         @test levels(df.c2) == levels(v)
-        df[!, :c3] .= (x->x).(v)
+        df[!, :c3] = (x -> x).(v)
         @test df.c3 ≅ v
         @test df.c3 !== v
         @test df.c3 isa CategoricalVector
         @test levels(df.c3) == levels(v)
         @test levels(df.c3) !== levels(v)
-        df[!, :c4] .= identity.(v)
+        df[!, :c4] = identity.(v)
         @test df.c4 ≅ v
         @test df.c4 !== v
         @test df.c4 isa CategoricalVector
         @test levels(df.c4) == levels(v)
         @test levels(df.c4) !== levels(v)
-        df[!, :c5] .= (x->v[2]).(v)
+        df[!, :c5] = (x -> v[2]).(v)
         @test unique(df.c5) == [unwrap(v[2])]
         @test df.c5 isa CategoricalVector
         @test levels(df.c5) == levels(v)
@@ -1483,39 +1584,39 @@ end
     @test v1 == v1′
 
     df = copy(refdf)
-    df[!, :newcol] .= 100.0
+    df[!, :newcol] = 100.0
     @test df.newcol == [100.0, 100.0, 100.0]
     @test df[:, 1:end-1] == refdf
 
     df = copy(refdf)
-    df[!, "newcol"] .= 100.0
+    df[!, "newcol"] = 100.0
     @test df.newcol == [100.0, 100.0, 100.0]
     @test df[:, 1:end-1] == refdf
 
     df = copy(refdf)
-    df[!, :newcol] .= 'd'
+    df[!, :newcol] = 'd'
     @test df.newcol == ['d', 'd', 'd']
     @test df[:, 1:end-1] == refdf
 
     df = copy(refdf)
-    df[!, "newcol"] .= 'd'
+    df[!, "newcol"] = 'd'
     @test df.newcol == ['d', 'd', 'd']
     @test df[:, 1:end-1] == refdf
 
     df = copy(refdf)
-    @test_throws DimensionMismatch df[!, :newcol] .= [1 2 3]
+    @test_throws ArgumentError df[!, :newcol] = [1 2 3]
     @test df == refdf
 
     df = copy(refdf)
-    @test_throws DimensionMismatch df[!, "newcol"] .= [1 2 3]
+    @test_throws ArgumentError df[!, "newcol"] = [1 2 3]
     @test df == refdf
 
     df = copy(refdf)
-    @test_throws ArgumentError df[!, 10] .= 'a'
+    @test_throws BoundsError df[!, 10] .= 'a'
     @test df == refdf
-    @test_throws ArgumentError df[!, 10] .= [1, 2, 3]
+    @test_throws BoundsError df[!, 10] .= [1, 2, 3]
     @test df == refdf
-    @test_throws ArgumentError df[!, 10] .= [1 2 3]
+    @test_throws BoundsError df[!, 10] .= [1 2 3]
     @test df == refdf
 
     df = copy(refdf)
@@ -1560,7 +1661,7 @@ end
 
     df = copy(refdf)
     if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        df.newcol .= 'd'
+        df.newcol = 'd'
         @test df == [refdf DataFrame(newcol=fill('d', 3))]
     else
         @test_throws ArgumentError df.newcol .= 'd'
@@ -1677,16 +1778,19 @@ end
     @test eltype(parent(df).x1) == Float64
 
     df = view(copy(refdf), :, :)
-    df[!, :newcol] .= 100.0
+    df[!, :newcol] = 100.0
     @test parent(df).newcol == [100, 100, 100]
     @test eltype(parent(df).newcol) == Union{Float64, Missing}
 
     df = view(copy(refdf), :, :)
-    @test_throws ArgumentError df[!, 10] .= 'a'
+    @test_throws BoundsError df[!, 10] .= 'a'
+    @test_throws ArgumentError df[!, 10] = 'a'
     @test df == refdf
-    @test_throws ArgumentError df[!, 10] .= [1, 2, 3]
+    @test_throws BoundsError df[!, 10] .= [1, 2, 3]
+    @test_throws ArgumentError df[!, 10] = [1, 2, 3]
     @test df == refdf
-    @test_throws ArgumentError df[!, 10] .= [1 2 3]
+    @test_throws BoundsError df[!, 10] .= [1 2 3]
+    @test_throws ArgumentError df[!, 10] = [1 2 3]
     @test df == refdf
 
     df = view(copy(refdf), :, :)
@@ -1706,7 +1810,7 @@ end
 
     df = view(copy(refdf), :, :)
     if VERSION >= v"1.7"
-        df.newcol .= 'd'
+        df.newcol = 'd'
         @test df.newcol == fill('d', 3)
     else
         @test_throws ArgumentError df.newcol .= 'd'
@@ -1925,7 +2029,7 @@ end
 @testset "broadcasting of df[:, col] = value" begin
     df = DataFrame(ones(3, 4), :auto)
     z = ["a", "b", "c"]
-    df[:, :z] .= z
+    df[:, :z] = z
     @test df.z == z
     @test df.z !== z
     @test_throws ArgumentError df[:, 6] .= z
@@ -1972,9 +2076,11 @@ end
 
 @testset "broadcasting of getproperty" begin
     df = DataFrame(a=1:4)
-    df.b .= 1
+    @test_throws ArgumentError df.b .= 1
+    df.b = 1
     x = df.b
-    df.c .= 4:-1:1
+    @test_throws ArgumentError df.c .= 4:-1:1
+    df.c = 4:-1:1
     df.a .= 'a':'d'
     @test df.a isa Vector{Int}
     @test df == DataFrame(a=97:100, b=1, c=4:-1:1)
@@ -1998,12 +2104,11 @@ end
 @testset "dotgetproperty on SubDataFrame" begin
     df = DataFrame(a=1:3, b=4:6)
     dfv = @view df[[3, 1], :]
-    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        dfv.c .= [1, 2]
-        @test df ≅ DataFrame(a=1:3, b=4:6, c=[2, missing, 1])
-    else
-        @test_throws ArgumentError dfv.c .= [1, 2]
-    end
+    @test_throws ArgumentError dfv.c .= [1, 2]
+    dfv.c = [1, 2]
+    @test df ≅ DataFrame(a=1:3, b=4:6, c=[2, missing, 1])
+    dfv.a .= [4, 5]
+    @test df ≅ DataFrame(a=[5,2,4], b=4:6, c=[2, missing, 1])
 
     df = DataFrame(a=1:3, b=4:6)
     dfv = @view df[[3, 1], 1:2]

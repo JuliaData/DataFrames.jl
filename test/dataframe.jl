@@ -148,7 +148,7 @@ end
     @test DataFrames._columns(dfdc) !== DataFrames._columns(df)
 
     df[1, :a] = 4
-    df[1, :b][!, :e] .= 5
+    df[1, :b][!, :e] = 5
 
     @test names(rename(df, [:f, :g])) == ["f", "g"]
     @test names(rename(df, [:f, :f], makeunique=true)) == ["f", "f_1"]
@@ -1613,7 +1613,7 @@ end
     @test df.y === y
     @alias df.z = z
     @test df.z === z
-    df[!, :zz] .= 1
+    df[!, :zz] = 1
     @test df.zz == df.y
 end
 
