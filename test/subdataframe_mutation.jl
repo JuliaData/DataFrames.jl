@@ -7,7 +7,7 @@ const ≅ = isequal
 @testset "mutating SubDataFrame with assignment to [!, col]" begin
     df = DataFrame()
     sdf = @view df[:, :]
-    @test_throws ArgumentError sdf[!, :a] = [1]
+    @test_throws DimensionMismatch sdf[!, :a] = [1]
     sdf[!, :a] = Int[]
     @test df.a isa Vector{Union{Missing, Int}}
     @test df == DataFrame(a=[])
@@ -20,7 +20,7 @@ const ≅ = isequal
 
     df = DataFrame()
     sdf = @view df[1:0, :]
-    @test_throws ArgumentError sdf[!, :a] = [1]
+    @test_throws DimensionMismatch sdf[!, :a] = [1]
     sdf[!, :a] = Int[]
     @test df.a isa Vector{Union{Missing, Int}}
     @test df == DataFrame(a=[])
@@ -33,7 +33,7 @@ const ≅ = isequal
 
     df = DataFrame(x=Int[])
     sdf = @view df[:, :]
-    @test_throws ArgumentError sdf[!, :a] = [1]
+    @test_throws DimensionMismatch sdf[!, :a] = [1]
     sdf[!, :a] = Int[]
     @test df.a isa Vector{Union{Missing, Int}}
     @test df == DataFrame(x=Int[], a=[])
@@ -52,7 +52,7 @@ const ≅ = isequal
 
     df = DataFrame(x=Int[])
     sdf = @view df[1:0, :]
-    @test_throws ArgumentError sdf[!, :a] = [1]
+    @test_throws DimensionMismatch sdf[!, :a] = [1]
     sdf[!, :a] = Int[]
     @test df.a isa Vector{Union{Missing, Int}}
     @test df == DataFrame(x=Int[], a=[])
@@ -71,7 +71,7 @@ const ≅ = isequal
 
     df = DataFrame(x=1:5)
     sdf = @view df[1:0, :]
-    @test_throws ArgumentError sdf[!, :a] = [1]
+    @test_throws DimensionMismatch sdf[!, :a] = [1]
     sdf[!, :a] = Int[]
     @test df.a isa Vector{Union{Missing, Int}}
     @test df ≅ DataFrame(x=1:5, a=missing)
@@ -92,7 +92,7 @@ const ≅ = isequal
 
     df = DataFrame(x=1:5)
     sdf = @view df[:, :]
-    @test_throws ArgumentError sdf[!, :a] = [1]
+    @test_throws DimensionMismatch sdf[!, :a] = [1]
     sdf[!, :a] = 11:15
     @test df.a isa Vector{Union{Missing, Int}}
     @test df ≅ DataFrame(x=1:5, a=11:15)
@@ -158,7 +158,7 @@ const ≅ = isequal
                          c=21:25,
                          d=[missing, 102, 103, missing, missing],
                          e=[missing, 1002, 1003, missing, missing])
-    @test_throws ArgumentError sdf[!, :x] = [1]
+    @test_throws DimensionMismatch sdf[!, :x] = [1]
     @test_throws DimensionMismatch sdf[!, :a] = [1]
     sdf[!, :f] = categorical(["3", "2"])
     @test df.f isa CategoricalArray
@@ -239,7 +239,7 @@ end
     sdf[!, :b] .= 1
     @test df.b isa Vector{Union{Missing, Int}}
     @test isempty(df.b)
-    @test_throws ArgumentError sdf[!, :c] = 1:2
+    @test_throws DimensionMismatch sdf[!, :c] = 1:2
     @test_throws DimensionMismatch sdf[!, :c] .= 1:2
     @test_throws DimensionMismatch sdf[!, :a] .= 1:2
     sdf[!, :a] .= [1.0]
@@ -269,7 +269,7 @@ end
     sdf[!, :b] .= 1
     @test df.b isa Vector{Union{Missing, Int}}
     @test isempty(df.b)
-    @test_throws ArgumentError sdf[!, :c] = 1:2
+    @test_throws DimensionMismatch sdf[!, :c] = 1:2
     @test_throws DimensionMismatch sdf[!, :c] .= 1:2
     @test_throws DimensionMismatch sdf[!, :a] .= 1:2
     sdf[!, :a] .= [1.0]
@@ -699,7 +699,7 @@ end
 @testset "mutating SubDataFrame with assignment to [:, col]" begin
     df = DataFrame()
     sdf = @view df[:, :]
-    @test_throws ArgumentError sdf[:, :a] = [1]
+    @test_throws DimensionMismatch sdf[:, :a] = [1]
     sdf[:, :a] = Int[]
     @test df.a isa Vector{Union{Missing, Int}}
     @test df == DataFrame(a=[])
@@ -712,7 +712,7 @@ end
 
     df = DataFrame()
     sdf = @view df[1:0, :]
-    @test_throws ArgumentError sdf[:, :a] = [1]
+    @test_throws DimensionMismatch sdf[:, :a] = [1]
     sdf[:, :a] = Int[]
     @test df.a isa Vector{Union{Missing, Int}}
     @test df == DataFrame(a=[])
@@ -725,7 +725,7 @@ end
 
     df = DataFrame(x=Int[])
     sdf = @view df[:, :]
-    @test_throws ArgumentError sdf[:, :a] = [1]
+    @test_throws DimensionMismatch sdf[:, :a] = [1]
     sdf[:, :a] = Int[]
     @test df.a isa Vector{Union{Missing, Int}}
     @test df == DataFrame(x=Int[], a=[])
@@ -744,7 +744,7 @@ end
 
     df = DataFrame(x=Int[])
     sdf = @view df[1:0, :]
-    @test_throws ArgumentError sdf[:, :a] = [1]
+    @test_throws DimensionMismatch sdf[:, :a] = [1]
     sdf[:, :a] = Int[]
     @test df.a isa Vector{Union{Missing, Int}}
     @test df == DataFrame(x=Int[], a=[])
@@ -763,7 +763,7 @@ end
 
     df = DataFrame(x=1:5)
     sdf = @view df[1:0, :]
-    @test_throws ArgumentError sdf[:, :a] = [1]
+    @test_throws DimensionMismatch sdf[:, :a] = [1]
     sdf[:, :a] = Int[]
     @test df.a isa Vector{Union{Missing, Int}}
     @test df ≅ DataFrame(x=1:5, a=missing)
@@ -784,7 +784,7 @@ end
 
     df = DataFrame(x=1:5)
     sdf = @view df[:, :]
-    @test_throws ArgumentError sdf[:, :a] = [1]
+    @test_throws DimensionMismatch sdf[:, :a] = [1]
     sdf[:, :a] = 11:15
     @test df.a isa Vector{Union{Missing, Int}}
     @test df ≅ DataFrame(x=1:5, a=11:15)
@@ -848,8 +848,8 @@ end
                          c=21:25,
                          d=[missing, 102, 103, missing, missing],
                          e=[missing, 1002, 1003, missing, missing])
-    @test_throws ArgumentError sdf[:, :x] = 1
-    @test_throws ArgumentError sdf[:, :x] = [1]
+    @test_throws DimensionMismatch sdf[:, :x] = 1
+    @test_throws DimensionMismatch sdf[:, :x] = [1]
     @test_throws MethodError sdf[:, :a] = 1
     @test_throws DimensionMismatch sdf[:, :a] = [1]
     sdf[:, :f] = categorical(["3", "2"])
@@ -913,7 +913,7 @@ end
                          c=[21, 22, 33, 24, 25])
 
     sdf = @view df[[3, 2], 1:2]
-    @test_throws ArgumentError df[!, :c] = 1:2
+    @test_throws DimensionMismatch df[!, :c] = 1:2
 end
 
 @testset "mutating SubDataFrame with broadcasting assignment to [:, col]" begin

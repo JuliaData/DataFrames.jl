@@ -1107,8 +1107,8 @@ end
     df = DataFrame(a=1:3, b=4:6, c=7:9)
     df[!, 1] = ["a", "b", "c"]
     @test df == DataFrame(a=["a", "b", "c"], b=4:6, c=7:9)
-    @test_throws ArgumentError df[!, 1] = ["a", "b"]
-    @test_throws ArgumentError df[!, 1] = ["a"]
+    @test_throws DimensionMismatch df[!, 1] = ["a", "b"]
+    @test_throws DimensionMismatch df[!, 1] = ["a"]
     @test_throws ArgumentError df[!, 5] = ["a", "b", "c"]
     df[!, :a] = 'a':'c'
     @test df == DataFrame(a='a':'c', b=4:6, c=7:9)
@@ -1127,8 +1127,8 @@ end
     df = DataFrame(a=1:3, b=4:6, c=7:9)
     df[!, "a"] = ["a", "b", "c"]
     @test df == DataFrame(a=["a", "b", "c"], b=4:6, c=7:9)
-    @test_throws ArgumentError df[!, "a"] = ["a", "b"]
-    @test_throws ArgumentError df[!, "a"] = ["a"]
+    @test_throws DimensionMismatch df[!, "a"] = ["a", "b"]
+    @test_throws DimensionMismatch df[!, "a"] = ["a"]
     df[!, "a"] = 'a':'c'
     @test df == DataFrame(a='a':'c', b=4:6, c=7:9)
     df."a" = ["aaa", "bbb", 1]
@@ -1580,7 +1580,7 @@ end
     df[!, :] = DataFrame(reshape(1:12, 3, :), :auto)
     @test df == DataFrame(reshape(1:12, 3, :), :auto)
     @test_throws ArgumentError df[!, :] = DataFrame(fill(1, 3, 4), :auto)[:, [3, 2, 1]]
-    @test_throws ArgumentError df[!, :] = DataFrame(fill(1, 3, 4), :auto)[1:2, :]
+    @test_throws DimensionMismatch df[!, :] = DataFrame(fill(1, 3, 4), :auto)[1:2, :]
 
     df = DataFrame(fill("x", 3, 4), :auto)
     df[!, Not(4)] = DataFrame(reshape(1:12, 3, :), :auto)[:, 1:3]

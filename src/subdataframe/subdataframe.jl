@@ -190,8 +190,7 @@ Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, ::
                                 "columns of its parent data frame is disallowed"))
         end
         if !(val isa AbstractVector && nrow(sdf) == length(val))
-            throw(ArgumentError("Assigned value must be a vector with length " *
-                                "equal to number of rows in the SubDataFrame"))
+            throw(DimensionMismatch("Length of the assigned column ($(length(val))) and rows in the SubDataFrame ($(nrow(sdf))) are not equal"))
         end
         T = eltype(val)
         newcol = similar(val, Union{T, Missing}, nrow(parent(sdf)))

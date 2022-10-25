@@ -635,7 +635,7 @@ Base.getindex(df::DataFrame, row_ind::typeof(!), col_inds::MultiColumnIndex) =
 function insert_single_column!(df::DataFrame, v::Any, col_ind::ColumnIndex; copycols = true)
     dv = _preprocess_column(v, nrow(df), copycols)
     if ncol(df) != 0 && nrow(df) != length(dv)
-        throw(ArgumentError("New columns must have the same length as old columns"))
+        throw(DimensionMismatch("Length of the column ($(length(dv))) and rows in the data frame ($(nrow(df))) are not equal"))
     end
     firstindex(dv) != 1 && _onebased_check_error()
 

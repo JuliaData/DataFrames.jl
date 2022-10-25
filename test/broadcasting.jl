@@ -802,7 +802,7 @@ end
     @test df == cdf
 
     df = DataFrame(x=Int[])
-    @test_throws ArgumentError df[!, :a] = sin.(1:3)
+    @test_throws DimensionMismatch df[!, :a] = sin.(1:3)
     df[!, :b] = sin.(1)
     df[!, :c] = sin(1) .+ 1
     @test df == DataFrame(x=Int[], b=Float64[], c=Float64[])
@@ -910,7 +910,7 @@ end
         df = DataFrame(x=Union{Int,String}[])
         df.x .= rhs
         if rhs isa AbstractVector && length(rhs) != 0
-            @test_throws ArgumentError df.a = rhs
+            @test_throws DimensionMismatch df.a = rhs
         else
             df.a = rhs
             @test size(df) == (n, 2)
@@ -993,7 +993,7 @@ end
     @test eltype(df.b) == Float64
     df[!, :b] .= [1]
     @test eltype(df.b) == Float64
-    @test_throws ArgumentError df[!, :b] = [1]
+    @test_throws DimensionMismatch df[!, :b] = [1]
     df[!, :b] = Int[]
     @test eltype(df.b) == Int
     df[!, :b] .= 'a'
