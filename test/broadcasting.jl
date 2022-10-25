@@ -769,6 +769,21 @@ end
                          3.5  6.5  9.5  12.5  15.5  1.0 3.0]
     @test names(df)[end] == "b"
     @test df[:, 1:end-2] == refdf
+
+    df = copy(refdf)
+    df.a = 1
+    @test Matrix(df) == [1.5  4.5  7.5  10.5  13.5  1.0
+                         2.5  5.5  8.5  11.5  14.5  1.0
+                         3.5  6.5  9.5  12.5  15.5  1.0]
+    @test names(df)[end] == "a"
+    @test df[:, 1:end-1] == refdf
+    df.b = [1, 2, 3]
+    @test Matrix(df) == [1.5  4.5  7.5  10.5  13.5  1.0 1.0
+                         2.5  5.5  8.5  11.5  14.5  1.0 2.0
+                         3.5  6.5  9.5  12.5  15.5  1.0 3.0]
+    @test names(df)[end] == "b"
+    @test df[:, 1:end-2] == refdf
+
     cdf = copy(df)
     @test_throws DimensionMismatch df[!, :c] .= ones(1, 3)
     @test df == cdf
@@ -786,6 +801,12 @@ end
     @test_throws ArgumentError dfr[:z] .= ones(3)
     @test df == cdf
 
+    df = DataFrame(x=Int[])
+    @test_throws ArgumentError df[!, :a] = sin.(1:3)
+    df[!, :b] = sin.(1)
+    df[!, :c] = sin(1) .+ 1
+    @test df == DataFrame(x=Int[], b=Float64[], c=Float64[])
+
     df = DataFrame()
     @test_throws DimensionMismatch df[!, :a] .= sin.(1:3)
     df[!, :b] .= sin.(1)
@@ -793,7 +814,7 @@ end
     @test df == DataFrame(b=Float64[], c=Float64[])
 
     df = copy(refdf)
-    df[!, "a"] .= 1
+    df[!, "a"] = 1
     @test Matrix(df) == [1.5  4.5  7.5  10.5  13.5  1.0
                          2.5  5.5  8.5  11.5  14.5  1.0
                          3.5  6.5  9.5  12.5  15.5  1.0]
@@ -843,8 +864,9 @@ end
     @test_throws DimensionMismatch df[!, "a"] .= [1 2]
     @test_throws DimensionMismatch df[!, "a"] .= [1, 2]
     @test_throws DimensionMismatch df[!, "a"] .= sin.(1) .+ [1, 2]
+    @testset "$rhs" for rhs in [1, [1], Int[], "abc", ["abc"]]
+        n = rhs isa AbstractVector ? length(rhs) : 0
 
-    for rhs in [1, [1], Int[], "abc", ["abc"]]
         df = DataFrame()
         df[!, :a] .= rhs
         @test size(df) == (0, 1)
@@ -861,9 +883,39 @@ end
         @test eltype(df[!, 1]) == Int
 
         df = DataFrame()
+        df[!, :a] .= length.(rhs)
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
+        df[!, :a] = length.(rhs)
+        @test size(df) == (n, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
+        df[!, :a] .= length.(rhs) .+ 1
+        @test size(df) == (0, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
+        df[!, :a] = length.(rhs) .+ 1
+        @test size(df) == (n, 1)
+        @test eltype(df[!, 1]) == Int
+
+        df = DataFrame()
         @. df[!, :a] = length(rhs) + 1
         @test size(df) == (0, 1)
         @test eltype(df[!, 1]) == Int
+
+        df = DataFrame(x=Union{Int,String}[])
+        df.x .= rhs
+        if rhs isa AbstractVector && length(rhs) != 0
+            @test_throws ArgumentError df.a = rhs
+        else
+            df.a = rhs
+            @test size(df) == (n, 2)
+            @test eltype(df[!, 2]) == (rhs isa AbstractVector ? eltype(rhs) : typeof(rhs))
+        end
 
         df = DataFrame(x=Int[])
         df[!, :a] .= rhs
@@ -940,8 +992,13 @@ end
     df[!, :b] .= sin.(1)
     @test eltype(df.b) == Float64
     df[!, :b] .= [1]
+    @test eltype(df.b) == Float64
+    @test_throws ArgumentError df[!, :b] = [1]
+    df[!, :b] = Int[]
     @test eltype(df.b) == Int
     df[!, :b] .= 'a'
+    @test eltype(df.b) == Int
+    df[!, :b] = 'a'
     @test eltype(df.b) == Char
     @test names(df) == ["a", "b"]
 
@@ -956,9 +1013,15 @@ end
     df = DataFrame(a=[])
     df[!, "b"] .= sin.(1)
     @test eltype(df."b") == Float64
+    df[!, "b"] = sin.(1)
+    @test eltype(df."b") == Float64
     df[!, "b"] .= [1]
+    @test eltype(df."b") == Float64
+    df[!, "b"] = Int[]
     @test eltype(df."b") == Int
     df[!, "b"] .= 'a'
+    @test eltype(df."b") == Int
+    df[!, "b"] = 'a'
     @test eltype(df."b") == Char
     @test names(df) == ["a", "b"]
 
@@ -1061,7 +1124,7 @@ end
     @test X == DataFrame([1 2; 3 4], :auto)
 
     X = DataFrame([1 2; 3 4], :auto)
-    foreach(i -> X[!, i] .= nothing, axes(X, 2))
+    foreach(i -> X[!, i] = nothing, axes(X, 2))
     @test (X .== nothing) == DataFrame(trues(2, 2), :auto)
 end
 
@@ -1396,10 +1459,10 @@ end
     df = copy(refdf)
     v1 = df[!, 1]
     v1′ = df[:, 1]
-    df[!, 1] .= 100.0
+    df[!, 1] = 100.0
     @test df.x1 == [100.0, 100.0, 100.0]
     @test v1 == v1′
-    df[!, 1] .= 'd'
+    df[!, 1] = 'd'
     @test df.x1 == ['d', 'd', 'd']
     @test v1 == v1′
     @test_throws DimensionMismatch df[!, 1] .= [1 2 3]
@@ -1409,10 +1472,10 @@ end
     df = copy(refdf)
     v1 = df[!, 1]
     v1′ = df[:, 1]
-    df[!, :x1] .= 100.0
+    df[!, :x1] = 100.0
     @test df.x1 == [100.0, 100.0, 100.0]
     @test v1 == v1′
-    df[!, :x1] .= 'd'
+    df[!, :x1] = 'd'
     @test df.x1 == ['d', 'd', 'd']
     @test v1 == v1′
     @test_throws DimensionMismatch df[!, :x1] .= [1 2 3]
@@ -1462,42 +1525,38 @@ end
                          'a'  'a'  9.5  12.5  15.5]
 
     df = copy(refdf)
-    v1 = df[!, 1]
-    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        df.x1 .= 'd'
-        @test df.x1 == ['d', 'd', 'd']
-        @test eltype(df.x1) === Char
-        @test_throws MethodError df[:, 1] .= "d"
-        @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
-        @test v1 == [1.5, 2.5, 3.5]
-    else
-        df.x1 .= 'd'
-        @test v1 == [100.0, 100.0, 100.0]
-        @test_throws MethodError df[:, 1] .= "d"
-        @test v1 == [100.0, 100.0, 100.0]
-        @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
-        @test v1 == [100.0, 100.0, 100.0]
-    end
+    df[!, 2:3] = 'b'
+    @test Matrix(df) == [1.5  'b'  'b'  10.5  13.5
+                         2.5  'b'  'b'  11.5  14.5
+                         3.5  'b'  'b'  12.5  15.5]
 
-    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        df = DataFrame(a=1:4, b=1, c=2)
-        df.a .= 'a':'d'
-        @test df == DataFrame(a='a':'d', b=1, c=2)
-        dfv = view(df, 2:3, 2:3)
-        x = df.b
-        dfv.b .= 0
-        @test df.b == [1, 0, 0, 1]
-        @test x == [1, 1, 1, 1]
-    else
-        df = DataFrame(a=1:4, b=1, c=2)
-        df.a .= 'a':'d'
-        @test df == DataFrame(a=97:100, b=1, c=2)
-        dfv = view(df, 2:3, 2:3)
-        x = df.b
-        dfv.b .= 0
-        @test df.b == [1, 0, 0, 1]
-        @test x === df.b
-    end
+    df = copy(refdf)
+    v1 = df[!, 1]
+    df.x1 .= 'd'
+    @test v1 == [100.0, 100.0, 100.0]
+    @test_throws MethodError df[:, 1] .= "d"
+    @test v1 == [100.0, 100.0, 100.0]
+    @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
+    @test v1 == [100.0, 100.0, 100.0]
+
+    df.x1 = 'd'
+    @test df.x1 == ['d', 'd', 'd']
+
+    df = DataFrame(a=1:4, b=1, c=2)
+    df.a .= 'a':'d'
+    @test df == DataFrame(a=97:100, b=1, c=2)
+    df.a = 'a':'d'
+    @test df == DataFrame(a='a':'d', b=1, c=2)
+    dfv = view(df, 2:3, 2:3)
+    x = df.b
+    dfv.b .= 0
+    @test df.b == [1, 0, 0, 1]
+    @test x == [1, 0, 0, 1]
+    @test x === df.b
+    dfv.b = 2
+    @test df.b == [1, 2, 2, 1]
+    @test x == [1, 0, 0, 1]
+    @test x !== df.b
 
     df = copy(refdf)
     if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
@@ -1637,22 +1696,13 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        df.x1 .= 'd'
-        @test df.x1 == ['d', 'd', 'd']
-        @test eltype(df.x1) === Any
-        df[:, 1] .= "d"
-        @test df.x1 == ["d", "d", "d"]
-        @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
-        @test v1 == [1.5, 2.5, 3.5]
-    else
-        df.x1 .= 'd'
-        @test v1 == [100.0, 100.0, 100.0]
-        @test_throws MethodError df[:, 1] .= "d"
-        @test v1 == [100.0, 100.0, 100.0]
-        @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
-        @test v1 == [100.0, 100.0, 100.0]
-    end
+    df.x1 .= 'd'
+    @test df.x1 == [100.0, 100.0, 100.0]
+    @test eltype(df.x1) === Float64
+    df[!, 1] = "d"
+    @test df.x1 == ["d", "d", "d"]
+    @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
+    @test v1 == [100.0, 100.0, 100.0]
 
     df = view(copy(refdf), :, :)
     if VERSION >= v"1.7"
@@ -1690,13 +1740,13 @@ end
     @test_throws MethodError dfr."a" .= ["a", "b"]
 end
 
-@testset "make sure that : is in place and ! allocates" begin
+@testset "make sure that .= is in place and = replaces column" begin
     df = DataFrame(a=[1, 2, 3])
     a = df.a
     df[:, :a] .+= 1
     @test a == [2, 3, 4]
     @test df.a === a
-    df[!, :a] .+= 1
+    df[!, :a] = df[!, :a] .+ 1
     @test a == [2, 3, 4]
     @test df.a == [3, 4, 5]
     @test df.a !== a
@@ -1706,7 +1756,7 @@ end
     df[:, "a"] .+= 1
     @test a == [2, 3, 4]
     @test df.a === a
-    df[!, "a"] .+= 1
+    df[!, "a"] = df[!, "a"] .+ 1
     @test a == [2, 3, 4]
     @test df.a == [3, 4, 5]
     @test df.a !== a
@@ -1910,36 +1960,27 @@ end
 
 @testset "broadcasting of getproperty" begin
     df = DataFrame(a=1:4)
-    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        df.b .= 1
-        x = df.b
-        df.c .= 4:-1:1
-        df.a .= 'a':'d'
-        @test df.a isa Vector{Char}
-        @test df == DataFrame(a='a':'d', b=1, c=4:-1:1)
+    df.b .= 1
+    x = df.b
+    df.c .= 4:-1:1
+    df.a .= 'a':'d'
+    @test df.a isa Vector{Int}
+    @test df == DataFrame(a=97:100, b=1, c=4:-1:1)
+    df.a = 'a':'d'
+    @test df.a isa Vector{Char}
+    @test df == DataFrame(a='a':'d', b=1, c=4:-1:1)
 
-        # in views also column replacement is performed
-        dfv = view(df, 2:3, 2:3)
-        dfv.b .= 0
-        @test x == [1, 1, 1, 1]
-        @test df.b !== x
-        @test df == DataFrame(a='a':'d', b=[1, 0, 0, 1], c=4:-1:1)
-        dfv.c .= ["p", "q"]
-        @test df == DataFrame(a='a':'d', b=[1, 0, 0, 1], c=[4, "p", "q", 1])
-    else
-        # Julia older than 1.7
-        df[!, :b] .= 1
-        x = df.b
-        df[!, :c] .= 4:-1:1
-        df.a .= 'a':'d'
-        dfv = view(df, 2:3, 2:3)
-        dfv.b .= 0
-        @test x == [1, 0, 0, 1]
-        @test df.b === x
-        @test df == DataFrame(a=97:100, b=[1, 0, 0, 1], c=4:-1:1)
-        @test_throws MethodError dfv.c .= ["p", "q"]
-        @test df == DataFrame(a=97:100, b=[1, 0, 0, 1], c=[4, 3, 2, 1])
-    end
+    # in views also column replacement is performed
+    dfv = view(df, 2:3, 2:3)
+    dfv.b .= 0
+    @test x == [1, 0, 0, 1]
+    @test df.b === x
+    dfv.b = 0
+    @test df.b !== x
+    @test df == DataFrame(a='a':'d', b=[1, 0, 0, 1], c=4:-1:1)
+    @test_throws MethodError dfv.c .= ["p", "q"]
+    dfv.c = ["p", "q"]
+    @test df == DataFrame(a='a':'d', b=[1, 0, 0, 1], c=[4, "p", "q", 1])
 end
 
 @testset "dotgetproperty on SubDataFrame" begin

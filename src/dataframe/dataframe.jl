@@ -632,11 +632,11 @@ Base.getindex(df::DataFrame, row_ind::typeof(!), col_inds::MultiColumnIndex) =
 ##############################################################################
 
 # Will automatically add a new column if needed
-function insert_single_column!(df::DataFrame, v::AbstractVector, col_ind::ColumnIndex)
-    if ncol(df) != 0 && nrow(df) != length(v)
+function insert_single_column!(df::DataFrame, v::Any, col_ind::ColumnIndex; copycols = false)
+    dv = _preprocess_column(v, nrow(df), copycols)
+    if ncol(df) != 0 && nrow(df) != length(dv)
         throw(ArgumentError("New columns must have the same length as old columns"))
     end
-    dv = isa(v, AbstractRange) ? collect(v) : v
     firstindex(dv) != 1 && _onebased_check_error()
 
     if haskey(index(df), col_ind)
@@ -664,24 +664,22 @@ function insert_single_entry!(df::DataFrame, v::Any, row_ind::Integer, col_ind::
     end
 end
 
-# df[!, SingleColumnIndex] = AbstractVector
-function Base.setindex!(df::DataFrame, v::AbstractVector, ::typeof(!), col_ind::ColumnIndex)
+# df[!, SingleColumnIndex] = value
+function Base.setindex!(df::DataFrame, v::Any, ::typeof(!), col_ind::ColumnIndex)
     insert_single_column!(df, v, col_ind)
     return df
 end
 
-# df.col = AbstractVector
+# df.col = value
 # separate methods are needed due to dispatch ambiguity
 Base.setproperty!(df::DataFrame, col_ind::Symbol, v::AbstractVector) =
     (df[!, col_ind] = v)
 Base.setproperty!(df::DataFrame, col_ind::AbstractString, v::AbstractVector) =
     (df[!, col_ind] = v)
-Base.setproperty!(::DataFrame, col_ind::Symbol, v::Any) =
-    throw(ArgumentError("It is only allowed to pass a vector as a column of a DataFrame. " *
-                        "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
-Base.setproperty!(::DataFrame, col_ind::AbstractString, v::Any) =
-    throw(ArgumentError("It is only allowed to pass a vector as a column of a DataFrame. " *
-                        "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
+Base.setproperty!(df::DataFrame, col_ind::Symbol, v::Any) =
+    (df[!, col_ind] = v)
+Base.setproperty!(df::DataFrame, col_ind::AbstractString, v::Any) =
+    (df[!, col_ind] = v)
 
 # df[SingleRowIndex, SingleColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)
@@ -781,6 +779,28 @@ for T1 in (:AbstractVector, :Not, :Colon, :(typeof(!))),
         for (j, col) in enumerate(idxs)
             # this will drop metadata appropriately
             df[row_inds, col] = (row_inds === !) ? mx[:, j] : view(mx, :, j)
+        end
+        return df
+    end
+end
+
+for T1 in (:(typeof(!)),),
+    T2 in MULTICOLUMNINDEX_TUPLE
+    @eval function Base.setindex!(df::DataFrame,
+                                  v::AbstractVector,
+                                  row_inds::$T1,
+                                  col_inds::$T2)
+        throw(ArgumentError("a vector can not be assigned to multiple rows and columns, consider reshaping to a matrix first"))
+    end
+
+    @eval function Base.setindex!(df::DataFrame,
+                                  v::Any,
+                                  row_inds::$T1,
+                                  col_inds::$T2)
+        idxs = index(df)[col_inds]
+        for col in idxs
+            # this will drop metadata appropriately
+            df[row_inds, col] = v
         end
         return df
     end

@@ -209,7 +209,7 @@ end
 #  and then define methods for them)
 # consider merging SubDataFrame and DataFrame setindex! methods
 
-function Base.setindex!(sdf::SubDataFrame, v::AbstractVector,
+function Base.setindex!(sdf::SubDataFrame, v::Any,
                         ::typeof(!), col_ind::ColumnIndex)
     if col_ind isa Union{Signed, Unsigned} && !(1 <= col_ind <= ncol(sdf))
         throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
@@ -219,15 +219,17 @@ function Base.setindex!(sdf::SubDataFrame, v::AbstractVector,
             throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
                                 "columns of its parent data frame is disallowed"))
         end
+        v = _preprocess_column(v, nrow(sdf), false)
         sdf[:, col_ind] = v
     else
         pdf = parent(sdf)
         p_col_ind = parentcols(index(sdf), col_ind)
         old_col = pdf[!, p_col_ind]
         T = eltype(old_col)
-        S = eltype(v)
+        S = v isa AbstractVector ? eltype(v) : typeof(v)
         newcol = similar(old_col, promote_type(T, S), length(old_col))
         newcol .= old_col
+        v = _preprocess_column(v, nrow(sdf), false)
         newcol[rows(sdf)] = v
         pdf[!, p_col_ind] = newcol
     end
@@ -278,12 +280,10 @@ Base.setproperty!(df::SubDataFrame, col_ind::Symbol, v::AbstractVector) =
     (df[!, col_ind] = v)
 Base.setproperty!(df::SubDataFrame, col_ind::AbstractString, v::AbstractVector) =
     (df[!, col_ind] = v)
-Base.setproperty!(::SubDataFrame, col_ind::Symbol, v::Any) =
-    throw(ArgumentError("It is only allowed to pass a vector as a column of a SubDataFrame. " *
-                        "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
-Base.setproperty!(::SubDataFrame, col_ind::AbstractString, v::Any) =
-    throw(ArgumentError("It is only allowed to pass a vector as a column of a SubDataFrame. " *
-                        "Instead use `df[!, col_ind] .= v` if you want to use broadcasting."))
+Base.setproperty!(df::SubDataFrame, col_ind::Symbol, v::Any) =
+    (df[!, col_ind] = v)
+Base.setproperty!(df::SubDataFrame, col_ind::AbstractString, v::Any) =
+    (df[!, col_ind] = v)
 
 ##############################################################################
 ##

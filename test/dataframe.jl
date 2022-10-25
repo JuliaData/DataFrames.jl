@@ -1610,11 +1610,7 @@ end
     @test x == 1:10
     df.y .= 1
     @test df.y == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        @test y == 1.0:10.0
-    else
-        @test df.y === y
-    end
+    @test df.y === y
     df.z = z
     @test df.z === z
     df[!, :zz] .= 1

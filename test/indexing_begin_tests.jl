@@ -19,9 +19,9 @@
     df[end, end] = (103, 104)
     @test df[end, end] == (103, 104)
 
-    df[!, begin] .= [1, 2, 3]
+    df[!, begin] = [1, 2, 3]
     @test df[:, 1] == [1, 2, 3]
-    df[!, end] .= [11, 12, 13]
+    df[!, end] = [11, 12, 13]
     @test df[:, 4] == [11, 12, 13]
 
     @test df[begin:end, [begin, end]] == df[:, [1, 4]]

@@ -1850,8 +1850,13 @@ end
 
 @testset "setproperty! corner cases" begin
     df = DataFrame(a=1)
-    @test_throws ArgumentError df.a = 1
-    @test_throws ArgumentError df."a" = 1
+    df.a = 2
+    @test df.a == [2]
+    df."a" = 3
+    @test df.a == [3]
+
+    df = DataFrame(a=1)
+
     dfv = @view df[:, :]
     dfv.a = [5]
     @test df == DataFrame(a=5)
@@ -1859,8 +1864,11 @@ end
     dfv."a" = [6]
     @test df == DataFrame(a=6)
     @test eltype(df.a) === Int
-    @test_throws ArgumentError dfv.a = 1
-    @test_throws ArgumentError dfv."a" = 1
+
+    dfv.a = 7
+    @test df.a == [7]
+    dfv."a" = 8
+    @test df.a == [8]
 end
 
 @testset "disallowed getindex and setindex! methods" begin
