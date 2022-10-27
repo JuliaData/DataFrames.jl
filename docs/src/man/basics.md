@@ -1,7 +1,5 @@
 # First Steps with DataFrames.jl
 
-**The tutorial section of the manual is still work in progress. Please report any questions or comments as issues in DataFrames.jl GitHub repository. Thank you!**
-
 ## Setting up the Environment
 
 If want to use the DataFrames.jl package you need to install it first.
@@ -21,8 +19,9 @@ julia> ] # ']' should be pressed
 (@v1.6) pkg> add DataFrames
 ```
 
-If you want to make sure everything works as expected you can run the tests bundled
-with DataFrames.jl, but be warned that it will take more than 30 minutes:
+If you want to make sure everything works as expected you can run the tests
+bundled with DataFrames.jl, but be warned that it will take more than 30
+minutes:
 
 ```julia
 julia> using Pkg
@@ -41,22 +40,25 @@ julia> ]
   [a93c6f00] DataFrames v1.1.1
 ```
 
-Throughout the rest of the tutorial we will assume that you have installed the DataFrames.jl package and
-have already typed `using DataFrames` which loads the package:
+Throughout the rest of the tutorial we will assume that you have installed the
+DataFrames.jl package and have already typed `using DataFrames` which loads the
+package:
+
 ```jldoctest dataframe
 julia> using DataFrames
 ```
 
-The most fundamental type provided by DataFrames.jl is `DataFrame`, where typically
-each row is interpreted as an observation and each column as a feature.
+The most fundamental type provided by DataFrames.jl is `DataFrame`, where
+typically each row is interpreted as an observation and each column as a
+feature.
 
 ## Constructors and Basic Utility Functions
 
 ### Constructors
 
-In this section you will see several ways to create a `DataFrame` using the constructor.
-You can find a detailed list of supported constructors along with more examples
-in the documentation of the [`DataFrame`](@ref) object.
+In this section you will see several ways to create a `DataFrame` using the
+constructor. You can find a detailed list of supported constructors along with
+more examples in the documentation of the [`DataFrame`](@ref) object.
 
 We start by creating an empty `DataFrame`:
 
@@ -65,7 +67,8 @@ julia> DataFrame()
 0×0 DataFrame
 ```
 
-Now let us initialize a `DataFrame` with several columns. This is a basic way to do it is the following:
+Now let us initialize a `DataFrame` with several columns. This is a basic way to
+do it is the following:
 
 ```jldoctest dataframe
 julia> DataFrame(A=1:3, B=5:7, fixed=1)
@@ -78,11 +81,12 @@ julia> DataFrame(A=1:3, B=5:7, fixed=1)
    3 │     3      7      1
 ```
 
-Observe that using this constructor scalars, like `1` for the column `:fixed` get automatically broadcasted
-to fill all rows of the created `DataFrame`.
+Observe that using this constructor scalars, like `1` for the column `:fixed`
+get automatically broadcasted to fill all rows of the created `DataFrame`.
 
-Sometimes one needs to create a data frame whose column names are not valid Julia identifiers.
-In such a case the following form, where `=` is replaced by `=>` is handy:
+Sometimes one needs to create a data frame whose column names are not valid
+Julia identifiers. In such a case the following form, where `=` is replaced by
+`=>` is handy:
 
 ```jldoctest dataframe
 julia> DataFrame("customer age" => [15, 20, 25],
@@ -273,17 +277,20 @@ german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
                                "..", "docs", "src", "assets", "german.csv"),
                       DataFrame)
 ```
-- we are storing the `german.csv` file in the DataFrames.jl repository to make user's life easier and
-  avoid having to download it each time;
-- `pathof(DataFrames)` gives us the full path of the file that was used to import the DataFrames.jl package;
+- we are storing the `german.csv` file in the DataFrames.jl repository to make
+  user's life easier and avoid having to download it each time;
+- `pathof(DataFrames)` gives us the full path of the file that was used to
+  import the DataFrames.jl package;
 - first we split the directory part from it using `dirname`;
-- then from this directory we need to move to the directory where the `german.csv` file is stored; we use
-  `joinpath` as this is a recommended way to compose paths to resources stored on disk in an operating
-  system independent way (remember that Windows and Unix differ as they use either `/` or `\` as path
-  separator; the `joinpath` function ensures we are not running into issues with this);
-- then we read the CSV file; the second argument to `CSV.read` is `DataFrame` to indicate that we want to
-  read in the file into a `DataFrame` (as `CSV.read` allows for many different target formats of data it
-  can read-into).
+- then from this directory we need to move to the directory where the
+  `german.csv` file is stored; we use `joinpath` as this is a recommended way to
+  compose paths to resources stored on disk in an operating system independent
+  way (remember that Windows and Unix differ as they use either `/` or `\` as
+  path separator; the `joinpath` function ensures we are not running into issues
+  with this);
+- then we read the CSV file; the second argument to `CSV.read` is `DataFrame` to
+  indicate that we want to read in the file into a `DataFrame` (as `CSV.read`
+  allows for many different target formats of data it can read-into).
 
 Before proceeding copy the reference data frame:
 
@@ -296,8 +303,8 @@ In this way we can always easily restore our data even if we mess up the
 
 ### Basic Operations on Data Frames
 
-To access the columns of a data frame directly (i.e. without copying) you can use
-one of the following syntaxes:
+To extract the columns of a data frame directly (i.e. without copying)
+you can use one of the following syntaxes:
 `german.Sex`, `german."Sex"`, `german[!, :Sex]` or `german[!, "Sex"]`.
 
 The two latter syntaxes using indexing are more flexible as they allow
@@ -355,10 +362,12 @@ julia> german[!, colname]
  "male"
 ```
 
-Since `german.Sex` does not make a copy, changing the elements of the column vector returned by this
-operation will affect the values stored in the original `german` data frame. To get a *copy*
-of the column you can use `german[:, :Sex]` or `german[:, "Sex"]`.
-In this case changing the vector returned by this operation does not affect the data stored in the `german` data frame.
+Since `german.Sex` does not make a copy when extracting a column from the data
+frame, changing the elements of the vector returned by this operation will
+affect the values stored in the original `german` data frame. To get a *copy* of
+the column you can use `german[:, :Sex]` or `german[:, "Sex"]`. In this case
+changing the vector returned by this operation does not affect the data stored
+in the `german` data frame.
 
 The `===` function allows us to check if both expressions produce the same object
 and confirm the behavior described above:
@@ -371,7 +380,8 @@ julia> german.Sex === german[:, :Sex]
 false
 ```
 
-You can obtain a vector of column names of the data frame as `String`s using the `names` function:
+You can obtain a vector of column names of the data frame as `String`s using the
+`names` function:
 
 ```jldoctest dataframe
 julia> names(german)
@@ -406,7 +416,8 @@ julia> names(german, AbstractString)
 You can explore more options of filtering column names in the documentation of
 the [`names`](@ref) function.
 
-If instead you wanted to get column names of a data frame as `Symbol`s use the `propertynames` function:
+If instead you wanted to get column names of a data frame as `Symbol`s use the
+`propertynames` function:
 
 ```jldoctest dataframe
 julia> propertynames(german)
@@ -494,9 +505,10 @@ julia> german
 0×10 DataFrame
 ```
 
-In the above example `empty` function created a new `DataFrame` with the same column names
-and column element types as `german` but with zero rows. On the other hand `empty!` function
-removed all rows from `german` in-place and made each of its columns empty.
+In the above example `empty` function created a new `DataFrame` with the same
+column names and column element types as `german` but with zero rows. On the
+other hand `empty!` function removed all rows from `german` in-place and made
+each of its columns empty.
 
 The difference between the behavior of the `empty` and `empty!` functions is an application of the
 [stylistic convention](https://docs.julialang.org/en/v1/manual/variables/#Stylistic-Conventions)
@@ -505,7 +517,8 @@ This convention is followed in all functions provided by the DataFrames.jl packa
 
 ### Getting Basic Information about a Data Frame
 
-In this section we will learn about how to get basic information on our `german` `DataFrame`:
+In this section we will learn about how to get basic information on our `german`
+`DataFrame`:
 
 The `size` function returns the dimensions of the data frame.
 First we restore the `german` data frame, as we have just emptied it above.
@@ -569,8 +582,9 @@ julia> describe(german, cols=1:3)
    3 │ Sex               female          male         0  String7
 ```
 
-The default statistics reported are mean, min, median, max, number of missing values, and element type of
-the column. `missing` values are skipped when computing the summary statistics.
+The default statistics reported are mean, min, median, max, number of missing
+values, and element type of the column. `missing` values are skipped when
+computing the summary statistics.
 
 You can adjust how data frame is displayed by calling the `show` function manually:
 `show(german, allrows=true)` prints all rows even if they do not fit on screen and
@@ -612,10 +626,11 @@ julia> mean(german.Age)
 ```
 
 If instead we want to apply some function to all columns of a data frame we can
-use the `mapcols` function. It returns a `DataFrame` where each column of the source
-data frame is transformed using a function passed as a first argument.
-Note that `mapcols` guarantees not to reuse the columns from `german` in the returned `DataFrame`.
-If the transformation returns its argument then it gets copied before being stored.
+use the `mapcols` function. It returns a `DataFrame` where each column of the
+source data frame is transformed using a function passed as a first argument.
+Note that `mapcols` guarantees not to reuse the columns from `german` in the
+returned `DataFrame`. If the transformation returns its argument then it gets
+copied before being stored.
 
 ```jldoctest dataframe
 julia> mapcols(id -> id .^ 2, german)
@@ -672,11 +687,11 @@ julia> last(german, 5)
                                                                4 columns omitted
 ```
 
-Using `first` and `last` without passing the number of rows will return a first/last
-`DataFrameRow` in the data frame. `DataFrameRow` is a view into a single row of an
-`AbstractDataFrame`. It stores a reference to a parent
-`DataFrame` and information about which row and columns from the parent are selected.
-You can think of `DataFrameRow` as a `NamedTuple` that is mutable,
+Using `first` and `last` without passing the number of rows will return a
+first/last `DataFrameRow` in the data frame. `DataFrameRow` is a view into a
+single row of an `AbstractDataFrame`. It stores a reference to a parent
+`DataFrame` and information about which row and columns from the parent are
+selected. You can think of `DataFrameRow` as a `NamedTuple` that is mutable,
 i.e. allows to update the source data frame, which is often useful.
 
 ```jldoctest dataframe
@@ -705,10 +720,10 @@ Data frame can be indexed in a similar way to matrices.
 In the [Indexing](@ref) section of the manual you can find all details about all
 the available options. Here we highlight the basic ones.
 
-The general syntax for indexing is `data_frame[selected_rows, selected_columns]`. Observe that, as
-opposed to matrices in Julia Base, it is required to always pass both row and column selector.
-The colon `:` indicates that all items (rows or columns depending on its position) should be retained.
-Here are a few examples:
+The general syntax for indexing is `data_frame[selected_rows, selected_columns]`.
+Observe that, as opposed to matrices in Julia Base, it is required to always pass
+both row and column selector. The colon `:` indicates that all items (rows or
+columns depending on its position) should be retained. Here are a few examples:
 
 ```jldoctest dataframe
 julia> german[1:5, [:Sex, :Age]]
@@ -768,13 +783,14 @@ julia> german[:, [:Age, :Sex]]
        985 rows omitted
 ```
 
-Pay attention that `german[!, [:Sex]]` and `german[:, [:Sex]]` returns a data frame object,
-while `german[!, :Sex]` and `german[:, :Sex]` returns a vector. In the first case, `[:Sex]`
-is a vector, indicating that the resulting object should be a data frame. On the other hand,
-`:Sex` is a single `Symbol`, indicating that a single column vector should be extracted. Note
-that in the first case a vector is required to be passed (not just any iterable), so e.g.
-`german[:, (:Age, :Sex)]` is not allowed, but `german[:, [:Age, :Sex]]` is valid.
-Below we show both operations to highlight this difference:
+Pay attention that `german[!, [:Sex]]` and `german[:, [:Sex]]` returns a data
+frame object, while `german[!, :Sex]` and `german[:, :Sex]` returns a vector. In
+the first case, `[:Sex]` is a vector, indicating that the resulting object
+should be a data frame. On the other hand, `:Sex` is a single `Symbol`,
+indicating that a single column vector should be extracted. Note that in the
+first case a vector is required to be passed (not just any iterable), so e.g.
+`german[:, (:Age, :Sex)]` is not allowed, but `german[:, [:Age, :Sex]]` is
+valid. Below we show both operations to highlight this difference:
 
 ```jldoctest dataframe
 julia> german[!, [:Sex]]
@@ -824,14 +840,15 @@ julia> german[!, :Sex]
  "male"
 ```
 
-As it was explained earlier in this tutorial the difference between using `!` and `:`
-when passing a row index is that `!` does not perform a copy of columns, while `:` does.
-Therefore `german[!, [:Sex]]` data frame stores the same vector as the source `german` data frame,
-while `german[:, [:Sex]]` stores its copy.
+As it was explained earlier in this tutorial the difference between using `!`
+and `:` when passing a row index is that `!` does not perform a copy of columns,
+while `:` does when reading data from a data frame. Therefore
+`german[!, [:Sex]]` data frame stores the same vector as the source `german`
+data frame, while `german[:, [:Sex]]` stores its copy.
 
-The `!` selector normally should be avoided as using it can lead to hard to catch bugs.
-However, when working with very large data frames
-it can be useful to save memory and improve performance of operations.
+The `!` selector normally should be avoided as using it can lead to hard to
+catch bugs. However, when working with very large data frames it can be useful
+to save memory and improve performance of operations.
 
 Recapping what we have already learned,
 To get the column `:Age` from the `german` data frame you can do the following:
@@ -841,10 +858,13 @@ To get the column `:Age` from the `german` data frame you can do the following:
   `german[!, "Age"]` or `german[!, 2]`.
 
 To get the first two columns as a `DataFrame`, we can index as follows:
-- to get the copied columns: `german[:, 1:2]`, `german[:, [:id, :Age]]`, or `german[:, ["id", "Age"]]`;
-- to reuse the columns without copying: `german[!, 1:2]`, `german[!, [:id, :Age]]`, or `german[!, ["id", "Age"]]`.
+- to get the copied columns: `german[:, 1:2]`, `german[:, [:id, :Age]]`,
+  or `german[:, ["id", "Age"]]`;
+- to reuse the columns without copying: `german[!, 1:2]`, `german[!, [:id, :Age]]`,
+  or `german[!, ["id", "Age"]]`.
 
-If you want to can get a single cell of a data frame use the same syntax as the one that gets a cell of a matrix:
+If you want to can get a single cell of a data frame use the same syntax as the
+one that gets a cell of a matrix:
 
 ```jldoctest dataframe
 julia> german[4, 4]
@@ -853,8 +873,9 @@ julia> german[4, 4]
 
 ### Views
 
-We can also create a `view` of a data frame. It is often useful as it is more memory
-efficient than creating a materialized selection. You can create it using a `view` function:
+We can also create a `view` of a data frame. It is often useful as it is more
+memory efficient than creating a materialized selection. You can create it using
+a `view` function:
 
 ```jldoctest dataframe
 julia> view(german, :, 2:5)
@@ -939,8 +960,9 @@ DataFrameRow
    3 │    49  male         1  own
 ```
 
-As you can see the row and column indexing syntax is exactly the same as for indexing.
-The only difference is that we do not create a new object, but a view into an existing one.
+As you can see the row and column indexing syntax is exactly the same as for
+indexing. The only difference is that we do not create a new object, but a view
+into an existing one.
 
 In order to compare the performance of indexing vs creation of a view let us
 run the following benchmark using the BenchmarkTools.jl package (please install
@@ -961,12 +983,15 @@ As you can see creation of a view is:
 - allocates much less memory.
 
 The downside of the view is that:
-- it points to the same memory as its parent (so changing a view changes the parent, which is sometimes undesirable);
-- some operations might be a bit slower (as DataFrames.jl needs to perform a mapping of indices of a view to indices of the parent).
+- it points to the same memory as its parent (so changing a view changes the
+  parent, which is sometimes undesirable);
+- some operations might be a bit slower (as DataFrames.jl needs to perform a
+  mapping of indices of a view to indices of the parent).
 
 ### Changing the Data Stored in a Data Frame
 
-In order to show how to perform mutating operations on a data frame we make a subset of a `german` data frame first:
+In order to show how to perform mutating operations on a data frame we make a
+subset of a `german` data frame first:
 
 ```jldoctest dataframe
 julia> df1 = german[1:6, 2:4]
@@ -1017,8 +1042,9 @@ julia> df1
    6 │    89  male         1
 ```
 
-This is a non-copying operation. One can perform it only if `val` vector has the same length as number
-of rows of `df1` or as a special case if `df1` would not have any columns.
+This is a non-copying operation. One can perform it only if `val` vector has the
+same length as number of rows of `df1` or as a special case if `df1` would not
+have any columns.
 
 ```jldoctest dataframe
 julia> df1.Age === val # no copy is performed
@@ -1099,8 +1125,8 @@ julia> df1
    6 │    89  male             1
 ```
 
-We have already mentioned that `DataFrameRow` can be used to mutate its parent data frame.
-Here are a few examples:
+We have already mentioned that `DataFrameRow` can be used to mutate its parent
+data frame. Here are a few examples:
 
 ```jldoctest dataframe
 julia> dfr = df1[2, :] # DataFrameRow with the second row and all columns of df1
@@ -1188,10 +1214,12 @@ In all these cases the parent of `sdf` view was also updated.
 
 ### Broadcasting Assignment
 
-Apart from normal assignment one can perform broadcasting assignment using the `.=` operation.
+Apart from normal assignment one can perform broadcasting assignment using the
+`.=` operation.
 
 Before we move forward let us explain how broadcasting works in Julia.
-The standard syntax to perform [broadcasting](https://docs.julialang.org/en/v1/manual/mathematical-operations/#man-dot-operators)
+The standard syntax to perform
+[broadcasting](https://docs.julialang.org/en/v1/manual/mathematical-operations/#man-dot-operators)
 is to use `.`. For example, as opposed to R this operation fails:
 
 ```jldoctest dataframe
@@ -1222,8 +1250,8 @@ julia> s
  56
 ```
 
-Similar syntax is fully supported in DataFrames.jl. Here, Column `:Age` is replaced freshly allocated
-vector because of broadcasting assignment:
+Similar syntax is fully supported in DataFrames.jl. Here, Column `:Age` is
+replaced freshly allocated vector because of broadcasting assignment:
 
 ```jldoctest dataframe
 julia> df1[!, :Age] .= [85, 89, 78, 58, 96, 68] # col `:Age` is replaced freshly allocated vector
@@ -1248,9 +1276,10 @@ julia> df1
    6 │    68  female           3
 ```
 
-Using the `:` instead of `!` above would perform a broadcasting assignment in-place into
-an existing column. The major difference between in-place and replace operations
-is that replacing columns is needed if new values have a different type than the old ones.
+Using the `:` instead of `!` above would perform a broadcasting assignment
+in-place into an existing column. The major difference between in-place and
+replace operations is that replacing columns is needed if new values have a
+different type than the old ones.
 
 In the examples below we operate on columns `:Customers` and `:City` that are not
 present in `df1`. In this case using `!` and `:` are equivalent and a new column
@@ -1347,14 +1376,16 @@ julia> df1
    6 │ Economics  female           4  Anam       Dehradoon
 ```
 
-There are some scenarios in DataFrames.jl, when we naturally want a broadcasting-like behaviour,
-but do not allow for the use of `.` operation. In such cases a so-called pseudo-broadcasting
-is performed for user convenience. We have already seen it in examples of `DataFrame` constructor.
-Below we show pseudo-broadcasting at work in the `insertcols!` function, that inserts
-a column into a data frame in an arbitrary position.
+There are some scenarios in DataFrames.jl, when we naturally want a
+broadcasting-like behaviour, but do not allow for the use of `.` operation. In
+such cases a so-called pseudo-broadcasting is performed for user convenience. We
+have already seen it in examples of `DataFrame` constructor. Below we show
+pseudo-broadcasting at work in the `insertcols!` function, that inserts a column
+into a data frame in an arbitrary position.
 
-In the example below we are creating a column `:Country` with the `insertcols!` function.
-Since we pass a scalar `"India"` value of the column it is broadcasted to all rows in the output data frame:
+In the example below we are creating a column `:Country` with the `insertcols!`
+function. Since we pass a scalar `"India"` value of the column it is broadcasted
+to all rows in the output data frame:
 
 ```jldoctest dataframe
 julia> insertcols!(df1, 1, :Country => "India")
@@ -1388,13 +1419,13 @@ julia> insertcols!(df1, 4, :b => exp(4))
 
 ### Not, Between, Cols, and All Column Selectors
 
-You can use `Not`, `Between`, `Cols`, and `All` selectors in more complex column selection
-scenarios:
-- `Not` selector (from the [InvertedIndices.jl](https://github.com/mbauman/InvertedIndices.jl) package)
-  allows us to specify the columns we want to exclude from the resulting data frame.
-  We can put any valid other column selector inside `Not`;
-- `Between` selector allows us to specify a range of columns (we can pass the start and stop column using any
-  of the single column selector syntaxes);
+You can use `Not`, `Between`, `Cols`, and `All` selectors in more complex column
+selection scenarios:
+- `Not` selector (from the [InvertedIndices.jl](https://github.com/mbauman/InvertedIndices.jl)
+  package) allows us to specify the columns we want to exclude from the resulting
+  data frame. We can put any valid other column selector inside `Not`;
+- `Between` selector allows us to specify a range of columns (we can pass the
+  start and stop column using any of the single column selector syntaxes);
 - `Cols(...)` selector picks a union of other selectors passed as its arguments;
 - `All()` allows us to select all columns of `DataFrame`; this is the same as passing `:`;
 - regular expression to select columns whose names match it.
@@ -1455,8 +1486,8 @@ julia> german[:, Between(:Sex, :Housing)]
                985 rows omitted
 ```
 
-In the example below `Cols` selector is picking a union of `"Age"` and `Between("Sex", "Job")`
-selectors passed as its arguments:
+In the example below `Cols` selector is picking a union of `"Age"` and
+`Between("Sex", "Job")` selectors passed as its arguments:
 
 ```jldoctest dataframe
 julia> german[:, Cols("Age", Between("Sex", "Job"))]
@@ -1484,7 +1515,8 @@ julia> german[:, Cols("Age", Between("Sex", "Job"))]
 ```
 
 You can also use `Regex` (regular expressions) to select columns. In the example
-below we select columns that have `"S"` in their name and also we use `Not` to drop row number 5:
+below we select columns that have `"S"` in their name and also we use `Not` to
+drop row number 5:
 
 ```jldoctest dataframe
 julia> german[Not(5), r"S"]
@@ -1513,29 +1545,34 @@ julia> german[Not(5), r"S"]
 
 ## Basic Usage of Transformation Functions
 
-In DataFrames.jl we have five functions that we can be used to perform transformations of columns
-of a data frame:
+In DataFrames.jl we have five functions that we can be used to perform
+transformations of columns of a data frame:
 
-- `combine`: creates a new data frame populated with columns that are results of transformation
-  applied to the source data frame columns, potentially combining its rows;
-- `select`: creates a new data frame that has the same number of rows as the source data frame
-  populated with columns that are results of transformations applied to the source data frame
-  columns;
+- `combine`: creates a new data frame populated with columns that are results of
+  transformation applied to the source data frame columns, potentially combining
+  its rows;
+- `select`: creates a new data frame that has the same number of rows as the
+  source data frame populated with columns that are results of transformations
+  applied to the source data frame columns;
 - `select!`: the same as `select` but updates the passed data frame in place;
-- `transform`: the same as `select` but keeps the columns that were already present in the data frame
-  (note though that these columns can be potentially modified by the transformation passed to `transform`);
-- `transform!`: the same as `transform` but updates the passed data frame in place.
+- `transform`: the same as `select` but keeps the columns that were already
+  present in the data frame (note though that these columns can be potentially
+  modified by the transformation passed to `transform`);
+- `transform!`: the same as `transform` but updates the passed data frame in
+  place.
 
 The fundamental ways to specify a transformation are:
 
-- `source_column => transformation => target_column_name`;
-  In this scenario the `source_column` is passed as an argument to `transformation` function
-  and stored in `target_column_name` column.
-- `source_column => transformation`;
-  In this scenario we apply the transformation function to `source_column` and the
-  target column names is automatically generated.
-- `source_column => target_column_name` renames the `source_column` to `target_column_name`.
-- `source_column` just keep the source column as is in the result without any transformation;
+- `source_column => transformation => target_column_name`; In this scenario the
+  `source_column` is passed as an argument to `transformation` function and
+  stored in `target_column_name` column.
+- `source_column => transformation`; In this scenario we apply the
+  transformation function to `source_column` and the target column names is
+  automatically generated.
+- `source_column => target_column_name` renames the `source_column` to
+  `target_column_name`.
+- `source_column` just keep the source column as is in the result without any
+  transformation;
 
 These rules are typically called transformation mini-language.
 
@@ -1599,16 +1636,17 @@ julia> combine(german, :Age => mean => :mean_age, :Housing => unique => :housing
    3 │   35.546  rent
 ```
 
-Note, however, that it is not allowed to return vectors of different lengths in different transformations:
+Note, however, that it is not allowed to return vectors of different lengths in
+different transformations:
 
 ```jldoctest dataframe
 julia> combine(german, :Age, :Housing => unique => :Housing)
 ERROR: ArgumentError: New columns must have the same length as old columns
 ```
 
-Let us discuss some other examples using `select`. Often we want to apply some function not to the whole
-column of a data frame, but rather to its individual elements. Normally we can achieve this using broadcasting
-like this:
+Let us discuss some other examples using `select`. Often we want to apply some
+function not to the whole column of a data frame, but rather to its individual
+elements. Normally we can achieve this using broadcasting like this:
 
 ```jldoctest dataframe
 julia> select(german, :Sex => (x -> uppercase.(x)) => :Sex)
@@ -1635,10 +1673,12 @@ julia> select(german, :Sex => (x -> uppercase.(x)) => :Sex)
 985 rows omitted
 ```
 
-This pattern is encountered very often in practice, therefore there is a `ByRow` convenience wrapper for a
-function that creates its broadcasted variant. In these examples `ByRow` is a special type used for
-selection operations to signal that the wrapped function should be applied to each element (row) of the selection.
-Here we are passing `ByRow` wrapper to target column name `:Sex` using `uppercase` function:
+This pattern is encountered very often in practice, therefore there is a `ByRow`
+convenience wrapper for a function that creates its broadcasted variant. In
+these examples `ByRow` is a special type used for selection operations to signal
+that the wrapped function should be applied to each element (row) of the
+selection. Here we are passing `ByRow` wrapper to target column name `:Sex`
+using `uppercase` function:
 
 ```jldoctest dataframe
 julia> select(german, :Sex => ByRow(uppercase) => :SEX)
@@ -1779,7 +1819,8 @@ julia> select(german, r"S", "Job", 1)
                                985 rows omitted
 ```
 
-Taking advantage of this flexibility here is an idiomatic pattern to move some column to the front of a data frame:
+Taking advantage of this flexibility here is an idiomatic pattern to move some
+column to the front of a data frame:
 
 ```jldoctest dataframe
 julia> select(german, "Sex", :)
@@ -1834,8 +1875,8 @@ julia> select(german, :Sex => :x1, :Age => :x2)
        985 rows omitted
 ```
 
-It is important to note that `select` always returns a data frame, even if a single column selected
-as opposed to indexing syntax. Compare the following:
+It is important to note that `select` always returns a data frame, even if a
+single column selected as opposed to indexing syntax. Compare the following:
 
 ```jldoctest dataframe
 julia> select(german, :Age)
@@ -1885,8 +1926,8 @@ julia> german[:, :Age]
  27
 ```
 
-By default `select` copies columns of a passed source data frame. In order to avoid copying, pass
-the `copycols=false` keyword argument:
+By default `select` copies columns of a passed source data frame. In order to
+avoid copying, pass the `copycols=false` keyword argument:
 
 ```jldoctest dataframe
 julia> df = select(german, :Sex)
@@ -1973,8 +2014,9 @@ julia> german
 
 As you can see the `:Age` column was dropped from the `german` data frame.
 
-The `transform` and `transform!` functions work identically to `select` and `select!` with the only difference that
-they retain all columns that are present in the source data frame. Here are some examples:
+The `transform` and `transform!` functions work identically to `select` and
+`select!` with the only difference that they retain all columns that are present
+in the source data frame. Here are some examples:
 
 ```jldoctest dataframe
 julia> german = copy(german_ref);
@@ -2036,10 +2078,9 @@ julia> transform(german, :Age => :Sex, :Sex => :Age)
 ```
 
 If we give more than one source column to a transformation they are passed as
-consecutive positional arguments.
-So for example the `[:Age, :Job] => (+) => :res` transformation below
-evaluates `+(df1.Age, df1.Job)` (which adds two columns)
-and stores the result in the `:res` column:
+consecutive positional arguments. So for example the
+`[:Age, :Job] => (+) => :res` transformation below evaluates `+(df1.Age, df1.Job)`
+(which adds two columns) and stores the result in the `:res` column:
 
 ```jldoctest dataframe
 julia> select(german, :Age, :Job, [:Age, :Job] => (+) => :res)

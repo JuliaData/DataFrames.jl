@@ -56,13 +56,14 @@ julia> df = DataFrame(A=1:4, B=["M", "F", "F", "M"])
    4 │     4  M
 ```
 
-Columns can be directly (i.e. without copying) accessed via `df.col`,
-`df."col"`, `df[!, :col]` or `df[!, "col"]`. The two latter syntaxes are more
-flexible as they allow passing a variable holding the name of the column, and
-not only a literal name. Note that column names can be either symbols (written
-as `:col`, `:var"col"` or `Symbol("col")`) or strings (written as `"col"`). Note
-that in the forms `df."col"` and `:var"col"` variable interpolation into a
-string using `$` does not work. Columns can also be accessed using an integer
+Columns can be directly (i.e. without copying) extracted using `df.col`,
+`df."col"`, `df[!, :col]` or `df[!, "col"]` (this rule applies to getting data
+from a data frame, not writing data to a data frame). The two latter syntaxes
+are more flexible as they allow passing a variable holding the name of the
+column, and not only a literal name. Note that column names can be either
+symbols (written as `:col`, `:var"col"` or `Symbol("col")`) or strings (written
+as `"col"`). In the forms `df."col"` and `:var"col"` variable interpolation into
+a string using `$` does not work. Columns can also be extracted using an integer
 index specifying their position.
 
 Since `df[!, :col]` does not make a copy, changing the elements of the column
@@ -169,7 +170,6 @@ julia> propertynames(df)
     is slightly faster and should generally be preferred, if not generating them
     via string manipulation.
 
-
 ### Constructing Column by Column
 
 It is also possible to start with an empty `DataFrame` and add columns to it one by one:
@@ -181,7 +181,7 @@ julia> df = DataFrame()
 julia> df.A = 1:8
 1:8
 
-julia> df.B = ["M", "F", "F", "M", "F", "M", "M", "F"]
+julia> df[:, :B] = ["M", "F", "F", "M", "F", "M", "M", "F"]
 8-element Vector{String}:
  "M"
  "F"
@@ -192,22 +192,33 @@ julia> df.B = ["M", "F", "F", "M", "F", "M", "M", "F"]
  "M"
  "F"
 
+julia> df[!, :C] .= 0
+8-element Vector{Int64}:
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+
 julia> df
-8×2 DataFrame
- Row │ A      B
-     │ Int64  String
-─────┼───────────────
-   1 │     1  M
-   2 │     2  F
-   3 │     3  F
-   4 │     4  M
-   5 │     5  F
-   6 │     6  M
-   7 │     7  M
-   8 │     8  F
+8×3 DataFrame
+ Row │ A      B       C
+     │ Int64  String  Int64
+─────┼──────────────────────
+   1 │     1  M           0
+   2 │     2  F           0
+   3 │     3  F           0
+   4 │     4  M           0
+   5 │     5  F           0
+   6 │     6  M           0
+   7 │     7  M           0
+   8 │     8  F           0
 ```
 
-The `DataFrame` we build in this way has 8 rows and 2 columns.
+The `DataFrame` we build in this way has 8 rows and 3 columns.
 This can be checked using the `size` function:
 
 ```jldoctest dataframe
@@ -215,12 +226,69 @@ julia> size(df, 1)
 8
 
 julia> size(df, 2)
-2
+3
 
 julia> size(df)
-(8, 2)
-
+(8, 3)
 ```
+
+In the above example notice that the `df[!, :C] .= 0` expression created a new
+column in the data frame by broadcasting a scalar.
+
+When setting a column of a data frame the `df[!, :C]` and `df.C` syntaxes are
+equivalent and they would replace (or create) the `:C` column in `df`. This
+is different from using `df[:, :C]` to set a column in a data frame, which
+updates the contents of column in-place if it already exists.
+
+Here is an example showing this difference. Let us try changing the `:B` column
+to a binary variable.
+
+```jldoctest dataframe
+julia> df[:, :B] = df.B .== "F"
+ERROR: MethodError: Cannot `convert` an object of type Bool to an object of type String
+
+julia> df[:, :B] .= df.B .== "F"
+ERROR: MethodError: Cannot `convert` an object of type Bool to an object of type String
+```
+
+The above operations did not work because when you use `:` as row selector the
+`:B` column is updated in-place, and it only supports storing strings.
+
+On the other hand the following works:
+
+```jldoctest dataframe
+julia> df.B = df.B .== "F"
+8-element BitVector:
+ 0
+ 1
+ 1
+ 0
+ 1
+ 0
+ 0
+ 1
+
+julia> df
+8×3 DataFrame
+ Row │ A      B      C
+     │ Int64  Bool   Int64
+─────┼─────────────────────
+   1 │     1  false      0
+   2 │     2   true      0
+   3 │     3   true      0
+   4 │     4  false      0
+   5 │     5   true      0
+   6 │     6  false      0
+   7 │     7  false      0
+   8 │     8   true      0
+```
+
+As you can see because we used `df.B` on the right-hand side of the assignment
+the `:B` column was replaced. The same effect would be achieved if we used
+`df[!, :B]` instead or if we used broadcasted assignment `.=`.
+
+In the [Indexing](@ref) section of the manual you can find all details about all
+the available indexing options.
 
 ### Constructing Row by Row
 
