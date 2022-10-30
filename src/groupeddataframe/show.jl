@@ -26,7 +26,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
             nrows = size(gd[i], 1)
             rows = nrows > 1 ? "rows" : "row"
 
-            identified_groups = [string(col, " = ", repr(gd[i][1, col]))
+            identified_groups = [string(col, " = ", repr(MIME("text/plain"), gd[i][1, col]))
                                  for col in gd.cols]
 
             print(io, "\nGroup $i ($nrows $rows): ")
@@ -83,7 +83,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
         nrows = size(gd[1], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [string(col, " = ", repr(gd[1][1, col]))
+        identified_groups = [string(col, " = ", repr(MIME("text/plain"), gd[1][1, col]))
                              for col in gd.cols]
 
         print(io, "\nFirst Group ($nrows $rows): ")
@@ -99,7 +99,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
         nrows = size(gd[N], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [string(col, " = ", repr(gd[N][1, col]))
+        identified_groups = [string(col, " = ", repr(MIME("text/plain"), gd[N][1, col]))
                              for col in gd.cols]
         print(io, "\n⋮")
         print(io, "\nLast Group ($nrows $rows): ")
@@ -124,4 +124,84 @@ function Base.show(df::GroupedDataFrame;
                 allrows=allrows, allcols=allcols, allgroups=allgroups,
                 rowlabel=rowlabel, summary=summary, truncate=truncate,
                 kwargs...)
+end
+
+function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
+    N = length(gd)
+    keys = html_escape(join(string.(groupcols(gd)), ", "))
+    keystr = length(gd.cols) > 1 ? "keys" : "key"
+    groupstr = N > 1 ? "groups" : "group"
+    write(io, "<p><b>$(nameof(typeof(gd))) with $N $groupstr based on $keystr: $keys</b></p>")
+    if N > 0
+        nrows = size(gd[1], 1)
+        rows = nrows > 1 ? "rows" : "row"
+
+        identified_groups = [string(col, " = ", repr(MIME("text/plain"), first(gd[1][!, col])))
+                             for col in gd.cols]
+
+        title = "First Group ($nrows $rows): " * join(identified_groups, ", ")
+        _show(io, mime, gd[1], title=title)
+    end
+    if N > 1
+        nrows = size(gd[N], 1)
+        rows = nrows > 1 ? "rows" : "row"
+
+        identified_groups = [string(col, " = ", repr(MIME("text/plain"), first(gd[N][!, col])))
+                             for col in gd.cols]
+
+        write(io, "<p>&vellip;</p>")
+        title = "Last Group ($nrows $rows): " * join(identified_groups, ", ")
+        _show(io, mime, gd[N], title=title)
+    end
+end
+
+function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
+    N = length(gd)
+    keys = join(latex_escape.(string.(groupcols(gd))), ", ")
+    keystr = length(gd.cols) > 1 ? "keys" : "key"
+    groupstr = N > 1 ? "groups" : "group"
+    write(io, "$(nameof(typeof(gd))) with $N $groupstr based on $keystr: $keys\n\n")
+    if N > 0
+        nrows = size(gd[1], 1)
+        rows = nrows > 1 ? "rows" : "row"
+
+        identified_groups = [latex_escape(string(col, " = ",
+                                                 repr(MIME("text/plain"), first(gd[1][!, col]))))
+                             for col in gd.cols]
+
+        write(io, "First Group ($nrows $rows): ")
+        join(io, identified_groups, ", ")
+        write(io, "\n\n")
+        show(io, mime, gd[1])
+    end
+    if N > 1
+        nrows = size(gd[N], 1)
+        rows = nrows > 1 ? "rows" : "row"
+
+        identified_groups = [latex_escape(string(col, " = ",
+                                                 repr(MIME("text/plain"), first(gd[N][!, col]))))
+                             for col in gd.cols]
+
+        write(io, "\n\$\\dots\$\n\n")
+        write(io, "Last Group ($nrows $rows): ")
+        join(io, identified_groups, ", ")
+        write(io, "\n\n")
+        show(io, mime, gd[N])
+    end
+end
+
+function Base.show(io::IO, mime::MIME"text/csv", gd::GroupedDataFrame)
+    isfirst = true
+    for sdf in gd
+        printtable(io, sdf, header = isfirst, separator = ',')
+        isfirst && (isfirst = false)
+    end
+end
+
+function Base.show(io::IO, mime::MIME"text/tab-separated-values", gd::GroupedDataFrame)
+    isfirst = true
+    for sdf in gd
+        printtable(io, sdf, header = isfirst, separator = '\t')
+        isfirst && (isfirst = false)
+    end
 end
