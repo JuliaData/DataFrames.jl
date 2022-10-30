@@ -3291,3 +3291,35 @@ function insertcols!(df::AbstractDataFrame; after::Bool=false,
     _drop_all_nonnote_metadata!(parent(df))
     return df
 end
+
+"""
+    partition(df::AbstractDataFrame, n)
+
+Iterate over `df` data frame by `n` row `SubDataFrame` at a time.
+
+# Examples
+
+```jldoctest
+julia> collect(Iterators.partition(DataFrame(x=1:5), 2))
+3-element Vector{SubDataFrame{DataFrame, DataFrames.Index, UnitRange{Int64}}}:
+ 2×1 SubDataFrame
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+ 2×1 SubDataFrame
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     3
+   2 │     4
+ 1×1 SubDataFrame
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     5
+```
+"""
+Iterators.partition(df::AbstractDataFrame, n::Integer) =
+    (view(df, idxs, :) for idxs in Iterators.partition(1:nrow(df), n))
