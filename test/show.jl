@@ -1015,7 +1015,7 @@ end
 end
 
 @testset "InlineStrings with GroupedDataFrame" begin
-    df = DataFrame(id=inlinestrings(["a", "b", "c"]), value=1:3)
+    df = DataFrame(id=inlinestrings(["a", "b", "c"]), value=collect(Int64, 1:3))
 
     io = IOContext(IOBuffer(), :limit=>true)
     show(io, groupby(df, :id))
