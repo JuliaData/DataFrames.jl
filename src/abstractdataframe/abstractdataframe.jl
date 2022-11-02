@@ -3293,9 +3293,10 @@ function insertcols!(df::AbstractDataFrame; after::Bool=false,
 end
 
 """
-    partition(df::AbstractDataFrame, n)
+    Iterators.partition(df::AbstractDataFrame, n)
 
-Iterate over `df` data frame by `n` row `SubDataFrame` at a time.
+Iterate over `df` data frame `n` rows at a time, returning each block
+as a `SubDataFrame`.
 
 # Examples
 
