@@ -1019,63 +1019,116 @@ end
 
     io = IOContext(IOBuffer(), :limit=>true)
     show(io, groupby(df, :id))
-    @test String(take!(io.io)) === "GroupedDataFrame with 3 groups based on key: id\n" *
-        "First Group (1 row): id = \"a\"\n Row │ id       value\n" *
-        "     │ String1  Int64\n─────┼────────────────\n" *
-        "   1 │ a            1\n⋮\nLast Group (1 row): id = \"c\"\n" *
-        " Row │ id       value\n     │ String1  Int64\n─────┼────────────────\n" *
-        "   1 │ c            3"
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 3 groups based on key: id
+        First Group (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1
+        ⋮
+        Last Group (1 row): id = "c"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ c            3"""
 
     io = IOContext(IOBuffer(), :limit=>true)
     show(io, MIME("text/plain"), groupby(df, :id))
-    @test String(take!(io.io)) === "GroupedDataFrame with 3 groups based on key: id\n" *
-        "First Group (1 row): id = \"a\"\n Row │ id       value\n" *
-        "     │ String1  Int64\n─────┼────────────────\n" *
-        "   1 │ a            1\n⋮\nLast Group (1 row): id = \"c\"\n" *
-        " Row │ id       value\n     │ String1  Int64\n─────┼────────────────\n" *
-        "   1 │ c            3"
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 3 groups based on key: id
+        First Group (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1
+        ⋮
+        Last Group (1 row): id = "c"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ c            3"""
 
     io = IOContext(IOBuffer(), :limit=>false)
     show(io, groupby(df, :id))
-    @test String(take!(io.io)) === "GroupedDataFrame with 3 groups based on key: id\n" *
-        "Group 1 (1 row): id = \"a\"\n Row │ id       value\n     │ String1  Int64\n" *
-        "─────┼────────────────\n   1 │ a            1\nGroup 2 (1 row): id = \"b\"\n" *
-        " Row │ id       value\n     │ String1  Int64\n─────┼────────────────\n" *
-        "   1 │ b            2\nGroup 3 (1 row): id = \"c\"\n Row │ id       value\n" *
-        "     │ String1  Int64\n─────┼────────────────\n   1 │ c            3"
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 3 groups based on key: id
+        Group 1 (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1
+        Group 2 (1 row): id = "b"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ b            2
+        Group 3 (1 row): id = "c"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ c            3"""
+
 
     io = IOContext(IOBuffer(), :limit=>false)
     show(io, MIME("text/plain"), groupby(df, :id))
-    @test String(take!(io.io)) === "GroupedDataFrame with 3 groups based on key: id\n" *
-        "Group 1 (1 row): id = \"a\"\n Row │ id       value\n     │ String1  Int64\n" *
-        "─────┼────────────────\n   1 │ a            1\nGroup 2 (1 row): id = \"b\"\n" *
-        " Row │ id       value\n     │ String1  Int64\n─────┼────────────────\n" *
-        "   1 │ b            2\nGroup 3 (1 row): id = \"c\"\n Row │ id       value\n" *
-        "     │ String1  Int64\n─────┼────────────────\n   1 │ c            3"
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 3 groups based on key: id
+        Group 1 (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1
+        Group 2 (1 row): id = "b"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ b            2
+        Group 3 (1 row): id = "c"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ c            3"""
 
     io = IOContext(IOBuffer(), :limit=>true)
     show(io, groupby(df[1:1, :], :id))
-    @test String(take!(io.io)) === "GroupedDataFrame with 1 group based on key: id\n" *
-        "First Group (1 row): id = \"a\"\n Row │ id       value\n     │ String1  Int64\n" *
-        "─────┼────────────────\n   1 │ a            1"
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 1 group based on key: id
+        First Group (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1"""
 
     io = IOContext(IOBuffer(), :limit=>false)
     show(io, groupby(df[1:1, :], :id))
-    @test String(take!(io.io)) === "GroupedDataFrame with 1 group based on key: id\n" *
-        "Group 1 (1 row): id = \"a\"\n Row │ id       value\n     │ String1  Int64\n" *
-        "─────┼────────────────\n   1 │ a            1"
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 1 group based on key: id
+        Group 1 (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1"""
 
     io = IOContext(IOBuffer(), :limit=>true)
     show(io, MIME("text/plain"), groupby(df[1:1, :], :id))
-    @test String(take!(io.io)) === "GroupedDataFrame with 1 group based on key: id\n" *
-        "First Group (1 row): id = \"a\"\n Row │ id       value\n     │ String1  Int64\n" *
-        "─────┼────────────────\n   1 │ a            1"
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 1 group based on key: id
+        First Group (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1"""
 
     io = IOContext(IOBuffer(), :limit=>false)
     show(io, MIME("text/plain"), groupby(df[1:1, :], :id))
-    @test String(take!(io.io)) === "GroupedDataFrame with 1 group based on key: id\n" *
-        "Group 1 (1 row): id = \"a\"\n Row │ id       value\n     │ String1  Int64\n" *
-        "─────┼────────────────\n   1 │ a            1"
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 1 group based on key: id
+        Group 1 (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1"""
 
     io = IOContext(IOBuffer())
     show(io, MIME("text/html"), groupby(df, :id))
@@ -1126,20 +1179,47 @@ end
 
     io = IOContext(IOBuffer())
     show(io, MIME("text/latex"), groupby(df, :id))
-    @test String(take!(io.io)) === "GroupedDataFrame with 3 groups based on key: id\n\n" *
-        "First Group (1 row): id = \"a\"\n\n\\begin{tabular}{r|cc}\n" *
-        "\t& id & value\\\\\n\t\\hline\n\t& String1 & Int64\\\\\n" *
-        "\t\\hline\n\t1 & a & 1 \\\\\n\\end{tabular}\n\n\$\\dots\$\n\n" *
-        "Last Group (1 row): id = \"c\"\n\n\\begin{tabular}{r|cc}\n" *
-        "\t& id & value\\\\\n\t\\hline\n\t& String1 & Int64\\\\\n\t\\hline\n" *
-        "\t1 & c & 3 \\\\\n\\end{tabular}\n"
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 3 groups based on key: id
+
+        First Group (1 row): id = "a"
+
+        \\begin{tabular}{r|cc}
+        \t& id & value\\\\
+        \t\\hline
+        \t& String1 & Int64\\\\
+        \t\\hline
+        \t1 & a & 1 \\\\
+        \\end{tabular}
+
+        \$\\dots\$
+
+        Last Group (1 row): id = "c"
+
+        \\begin{tabular}{r|cc}
+        \t& id & value\\\\
+        \t\\hline
+        \t& String1 & Int64\\\\
+        \t\\hline
+        \t1 & c & 3 \\\\
+        \\end{tabular}
+        """
 
     io = IOContext(IOBuffer())
     show(io, MIME("text/latex"), groupby(df[1:1, :], :id))
-    @test String(take!(io.io)) === "GroupedDataFrame with 1 group based on key: id\n\n" *
-        "First Group (1 row): id = \"a\"\n\n\\begin{tabular}{r|cc}\n" *
-        "\t& id & value\\\\\n\t\\hline\n\t& String1 & Int64\\\\\n" *
-        "\t\\hline\n\t1 & a & 1 \\\\\n\\end{tabular}\n"
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 1 group based on key: id
+
+        First Group (1 row): id = "a"
+
+        \\begin{tabular}{r|cc}
+        \t& id & value\\\\
+        \t\\hline
+        \t& String1 & Int64\\\\
+        \t\\hline
+        \t1 & a & 1 \\\\
+        \\end{tabular}
+        """
 end
 
 end # module
