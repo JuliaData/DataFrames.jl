@@ -3322,5 +3322,31 @@ julia> collect(Iterators.partition(DataFrame(x=1:5), 2))
    1 │     5
 ```
 """
-Iterators.partition(df::AbstractDataFrame, n::Integer) =
-    (view(df, idxs, :) for idxs in Iterators.partition(1:nrow(df), n))
+function Iterators.partition(df::AbstractDataFrame, n::Integer)
+    n < 1 && throw(ArgumentError("cannot create partitions of length $n"))
+    return Iterators.PartitionIterator(df, Int(n))
+end
+
+# use autodetection of eltype
+Base.IteratorEltype(::Type{<:Iterators.PartitionIterator{<:AbstractDataFrame}}) =
+    Base.EltypeUnknown()
+
+# we do not need to be overly specific here as we rely on autodetection of eltype
+Base.eltype(::Type{<:Iterators.PartitionIterator{<:AbstractDataFrame}}) =
+    AbstractDataFrame
+
+IteratorSize(::Type{<:Iterators.PartitionIterator{<:AbstractDataFrame}}) =
+    Base.HasLength()
+
+function Base.length(itr::Iterators.PartitionIterator{<:AbstractDataFrame})
+    l = nrow(itr.c)
+    return cld(l, itr.n)
+end
+
+function Base.iterate(itr::Iterators.PartitionIterator{<:AbstractDataFrame}, state=1)
+    last_idx = nrow(itr.c)
+    state > last_idx && return nothing
+    r = min(state + itr.n - 1, last_idx)
+    return view(itr.c, state:r, :), r + 1
+end
+

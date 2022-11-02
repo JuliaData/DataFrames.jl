@@ -2256,14 +2256,25 @@ end
 
 @testset "Iterators.partition" begin
     for df in (DataFrame(x=1:5), view(DataFrame(x=1:6, y=11:16), 1:5, 1:1))
-        res = collect(Iterators.partition(df, 2))
+        p = Iterators.partition(df, 2)
+        @test p isa Iterators.PartitionIterator
+        @test Tables.partitions(p) === p
+        @test eltype(p) === AbstractDataFrame
+        @test Base.IteratorEltype(typeof(p)) === Base.EltypeUnknown()
+        @test length(p) == 3
+        @test Base.IteratorSize(typeof(p)) === Base.HasLength()
+        res = collect(p)
         @test res == [DataFrame(x=1:2), DataFrame(x=3:4), DataFrame(x=5)]
         @test all(v -> v isa SubDataFrame, res)
         @test_throws ArgumentError Iterators.partition(df, false)
         @test_throws ArgumentError Iterators.partition(df, -1)
     end
-    @test isempty(Iterators.partition(DataFrame(), 1))
-    @test eltype(collect(Iterators.partition(DataFrame(), 1))) <: SubDataFrame
+    p = Iterators.partition(DataFrame(), 1)
+    @test p isa Iterators.PartitionIterator
+    @test Tables.partitions(p) === p
+    @test isempty(p)
+    @test length(p) == 0
+    @test eltype(collect(p)) <: SubDataFrame
 end
 
 end # module
