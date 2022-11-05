@@ -486,6 +486,43 @@ end
     @test_throws ArgumentError colmetadata!(df, :a, "p", "q")
 end
 
+@testset "fallback definitions of metadata and colmetadata" begin
+    df = DataFrame()
+    @test metadata(df) == Dict()
+    @test metadata(df, style=true) == Dict()
+    @test colmetadata(df) == Dict()
+    @test colmetadata(df, style=true) == Dict()
+    df.a = 1:2
+    df.b = 2:3
+    df.c = 3:4
+    @test metadata(df) == Dict()
+    @test metadata(df, style=true) == Dict()
+    @test colmetadata(df) == Dict()
+    @test colmetadata(df, style=true) == Dict()
+    metadata!(df, "a1", "b1", style=:default)
+    metadata!(df, "a2", "b2", style=:note)
+    colmetadata!(df, :a, "x1", "y1", style=:default)
+    colmetadata!(df, :a, "x2", "y2", style=:note)
+    colmetadata!(df, :c, "x3", "y3", style=:note)
+    @test metadata(df) == Dict("a1" => "b1", "a2" => "b2")
+    @test metadata(df, style=true) == Dict("a1" => ("b1", :default),
+                                           "a2" => ("b2", :note))
+    @test colmetadata(df) == Dict(:a => Dict("x1" => "y1",
+                                             "x2" => "y2"),
+                                  :c => Dict("x3" => "y3"))
+    @test colmetadata(df, style=true) == Dict(:a => Dict("x1" => ("y1", :default),
+                                                         "x2" => ("y2", :note)),
+                                              :c => Dict("x3" => ("y3", :note)))
+    @test colmetadata(df, :a) == Dict("x1" => "y1",
+                                      "x2" => "y2")
+    @test colmetadata(df, :a, style=true) == Dict("x1" => ("y1", :default),
+                                                  "x2" => ("y2", :note))
+    @test colmetadata(df, :b) == Dict()
+    @test colmetadata(df, :b, style=true) == Dict()
+    @test colmetadata(df, :c) == Dict("x3" => "y3")
+    @test colmetadata(df, :c, style=true) == Dict("x3" => ("y3", :note))
+end
+
 @testset "rename & rename!" begin
     df = DataFrame()
     df2 = rename(df)
