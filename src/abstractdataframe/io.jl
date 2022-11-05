@@ -282,13 +282,6 @@ function _show(io::IO,
     return nothing
 end
 
-function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; kwargs...)
-    _verify_kwargs_for_html(; kwargs...)
-    r, c = parentindices(dfr)
-    title = "DataFrameRow ($(length(dfr)) columns)"
-    _show(io, mime, view(parent(dfr), [r], c); rowid=r, title=title, kwargs...)
-end
-
 function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows; kwargs...)
     _verify_kwargs_for_html(; kwargs...)
     df = parent(dfrs)
@@ -301,35 +294,6 @@ function Base.show(io::IO, mime::MIME"text/html", dfcs::DataFrameColumns; kwargs
     df = parent(dfcs)
     title = "$(nrow(df))×$(ncol(df)) DataFrameColumns"
     _show(io, mime, df; title=title, kwargs...)
-end
-
-function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
-    N = length(gd)
-    keys = html_escape(join(string.(groupcols(gd)), ", "))
-    keystr = length(gd.cols) > 1 ? "keys" : "key"
-    groupstr = N > 1 ? "groups" : "group"
-    write(io, "<p><b>$(nameof(typeof(gd))) with $N $groupstr based on $keystr: $keys</b></p>")
-    if N > 0
-        nrows = size(gd[1], 1)
-        rows = nrows > 1 ? "rows" : "row"
-
-        identified_groups = [string(col, " = ", repr(first(gd[1][!, col])))
-                             for col in gd.cols]
-
-        title = "First Group ($nrows $rows): " * join(identified_groups, ", ")
-        _show(io, mime, gd[1], title=title)
-    end
-    if N > 1
-        nrows = size(gd[N], 1)
-        rows = nrows > 1 ? "rows" : "row"
-
-        identified_groups = [string(col, " = ", repr(first(gd[N][!, col])))
-                             for col in gd.cols]
-
-        write(io, "<p>&vellip;</p>")
-        title = "Last Group ($nrows $rows): " * join(identified_groups, ", ")
-        _show(io, mime, gd[N], title=title)
-    end
 end
 
 # Internal function to verify the keywords in show functions using the HTML
@@ -453,50 +417,10 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
     write(io, "\\end{tabular}\n")
 end
 
-function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow; eltypes::Bool=true)
-    r, c = parentindices(dfr)
-    _show(io, mime, view(parent(dfr), [r], c), eltypes=eltypes, rowid=r)
-end
-
 Base.show(io::IO, mime::MIME"text/latex", dfrs::DataFrameRows; eltypes::Bool=true) =
 	_show(io, mime, parent(dfrs), eltypes=eltypes)
 Base.show(io::IO, mime::MIME"text/latex", dfcs::DataFrameColumns; eltypes::Bool=true) =
 	_show(io, mime, parent(dfcs), eltypes=eltypes)
-
-function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
-    N = length(gd)
-    keys = join(latex_escape.(string.(groupcols(gd))), ", ")
-    keystr = length(gd.cols) > 1 ? "keys" : "key"
-    groupstr = N > 1 ? "groups" : "group"
-    write(io, "$(nameof(typeof(gd))) with $N $groupstr based on $keystr: $keys\n\n")
-    if N > 0
-        nrows = size(gd[1], 1)
-        rows = nrows > 1 ? "rows" : "row"
-
-        identified_groups = [latex_escape(string(col, " = ",
-                                                 repr(first(gd[1][!, col]))))
-                             for col in gd.cols]
-
-        write(io, "First Group ($nrows $rows): ")
-        join(io, identified_groups, ", ")
-        write(io, "\n\n")
-        show(io, mime, gd[1])
-    end
-    if N > 1
-        nrows = size(gd[N], 1)
-        rows = nrows > 1 ? "rows" : "row"
-
-        identified_groups = [latex_escape(string(col, " = ",
-                                                 repr(first(gd[N][!, col]))))
-                             for col in gd.cols]
-
-        write(io, "\n\$\\dots\$\n\n")
-        write(io, "Last Group ($nrows $rows): ")
-        join(io, identified_groups, ", ")
-        write(io, "\n\n")
-        show(io, mime, gd[N])
-    end
-end
 
 ##############################################################################
 #
@@ -566,35 +490,9 @@ function printtable(io::IO,
     nothing
 end
 
-function Base.show(io::IO, mime::MIME"text/csv", dfr::DataFrameRow)
-    r, c = parentindices(dfr)
-    show(io, mime, view(parent(dfr), [r], c))
-end
-
-function Base.show(io::IO, mime::MIME"text/tab-separated-values", dfr::DataFrameRow)
-    r, c = parentindices(dfr)
-    show(io, mime, view(parent(dfr), [r], c))
-end
-
 Base.show(io::IO, mime::MIME"text/csv",
           dfs::Union{DataFrameRows, DataFrameColumns}) =
     show(io, mime, parent(dfs))
 Base.show(io::IO, mime::MIME"text/tab-separated-values",
           dfs::Union{DataFrameRows, DataFrameColumns}) =
     show(io, mime, parent(dfs))
-
-function Base.show(io::IO, mime::MIME"text/csv", gd::GroupedDataFrame)
-    isfirst = true
-    for sdf in gd
-        printtable(io, sdf, header = isfirst, separator = ',')
-        isfirst && (isfirst = false)
-    end
-end
-
-function Base.show(io::IO, mime::MIME"text/tab-separated-values", gd::GroupedDataFrame)
-    isfirst = true
-    for sdf in gd
-        printtable(io, sdf, header = isfirst, separator = '\t')
-        isfirst && (isfirst = false)
-    end
-end

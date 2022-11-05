@@ -1,3 +1,10 @@
+# DataFrames.jl v1.4.3 Patch Release Notes
+
+## Display improvements
+
+* Improve printing of grouping keys when displaying `GroupedDataFrame`
+  ([#3213](https://github.com/JuliaData/DataFrames.jl/pull/3213))
+
 # DataFrames.jl v1.4.2 Patch Release Notes
 
 ## Bug fixes

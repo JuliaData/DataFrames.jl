@@ -12,7 +12,7 @@ Base.show(io::IO, f::F) = show(io, f.i)
 
 module TestShow
 
-using DataFrames, Dates, Random, Test, CategoricalArrays
+using DataFrames, Dates, Random, Test, CategoricalArrays, InlineStrings
 
 import Main: ⛵⛵⛵⛵⛵, F
 
@@ -1012,6 +1012,214 @@ end
              │ CategoricalValue…
         ─────┼───────────────────
            1 │ 1"""
+end
+
+@testset "InlineStrings with GroupedDataFrame" begin
+    df = DataFrame(id=inlinestrings(["a", "b", "c"]), value=collect(Int64, 1:3))
+
+    io = IOContext(IOBuffer(), :limit=>true)
+    show(io, groupby(df, :id))
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 3 groups based on key: id
+        First Group (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1
+        ⋮
+        Last Group (1 row): id = "c"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ c            3"""
+
+    io = IOContext(IOBuffer(), :limit=>true)
+    show(io, MIME("text/plain"), groupby(df, :id))
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 3 groups based on key: id
+        First Group (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1
+        ⋮
+        Last Group (1 row): id = "c"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ c            3"""
+
+    io = IOContext(IOBuffer(), :limit=>false)
+    show(io, groupby(df, :id))
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 3 groups based on key: id
+        Group 1 (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1
+        Group 2 (1 row): id = "b"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ b            2
+        Group 3 (1 row): id = "c"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ c            3"""
+
+
+    io = IOContext(IOBuffer(), :limit=>false)
+    show(io, MIME("text/plain"), groupby(df, :id))
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 3 groups based on key: id
+        Group 1 (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1
+        Group 2 (1 row): id = "b"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ b            2
+        Group 3 (1 row): id = "c"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ c            3"""
+
+    io = IOContext(IOBuffer(), :limit=>true)
+    show(io, groupby(df[1:1, :], :id))
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 1 group based on key: id
+        First Group (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1"""
+
+    io = IOContext(IOBuffer(), :limit=>false)
+    show(io, groupby(df[1:1, :], :id))
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 1 group based on key: id
+        Group 1 (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1"""
+
+    io = IOContext(IOBuffer(), :limit=>true)
+    show(io, MIME("text/plain"), groupby(df[1:1, :], :id))
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 1 group based on key: id
+        First Group (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1"""
+
+    io = IOContext(IOBuffer(), :limit=>false)
+    show(io, MIME("text/plain"), groupby(df[1:1, :], :id))
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 1 group based on key: id
+        Group 1 (1 row): id = "a"
+         Row │ id       value
+             │ String1  Int64
+        ─────┼────────────────
+           1 │ a            1"""
+
+    io = IOContext(IOBuffer())
+    show(io, MIME("text/html"), groupby(df, :id))
+    @test String(take!(io.io)) === "<p><b>GroupedDataFrame with 3 groups based on key: id</b></p>" *
+        "<div><div style = \"float: left;\"><span>First Group (1 row): id = &quot;a&quot;</span></div>" *
+        "<div style = \"clear: both;\"></div></div>" *
+        "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+        "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+        "<thead><tr class = \"header\"><th class = \"rowNumber\" " *
+        "style = \"font-weight: bold; text-align: right;\">Row</th>" *
+        "<th style = \"text-align: left;\">id</th><th style = \"text-align: left;\">value</th></tr>" *
+        "<tr class = \"subheader headerLastRow\"><th class = \"rowNumber\" " *
+        "style = \"font-weight: bold; text-align: right;\"></th>" *
+        "<th title = \"String1\" style = \"text-align: left;\">String1</th>" *
+        "<th title = \"Int64\" style = \"text-align: left;\">Int64</th></tr></thead>" *
+        "<tbody><tr><td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+        "<td style = \"text-align: left;\">a</td><td style = \"text-align: right;\">1</td></tr></tbody>" *
+        "</table></div><p>&vellip;</p><div><div style = \"float: left;\">" *
+        "<span>Last Group (1 row): id = &quot;c&quot;</span></div>" *
+        "<div style = \"clear: both;\"></div></div><div class = \"data-frame\" " *
+        "style = \"overflow-x: scroll;\"><table class = \"data-frame\" " *
+        "style = \"margin-bottom: 6px;\"><thead><tr class = \"header\">" *
+        "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+        "<th style = \"text-align: left;\">id</th><th style = \"text-align: left;\">value</th></tr>" *
+        "<tr class = \"subheader headerLastRow\"><th class = \"rowNumber\" " *
+        "style = \"font-weight: bold; text-align: right;\"></th>" *
+        "<th title = \"String1\" style = \"text-align: left;\">String1</th>" *
+        "<th title = \"Int64\" style = \"text-align: left;\">Int64</th></tr></thead>" *
+        "<tbody><tr><td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+        "<td style = \"text-align: left;\">c</td><td style = \"text-align: right;\">3</td></tr></tbody></table></div>"
+
+    io = IOContext(IOBuffer())
+    show(io, MIME("text/html"), groupby(df[1:1, :], :id))
+    @test String(take!(io.io)) === "<p><b>GroupedDataFrame with 1 group based on key: id</b></p><div>" *
+        "<div style = \"float: left;\"><span>First Group (1 row): id = &quot;a&quot;</span></div>" *
+        "<div style = \"clear: both;\"></div></div><div class = \"data-frame\" " *
+        "style = \"overflow-x: scroll;\"><table class = \"data-frame\" " *
+        "style = \"margin-bottom: 6px;\"><thead><tr class = \"header\">" *
+        "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+        "<th style = \"text-align: left;\">id</th><th style = \"text-align: left;\">value</th></tr>" *
+        "<tr class = \"subheader headerLastRow\"><th class = \"rowNumber\" " *
+        "style = \"font-weight: bold; text-align: right;\"></th>" *
+        "<th title = \"String1\" style = \"text-align: left;\">String1</th>" *
+        "<th title = \"Int64\" style = \"text-align: left;\">Int64</th></tr></thead>" *
+        "<tbody><tr><td class = \"rowNumber\" style = \"font-weight: bold; " *
+        "text-align: right;\">1</td><td style = \"text-align: left;\">a</td>" *
+        "<td style = \"text-align: right;\">1</td></tr></tbody></table></div>"
+
+    io = IOContext(IOBuffer())
+    show(io, MIME("text/latex"), groupby(df, :id))
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 3 groups based on key: id
+
+        First Group (1 row): id = "a"
+
+        \\begin{tabular}{r|cc}
+        \t& id & value\\\\
+        \t\\hline
+        \t& String1 & Int64\\\\
+        \t\\hline
+        \t1 & a & 1 \\\\
+        \\end{tabular}
+
+        \$\\dots\$
+
+        Last Group (1 row): id = "c"
+
+        \\begin{tabular}{r|cc}
+        \t& id & value\\\\
+        \t\\hline
+        \t& String1 & Int64\\\\
+        \t\\hline
+        \t1 & c & 3 \\\\
+        \\end{tabular}
+        """
+
+    io = IOContext(IOBuffer())
+    show(io, MIME("text/latex"), groupby(df[1:1, :], :id))
+    @test String(take!(io.io)) === """
+        GroupedDataFrame with 1 group based on key: id
+
+        First Group (1 row): id = "a"
+
+        \\begin{tabular}{r|cc}
+        \t& id & value\\\\
+        \t\\hline
+        \t& String1 & Int64\\\\
+        \t\\hline
+        \t1 & a & 1 \\\\
+        \\end{tabular}
+        """
 end
 
 end # module
