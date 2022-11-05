@@ -470,6 +470,22 @@ end
     @test check_allnotemetadata(df)
 end
 
+@testset "metadata default" begin
+    df = DataFrame(a=1)
+    metadata!(df, "x", "y")
+    colmetadata!(df, :a, "p", "q")
+    @test metadata(df, "x", style=true) == ("y", :default)
+    @test colmetadata(df, :a, "p", style=true) == ("q", :default)
+    df = eachcol(DataFrame(a=1))
+    metadata!(df, "x", "y")
+    colmetadata!(df, :a, "p", "q")
+    @test metadata(df, "x", style=true) == ("y", :default)
+    @test colmetadata(df, :a, "p", style=true) == ("q", :default)
+    df = view(DataFrame(a=1), :, :)
+    @test_throws ArgumentError metadata!(df, "x", "y")
+    @test_throws ArgumentError colmetadata!(df, :a, "p", "q")
+end
+
 @testset "rename & rename!" begin
     df = DataFrame()
     df2 = rename(df)
