@@ -5,6 +5,11 @@
 * Improve printing of grouping keys when displaying `GroupedDataFrame`
   ([#3213](https://github.com/JuliaData/DataFrames.jl/pull/3213))
 
+## Integration changes
+
+* Support updates of metadata API introduced in DataAPI.jl 1.13.0
+  ([3216](https://github.com/JuliaData/DataFrames.jl/pull/3216))
+
 # DataFrames.jl v1.4.2 Patch Release Notes
 
 ## Bug fixes
