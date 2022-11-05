@@ -30,3 +30,25 @@ Base.show(dfr::DataFrameRow;
           kwargs...) =
     show(stdout, dfr; allcols=allcols, rowlabel=rowlabel, eltypes=eltypes,
          truncate=truncate, kwargs...)
+
+function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; kwargs...)
+    _verify_kwargs_for_html(; kwargs...)
+    r, c = parentindices(dfr)
+    title = "DataFrameRow ($(length(dfr)) columns)"
+    _show(io, mime, view(parent(dfr), [r], c); rowid=r, title=title, kwargs...)
+end
+
+function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow; eltypes::Bool=true)
+    r, c = parentindices(dfr)
+    _show(io, mime, view(parent(dfr), [r], c), eltypes=eltypes, rowid=r)
+end
+
+function Base.show(io::IO, mime::MIME"text/csv", dfr::DataFrameRow)
+    r, c = parentindices(dfr)
+    show(io, mime, view(parent(dfr), [r], c))
+end
+
+function Base.show(io::IO, mime::MIME"text/tab-separated-values", dfr::DataFrameRow)
+    r, c = parentindices(dfr)
+    show(io, mime, view(parent(dfr), [r], c))
+end
