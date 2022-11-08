@@ -3191,6 +3191,7 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Sy
         target_row_count = 1
     end
 
+    start_col_ind = col_ind
     for (name, item) in name_cols
         if !(item isa AbstractVector)
             if item isa Union{AbstractArray{<:Any, 0}, Ref}
@@ -3243,6 +3244,15 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Sy
         col_ind += 1
     end
 
+    delta = col_ind - start_col_ind
+    colmetadata_dict = getfield(parent(df), :colmetadata)
+    if !isnothing(colmetadata_dict) && delta > 0
+        to_move = Int[i for i in keys(colmetadata_dict) if i >= start_col_ind]
+        sort!(to_move, rev=true)
+        for i in to_move
+            colmetadata_dict[i + delta] = pop!(colmetadata_dict, i)
+        end
+    end
     _drop_all_nonnote_metadata!(parent(df))
     return df
 end

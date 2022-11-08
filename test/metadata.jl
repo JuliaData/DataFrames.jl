@@ -3853,4 +3853,110 @@ end
     end
 end
 
+@testset "insertcols! and insertcols" begin
+    df = DataFrame(a=1, b=2)
+    colmetadata!(df, :a, "x", "y", style=:note)
+    colmetadata!(df, :a, "x1", "y1", style=:default)
+    colmetadata!(df, :b, "p", "q", style=:note)
+    colmetadata!(df, :b, "p1", "q1", style=:default)
+    insertcols!(df, 2, :c => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 1, :d => 4)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, :e => 5)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 1)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 1, :f => 1, :g => 2, :h => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 6, :f2 => 1, :g2 => 2, :h2 => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, :f3 => 1, :g3 => 2, :h3 => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    @test colmetadata(df, :a, "x", style=true) == ("y", :note)
+    @test colmetadata(df, :b, "p", style=true) == ("q", :note)
+
+    df = DataFrame(a=1, b=2)
+    colmetadata!(df, :a, "x", "y", style=:note)
+    colmetadata!(df, :a, "x1", "y1", style=:default)
+    colmetadata!(df, :b, "p", "q", style=:note)
+    colmetadata!(df, :b, "p1", "q1", style=:default)
+    df = view(df, :, :)
+    insertcols!(df, 2, :c => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 1, :d => 4)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, :e => 5)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 1)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 1, :f => 1, :g => 2, :h => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 6, :f2 => 1, :g2 => 2, :h2 => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, :f3 => 1, :g3 => 2, :h3 => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    @test colmetadata(df, :a, "x", style=true) == ("y", :note)
+    @test colmetadata(df, :b, "p", style=true) == ("q", :note)
+
+    df = DataFrame(a=1, b=2)
+    df2 = df
+    colmetadata!(df, :a, "x", "y", style=:note)
+    colmetadata!(df, :a, "x1", "y1", style=:default)
+    colmetadata!(df, :b, "p", "q", style=:note)
+    colmetadata!(df, :b, "p1", "q1", style=:default)
+    df = insertcols(df, 2, :c => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    df = insertcols(df, 1, :d => 4)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    df = insertcols(df, :e => 5)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    df = insertcols(df)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    df = insertcols(df, 1)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    df = insertcols(df, 1, :f => 1, :g => 2, :h => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    df = insertcols(df, 6, :f2 => 1, :g2 => 2, :h2 => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    df = insertcols(df, :f3 => 1, :g3 => 2, :h3 => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    @test colmetadata(df, :a, "x", style=true) == ("y", :note)
+    @test colmetadata(df, :b, "p", style=true) == ("q", :note)
+    @test sort([k => sort(collect(v)) for  (k, v) in colmetadatakeys(df2)]) ==
+          [:a => ["x", "x1"], :b => ["p", "p1"]]
+    @test colmetadata(df2, :a, "x", style=true) == ("y", :note)
+    @test colmetadata(df2, :a, "x1", style=true) == ("y1", :default)
+    @test colmetadata(df2, :b, "p", style=true) == ("q", :note)
+    @test colmetadata(df2, :b, "p1", style=true) == ("q1", :default)
+end
+
 end # module
