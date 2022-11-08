@@ -130,13 +130,23 @@ const METADATA_FIXED =
     Metadata: this function preserves table-level and column-level `:note`-style metadata.
     """
 
-include("other/utils.jl")
-include("other/index.jl")
+# include("other/utils.jl")
+# include("other/index.jl")
+
+include("new_module_index/SeparateModuleIndex.jl")
+using .SeparateModuleIndex
+import .SeparateModuleIndex: _names
 
 include("abstractdataframe/abstractdataframe.jl")
 include("dataframe/dataframe.jl")
 include("subdataframe/subdataframe.jl")
 include("dataframerow/dataframerow.jl")
+
+include("new_module/SeparateModule.jl")
+using .SeparateModule
+import .SeparateModule: normalize_selection, _manipulate
+
+
 include("dataframe/insertion.jl")
 
 include("groupeddataframe/groupeddataframe.jl")
