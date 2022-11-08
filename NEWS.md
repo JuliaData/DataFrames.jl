@@ -1,5 +1,10 @@
 # DataFrames.jl v1.4.3 Patch Release Notes
 
+## Bug fixes
+
+* Fix incorrect handling of column metadata in `insertcols!` and `insertcols`
+  ([#3220](https://github.com/JuliaData/DataFrames.jl/pull/3220))
+
 ## Display improvements
 
 * Improve printing of grouping keys when displaying `GroupedDataFrame`
