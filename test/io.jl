@@ -629,137 +629,69 @@ end
     show(IOContext(io, :limit => true), MIME"text/html"(),
          DataFrame(a = Int64.(1:26 |> collect)))
     str = String(take!(io))
-    @test str == "<div>" *
-                 "<div style = \"float: left;\">" *
-                 "<span>26×1 DataFrame</span>" *
-                 "</div>" *
-                 "<div style = \"float: right;\">" *
-                 "<span style = \"font-style: italic;\">1 row omitted</span>" *
-                 "</div>" *
-                 "<div style = \"clear: both;\">" *
-                 "</div>" *
-                 "</div>" *
-                 "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
-                 "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
-                 "<thead>" *
-                 "<tr class = \"header\">" *
-                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
-                 "<th style = \"text-align: left;\">a</th>" *
-                 "</tr>" *
-                 "<tr class = \"subheader headerLastRow\">" *
-                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
-                 "</th>" *
-                 "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
-                 "</tr>" *
-                 "</thead>" *
-                 "<tbody>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
-                 "<td style = \"text-align: right;\">1</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">2</td>" *
-                 "<td style = \"text-align: right;\">2</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">3</td>" *
-                 "<td style = \"text-align: right;\">3</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">4</td>" *
-                 "<td style = \"text-align: right;\">4</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">5</td>" *
-                 "<td style = \"text-align: right;\">5</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">6</td>" *
-                 "<td style = \"text-align: right;\">6</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">7</td>" *
-                 "<td style = \"text-align: right;\">7</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">8</td>" *
-                 "<td style = \"text-align: right;\">8</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">9</td>" *
-                 "<td style = \"text-align: right;\">9</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">10</td>" *
-                 "<td style = \"text-align: right;\">10</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">11</td>" *
-                 "<td style = \"text-align: right;\">11</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">12</td>" *
-                 "<td style = \"text-align: right;\">12</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">13</td>" *
-                 "<td style = \"text-align: right;\">13</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td style = \"text-align: right;\">&vellip;</td>" *
-                 "<td style = \"text-align: right;\">&vellip;</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">15</td>" *
-                 "<td style = \"text-align: right;\">15</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">16</td>" *
-                 "<td style = \"text-align: right;\">16</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">17</td>" *
-                 "<td style = \"text-align: right;\">17</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">18</td>" *
-                 "<td style = \"text-align: right;\">18</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">19</td>" *
-                 "<td style = \"text-align: right;\">19</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">20</td>" *
-                 "<td style = \"text-align: right;\">20</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">21</td>" *
-                 "<td style = \"text-align: right;\">21</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">22</td>" *
-                 "<td style = \"text-align: right;\">22</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">23</td>" *
-                 "<td style = \"text-align: right;\">23</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">24</td>" *
-                 "<td style = \"text-align: right;\">24</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">25</td>" *
-                 "<td style = \"text-align: right;\">25</td>" *
-                 "</tr>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">26</td>" *
-                 "<td style = \"text-align: right;\">26</td>" *
-                 "</tr>" *
-                 "</tbody>" *
-                 "</table>" *
-                 "</div>"
+    @test str == """<div><div style = "float: left;"><span>26×1 DataFrame</span></div>""" *
+                 """<div style = "clear: both;"></div></div>""" *
+                 """<div class = "data-frame" style = "overflow-x: scroll;">""" *
+                 """<table class = "data-frame" style = "margin-bottom: 6px;">""" *
+                 """<thead><tr class = "header">""" *
+                 """<th class = "rowNumber" style = "font-weight: bold; text-align: right;">Row</th>""" *
+                 """<th style = "text-align: left;">a</th></tr>""" *
+                 """<tr class = "subheader headerLastRow">""" *
+                 """<th class = "rowNumber" style = "font-weight: bold; text-align: right;"></th>""" *
+                 """<th title = "Int64" style = "text-align: left;">Int64</th></tr></thead>""" *
+                 """<tbody><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">1</td>""" *
+                 """<td style = "text-align: right;">1</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">2</td>""" *
+                 """<td style = "text-align: right;">2</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">3</td>""" *
+                 """<td style = "text-align: right;">3</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">4</td>""" *
+                 """<td style = "text-align: right;">4</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">5</td>""" *
+                 """<td style = "text-align: right;">5</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">6</td>""" *
+                 """<td style = "text-align: right;">6</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">7</td>""" *
+                 """<td style = "text-align: right;">7</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">8</td>""" *
+                 """<td style = "text-align: right;">8</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">9</td>""" *
+                 """<td style = "text-align: right;">9</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">10</td>""" *
+                 """<td style = "text-align: right;">10</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">11</td>""" *
+                 """<td style = "text-align: right;">11</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">12</td>""" *
+                 """<td style = "text-align: right;">12</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">13</td>""" *
+                 """<td style = "text-align: right;">13</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">14</td>""" *
+                 """<td style = "text-align: right;">14</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">15</td>""" *
+                 """<td style = "text-align: right;">15</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">16</td>""" *
+                 """<td style = "text-align: right;">16</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">17</td>""" *
+                 """<td style = "text-align: right;">17</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">18</td>""" *
+                 """<td style = "text-align: right;">18</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">19</td>""" *
+                 """<td style = "text-align: right;">19</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">20</td>""" *
+                 """<td style = "text-align: right;">20</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">21</td>""" *
+                 """<td style = "text-align: right;">21</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">22</td>""" *
+                 """<td style = "text-align: right;">22</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">23</td>""" *
+                 """<td style = "text-align: right;">23</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">24</td>""" *
+                 """<td style = "text-align: right;">24</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">25</td>""" *
+                 """<td style = "text-align: right;">25</td></tr><tr>""" *
+                 """<td class = "rowNumber" style = "font-weight: bold; text-align: right;">26</td>""" *
+                 """<td style = "text-align: right;">26</td></tr></tbody></table></div>"""
 
     # Test invalid keywords when printing to HTML.
     @test_throws ArgumentError show(stdout, MIME("text/html"), df, rowid=10)
