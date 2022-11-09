@@ -4375,6 +4375,7 @@ end
     @test isequal_typed(combine(gdf, :a => (x -> [(x=[1], y=2), (x=[3], y="a")]) => [:z1, :z2]),
                         DataFrame(a=[1, 1, 2, 2], z1=[[1], [3], [1], [3]], z2=Any[2, "a", 2, "a"]))
     @test_throws ArgumentError combine(gdf, :a => (x -> [(x=[1], y=2), (x=[3], y="a")]) => [:z1, :z2, :z3])
+    @test_throws ArgumentError combine(gdf, :a => (x -> [Dict('x' => 1)]) => AsTable)
 end
 
 end # module
