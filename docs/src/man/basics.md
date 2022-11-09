@@ -474,6 +474,10 @@ Let us start with the example of using the `empty` and `empty!` functions:
 ```jldoctest dataframe
 julia> empty(german)
 0×10 DataFrame
+ Row │ id     Age    Sex      Job    Housing  Saving accounts  Checking accoun ⋯
+     │ Int64  Int64  String7  Int64  String7  String15         String15        ⋯
+─────┴──────────────────────────────────────────────────────────────────────────
+                                                               4 columns omitted
 
 julia> german
 1000×10 DataFrame
@@ -500,9 +504,17 @@ julia> german
 
 julia> empty!(german)
 0×10 DataFrame
+ Row │ id     Age    Sex      Job    Housing  Saving accounts  Checking accoun ⋯
+     │ Int64  Int64  String7  Int64  String7  String15         String15        ⋯
+─────┴──────────────────────────────────────────────────────────────────────────
+                                                               4 columns omitted
 
 julia> german
 0×10 DataFrame
+ Row │ id     Age    Sex      Job    Housing  Saving accounts  Checking accoun ⋯
+     │ Int64  Int64  String7  Int64  String7  String15         String15        ⋯
+─────┴──────────────────────────────────────────────────────────────────────────
+                                                               4 columns omitted
 ```
 
 In the above example `empty` function created a new `DataFrame` with the same
@@ -510,10 +522,11 @@ column names and column element types as `german` but with zero rows. On the
 other hand `empty!` function removed all rows from `german` in-place and made
 each of its columns empty.
 
-The difference between the behavior of the `empty` and `empty!` functions is an application of the
+The difference between the behavior of the `empty` and `empty!` functions is an
+application of the
 [stylistic convention](https://docs.julialang.org/en/v1/manual/variables/#Stylistic-Conventions)
-employed in the Julia language.
-This convention is followed in all functions provided by the DataFrames.jl package.
+employed in the Julia language. This convention is followed in all functions
+provided by the DataFrames.jl package.
 
 ### Getting Basic Information about a Data Frame
 
