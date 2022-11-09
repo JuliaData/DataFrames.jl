@@ -299,6 +299,9 @@ integers and the second one can only contain strings):
 ```jldoctest dataframe
 julia> df = DataFrame(A=Int[], B=String[])
 0×2 DataFrame
+ Row │ A      B
+     │ Int64  String
+─────┴───────────────
 ```
 
 Rows can then be added as tuples or vectors, where the order of elements matches that of columns.
