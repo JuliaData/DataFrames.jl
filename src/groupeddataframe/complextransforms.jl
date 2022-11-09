@@ -28,7 +28,6 @@ function _combine_with_first((first,)::Ref{Any},
     @assert first isa Union{NamedTuple, DataFrameRow, AbstractDataFrame}
     @assert f isa Base.Callable
     @assert incols isa Union{Nothing, AbstractVector, Tuple, NamedTuple}
-    @assert first isa Union{NamedTuple, DataFrameRow, AbstractDataFrame}
     extrude = false
 
     lgd = length(gd)

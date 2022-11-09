@@ -1,5 +1,10 @@
 # DataFrames.jl v1.4.3 Patch Release Notes
 
+## Bug fixes
+
+* Correctly handle `GroupedDataFrame` with no groups in multi column operation specification syntax
+  ([#3122](https://github.com/JuliaData/DataFrames.jl/issues/3122))
+
 ## Display improvements
 
 * Improve printing of grouping keys when displaying `GroupedDataFrame`
