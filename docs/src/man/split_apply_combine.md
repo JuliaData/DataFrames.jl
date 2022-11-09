@@ -30,15 +30,22 @@ object from your data frame using the `groupby` function that takes two argument
 (1) a data frame to be grouped, and (2) a set of columns to group by.
 
 Operations can then be applied on each group using one of the following functions:
-* `combine`: does not put restrictions on number of rows returned, the order of rows
-  is specified by the order of groups in `GroupedDataFrame`; it is typically used
-  to compute summary statistics by group;
+* `combine`: does not put restrictions on number of rows returned per group;
+  the returned values are vertically concatenaded following order of groups in
+  `GroupedDataFrame`; it is typically used to compute summary statistics by group;
+  for `GroupedDataFrame` if grouping columns are kept they are put as first columns
+  in the result;
 * `select`: return a data frame with the number and order of rows exactly the same
   as the source data frame, including only new calculated columns;
   `select!` is an in-place version of `select`;
 * `transform`: return a data frame with the number and order of rows exactly the same
   as the source data frame, including all columns from the source and new calculated columns;
-  `transform!` is an in-place version of `transform`.
+  `transform!` is an in-place version of `transform`;
+  existing columns in the source data frame are put as first columns in the result;
+
+As a special case, if a `GroupedDataFrame` that has zero groups is passed then
+the result of the operation is determined by performing a single call to the
+transformation function with a 0-row argument passed to it.
 
 All these functions take a specification of one or more functions to apply to
 each subset of the `DataFrame`. This specification can be of the following forms:
