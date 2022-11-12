@@ -493,7 +493,7 @@ end
                             "`Symbol`s, strings or integers"))
     end
     if any(x -> !isequal(keys(x), kp1), res)
-        throw(ArgumentError("keys of the returned elements must be identical"))
+        throw(ArgumentError("keys of the returned elements must be equal"))
     end
     outcols = [[x[n] for x in res] for n in kp1]
     # make sure we only infer column names and types for empty res, but do not
@@ -529,7 +529,7 @@ function _combine_process_pair_astable(optional_i::Bool,
         else
             emptyres = false
         end
-        kp1 = isempty(res) ? () : kp1 = keys(res[1])
+        kp1 = isempty(res) ? () : keys(res[1])
 
         outcols, nms = expand_res_astable(res, kp1, emptyres)
     else
