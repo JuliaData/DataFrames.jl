@@ -168,13 +168,13 @@ function metadatakeys(x::Union{DataFrameRow, SubDataFrame})
 end
 
 """
-    metadata!(df::AbstractDataFrame, key::AbstractString, value; style)
-    metadata!(dfr::DataFrameRow, key::AbstractString, value; style)
-    metadata!(dfc::DataFrameColumns, key::AbstractString, value; style)
-    metadata!(dfr::DataFrameRows, key::AbstractString, value; style)
+    metadata!(df::AbstractDataFrame, key::AbstractString, value; style::Symbol=:default)
+    metadata!(dfr::DataFrameRow, key::AbstractString, value; style::Symbol=:default)
+    metadata!(dfc::DataFrameColumns, key::AbstractString, value; style::Symbol=:default)
+    metadata!(dfr::DataFrameRows, key::AbstractString, value; style::Symbol=:default)
 
 Set table-level metadata for object `df` for key `key` to have value `value`
-and style `style` and return `df`.
+and style `style` (`:default` by default) and return `df`.
 
 For `SubDataFrame` and `DataFrameRow` only `:note`-style is allowed.
 Trying to set a key-value pair for which the key already exists in the parent
@@ -188,7 +188,8 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 $TABLEMETA_EXAMPLE
 ```
 """
-function metadata!(df::DataFrame, key::AbstractString, value::Any; style)
+function metadata!(df::DataFrame, key::AbstractString, value::Any;
+                   style::Symbol=:default)
     premeta = getfield(df, :metadata)
     if premeta === nothing
         meta = Dict{String, Tuple{Any, Any}}()
@@ -204,13 +205,13 @@ function metadata!(df::DataFrame, key::AbstractString, value::Any; style)
 end
 
 function metadata!(x::Union{DataFrameRows, DataFrameColumns},
-                   key::AbstractString, value::Any; style)
+                   key::AbstractString, value::Any; style::Symbol=:default)
     metadata!(parent(x), key, value, style=style)
     return x
 end
 
 function metadata!(x::Union{DataFrameRow, SubDataFrame},
-                   key::AbstractString, value::Any; style)
+                   key::AbstractString, value::Any; style::Symbol=:default)
     if style !== :note
         throw(ArgumentError("only :note-style metadata is supported for " *
                             "DataFrameRow and SubDataFrame"))
@@ -464,13 +465,13 @@ function colmetadatakeys(x::Union{DataFrameRow, SubDataFrame})
 end
 
 """
-    colmetadata!(df::AbstractDataFrame, col::ColumnIndex, key::AbstractString, value; style)
-    colmetadata!(dfr::DataFrameRow, col::ColumnIndex, key::AbstractString, value; style)
-    colmetadata!(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString, value; style)
-    colmetadata!(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString, value; style)
+    colmetadata!(df::AbstractDataFrame, col::ColumnIndex, key::AbstractString, value; style::Symbol=:default)
+    colmetadata!(dfr::DataFrameRow, col::ColumnIndex, key::AbstractString, value; style::Symbol=:default)
+    colmetadata!(dfc::DataFrameColumns, col::ColumnIndex, key::AbstractString, value; style::Symbol=:default)
+    colmetadata!(dfr::DataFrameRows, col::ColumnIndex, key::AbstractString, value; style::Symbol=:default)
 
 Set column-level metadata in `df` for column `col` and key `key` to have value `value`
-and style `style` and return `df`.
+and style `style` (`:default` by default) and return `df`.
 
 For `SubDataFrame` and `DataFrameRow` only `:note` style is allowed.
 Trying to set a key-value pair for which the key already exists in the parent
@@ -484,7 +485,8 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 $COLMETADATA_EXAMPLE
 ```
 """
-function colmetadata!(df::DataFrame, col::ColumnIndex, key::AbstractString, value::Any; style)
+function colmetadata!(df::DataFrame, col::ColumnIndex, key::AbstractString, value::Any;
+                      style::Symbol=:default)
     idx = index(df)[col] # check if column exists and get its integer index
     pre_cols_meta = getfield(df, :colmetadata)
     if pre_cols_meta === nothing
@@ -502,13 +504,15 @@ function colmetadata!(df::DataFrame, col::ColumnIndex, key::AbstractString, valu
 end
 
 function colmetadata!(x::Union{DataFrameRows, DataFrameColumns},
-                      col::ColumnIndex, key::AbstractString, value::Any; style)
+                      col::ColumnIndex, key::AbstractString, value::Any;
+                      style::Symbol=:default)
     colmetadata!(parent(x), col, key, value; style=style)
     return x
 end
 
 function colmetadata!(x::Union{DataFrameRow, SubDataFrame},
-                      col::ColumnIndex, key::AbstractString, value::Any; style)
+                      col::ColumnIndex, key::AbstractString, value::Any;
+                      style::Symbol=:default)
     col_name = _names(x)[index(x)[col]]
     if style !== :note
         throw(ArgumentError("only :note-style metadata is supported for " *
