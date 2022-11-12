@@ -53,7 +53,9 @@ const TRANSFORMATION_COMMON_RULES =
 
     As a special case, if a `GroupedDataFrame` that has zero groups is passed then
     the result of the operation is determined by performing a single call to the
-    transformation function with a 0-row argument passed to it.
+    transformation function with a 0-row argument passed to it. The output of this
+    operation is only used to identify the number and type of produced columns, but
+    the result has zero rows.
 
     All these functions take a specification of one or more functions to apply to
     each subset of the `DataFrame`. This specification can be of the following forms:
