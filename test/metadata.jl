@@ -470,6 +470,59 @@ end
     @test check_allnotemetadata(df)
 end
 
+@testset "metadata default" begin
+    df = DataFrame(a=1)
+    metadata!(df, "x", "y")
+    colmetadata!(df, :a, "p", "q")
+    @test metadata(df, "x", style=true) == ("y", :default)
+    @test colmetadata(df, :a, "p", style=true) == ("q", :default)
+    df = eachcol(DataFrame(a=1))
+    metadata!(df, "x", "y")
+    colmetadata!(df, :a, "p", "q")
+    @test metadata(df, "x", style=true) == ("y", :default)
+    @test colmetadata(df, :a, "p", style=true) == ("q", :default)
+    df = view(DataFrame(a=1), :, :)
+    @test_throws ArgumentError metadata!(df, "x", "y")
+    @test_throws ArgumentError colmetadata!(df, :a, "p", "q")
+end
+
+@testset "fallback definitions of metadata and colmetadata" begin
+    df = DataFrame()
+    @test metadata(df) == Dict()
+    @test metadata(df, style=true) == Dict()
+    @test colmetadata(df) == Dict()
+    @test colmetadata(df, style=true) == Dict()
+    df.a = 1:2
+    df.b = 2:3
+    df.c = 3:4
+    @test metadata(df) == Dict()
+    @test metadata(df, style=true) == Dict()
+    @test colmetadata(df) == Dict()
+    @test colmetadata(df, style=true) == Dict()
+    metadata!(df, "a1", "b1", style=:default)
+    metadata!(df, "a2", "b2", style=:note)
+    colmetadata!(df, :a, "x1", "y1", style=:default)
+    colmetadata!(df, :a, "x2", "y2", style=:note)
+    colmetadata!(df, :c, "x3", "y3", style=:note)
+    @test metadata(df) == Dict("a1" => "b1", "a2" => "b2")
+    @test metadata(df, style=true) == Dict("a1" => ("b1", :default),
+                                           "a2" => ("b2", :note))
+    @test colmetadata(df) == Dict(:a => Dict("x1" => "y1",
+                                             "x2" => "y2"),
+                                  :c => Dict("x3" => "y3"))
+    @test colmetadata(df, style=true) == Dict(:a => Dict("x1" => ("y1", :default),
+                                                         "x2" => ("y2", :note)),
+                                              :c => Dict("x3" => ("y3", :note)))
+    @test colmetadata(df, :a) == Dict("x1" => "y1",
+                                      "x2" => "y2")
+    @test colmetadata(df, :a, style=true) == Dict("x1" => ("y1", :default),
+                                                  "x2" => ("y2", :note))
+    @test colmetadata(df, :b) == Dict()
+    @test colmetadata(df, :b, style=true) == Dict()
+    @test colmetadata(df, :c) == Dict("x3" => "y3")
+    @test colmetadata(df, :c, style=true) == Dict("x3" => ("y3", :note))
+end
+
 @testset "rename & rename!" begin
     df = DataFrame()
     df2 = rename(df)
@@ -3851,6 +3904,112 @@ end
             @test isempty(colmetadatakeys(res, :c))
         end
     end
+end
+
+@testset "insertcols! and insertcols" begin
+    df = DataFrame(a=1, b=2)
+    colmetadata!(df, :a, "x", "y", style=:note)
+    colmetadata!(df, :a, "x1", "y1", style=:default)
+    colmetadata!(df, :b, "p", "q", style=:note)
+    colmetadata!(df, :b, "p1", "q1", style=:default)
+    insertcols!(df, 2, :c => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 1, :d => 4)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, :e => 5)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 1)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 1, :f => 1, :g => 2, :h => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 6, :f2 => 1, :g2 => 2, :h2 => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, :f3 => 1, :g3 => 2, :h3 => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    @test colmetadata(df, :a, "x", style=true) == ("y", :note)
+    @test colmetadata(df, :b, "p", style=true) == ("q", :note)
+
+    df = DataFrame(a=1, b=2)
+    colmetadata!(df, :a, "x", "y", style=:note)
+    colmetadata!(df, :a, "x1", "y1", style=:default)
+    colmetadata!(df, :b, "p", "q", style=:note)
+    colmetadata!(df, :b, "p1", "q1", style=:default)
+    df = view(df, :, :)
+    insertcols!(df, 2, :c => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 1, :d => 4)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, :e => 5)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 1)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 1, :f => 1, :g => 2, :h => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, 6, :f2 => 1, :g2 => 2, :h2 => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    insertcols!(df, :f3 => 1, :g3 => 2, :h3 => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    @test colmetadata(df, :a, "x", style=true) == ("y", :note)
+    @test colmetadata(df, :b, "p", style=true) == ("q", :note)
+
+    df = DataFrame(a=1, b=2)
+    df2 = df
+    colmetadata!(df, :a, "x", "y", style=:note)
+    colmetadata!(df, :a, "x1", "y1", style=:default)
+    colmetadata!(df, :b, "p", "q", style=:note)
+    colmetadata!(df, :b, "p1", "q1", style=:default)
+    df = insertcols(df, 2, :c => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    df = insertcols(df, 1, :d => 4)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    df = insertcols(df, :e => 5)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    df = insertcols(df)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    df = insertcols(df, 1)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    df = insertcols(df, 1, :f => 1, :g => 2, :h => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    df = insertcols(df, 6, :f2 => 1, :g2 => 2, :h2 => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    df = insertcols(df, :f3 => 1, :g3 => 2, :h3 => 3)
+    @test sort([k => collect(v) for  (k, v) in colmetadatakeys(df)]) ==
+          [:a => ["x"], :b => ["p"]]
+    @test colmetadata(df, :a, "x", style=true) == ("y", :note)
+    @test colmetadata(df, :b, "p", style=true) == ("q", :note)
+    @test sort([k => sort(collect(v)) for  (k, v) in colmetadatakeys(df2)]) ==
+          [:a => ["x", "x1"], :b => ["p", "p1"]]
+    @test colmetadata(df2, :a, "x", style=true) == ("y", :note)
+    @test colmetadata(df2, :a, "x1", style=true) == ("y1", :default)
+    @test colmetadata(df2, :b, "p", style=true) == ("q", :note)
+    @test colmetadata(df2, :b, "p1", style=true) == ("q1", :default)
 end
 
 end # module
