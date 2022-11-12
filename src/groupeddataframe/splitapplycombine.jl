@@ -486,6 +486,23 @@ function _combine_process_pair_symbol(optional_i::Bool,
     end
 end
 
+@noinline function expand_res_astable(res, kp1, emptyres::Bool)
+    prepend = all(x -> x isa Integer, kp1)
+    if !(prepend || all(x -> x isa Symbol, kp1) || all(x -> x isa AbstractString, kp1))
+        throw(ArgumentError("keys of the returned elements must be " *
+                            "`Symbol`s, strings or integers"))
+    end
+    if any(x -> !isequal(keys(x), kp1), res)
+        throw(ArgumentError("keys of the returned elements must be equal"))
+    end
+    outcols = [[x[n] for x in res] for n in kp1]
+    # make sure we only infer column names and types for empty res, but do not
+    # produce values that were generated when computing firstres
+    emptyres && foreach(empty!, outcols)
+    nms = [prepend ? Symbol("x", n) : Symbol(n) for n in kp1]
+    return outcols, nms
+end
+
 # perform a transformation specified using the Pair notation with multiple output columns
 function _combine_process_pair_astable(optional_i::Bool,
                                        gd::GroupedDataFrame,
@@ -506,19 +523,15 @@ function _combine_process_pair_astable(optional_i::Bool,
                                                  firstmulticol, NOTHING_IDX_AGG, threads)
         @assert length(outcol_vec) == 1
         res = outcol_vec[1]
-        @assert length(res) > 0
+        if isempty(res)
+            emptyres = true
+            res = firstres
+        else
+            emptyres = false
+        end
+        kp1 = isempty(res) ? () : keys(res[1])
 
-        kp1 = keys(res[1])
-        prepend = all(x -> x isa Integer, kp1)
-        if !(prepend || all(x -> x isa Symbol, kp1) || all(x -> x isa AbstractString, kp1))
-            throw(ArgumentError("keys of the returned elements must be " *
-                                "`Symbol`s, strings or integers"))
-        end
-        if any(x -> !isequal(keys(x), kp1), res)
-            throw(ArgumentError("keys of the returned elements must be identical"))
-        end
-        outcols = [[x[n] for x in res] for n in kp1]
-        nms = [prepend ? Symbol("x", n) : Symbol(n) for n in kp1]
+        outcols, nms = expand_res_astable(res, kp1, emptyres)
     else
         if !firstmulticol
             firstres = Tables.columntable(firstres)
@@ -527,9 +540,8 @@ function _combine_process_pair_astable(optional_i::Bool,
         end
         idx, outcols, nms = _combine_multicol(Ref{Any}(firstres), Ref{Any}(fun), gd,
                                               wincols, threads)
-
         if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
-            NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
+             NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
             lock(gd.lazy_lock) do
                 # if idx_agg was not computed yet it is nothing
                 # in this case if we are not passed a vector compute it.
@@ -541,8 +553,8 @@ function _combine_process_pair_astable(optional_i::Bool,
                 idx = idx_agg[]
             end
         end
-        @assert length(outcols) == length(nms)
     end
+    @assert length(outcols) == length(nms)
     if out_col_name isa AbstractVector{Symbol}
         if length(out_col_name) != length(nms)
             throw(ArgumentError("Number of returned columns is $(length(nms)) " *

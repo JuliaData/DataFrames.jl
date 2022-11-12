@@ -4312,4 +4312,70 @@ end
     @test_throws ArgumentError gdf[Not([true true true true])]
 end
 
+@testset "aggregation of empty GroupedDataFrame with table output" begin
+    df = DataFrame(:a => Int[])
+    gdf = groupby(df, :a)
+    @test isequal_typed(combine(gdf, :a => (x -> [(x=1, y="a")]) => AsTable, :a => :b),
+                        DataFrame(a=Int[], x=Int[], y=String[], b=Int[]))
+    @test isequal_typed(combine(gdf, :a => (x -> [(1, "a")]) => AsTable, :a => :b),
+                        DataFrame(a=Int[], x1=Int[], x2=String[], b=Int[]))
+    @test isequal_typed(combine(gdf, :a => (x -> ["ab"]) => AsTable, :a => :b),
+                        DataFrame(a=Int[], x1=Char[], x2=Char[], b=Int[]))
+    # test below errors because keys for strings do not support == comparison
+    @test_throws ArgumentError combine(gdf, :a => (x -> ["ab", "cd"]) => AsTable, :a => :b)
+    @test isequal_typed(combine(gdf, :a => (x -> []) => AsTable, :a => :b),
+                        DataFrame(a=Int[], b=Int[]))
+    @test_throws ArgumentError combine(gdf, :a => (x -> [(a=x, b=x), (a=x, c=x)]) => AsTable)
+    @test isequal_typed(combine(gdf, :a => (x -> [(x=1, y=2), (x=3, y="a")]) => AsTable),
+                        DataFrame(a=Int[], x=Int[], y=Any[]))
+    @test isequal_typed(combine(gdf, :a => (x -> [(x=[1], y=2), (x=[3], y="a")]) => AsTable),
+                        DataFrame(a=Int[], x=Vector{Int}[], y=Any[]))
+    @test isequal_typed(combine(gdf, :a => (x -> [(x=[1], y=2), (x=[3], y="a")]) => [:z1, :z2]),
+                        DataFrame(a=Int[], z1=Vector{Int}[], z2=Any[]))
+    @test_throws ArgumentError combine(gdf, :a => (x -> [(x=[1], y=2), (x=[3], y="a")]) => [:z1, :z2, :z3])
+
+    df = DataFrame(:a => [1, 2])
+    gdf = groupby(df, :a)[2:1]
+    @test isequal_typed(combine(gdf, :a => (x -> [(x=1, y="a")]) => AsTable, :a => :b),
+                        DataFrame(a=Int[], x=Int[], y=String[], b=Int[]))
+    @test isequal_typed(combine(gdf, :a => (x -> [(1, "a")]) => AsTable, :a => :b),
+                        DataFrame(a=Int[], x1=Int[], x2=String[], b=Int[]))
+    @test isequal_typed(combine(gdf, :a => (x -> ["ab"]) => AsTable, :a => :b),
+                        DataFrame(a=Int[], x1=Char[], x2=Char[], b=Int[]))
+    # test below errors because keys for strings do not support == comparison
+    @test_throws ArgumentError combine(gdf, :a => (x -> ["ab", "cd"]) => AsTable, :a => :b)
+    @test isequal_typed(combine(gdf, :a => (x -> []) => AsTable, :a => :b),
+                        DataFrame(a=Int[], b=Int[]))
+    @test_throws ArgumentError combine(gdf, :a => (x -> [(a=x, b=x), (a=x, c=x)]) => AsTable)
+    @test isequal_typed(combine(gdf, :a => (x -> [(x=1, y=2), (x=3, y="a")]) => AsTable),
+                        DataFrame(a=Int[], x=Int[], y=Any[]))
+    @test isequal_typed(combine(gdf, :a => (x -> [(x=[1], y=2), (x=[3], y="a")]) => AsTable),
+                        DataFrame(a=Int[], x=Vector{Int}[], y=Any[]))
+    @test isequal_typed(combine(gdf, :a => (x -> [(x=[1], y=2), (x=[3], y="a")]) => [:z1, :z2]),
+                        DataFrame(a=Int[], z1=Vector{Int}[], z2=Any[]))
+    @test_throws ArgumentError combine(gdf, :a => (x -> [(x=[1], y=2), (x=[3], y="a")]) => [:z1, :z2, :z3])
+
+    df = DataFrame(:a => [1, 2])
+    gdf = groupby(df, :a)
+    @test isequal_typed(combine(gdf, :a => (x -> [(x=1, y="a")]) => AsTable, :a => :b),
+                        DataFrame(a=1:2, x=[1, 1], y=["a", "a"], b=1:2))
+    @test isequal_typed(combine(gdf, :a => (x -> [(1, "a")]) => AsTable, :a => :b),
+                        DataFrame(a=1:2, x1=[1, 1], x2=["a", "a"], b=1:2))
+    @test isequal_typed(combine(gdf, :a => (x -> ["ab"]) => AsTable, :a => :b),
+                        DataFrame(a=1:2, x1=['a', 'a'], x2=['b', 'b'], b=1:2))
+    # test below errors because keys for strings do not support == comparison
+    @test_throws ArgumentError combine(gdf, :a => (x -> ["ab", "cd"]) => AsTable, :a => :b)
+    @test isequal_typed(combine(gdf, :a => (x -> []) => AsTable, :a => :b),
+                        DataFrame(a=1:2, b=1:2))
+    @test_throws ArgumentError combine(gdf, :a => (x -> [(a=x, b=x), (a=x, c=x)]) => AsTable)
+    @test isequal_typed(combine(gdf, :a => (x -> [(x=1, y=2), (x=3, y="a")]) => AsTable),
+                        DataFrame(a=[1, 1, 2, 2], x=[1, 3, 1, 3], y=Any[2, "a", 2, "a"]))
+    @test isequal_typed(combine(gdf, :a => (x -> [(x=[1], y=2), (x=[3], y="a")]) => AsTable),
+                        DataFrame(a=[1, 1, 2, 2], x=[[1], [3], [1], [3]], y=Any[2, "a", 2, "a"]))
+    @test isequal_typed(combine(gdf, :a => (x -> [(x=[1], y=2), (x=[3], y="a")]) => [:z1, :z2]),
+                        DataFrame(a=[1, 1, 2, 2], z1=[[1], [3], [1], [3]], z2=Any[2, "a", 2, "a"]))
+    @test_throws ArgumentError combine(gdf, :a => (x -> [(x=[1], y=2), (x=[3], y="a")]) => [:z1, :z2, :z3])
+    @test_throws ArgumentError combine(gdf, :a => (x -> [Dict('x' => 1)]) => AsTable)
+end
+
 end # module

@@ -4,6 +4,9 @@
 
 * Fix incorrect handling of column metadata in `insertcols!` and `insertcols`
   ([#3220](https://github.com/JuliaData/DataFrames.jl/pull/3220))
+* Correctly handle `GroupedDataFrame` with no groups in multi-column
+  operation specification syntax
+  ([#3122](https://github.com/JuliaData/DataFrames.jl/issues/3122))
 
 ## Display improvements
 
