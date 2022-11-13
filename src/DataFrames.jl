@@ -17,7 +17,7 @@ import .SeparateModuleIndex: _names, index, rename!
 
 include("new_module/SeparateModule.jl")
 using .SeparateModule
-import .SeparateModule: normalize_selection, _manipulate, manipulate
+import .SeparateModule: normalize_selection, manipulate
 
 import SnoopPrecompile
 

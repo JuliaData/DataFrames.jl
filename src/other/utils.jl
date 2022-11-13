@@ -150,3 +150,25 @@ function _nt_like_hash(v, h::UInt)
 
     return xor(objectid(Tuple(propertynames(v))), h)
 end
+
+# from old index.jl
+function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false)
+    if !makeunique
+        if length(unique(nms)) != length(nms)
+            dup = unique(nms[nonunique(DataFrame(nms=nms))])
+            dupstr = join(string.(':', dup), ", ", " and ")
+            msg = "Duplicate variable names: $dupstr. Pass makeunique=true " *
+                  "to make them unique using a suffix automatically."
+            throw(ArgumentError(msg))
+        end
+    end
+    if length(nms) != length(x)
+        throw(DimensionMismatch("Length of nms doesn't match length of x."))
+    end
+    make_unique!(x.names, nms, makeunique=makeunique)
+    empty!(x.lookup)
+    for (i, n) in enumerate(x.names)
+        x.lookup[n] = i
+    end
+    return x
+end

@@ -40,28 +40,6 @@ Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.isequal(x::AbstractIndex, y::AbstractIndex) = _names(x) == _names(y) # it is enough to check names
 Base.:(==)(x::AbstractIndex, y::AbstractIndex) = isequal(x, y)
 
-
-function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false)
-    if !makeunique
-        if length(unique(nms)) != length(nms)
-            dup = unique(nms[nonunique(DataFrame(nms=nms))])
-            dupstr = join(string.(':', dup), ", ", " and ")
-            msg = "Duplicate variable names: $dupstr. Pass makeunique=true " *
-                  "to make them unique using a suffix automatically."
-            throw(ArgumentError(msg))
-        end
-    end
-    if length(nms) != length(x)
-        throw(DimensionMismatch("Length of nms doesn't match length of x."))
-    end
-    make_unique!(x.names, nms, makeunique=makeunique)
-    empty!(x.lookup)
-    for (i, n) in enumerate(x.names)
-        x.lookup[n] = i
-    end
-    return x
-end
-
 function rename!(x::Index, nms::AbstractVector{Pair{Symbol, Symbol}})
     xbackup = copy(x)
     processedfrom = Set{Symbol}()

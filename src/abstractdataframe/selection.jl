@@ -1348,6 +1348,19 @@ combine(@nospecialize(f::Pair), gd::AbstractDataFrame;
                         "You can pass a `Pair` as the second argument of the transformation. If you want the return " *
                         "value to be processed as having multiple columns add `=> AsTable` suffix to the pair."))
 
+function manipulate(df::DataFrame, @nospecialize(cs...); copycols::Bool, keeprows::Bool, renamecols::Bool)
+    cs_vec = []
+    for v in cs
+        if v isa AbstractVecOrMat{<:Pair}
+            append!(cs_vec, v)
+        else
+            push!(cs_vec, v)
+        end
+    end
+    normalized_cs = Any[normalize_selection(index(df), make_pair_concrete(c), renamecols) for c in cs_vec]
+    return _manipulate(df, normalized_cs, copycols, keeprows)
+end
+
 function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols::Bool, keeprows::Bool)
     @assert !(df isa SubDataFrame && copycols==false)
     newdf = DataFrame()
@@ -1481,6 +1494,17 @@ function manipulate(df::DataFrame, args::AbstractVector{Int};
     return new_df
 end
 
+function manipulate(df::DataFrame, c::MultiColumnIndex; copycols::Bool, keeprows::Bool,
+    renamecols::Bool)
+    if c isa AbstractVector{<:Pair}
+    return manipulate(df, c..., copycols=copycols, keeprows=keeprows,
+            renamecols=renamecols)
+    else
+    return manipulate(df, index(df)[c], copycols=copycols, keeprows=keeprows,
+            renamecols=renamecols)
+    end
+end
+
 
 function manipulate(dfv::SubDataFrame, args::MultiColumnIndex;
                     copycols::Bool, keeprows::Bool, renamecols::Bool)
@@ -1491,3 +1515,26 @@ function manipulate(dfv::SubDataFrame, args::MultiColumnIndex;
         return copycols ? dfv[:, args] : view(dfv, :, args)
     end
 end
+
+
+function manipulate(df::AbstractDataFrame, @nospecialize(cs...); copycols::Bool, keeprows::Bool, renamecols::Bool)
+    cs_vec = []
+    for v in cs
+        if v isa AbstractVecOrMat{<:Pair}
+            append!(cs_vec, v)
+        else
+            push!(cs_vec, v)
+        end
+    end
+    normalized_cs = Any[normalize_selection(index(df), make_pair_concrete(c), renamecols) for c in cs_vec]
+    return _manipulate(df, normalized_cs, copycols, keeprows)
+end
+
+
+manipulate(df::DataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool,
+           renamecols::Bool) =
+    manipulate(df, Int[index(df)[c]], copycols=copycols, keeprows=keeprows, renamecols=renamecols)
+
+manipulate(dfv::SubDataFrame, c::ColumnIndex; copycols::Bool, keeprows::Bool,
+           renamecols::Bool) =
+    manipulate(dfv, Int[index(dfv)[c]], copycols=copycols, keeprows=keeprows, renamecols=renamecols)
