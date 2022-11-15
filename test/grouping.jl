@@ -1755,7 +1755,7 @@ end
     @test_throws ArgumentError gdf[Not([true true true true])]
 end
 
-include("groupby_operations.jl")
+include("grouped_operations.jl")
 
 end # module
 
