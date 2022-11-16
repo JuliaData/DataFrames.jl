@@ -16,8 +16,8 @@ using .SeparateModuleIndex
 import .SeparateModuleIndex: _names, index, rename!
 
 include("new_module/SeparateModule.jl")
-using .SeparateModule
-import .SeparateModule: normalize_selection, manipulate
+using .SeparateModule: normalize_selection, make_pair_concrete, broadcast_pair
+import .SeparateModule: normalize_selection
 
 import SnoopPrecompile
 
@@ -140,7 +140,6 @@ const METADATA_FIXED =
     """
 
 include("other/utils.jl")
-# include("other/index.jl")
 
 include("abstractdataframe/abstractdataframe.jl")
 include("dataframe/dataframe.jl")

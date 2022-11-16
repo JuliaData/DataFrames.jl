@@ -11,6 +11,6 @@ import ..SeparateModuleIndex: funname
 
 include("selection.jl")
 
-export normalize_selection, make_pair_concrete, broadcast_pair, manipulate
+export normalize_selection, make_pair_concrete, broadcast_pair
 
 end

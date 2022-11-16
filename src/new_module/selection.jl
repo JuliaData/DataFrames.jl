@@ -332,5 +332,3 @@ function normalize_selection(idx::AbstractIndex,
 
     return combine_src => fun => newcol
 end
-
-function manipulate end

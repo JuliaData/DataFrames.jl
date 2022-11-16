@@ -1,6 +1,6 @@
 module SeparateModuleIndex
 using Unicode: Unicode
-using REPL: REPL
+using REPL: levenshtein
 using DataAPI: All, Between, Cols, DataAPI, nrow
 using InvertedIndices: InvertedIndices, Not
 using Printf: @sprintf
@@ -15,5 +15,5 @@ export
     _findall, add_names, funname, SubIndex, _names,
     AsTable, ColumnIndex, MultiColumnIndex, Index,
     COLUMNINDEX_STR, MULTICOLUMNINDEX_STR, SymbolOrString, AbstractIndex,
-    MULTICOLUMNINDEX_TUPLE, make_unique, index,parentcols,rename!,fuzzymatch, make_unique!, _norm_eq, _julia_charmap
+    MULTICOLUMNINDEX_TUPLE, make_unique, index, parentcols,rename!,fuzzymatch, make_unique!, _norm_eq, _julia_charmap
 end
