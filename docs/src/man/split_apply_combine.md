@@ -67,7 +67,7 @@ each subset of the `DataFrame`. This specification can be of the following forms
    except `AsTable` are allowed).
 4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
    must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
-5. special convenience forms `function => target_cols` or just `function`
+5. context dependent expressions `function => target_cols` or just `function`
    for specific `function`s where the input columns are omitted;
    without `target_cols` the new column has the same name as `function`, otherwise
    it must be single name (as a `Symbol` or a string). Supported `function`s are:
@@ -778,3 +778,338 @@ julia> df
    5 │     2  missing      5
    6 │     3  missing      6
 ```
+
+# Context dependent expressions
+
+Operation specification language supports the following context dependent
+operations:
+
+* getting the number of rows (`nrow`);
+* getting the proportion of rows (`proprow`);
+* getting the group number (`groupindices`);
+* getting a vector of group indices (`eachindex`).
+
+These operations are context dependent, because they do not require input column
+name in the operation specification syntax.
+
+These four exceptions to the standard operation specification syntax were
+introduced for user convenience as these operations are often needed in
+practice.
+
+Below each of them is explained by example.
+
+First create a data frame we will work with:
+
+```jldoctest sac
+julia> df = DataFrame(customer_id=["a", "b", "b", "b", "c", "c"],
+                      transaction_id=[12, 15, 19, 17, 13, 11],
+                      volume=[2, 3, 1, 4, 5, 9])
+6×3 DataFrame
+ Row │ customer_id  transaction_id  volume
+     │ String       Int64           Int64
+─────┼─────────────────────────────────────
+   1 │ a                        12       2
+   2 │ b                        15       3
+   3 │ b                        19       1
+   4 │ b                        17       4
+   5 │ c                        13       5
+   6 │ c                        11       9
+
+julia> gdf = groupby(df, :customer_id, sort=true);
+
+julia> show(gdf, allgroups=true)
+GroupedDataFrame with 3 groups based on key: customer_id
+Group 1 (1 row): customer_id = "a"
+ Row │ customer_id  transaction_id  volume
+     │ String       Int64           Int64
+─────┼─────────────────────────────────────
+   1 │ a                        12       2
+Group 2 (3 rows): customer_id = "b"
+ Row │ customer_id  transaction_id  volume
+     │ String       Int64           Int64
+─────┼─────────────────────────────────────
+   1 │ b                        15       3
+   2 │ b                        19       1
+   3 │ b                        17       4
+Group 3 (2 rows): customer_id = "c"
+ Row │ customer_id  transaction_id  volume
+     │ String       Int64           Int64
+─────┼─────────────────────────────────────
+   1 │ c                        13       5
+   2 │ c                        11       9
+```
+
+## Getting the number of rows
+
+You can get the number of rows per group in a `GroupedDataFrame` by just
+writing `nrow`, in which case the generated column name with the number of rows
+is `:nrow`:
+
+```jldoctest sac
+julia> combine(gdf, nrow)
+3×2 DataFrame
+ Row │ customer_id  nrow
+     │ String       Int64
+─────┼────────────────────
+   1 │ a                1
+   2 │ b                3
+   3 │ c                2
+```
+
+Additionally you are allowed to pass target column name:
+
+```jldoctest sac
+julia> combine(gdf, nrow => "transaction_count")
+3×2 DataFrame
+ Row │ customer_id  transaction_count
+     │ String       Int64
+─────┼────────────────────────────────
+   1 │ a                            1
+   2 │ b                            3
+   3 │ c                            2
+```
+
+Note that in both cases we did not pass source column name as it is not needed
+to determine the number of rows per group. This is the reason why context
+dependent expressions are exceptions to standard operation specification syntax.
+
+Additionally the `nrow` expression also works in operation specification syntax
+applied to a data frame. Here is an example:
+
+```jldoctest sac
+julia> combine(df, nrow => "transaction_count")
+1×1 DataFrame
+ Row │ transaction_count
+     │ Int64
+─────┼───────────────────
+   1 │                 6
+```
+
+Finally, recall that [`nrow`](@ref) is also a regular function that returns a
+number of rows in a data frame:
+
+
+```jldoctest sac
+julia> nrow(df)
+6
+```
+
+This dual-use of `nrow` does not lead to ambiguities, and is meant to make it
+easier to remember this exception.
+
+## Getting the proportion of rows
+
+If you want to get a proportion of rows per group in a `GroupedDataFrame`
+you can use the `proprow` and `proprow => [target column name]` context
+dependent expressions. Here are some examples:
+
+```jldoctest sac
+julia> combine(gdf, proprow)
+3×2 DataFrame
+ Row │ customer_id  proprow
+     │ String       Float64
+─────┼───────────────────────
+   1 │ a            0.166667
+   2 │ b            0.5
+   3 │ c            0.333333
+
+julia> combine(gdf, proprow => "transaction_fraction")
+3×2 DataFrame
+ Row │ customer_id  transaction_fraction
+     │ String       Float64
+─────┼───────────────────────────────────
+   1 │ a                        0.166667
+   2 │ b                        0.5
+   3 │ c                        0.333333
+```
+
+As opposed to `nrow`, `proprow` cannot be used outside of operation
+specification syntax and is only allowed when processing `GroupedDataFrame`.
+
+## Getting the group number
+
+Another common operation is getting group number. Use the `groupindices` and
+`groupindices => [target column name]` context dependent expressions to get it:
+
+
+```jldoctest sac
+julia> combine(gdf, groupindices)
+3×2 DataFrame
+ Row │ customer_id  groupindices
+     │ String       Int64
+─────┼───────────────────────────
+   1 │ a                       1
+   2 │ b                       2
+   3 │ c                       3
+
+julia> combine(gdf, groupindices => "group_number")
+3×2 DataFrame
+ Row │ customer_id  group_number
+     │ String       Int64
+─────┼───────────────────────────
+   1 │ a                       1
+   2 │ b                       2
+   3 │ c                       3
+```
+
+The `groupindices` name was chosen, because there exists the
+[`groupindices`](@ref) function that applied to `GroupedDataFrame` returns
+group indices for each row in the parent data frame of the passed
+`GroupedDataFrame`:
+
+```jldoctest sac
+julia> groupindices(gdf)
+6-element Vector{Union{Missing, Int64}}:
+ 1
+ 2
+ 2
+ 2
+ 3
+ 3
+```
+
+So as for `nrow` we see that the result is similar, but just in a different
+context (normal function call vs. operation specification syntax).
+
+## Getting a vector of group indices
+
+The last context dependent expression supported by operation is getting group
+indices. Use the `eachindex` and `eachindex => [target column name]` expressions
+to get it:
+
+
+```jldoctest sac
+julia> combine(gdf, eachindex)
+6×2 DataFrame
+ Row │ customer_id  eachindex
+     │ String       Int64
+─────┼────────────────────────
+   1 │ a                    1
+   2 │ b                    1
+   3 │ b                    2
+   4 │ b                    3
+   5 │ c                    1
+   6 │ c                    2
+
+julia> combine(gdf, eachindex => "transaction_number")
+6×2 DataFrame
+ Row │ customer_id  transaction_number
+     │ String       Int64
+─────┼─────────────────────────────────
+   1 │ a                             1
+   2 │ b                             1
+   3 │ b                             2
+   4 │ b                             3
+   5 │ c                             1
+   6 │ c                             2
+```
+
+Note that this operation also makes sense in a data frame context so it is
+also supported:
+
+```jldoctest sac
+julia> transform(df, eachindex)
+6×4 DataFrame
+ Row │ customer_id  transaction_id  volume  eachindex
+     │ String       Int64           Int64   Int64
+─────┼────────────────────────────────────────────────
+   1 │ a                        12       2          1
+   2 │ b                        15       3          2
+   3 │ b                        19       1          3
+   4 │ b                        17       4          4
+   5 │ c                        13       5          5
+   6 │ c                        11       9          6
+```
+
+Finally recall that `eachindex` is a standard function for getting all indices
+in an array. This similarity of functionality was the reason why this name was
+picked:
+
+```jldoctest sac
+julia> collect(eachindex(df.customer_id))
+6-element Vector{Int64}:
+ 1
+ 2
+ 3
+ 4
+ 5
+ 6
+```
+
+This, for example, means that in the following example the two created columns
+have the same contents:
+
+```jldoctest sac
+julia> combine(gdf, eachindex, :customer_id => eachindex)
+6×3 DataFrame
+ Row │ customer_id  eachindex  customer_id_eachindex
+     │ String       Int64      Int64
+─────┼───────────────────────────────────────────────
+   1 │ a                    1                      1
+   2 │ b                    1                      1
+   3 │ b                    2                      2
+   4 │ b                    3                      3
+   5 │ c                    1                      1
+   6 │ c                    2                      2
+```
+
+
+## Passing a function in operation specification syntax
+
+When discussing context dependent expressions it is important to remember
+that operation specification syntax allows you to pass a function (without
+source and target column names), in which case such a function get a
+`SubDataFrame` that represents a group in a `GroupedDataFrame`. Here is an
+example:
+
+```jldoctest sac
+julia> combine(gdf, nrow, x -> nrow(x))
+3×3 DataFrame
+ Row │ customer_id  nrow   x1
+     │ String       Int64  Int64
+─────┼───────────────────────────
+   1 │ a                1      1
+   2 │ b                3      3
+   3 │ c                2      2
+```
+
+Notice that columns `:nrow` and `:x1` have an identical contents. This is
+expected. We already know that `nrow` is a context dependent expression
+generating the `:nrow` column with number of rows per group. However, the
+`x -> nrow(x)` anonymous function does exactly the same as it gets a
+`SubDataFrame` as its argument and returns its number of rows (the `:x1` column
+name is a default auto-generated column name in this case).
+
+To show you another example of passing a function consider the following case:
+
+```jldoctest sac
+julia> combine(gdf, :volume => sum, x -> sum(x.volume))
+3×3 DataFrame
+ Row │ customer_id  volume_sum  x1
+     │ String       Int64       Int64
+─────┼────────────────────────────────
+   1 │ a                     2      2
+   2 │ b                     8      8
+   3 │ c                    14     14
+```
+
+Again, both `:volume_sum` and `:x1` columns hold the same data. The reason
+is that in `:volume => sum` we just apply the `sum` function to the `:volume`
+column, while in `x -> sum(x.volume`, `x` variable is a `SubDataFrame`
+representing the whole group.
+
+Passing a function taking a `SubDataFrame` is a flexible functionality allowing
+you to perform complex operations on your data. However, you should bear in mind
+two aspects:
+
+* Using full operation specification syntax (where source and target column
+  names are passe) will lead to faster execution of your code (as Julia
+  compiler is able to better optimize execution of such operations) in
+  comparison to just passing a function taking a `SubDataFrame`.
+* Although writing `row`, `proprow`, `groupindices`, and `eachindex` looks like
+  just passing a function they **do not** take a `SubDataFrame` as their
+  argument. As we explained in this section, they are special context dependent
+  expressions that are exceptions to the standard operation specification syntax
+  rules. They were added for user convenience (and at the same time they are
+  optimized to be fast).
+
