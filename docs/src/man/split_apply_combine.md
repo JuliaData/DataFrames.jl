@@ -626,7 +626,7 @@ Last Group (5 rows): g = 501
 ```
 
 Note that although `GroupedDataFrame` is iterable and indexable it is not an
-`AbstractVector`. For this reason currently it was designed that it does not
+`AbstractVector`. For this reason currently it was decided that it does not
 support `map` nor broadcasting (to allow for making a decision in the future
 what result type they should produce). To apply a function to all groups of a
 data frame and get a vector of results either use a comprehension or `collect`
