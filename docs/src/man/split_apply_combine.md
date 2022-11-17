@@ -633,6 +633,8 @@ data frame and get a vector of results either use a comprehension or `collect`
 `GroupedDataFrame` into a vector first. Here are examples of both approaches:
 
 ```jldoctest sac
+julia> gd = groupby(iris, :Species);
+
 julia> [nrow(sdf) for sdf in gd]
 3-element Vector{Int64}:
  50
