@@ -1,5 +1,7 @@
 # The Split-Apply-Combine Strategy
 
+## Design of the split-apply-combine support
+
 Many data analysis tasks involve three steps:
 1. splitting a data set into groups,
 2. applying some functions to each of the groups,
@@ -185,6 +187,8 @@ for details):
   column names should include the name of transformation functions or not.
 - `threads` : whether transformations may be run in separate tasks which can execute
   in parallel
+
+## Examples of the split-apply-combine operations
 
 We show several examples of these functions applied to the `iris` dataset below:
 
@@ -385,116 +389,8 @@ julia> combine(gdf) do df
    3 │ Iris-virginica     5.552  0.304588
 ```
 
-If you only want to split the data set into subsets, use the [`groupby`](@ref) function:
+To apply a function to each non-grouping column of a `GroupedDataFrame` you can write:
 
-```jldoctest sac
-julia> for subdf in groupby(iris, :Species)
-           println(size(subdf, 1))
-       end
-50
-50
-50
-```
-
-To also get the values of the grouping columns along with each group, use the
-`pairs` function:
-
-```jldoctest sac
-julia> for (key, subdf) in pairs(groupby(iris, :Species))
-           println("Number of data points for $(key.Species): $(nrow(subdf))")
-       end
-Number of data points for Iris-setosa: 50
-Number of data points for Iris-versicolor: 50
-Number of data points for Iris-virginica: 50
-```
-
-The value of `key` in the previous example is a [`DataFrames.GroupKey`](@ref) object,
-which can be used in a similar fashion to a `NamedTuple`.
-
-Grouping a data frame using the `groupby` function can be seen as adding a lookup key
-to it. Such lookups can be performed efficiently by indexing the resulting
-`GroupedDataFrame` with a `Tuple` or `NamedTuple`:
-```jldoctest sac
-julia> df = DataFrame(g=repeat(1:1000, inner=5), x=1:5000)
-5000×2 DataFrame
-  Row │ g      x
-      │ Int64  Int64
-──────┼──────────────
-    1 │     1      1
-    2 │     1      2
-    3 │     1      3
-    4 │     1      4
-    5 │     1      5
-    6 │     2      6
-    7 │     2      7
-    8 │     2      8
-  ⋮   │   ⋮      ⋮
- 4994 │   999   4994
- 4995 │   999   4995
- 4996 │  1000   4996
- 4997 │  1000   4997
- 4998 │  1000   4998
- 4999 │  1000   4999
- 5000 │  1000   5000
-    4985 rows omitted
-
-julia> gdf = groupby(df, :g)
-GroupedDataFrame with 1000 groups based on key: g
-First Group (5 rows): g = 1
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │     1      1
-   2 │     1      2
-   3 │     1      3
-   4 │     1      4
-   5 │     1      5
-⋮
-Last Group (5 rows): g = 1000
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │  1000   4996
-   2 │  1000   4997
-   3 │  1000   4998
-   4 │  1000   4999
-   5 │  1000   5000
-
-julia> gdf[(g=500,)]
-5×2 SubDataFrame
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │   500   2496
-   2 │   500   2497
-   3 │   500   2498
-   4 │   500   2499
-   5 │   500   2500
-
-julia> gdf[[(500,), (501,)]]
-GroupedDataFrame with 2 groups based on key: g
-First Group (5 rows): g = 500
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │   500   2496
-   2 │   500   2497
-   3 │   500   2498
-   4 │   500   2499
-   5 │   500   2500
-⋮
-Last Group (5 rows): g = 501
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │   501   2501
-   2 │   501   2502
-   3 │   501   2503
-   4 │   501   2504
-   5 │   501   2505
-```
-
-In order to apply a function to each non-grouping column of a `GroupedDataFrame` you can write:
 ```jldoctest sac
 julia> gd = groupby(iris, :Species)
 GroupedDataFrame with 3 groups based on key: Species
@@ -616,7 +512,216 @@ julia> gd[1]
    1 │     1
 ```
 
-# Simulating the SQL `where` clause
+## Using `GroupedDataFrame` as an itrable and indexable object
+
+If you only want to split the data set into subsets, use the [`groupby`](@ref)
+function. You can then iterate `SubDataFrame`s that constitute the identified
+groups:
+
+```jldoctest sac
+julia> for subdf in groupby(iris, :Species)
+           println(size(subdf, 1))
+       end
+50
+50
+50
+```
+
+To also get the values of the grouping columns along with each group, use the
+`pairs` function:
+
+```jldoctest sac
+julia> for (key, subdf) in pairs(groupby(iris, :Species))
+           println("Number of data points for $(key.Species): $(nrow(subdf))")
+       end
+Number of data points for Iris-setosa: 50
+Number of data points for Iris-versicolor: 50
+Number of data points for Iris-virginica: 50
+```
+
+The value of `key` in the previous example is a [`DataFrames.GroupKey`](@ref) object,
+which can be used in a similar fashion to a `NamedTuple`.
+
+Grouping a data frame using the `groupby` function can be seen as adding a lookup key
+to it. Such lookups can be performed efficiently by indexing the resulting
+`GroupedDataFrame` with a `Tuple` or `NamedTuple`:
+```jldoctest sac
+julia> df = DataFrame(g=repeat(1:1000, inner=5), x=1:5000)
+5000×2 DataFrame
+  Row │ g      x
+      │ Int64  Int64
+──────┼──────────────
+    1 │     1      1
+    2 │     1      2
+    3 │     1      3
+    4 │     1      4
+    5 │     1      5
+    6 │     2      6
+    7 │     2      7
+    8 │     2      8
+  ⋮   │   ⋮      ⋮
+ 4994 │   999   4994
+ 4995 │   999   4995
+ 4996 │  1000   4996
+ 4997 │  1000   4997
+ 4998 │  1000   4998
+ 4999 │  1000   4999
+ 5000 │  1000   5000
+    4985 rows omitted
+
+julia> gdf = groupby(df, :g)
+GroupedDataFrame with 1000 groups based on key: g
+First Group (5 rows): g = 1
+ Row │ g      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     1      2
+   3 │     1      3
+   4 │     1      4
+   5 │     1      5
+⋮
+Last Group (5 rows): g = 1000
+ Row │ g      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │  1000   4996
+   2 │  1000   4997
+   3 │  1000   4998
+   4 │  1000   4999
+   5 │  1000   5000
+
+julia> gdf[(g=500,)]
+5×2 SubDataFrame
+ Row │ g      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │   500   2496
+   2 │   500   2497
+   3 │   500   2498
+   4 │   500   2499
+   5 │   500   2500
+
+julia> gdf[[(500,), (501,)]]
+GroupedDataFrame with 2 groups based on key: g
+First Group (5 rows): g = 500
+ Row │ g      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │   500   2496
+   2 │   500   2497
+   3 │   500   2498
+   4 │   500   2499
+   5 │   500   2500
+⋮
+Last Group (5 rows): g = 501
+ Row │ g      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │   501   2501
+   2 │   501   2502
+   3 │   501   2503
+   4 │   501   2504
+   5 │   501   2505
+```
+
+Note that although `GroupedDataFrame` is iterable and indexable it is not an
+`AbstractVector`. For this reason currently it was designed that it does not
+support `map` nor broadcasting (to allow for making a decision in the future
+what result type they should produce). To apply a function to all groups of a
+data frame and get a vector of results either use a comprehension or `collect`
+`GroupedDataFrame` into a vector first. Here are examples of both approaches:
+
+```jldoctest sac
+julia> [nrow(sdf) for sdf in gd]
+3-element Vector{Int64}:
+ 50
+ 50
+ 50
+
+julia> sdf_vec = collect(gd)
+3-element Vector{Any}:
+ 50×5 SubDataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species     
+     │ Float64      Float64     Float64      Float64     String15    
+─────┼───────────────────────────────────────────────────────────────
+   1 │         5.1         3.5          1.4         0.2  Iris-setosa
+   2 │         4.9         3.0          1.4         0.2  Iris-setosa
+   3 │         4.7         3.2          1.3         0.2  Iris-setosa
+   4 │         4.6         3.1          1.5         0.2  Iris-setosa
+   5 │         5.0         3.6          1.4         0.2  Iris-setosa
+   6 │         5.4         3.9          1.7         0.4  Iris-setosa
+   7 │         4.6         3.4          1.4         0.3  Iris-setosa
+   8 │         5.0         3.4          1.5         0.2  Iris-setosa
+  ⋮  │      ⋮           ⋮            ⋮           ⋮            ⋮
+  44 │         5.0         3.5          1.6         0.6  Iris-setosa
+  45 │         5.1         3.8          1.9         0.4  Iris-setosa
+  46 │         4.8         3.0          1.4         0.3  Iris-setosa
+  47 │         5.1         3.8          1.6         0.2  Iris-setosa
+  48 │         4.6         3.2          1.4         0.2  Iris-setosa
+  49 │         5.3         3.7          1.5         0.2  Iris-setosa
+  50 │         5.0         3.3          1.4         0.2  Iris-setosa
+                                                      35 rows omitted
+ 50×5 SubDataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15        
+─────┼───────────────────────────────────────────────────────────────────
+   1 │         7.0         3.2          4.7         1.4  Iris-versicolor
+   2 │         6.4         3.2          4.5         1.5  Iris-versicolor
+   3 │         6.9         3.1          4.9         1.5  Iris-versicolor
+   4 │         5.5         2.3          4.0         1.3  Iris-versicolor
+   5 │         6.5         2.8          4.6         1.5  Iris-versicolor
+   6 │         5.7         2.8          4.5         1.3  Iris-versicolor
+   7 │         6.3         3.3          4.7         1.6  Iris-versicolor
+   8 │         4.9         2.4          3.3         1.0  Iris-versicolor
+  ⋮  │      ⋮           ⋮            ⋮           ⋮              ⋮
+  44 │         5.0         2.3          3.3         1.0  Iris-versicolor
+  45 │         5.6         2.7          4.2         1.3  Iris-versicolor
+  46 │         5.7         3.0          4.2         1.2  Iris-versicolor
+  47 │         5.7         2.9          4.2         1.3  Iris-versicolor
+  48 │         6.2         2.9          4.3         1.3  Iris-versicolor
+  49 │         5.1         2.5          3.0         1.1  Iris-versicolor
+  50 │         5.7         2.8          4.1         1.3  Iris-versicolor
+                                                          35 rows omitted
+ 50×5 SubDataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species        
+     │ Float64      Float64     Float64      Float64     String15       
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         6.3         3.3          6.0         2.5  Iris-virginica
+   2 │         5.8         2.7          5.1         1.9  Iris-virginica
+   3 │         7.1         3.0          5.9         2.1  Iris-virginica
+   4 │         6.3         2.9          5.6         1.8  Iris-virginica
+   5 │         6.5         3.0          5.8         2.2  Iris-virginica
+   6 │         7.6         3.0          6.6         2.1  Iris-virginica
+   7 │         4.9         2.5          4.5         1.7  Iris-virginica
+   8 │         7.3         2.9          6.3         1.8  Iris-virginica
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+  44 │         6.8         3.2          5.9         2.3  Iris-virginica
+  45 │         6.7         3.3          5.7         2.5  Iris-virginica
+  46 │         6.7         3.0          5.2         2.3  Iris-virginica
+  47 │         6.3         2.5          5.0         1.9  Iris-virginica
+  48 │         6.5         3.0          5.2         2.0  Iris-virginica
+  49 │         6.2         3.4          5.4         2.3  Iris-virginica
+  50 │         5.9         3.0          5.1         1.8  Iris-virginica
+                                                         35 rows omitted
+
+julia> map(nrow, sdf_vec)
+3-element Vector{Int64}:
+ 50
+ 50
+ 50
+
+julia> nrow.(sdf_vec)
+3-element Vector{Int64}:
+ 50
+ 50
+ 50
+```
+
+Note, that using split-apply-combine strategy with operation specification
+syntax usually will be faster than iterating a `GroupedDataFrame`.
+
+## Simulating the SQL `where` clause
 
 You can conveniently work on subsets of a data frame by using `SubDataFrame`s.
 Operations performed on such objects can either create a new data frame or be
@@ -779,7 +884,7 @@ julia> df
    6 │     3  missing      6
 ```
 
-# Context dependent expressions
+## Context dependent expressions
 
 Operation specification language supports the following context dependent
 operations:
@@ -897,7 +1002,7 @@ julia> nrow(df)
 This dual-use of `nrow` does not lead to ambiguities, and is meant to make it
 easier to remember this exception.
 
-## Getting the proportion of rows
+### Getting the proportion of rows
 
 If you want to get a proportion of rows per group in a `GroupedDataFrame`
 you can use the `proprow` and `proprow => [target column name]` context
@@ -926,7 +1031,7 @@ julia> combine(gdf, proprow => "transaction_fraction")
 As opposed to `nrow`, `proprow` cannot be used outside of operation
 specification syntax and is only allowed when processing `GroupedDataFrame`.
 
-## Getting the group number
+### Getting the group number
 
 Another common operation is getting group number. Use the `groupindices` and
 `groupindices => [target column name]` context dependent expressions to get it:
@@ -971,7 +1076,7 @@ julia> groupindices(gdf)
 So as for `nrow` we see that the result is similar, but just in a different
 context (normal function call vs. operation specification syntax).
 
-## Getting a vector of group indices
+### Getting a vector of group indices
 
 The last context dependent expression supported by operation is getting group
 indices. Use the `eachindex` and `eachindex => [target column name]` expressions
@@ -1054,7 +1159,7 @@ julia> combine(gdf, eachindex, :customer_id => eachindex)
 ```
 
 
-## Passing a function in operation specification syntax
+### Passing a function in operation specification syntax
 
 When discussing context dependent expressions it is important to remember
 that operation specification syntax allows you to pass a function (without
