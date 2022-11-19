@@ -13,11 +13,7 @@ using Tables: ByRow
 
 include("new_module_index/SeparateModuleIndex.jl")
 using .SeparateModuleIndex
-import .SeparateModuleIndex: _names, index, rename!
-
-include("new_module/SeparateModule.jl")
-using .SeparateModule: normalize_selection, make_pair_concrete, broadcast_pair
-import .SeparateModule: normalize_selection
+import .SeparateModuleIndex: _names, index, rename!, normalize_selection
 
 import SnoopPrecompile
 
@@ -145,7 +141,6 @@ include("abstractdataframe/abstractdataframe.jl")
 include("dataframe/dataframe.jl")
 include("subdataframe/subdataframe.jl")
 include("dataframerow/dataframerow.jl")
-
 include("dataframe/insertion.jl")
 
 include("groupeddataframe/groupeddataframe.jl")

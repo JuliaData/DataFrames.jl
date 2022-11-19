@@ -221,17 +221,23 @@ const TRANSFORMATION_COMMON_RULES =
     invoke optimized implementation, see [`table_transformation`](@ref) for details.
     """
 
-### OK
-normalize_selection(idx::AbstractIndex, sel::Pair{typeof(groupindices), Symbol},renamecols::Bool) = Int[] => groupindices => last(sel)
-normalize_selection(idx::AbstractIndex, sel::Pair{typeof(groupindices), <:AbstractString}, renamecols::Bool) = normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
-normalize_selection(idx::AbstractIndex, sel::typeof(groupindices), renamecols::Bool) = normalize_selection(idx, groupindices => :groupindices, renamecols)
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(groupindices), Symbol},
+                    renamecols::Bool) =
+    Int[] => groupindices => last(sel)
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(groupindices), <:AbstractString},
+                    renamecols::Bool) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
+normalize_selection(idx::AbstractIndex, sel::typeof(groupindices), renamecols::Bool) =
+    normalize_selection(idx, groupindices => :groupindices, renamecols)
 
-normalize_selection(idx::AbstractIndex, sel::Pair{typeof(proprow), Symbol}, renamecols::Bool) = Int[] => proprow => last(sel)
-normalize_selection(idx::AbstractIndex, sel::Pair{typeof(proprow), <:AbstractString}, renamecols::Bool) = normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
-normalize_selection(idx::AbstractIndex, sel::typeof(proprow), renamecols::Bool) = normalize_selection(idx, proprow => :proprow, renamecols)
-### OK
-
-
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(proprow), Symbol},
+                    renamecols::Bool) =
+    Int[] => proprow => last(sel)
+normalize_selection(idx::AbstractIndex, sel::Pair{typeof(proprow), <:AbstractString},
+                    renamecols::Bool) =
+    normalize_selection(idx, first(sel) => Symbol(last(sel)), renamecols)
+normalize_selection(idx::AbstractIndex, sel::typeof(proprow), renamecols::Bool) =
+    normalize_selection(idx, proprow => :proprow, renamecols)
 
 _transformation_helper(df::AbstractDataFrame, col_idx::Nothing, (fun,)::Ref{Any}) =
     fun(df)

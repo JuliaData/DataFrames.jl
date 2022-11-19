@@ -261,7 +261,7 @@ end
 # Returns candidates ordered by (distance, name) pair
 function fuzzymatch(l::Dict{Symbol, Int}, idx::Symbol)
         idxs = uppercase(string(idx))
-        dist = [(levenshtein(uppercase(string(x)), idxs), x) for x in keys(l)]
+        dist = [(REPL.levenshtein(uppercase(string(x)), idxs), x) for x in keys(l)]
         sort!(dist)
         c = [count(x -> x[1] <= i, dist) for i in 0:2]
         maxd = max(0, searchsortedlast(c, 8) - 1)
