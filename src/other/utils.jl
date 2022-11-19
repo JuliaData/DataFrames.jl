@@ -140,18 +140,7 @@ macro spawn_or_run(threads, expr)
     end
 end
 
-function _nt_like_hash(v, h::UInt)
-    length(v) == 0 && return hash(NamedTuple(), h)
-
-    h = hash((), h)
-    for i in length(v):-1:1
-        h = hash(v[i], h)
-    end
-
-    return xor(objectid(Tuple(propertynames(v))), h)
-end
-
-# from old index.jl
+# from index.jl
 function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false)
     if !makeunique
         if length(unique(nms)) != length(nms)
@@ -171,4 +160,15 @@ function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false)
         x.lookup[n] = i
     end
     return x
+end
+
+function _nt_like_hash(v, h::UInt)
+    length(v) == 0 && return hash(NamedTuple(), h)
+
+    h = hash((), h)
+    for i in length(v):-1:1
+        h = hash(v[i], h)
+    end
+
+    return xor(objectid(Tuple(propertynames(v))), h)
 end
