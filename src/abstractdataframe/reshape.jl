@@ -215,13 +215,13 @@ end
 """
     unstack(df::AbstractDataFrame, rowkeys, colkey, value;
             renamecols::Function=identity, allowmissing::Bool=false,
-            combine=nothing, fill=missing, threads::Bool=true)
+            combine=only, fill=missing, threads::Bool=true)
     unstack(df::AbstractDataFrame, colkey, value;
             renamecols::Function=identity, allowmissing::Bool=false,
-            combine=nothing, fill=missing, threads::Bool=true)
+            combine=only, fill=missing, threads::Bool=true)
     unstack(df::AbstractDataFrame;
             renamecols::Function=identity, allowmissing::Bool=false,
-            combine=nothing, fill=missing, threads::Bool=true)
+            combine=only, fill=missing, threads::Bool=true)
 
 Unstack data frame `df`, i.e. convert it from long to wide format.
 
