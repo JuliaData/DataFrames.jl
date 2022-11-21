@@ -75,7 +75,7 @@ const TRANSFORMATION_COMMON_RULES =
        except `AsTable` are allowed).
     4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
        must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
-    5. context dependent expressions `function => target_cols` or just `function`
+    5. context-dependent expressions `function => target_cols` or just `function`
        for specific `function`s where the input columns are omitted;
        without `target_cols` the new column has the same name as `function`, otherwise
        it must be single name (as a `Symbol` or a string). Supported `function`s are:
@@ -1267,7 +1267,7 @@ julia> select(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
    8 │     2      1      8      9
 ```
 
-# context dependent expressions
+# context-dependent expressions
 ```jldoctest
 julia> df = DataFrame(a=[1, 1, 1, 2, 2, 1, 1, 2],
                       b=repeat([2, 1], outer=[4]),

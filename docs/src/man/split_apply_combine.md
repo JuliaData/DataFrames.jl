@@ -69,7 +69,7 @@ each subset of the `DataFrame`. This specification can be of the following forms
    except `AsTable` are allowed).
 4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
    must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
-5. context dependent expressions `function => target_cols` or just `function`
+5. context-dependent expressions `function => target_cols` or just `function`
    for specific `function`s where the input columns are omitted;
    without `target_cols` the new column has the same name as `function`, otherwise
    it must be single name (as a `Symbol` or a string). Supported `function`s are:
@@ -512,7 +512,7 @@ julia> gd[1]
    1 │     1
 ```
 
-## Using `GroupedDataFrame` as an itrable and indexable object
+## Using `GroupedDataFrame` as an iterable and indexable object
 
 If you only want to split the data set into subsets, use the [`groupby`](@ref)
 function. You can then iterate `SubDataFrame`s that constitute the identified
@@ -720,8 +720,9 @@ julia> nrow.(sdf_vec)
  50
 ```
 
-Note, that using split-apply-combine strategy with operation specification
-syntax usually will be faster than iterating a `GroupedDataFrame`.
+Note that using the split-apply-combine strategy with operation specification
+syntax in `combine`, `select` or `transform` will usually be faster than iterating
+a `GroupedDataFrame`.
 
 ## Simulating the SQL `where` clause
 
@@ -886,17 +887,17 @@ julia> df
    6 │     3  missing      6
 ```
 
-## Context dependent expressions
+## Context-dependent expressions
 
-Operation specification language supports the following context dependent
-operations:
+The operation specification language used with `combine`, `select` and `transform`
+supports the following context-dependent operations:
 
-* getting the number of rows (`nrow`);
-* getting the proportion of rows (`proprow`);
+* getting the number of rows in a group (`nrow`);
+* getting the proportion of rows in a group (`proprow`);
 * getting the group number (`groupindices`);
 * getting a vector of group indices (`eachindex`).
 
-These operations are context dependent, because they do not require input column
+These operations are context-dependent, because they do not require specifying the input column
 name in the operation specification syntax.
 
 These four exceptions to the standard operation specification syntax were
@@ -977,10 +978,10 @@ julia> combine(gdf, nrow => "transaction_count")
 ```
 
 Note that in both cases we did not pass source column name as it is not needed
-to determine the number of rows per group. This is the reason why context
-dependent expressions are exceptions to standard operation specification syntax.
+to determine the number of rows per group. This is the reason why context-dependent
+expressions are exceptions to standard operation specification syntax.
 
-Additionally the `nrow` expression also works in operation specification syntax
+The `nrow` expression also works in the operation specification syntax
 applied to a data frame. Here is an example:
 
 ```jldoctest sac
@@ -1001,14 +1002,14 @@ julia> nrow(df)
 6
 ```
 
-This dual-use of `nrow` does not lead to ambiguities, and is meant to make it
+This dual use of `nrow` does not lead to ambiguities, and is meant to make it
 easier to remember this exception.
 
 ### Getting the proportion of rows
 
 If you want to get a proportion of rows per group in a `GroupedDataFrame`
-you can use the `proprow` and `proprow => [target column name]` context
-dependent expressions. Here are some examples:
+you can use the `proprow` and `proprow => [target column name]` context-dependent
+expressions. Here are some examples:
 
 ```jldoctest sac
 julia> combine(gdf, proprow)
@@ -1030,13 +1031,13 @@ julia> combine(gdf, proprow => "transaction_fraction")
    3 │ c                        0.333333
 ```
 
-As opposed to `nrow`, `proprow` cannot be used outside of operation
-specification syntax and is only allowed when processing `GroupedDataFrame`.
+As opposed to `nrow`, `proprow` cannot be used outside of the operation
+specification syntax and is only allowed when processing a `GroupedDataFrame`.
 
 ### Getting the group number
 
 Another common operation is getting group number. Use the `groupindices` and
-`groupindices => [target column name]` context dependent expressions to get it:
+`groupindices => [target column name]` context-dependent expressions to get it:
 
 
 ```jldoctest sac
@@ -1059,10 +1060,9 @@ julia> combine(gdf, groupindices => "group_number")
    3 │ c                       3
 ```
 
-The `groupindices` name was chosen, because there exists the
-[`groupindices`](@ref) function that applied to `GroupedDataFrame` returns
-group indices for each row in the parent data frame of the passed
-`GroupedDataFrame`:
+Outside of the operation specification syntax, [`groupindices`](@ref)
+is also a regular function which returns group indices for each row
+in the parent data frame of the passed `GroupedDataFrame`:
 
 ```jldoctest sac
 julia> groupindices(gdf)
@@ -1075,14 +1075,10 @@ julia> groupindices(gdf)
  3
 ```
 
-So as for `nrow` we see that the result is similar, but just in a different
-context (normal function call vs. operation specification syntax).
+### Getting a vector of indices within groups
 
-### Getting a vector of group indices
-
-The last context dependent expression supported by operation is getting group
-indices. Use the `eachindex` and `eachindex => [target column name]` expressions
-to get it:
+The last context-dependent expression supported by the operation
+specification syntax is getting the index of each row within each group:
 
 
 ```jldoctest sac
@@ -1111,8 +1107,8 @@ julia> combine(gdf, eachindex => "transaction_number")
    6 │ c                             2
 ```
 
-Note that this operation also makes sense in a data frame context so it is
-also supported:
+Note that this operation also makes sense in a data frame context,
+where all rows are considered to be in the same group:
 
 ```jldoctest sac
 julia> transform(df, eachindex)
@@ -1161,11 +1157,11 @@ julia> combine(gdf, eachindex, :customer_id => eachindex)
 ```
 
 
-### Passing a function in operation specification syntax
+## Context-dependent expressions versus functions
 
 When discussing context dependent expressions it is important to remember
 that operation specification syntax allows you to pass a function (without
-source and target column names), in which case such a function get a
+source and target column names), in which case such a function gets passed a
 `SubDataFrame` that represents a group in a `GroupedDataFrame`. Here is an
 example:
 
@@ -1209,13 +1205,13 @@ Passing a function taking a `SubDataFrame` is a flexible functionality allowing
 you to perform complex operations on your data. However, you should bear in mind
 two aspects:
 
-* Using full operation specification syntax (where source and target column
-  names are passe) will lead to faster execution of your code (as Julia
+* Using the full operation specification syntax (where source and target column
+  names are passed) will lead to faster execution of your code (as the Julia
   compiler is able to better optimize execution of such operations) in
   comparison to just passing a function taking a `SubDataFrame`.
 * Although writing `row`, `proprow`, `groupindices`, and `eachindex` looks like
   just passing a function they **do not** take a `SubDataFrame` as their
-  argument. As we explained in this section, they are special context dependent
+  argument. As we explained in this section, they are special context-dependent
   expressions that are exceptions to the standard operation specification syntax
   rules. They were added for user convenience (and at the same time they are
   optimized to be fast).
