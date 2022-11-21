@@ -220,7 +220,7 @@ julia> iris = CSV.read((joinpath(dirname(pathof(DataFrames)),
  150 │         5.9         3.0          5.1         1.8  Iris-virginica
                                                         135 rows omitted
 
-julia> gdf = groupby(iris, :Species)
+julia> iris_gdf = groupby(iris, :Species)
 GroupedDataFrame with 3 groups based on key: Species
 First Group (50 rows): Species = "Iris-setosa"
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
@@ -243,7 +243,7 @@ Last Group (50 rows): Species = "Iris-virginica"
   50 │         5.9         3.0          5.1         1.8  Iris-virginica
                                                          47 rows omitted
 
-julia> combine(gdf, :PetalLength => mean)
+julia> combine(iris_gdf, :PetalLength => mean)
 3×2 DataFrame
  Row │ Species          PetalLength_mean
      │ String15         Float64
@@ -252,7 +252,7 @@ julia> combine(gdf, :PetalLength => mean)
    2 │ Iris-versicolor             4.26
    3 │ Iris-virginica              5.552
 
-julia> combine(gdf, nrow, proprow, groupindices)
+julia> combine(iris_gdf, nrow, proprow, groupindices)
 3×4 DataFrame
  Row │ Species          nrow   proprow   groupindices
      │ String15         Int64  Float64   Int64
@@ -261,7 +261,7 @@ julia> combine(gdf, nrow, proprow, groupindices)
    2 │ Iris-versicolor     50  0.333333             2
    3 │ Iris-virginica      50  0.333333             3
 
-julia> combine(gdf, nrow, :PetalLength => mean => :mean)
+julia> combine(iris_gdf, nrow, :PetalLength => mean => :mean)
 3×3 DataFrame
  Row │ Species          nrow   mean
      │ String15         Int64  Float64
@@ -270,7 +270,9 @@ julia> combine(gdf, nrow, :PetalLength => mean => :mean)
    2 │ Iris-versicolor     50    4.26
    3 │ Iris-virginica      50    5.552
 
-julia> combine(gdf, [:PetalLength, :SepalLength] => ((p, s) -> (a=mean(p)/mean(s), b=sum(p))) =>
+julia> combine(iris_gdf,
+               [:PetalLength, :SepalLength] =>
+               ((p, s) -> (a=mean(p)/mean(s), b=sum(p))) =>
                AsTable) # multiple columns are passed as arguments
 3×3 DataFrame
  Row │ Species          a         b
@@ -280,7 +282,7 @@ julia> combine(gdf, [:PetalLength, :SepalLength] => ((p, s) -> (a=mean(p)/mean(s
    2 │ Iris-versicolor  0.717655    213.0
    3 │ Iris-virginica   0.842744    277.6
 
-julia> combine(gdf,
+julia> combine(iris_gdf,
                AsTable([:PetalLength, :SepalLength]) =>
                x -> std(x.PetalLength) / std(x.SepalLength)) # passing a NamedTuple
 3×2 DataFrame
@@ -291,7 +293,7 @@ julia> combine(gdf,
    2 │ Iris-versicolor                          0.910378
    3 │ Iris-virginica                           0.867923
 
-julia> combine(x -> std(x.PetalLength) / std(x.SepalLength), gdf) # passing a SubDataFrame
+julia> combine(x -> std(x.PetalLength) / std(x.SepalLength), iris_gdf) # passing a SubDataFrame
 3×2 DataFrame
  Row │ Species          x1
      │ String15         Float64
@@ -300,7 +302,7 @@ julia> combine(x -> std(x.PetalLength) / std(x.SepalLength), gdf) # passing a Su
    2 │ Iris-versicolor  0.910378
    3 │ Iris-virginica   0.867923
 
-julia> combine(gdf, 1:2 => cor, nrow)
+julia> combine(iris_gdf, 1:2 => cor, nrow)
 3×3 DataFrame
  Row │ Species          SepalLength_SepalWidth_cor  nrow
      │ String15         Float64                     Int64
@@ -309,7 +311,7 @@ julia> combine(gdf, 1:2 => cor, nrow)
    2 │ Iris-versicolor                    0.525911     50
    3 │ Iris-virginica                     0.457228     50
 
-julia> combine(gdf, :PetalLength => (x -> [extrema(x)]) => [:min, :max])
+julia> combine(iris_gdf, :PetalLength => (x -> [extrema(x)]) => [:min, :max])
 3×3 DataFrame
  Row │ Species          min      max
      │ String15         Float64  Float64
@@ -321,7 +323,7 @@ julia> combine(gdf, :PetalLength => (x -> [extrema(x)]) => [:min, :max])
 
 To get row number for each observation within each group use the `eachindex` function:
 ```
-julia> combine(gdf, eachindex)
+julia> combine(iris_gdf, eachindex)
 150×2 DataFrame
  Row │ Species         eachindex
      │ String15        Int64
@@ -342,7 +344,7 @@ In the example below
 the return values in columns `:SepalLength_SepalWidth_cor` and `:nrow` are
 broadcasted to match the number of elements in each group:
 ```
-julia> select(gdf, 1:2 => cor)
+julia> select(iris_gdf, 1:2 => cor)
 150×2 DataFrame
  Row │ Species         SepalLength_SepalWidth_cor
      │ String          Float64
@@ -357,7 +359,7 @@ julia> select(gdf, 1:2 => cor)
  150 │ Iris-virginica                    0.457228
                                   143 rows omitted
 
-julia> transform(gdf, :Species => x -> chop.(x, head=5, tail=0))
+julia> transform(iris_gdf, :Species => x -> chop.(x, head=5, tail=0))
 150×6 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species         Species_function
      │ Float64      Float64     Float64      Float64     String          SubString…
@@ -377,7 +379,7 @@ All functions also support the `do` block form. However, as noted above,
 this form is slow and should therefore be avoided when performance matters.
 
 ```jldoctest sac
-julia> combine(gdf) do df
+julia> combine(iris_gdf) do df
            (m = mean(df.PetalLength), s² = var(df.PetalLength))
        end
 3×3 DataFrame
@@ -392,30 +394,7 @@ julia> combine(gdf) do df
 To apply a function to each non-grouping column of a `GroupedDataFrame` you can write:
 
 ```jldoctest sac
-julia> gd = groupby(iris, :Species)
-GroupedDataFrame with 3 groups based on key: Species
-First Group (50 rows): Species = "Iris-setosa"
- Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String15
-─────┼───────────────────────────────────────────────────────────────
-   1 │         5.1         3.5          1.4         0.2  Iris-setosa
-   2 │         4.9         3.0          1.4         0.2  Iris-setosa
-  ⋮  │      ⋮           ⋮            ⋮           ⋮            ⋮
-  49 │         5.3         3.7          1.5         0.2  Iris-setosa
-  50 │         5.0         3.3          1.4         0.2  Iris-setosa
-                                                      46 rows omitted
-⋮
-Last Group (50 rows): Species = "Iris-virginica"
- Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String15
-─────┼──────────────────────────────────────────────────────────────────
-   1 │         6.3         3.3          6.0         2.5  Iris-virginica
-   2 │         5.8         2.7          5.1         1.9  Iris-virginica
-  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
-  50 │         5.9         3.0          5.1         1.8  Iris-virginica
-                                                         47 rows omitted
-
-julia> combine(gd, valuecols(gd) .=> mean)
+julia> combine(iris_gdf, valuecols(iris_gdf) .=> mean)
 3×5 DataFrame
  Row │ Species          SepalLength_mean  SepalWidth_mean  PetalLength_mean  P ⋯
      │ String15         Float64           Float64          Float64           F ⋯
@@ -431,6 +410,7 @@ grouping columns of its parent data frame must not be mutated, and
 rows must not be added nor removed from it. If the number or rows
 of the parent changes then an error is thrown when a child `GroupedDataFrame`
 is used:
+
 ```jldoctest sac
 julia> df = DataFrame(id=1:2)
 2×1 DataFrame
@@ -519,7 +499,7 @@ function. You can then iterate `SubDataFrame`s that constitute the identified
 groups:
 
 ```jldoctest sac
-julia> for subdf in groupby(iris, :Species)
+julia> for subdf in iris_gdf
            println(size(subdf, 1))
        end
 50
@@ -531,98 +511,12 @@ To also get the values of the grouping columns along with each group, use the
 `pairs` function:
 
 ```jldoctest sac
-julia> for (key, subdf) in pairs(groupby(iris, :Species))
+julia> for (key, subdf) in pairs(iris_gdf)
            println("Number of data points for $(key.Species): $(nrow(subdf))")
        end
 Number of data points for Iris-setosa: 50
 Number of data points for Iris-versicolor: 50
 Number of data points for Iris-virginica: 50
-```
-
-The value of `key` in the previous example is a [`DataFrames.GroupKey`](@ref) object,
-which can be used in a similar fashion to a `NamedTuple`.
-
-Grouping a data frame using the `groupby` function can be seen as adding a lookup key
-to it. Such lookups can be performed efficiently by indexing the resulting
-`GroupedDataFrame` with a `Tuple` or `NamedTuple`:
-```jldoctest sac
-julia> df = DataFrame(g=repeat(1:1000, inner=5), x=1:5000)
-5000×2 DataFrame
-  Row │ g      x
-      │ Int64  Int64
-──────┼──────────────
-    1 │     1      1
-    2 │     1      2
-    3 │     1      3
-    4 │     1      4
-    5 │     1      5
-    6 │     2      6
-    7 │     2      7
-    8 │     2      8
-  ⋮   │   ⋮      ⋮
- 4994 │   999   4994
- 4995 │   999   4995
- 4996 │  1000   4996
- 4997 │  1000   4997
- 4998 │  1000   4998
- 4999 │  1000   4999
- 5000 │  1000   5000
-    4985 rows omitted
-
-julia> gdf = groupby(df, :g)
-GroupedDataFrame with 1000 groups based on key: g
-First Group (5 rows): g = 1
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │     1      1
-   2 │     1      2
-   3 │     1      3
-   4 │     1      4
-   5 │     1      5
-⋮
-Last Group (5 rows): g = 1000
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │  1000   4996
-   2 │  1000   4997
-   3 │  1000   4998
-   4 │  1000   4999
-   5 │  1000   5000
-
-julia> gdf[(g=500,)]
-5×2 SubDataFrame
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │   500   2496
-   2 │   500   2497
-   3 │   500   2498
-   4 │   500   2499
-   5 │   500   2500
-
-julia> gdf[[(500,), (501,)]]
-GroupedDataFrame with 2 groups based on key: g
-First Group (5 rows): g = 500
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │   500   2496
-   2 │   500   2497
-   3 │   500   2498
-   4 │   500   2499
-   5 │   500   2500
-⋮
-Last Group (5 rows): g = 501
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │   501   2501
-   2 │   501   2502
-   3 │   501   2503
-   4 │   501   2504
-   5 │   501   2505
 ```
 
 Note that although `GroupedDataFrame` is iterable and indexable it is not an
@@ -633,15 +527,13 @@ data frame and get a vector of results either use a comprehension or `collect`
 `GroupedDataFrame` into a vector first. Here are examples of both approaches:
 
 ```jldoctest sac
-julia> gd = groupby(iris, :Species);
-
-julia> [nrow(sdf) for sdf in gd]
+julia> [nrow(sdf) for sdf in iris_gdf]
 3-element Vector{Int64}:
  50
  50
  50
 
-julia> sdf_vec = collect(gd)
+julia> sdf_vec = collect(iris_gdf)
 3-element Vector{Any}:
  50×5 SubDataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species     
@@ -723,6 +615,121 @@ julia> nrow.(sdf_vec)
 Note that using the split-apply-combine strategy with operation specification
 syntax in `combine`, `select` or `transform` will usually be faster than iterating
 a `GroupedDataFrame`.
+
+The value of `key` in the example above where we iterated `pairs(iris_gdf)`
+is a [`DataFrames.GroupKey`](@ref) object,
+which can be used in a similar fashion to a `NamedTuple`.
+
+Grouping a data frame using the `groupby` function can be seen as adding a
+lookup key to it. Such lookups can be performed efficiently by indexing the
+resulting `GroupedDataFrame` with [`DataFrames.GroupKey`](@ref) (as it was
+presented aboce) a `Tuple`, a `NamedTuple`, or a dictionary. Here are some
+more examples of such indexing.
+
+```jldoctest sac
+julia> df = DataFrame(g=repeat(1:1000, inner=5), x=1:5000)
+5000×2 DataFrame
+  Row │ g      x
+      │ Int64  Int64
+──────┼──────────────
+    1 │     1      1
+    2 │     1      2
+    3 │     1      3
+    4 │     1      4
+    5 │     1      5
+    6 │     2      6
+    7 │     2      7
+    8 │     2      8
+  ⋮   │   ⋮      ⋮
+ 4994 │   999   4994
+ 4995 │   999   4995
+ 4996 │  1000   4996
+ 4997 │  1000   4997
+ 4998 │  1000   4998
+ 4999 │  1000   4999
+ 5000 │  1000   5000
+    4985 rows omitted
+
+julia> gd = groupby(df, :g)
+GroupedDataFrame with 1000 groups based on key: g
+First Group (5 rows): g = 1
+ Row │ g      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     1      2
+   3 │     1      3
+   4 │     1      4
+   5 │     1      5
+⋮
+Last Group (5 rows): g = 1000
+ Row │ g      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │  1000   4996
+   2 │  1000   4997
+   3 │  1000   4998
+   4 │  1000   4999
+   5 │  1000   5000
+
+julia> gd[(g=500,)] # a NamedTuple
+5×2 SubDataFrame
+ Row │ g      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │   500   2496
+   2 │   500   2497
+   3 │   500   2498
+   4 │   500   2499
+   5 │   500   2500
+
+julia> gd[[(500,), (501,)]] # a vector of Tuples
+GroupedDataFrame with 2 groups based on key: g
+First Group (5 rows): g = 500
+ Row │ g      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │   500   2496
+   2 │   500   2497
+   3 │   500   2498
+   4 │   500   2499
+   5 │   500   2500
+⋮
+Last Group (5 rows): g = 501
+ Row │ g      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │   501   2501
+   2 │   501   2502
+   3 │   501   2503
+   4 │   501   2504
+   5 │   501   2505
+
+julia> key = keys(gd) |> last # first key in gd
+GroupKey: (g = 1000,)
+
+julia> gd[key]
+5×2 SubDataFrame
+ Row │ g      x     
+     │ Int64  Int64
+─────┼──────────────
+   1 │  1000   4996
+   2 │  1000   4997
+   3 │  1000   4998
+   4 │  1000   4999
+   5 │  1000   5000
+
+julia> gd[Dict("g" => 1000)] # a dictionary
+5×2 SubDataFrame
+ Row │ g      x     
+     │ Int64  Int64
+─────┼──────────────
+   1 │  1000   4996
+   2 │  1000   4997
+   3 │  1000   4998
+   4 │  1000   4999
+   5 │  1000   5000
+```
 
 ## Simulating the SQL `where` clause
 
@@ -895,7 +902,7 @@ supports the following context-dependent operations:
 * getting the number of rows in a group (`nrow`);
 * getting the proportion of rows in a group (`proprow`);
 * getting the group number (`groupindices`);
-* getting a vector of group indices (`eachindex`).
+* getting a vector of indices within groups (`eachindex`).
 
 These operations are context-dependent, because they do not require specifying the input column
 name in the operation specification syntax.
@@ -947,7 +954,7 @@ Group 3 (2 rows): customer_id = "c"
    2 │ c                        11       9
 ```
 
-## Getting the number of rows
+### Getting the number of rows
 
 You can get the number of rows per group in a `GroupedDataFrame` by just
 writing `nrow`, in which case the generated column name with the number of rows
@@ -1050,6 +1057,18 @@ julia> combine(gdf, groupindices)
    2 │ b                       2
    3 │ c                       3
 
+julia> transform(gdf, groupindices)
+6×4 DataFrame
+ Row │ customer_id  transaction_id  volume  groupindices 
+     │ String       Int64           Int64   Int64
+─────┼───────────────────────────────────────────────────
+   1 │ a                        12       2             1
+   2 │ b                        15       3             2
+   3 │ b                        19       1             2
+   4 │ b                        17       4             2
+   5 │ c                        13       5             3
+   6 │ c                        11       9             3
+
 julia> combine(gdf, groupindices => "group_number")
 3×2 DataFrame
  Row │ customer_id  group_number
@@ -1093,6 +1112,18 @@ julia> combine(gdf, eachindex)
    4 │ b                    3
    5 │ c                    1
    6 │ c                    2
+
+julia> select(gdf, eachindex, groupindices)
+6×3 DataFrame
+ Row │ customer_id  eachindex  groupindices 
+     │ String       Int64      Int64
+─────┼──────────────────────────────────────
+   1 │ a                    1             1
+   2 │ b                    1             2
+   3 │ b                    2             2
+   4 │ b                    3             2
+   5 │ c                    1             3
+   6 │ c                    2             3
 
 julia> combine(gdf, eachindex => "transaction_number")
 6×2 DataFrame
@@ -1182,24 +1213,6 @@ generating the `:nrow` column with number of rows per group. However, the
 `x -> nrow(x)` anonymous function does exactly the same as it gets a
 `SubDataFrame` as its argument and returns its number of rows (the `:x1` column
 name is a default auto-generated column name in this case).
-
-To show you another example of passing a function consider the following case:
-
-```jldoctest sac
-julia> combine(gdf, :volume => sum, x -> sum(x.volume))
-3×3 DataFrame
- Row │ customer_id  volume_sum  x1
-     │ String       Int64       Int64
-─────┼────────────────────────────────
-   1 │ a                     2      2
-   2 │ b                     8      8
-   3 │ c                    14     14
-```
-
-Again, both `:volume_sum` and `:x1` columns hold the same data. The reason
-is that in `:volume => sum` we just apply the `sum` function to the `:volume`
-column, while in `x -> sum(x.volume`, `x` variable is a `SubDataFrame`
-representing the whole group.
 
 Passing a function taking a `SubDataFrame` is a flexible functionality allowing
 you to perform complex operations on your data. However, you should bear in mind
