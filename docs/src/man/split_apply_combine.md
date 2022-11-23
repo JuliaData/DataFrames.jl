@@ -69,7 +69,7 @@ each subset of the `DataFrame`. This specification can be of the following forms
    except `AsTable` are allowed).
 4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
    must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
-5. context-dependent expressions `function => target_cols` or just `function`
+5. column-independent operations `function => target_cols` or just `function`
    for specific `function`s where the input columns are omitted;
    without `target_cols` the new column has the same name as `function`, otherwise
    it must be single name (as a `Symbol` or a string). Supported `function`s are:
@@ -894,17 +894,17 @@ julia> df
    6 │     3  missing      6
 ```
 
-## Context-dependent expressions
+## Column-independent operations
 
 The operation specification language used with `combine`, `select` and `transform`
-supports the following context-dependent operations:
+supports the following column-independent operations:
 
 * getting the number of rows in a group (`nrow`);
 * getting the proportion of rows in a group (`proprow`);
 * getting the group number (`groupindices`);
 * getting a vector of indices within groups (`eachindex`).
 
-These operations are context-dependent, because they do not require specifying the input column
+These operations are column-independent, because they do not require specifying the input column
 name in the operation specification syntax.
 
 These four exceptions to the standard operation specification syntax were
@@ -985,8 +985,8 @@ julia> combine(gdf, nrow => "transaction_count")
 ```
 
 Note that in both cases we did not pass source column name as it is not needed
-to determine the number of rows per group. This is the reason why context-dependent
-expressions are exceptions to standard operation specification syntax.
+to determine the number of rows per group. This is the reason why column-independent
+operations are exceptions to standard operation specification syntax.
 
 The `nrow` expression also works in the operation specification syntax
 applied to a data frame. Here is an example:
@@ -1015,8 +1015,8 @@ easier to remember this exception.
 ### Getting the proportion of rows
 
 If you want to get a proportion of rows per group in a `GroupedDataFrame`
-you can use the `proprow` and `proprow => [target column name]` context-dependent
-expressions. Here are some examples:
+you can use the `proprow` and `proprow => [target column name]` column-independent
+operations. Here are some examples:
 
 ```jldoctest sac
 julia> combine(gdf, proprow)
@@ -1044,7 +1044,7 @@ specification syntax and is only allowed when processing a `GroupedDataFrame`.
 ### Getting the group number
 
 Another common operation is getting group number. Use the `groupindices` and
-`groupindices => [target column name]` context-dependent expressions to get it:
+`groupindices => [target column name]` column-independent operations to get it:
 
 
 ```jldoctest sac
@@ -1096,7 +1096,7 @@ julia> groupindices(gdf)
 
 ### Getting a vector of indices within groups
 
-The last context-dependent expression supported by the operation
+The last column-independent operation supported by the operation
 specification syntax is getting the index of each row within each group:
 
 
@@ -1188,13 +1188,13 @@ julia> combine(gdf, eachindex, :customer_id => eachindex)
 ```
 
 
-## Context-dependent expressions versus functions
+## Column-independent operations versus functions
 
-When discussing context dependent expressions it is important to remember
+When discussing column-independent operations it is important to remember
 that operation specification syntax allows you to pass a function (without
 source and target column names), in which case such a function gets passed a
 `SubDataFrame` that represents a group in a `GroupedDataFrame`. Here is an
-example:
+example comparing column-independent operation and a function:
 
 ```jldoctest sac
 julia> combine(gdf, nrow, x -> nrow(x))
@@ -1208,7 +1208,7 @@ julia> combine(gdf, nrow, x -> nrow(x))
 ```
 
 Notice that columns `:nrow` and `:x1` have an identical contents. This is
-expected. We already know that `nrow` is a context dependent expression
+expected. We already know that `nrow` is a column-independent operation
 generating the `:nrow` column with number of rows per group. However, the
 `x -> nrow(x)` anonymous function does exactly the same as it gets a
 `SubDataFrame` as its argument and returns its number of rows (the `:x1` column
@@ -1224,8 +1224,8 @@ two aspects:
   comparison to just passing a function taking a `SubDataFrame`.
 * Although writing `row`, `proprow`, `groupindices`, and `eachindex` looks like
   just passing a function they **do not** take a `SubDataFrame` as their
-  argument. As we explained in this section, they are special context-dependent
-  expressions that are exceptions to the standard operation specification syntax
+  argument. As we explained in this section, they are special column-independent
+  operations that are exceptions to the standard operation specification syntax
   rules. They were added for user convenience (and at the same time they are
   optimized to be fast).
 
