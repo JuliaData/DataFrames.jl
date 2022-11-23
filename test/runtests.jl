@@ -6,7 +6,7 @@ fatalerrors = length(ARGS) > 0 && ARGS[1] == "-f"
 quiet = length(ARGS) > 0 && ARGS[1] == "-q"
 anyerrors = false
 
-using DataFrames, Dates, Test, Random
+using DataFrames, Dates, Test, Random, InlineStrings
 
 if Threads.nthreads() < 2
     @warn("Running with only one thread: correctness of parallel operations is not tested")

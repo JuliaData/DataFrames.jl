@@ -1014,6 +1014,9 @@ julia> df = DataFrame(a=1:3, b=4:6)
 
 julia> empty!(df)
 0×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┴──────────────
 
 julia> df.a, df.b
 (Int64[], Int64[])

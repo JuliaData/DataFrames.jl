@@ -5,6 +5,26 @@
 * Add `Iterators.partition` support
    ([#3212](https://github.com/JuliaData/DataFrames.jl/pull/3212))
 
+# DataFrames.jl v1.4.3 Patch Release Notes
+
+## Bug fixes
+
+* Fix incorrect handling of column metadata in `insertcols!` and `insertcols`
+  ([#3220](https://github.com/JuliaData/DataFrames.jl/pull/3220))
+* Correctly handle `GroupedDataFrame` with no groups in multi-column
+  operation specification syntax
+  ([#3122](https://github.com/JuliaData/DataFrames.jl/issues/3122))
+
+## Display improvements
+
+* Improve printing of grouping keys when displaying `GroupedDataFrame`
+  ([#3213](https://github.com/JuliaData/DataFrames.jl/pull/3213))
+
+## Integration changes
+
+* Support updates of metadata API introduced in DataAPI.jl 1.13.0
+  ([3216](https://github.com/JuliaData/DataFrames.jl/pull/3216))
+
 # DataFrames.jl v1.4.2 Patch Release Notes
 
 ## Bug fixes
