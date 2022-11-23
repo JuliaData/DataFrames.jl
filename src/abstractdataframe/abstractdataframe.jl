@@ -3293,7 +3293,7 @@ function insertcols!(df::AbstractDataFrame; after::Bool=false,
 end
 
 """
-    Iterators.partition(df::AbstractDataFrame, n)
+    Iterators.partition(df::AbstractDataFrame, n::Integer)
 
 Iterate over `df` data frame `n` rows at a time, returning each block
 as a `SubDataFrame`.
@@ -3332,6 +3332,7 @@ Base.IteratorEltype(::Type{<:Iterators.PartitionIterator{<:AbstractDataFrame}}) 
     Base.EltypeUnknown()
 
 # we do not need to be overly specific here as we rely on autodetection of eltype
+# this method is needed only to override the fallback for `PartitionIterator`
 Base.eltype(::Type{<:Iterators.PartitionIterator{<:AbstractDataFrame}}) =
     AbstractDataFrame
 
@@ -3343,7 +3344,7 @@ function Base.length(itr::Iterators.PartitionIterator{<:AbstractDataFrame})
     return cld(l, itr.n)
 end
 
-function Base.iterate(itr::Iterators.PartitionIterator{<:AbstractDataFrame}, state=1)
+function Base.iterate(itr::Iterators.PartitionIterator{<:AbstractDataFrame}, state::Int=1)
     last_idx = nrow(itr.c)
     state > last_idx && return nothing
     r = min(state + itr.n - 1, last_idx)
