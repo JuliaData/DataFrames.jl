@@ -341,7 +341,7 @@ normalize_selection(idx::AbstractIndex, @nospecialize(sel), renamecols::Bool) =
         idx[sel]
     catch e
         if e isa MethodError && e.f === getindex && e.args === (idx, sel)
-            throw(ArgumentError("Unrecognized column selector $sel in AsTable constructor"))
+            throw(ArgumentError("Unrecognized column selector $sel"))
         else
             rethrow(e)
         end
@@ -1807,11 +1807,7 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
                     push!(seen_single_column, ind_idx)
                 end
             else
-                newind = normalize_selection(index(dfv), make_pair_concrete(ind), renamecols)
-                if newind isa Pair
-                    throw(ArgumentError("transforming and renaming columns of a " *
-                                        "SubDataFrame is not allowed when `copycols=false`"))
-                end
+                newind = index(dfv)[ind]
                 push!(newinds, newind)
             end
         end

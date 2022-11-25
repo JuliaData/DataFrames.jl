@@ -1,3 +1,11 @@
+# DataFrames.jl v1.4.4 Patch Release Notes
+
+## Bug fixes
+
+* Fix bug in `select` and `transform` with `copycols=false` on `SubDataFrame`
+  that incorrectly allowed passing transformations
+  ([#3231](https://github.com/JuliaData/DataFrames.jl/pull/3231))
+
 # DataFrames.jl v1.4.3 Patch Release Notes
 
 ## Bug fixes

@@ -2733,4 +2733,12 @@ end
                          e=[missing, 4, missing, 8])
 end
 
+@testset "selection on a view without copying" begin
+    df = DataFrame(a=1:2)
+    for dfv in (view(df, :, :), view(df, 1:2, 1:1))
+        @test_throws MethodError select(dfv, x -> true, copycols=false)
+        @test_throws MethodError select(dfv, :a => identity, copycols=false)
+    end
+end
+
 end # module
