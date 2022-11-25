@@ -146,6 +146,7 @@ valuecols
 
 ## Filtering rows
 ```@docs
+allunique
 deleteat!
 empty
 empty!
