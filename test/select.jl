@@ -315,6 +315,8 @@ end
     @test_throws BoundsError select(df, 6)
     @test_throws ArgumentError select(df, [1, 1])
     @test_throws ArgumentError select(df, :f)
+    @test_throws ArgumentError select(df, 1.0)
+    @test_throws ArgumentError select(df, true)
     @test_throws BoundsError select!(df, [true, false])
 
     @test select(df, 1:0) == DataFrame()
