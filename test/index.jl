@@ -24,7 +24,7 @@ using DataFrames: Index, SubIndex, fuzzymatch
         end
     end
 
-    @test_throws MethodError i[1.0]
+    @test_throws ArgumentError i[1.0]
     @test_throws ArgumentError i[true]
     @test_throws ArgumentError i[false]
     @test_throws ArgumentError i[Union{Bool, Missing}[true, false]]
@@ -477,8 +477,8 @@ end
     @test df[:, Cols(x -> x[1] == 'a')] == df[:, [1, 2]]
     @test df[:, Cols(x -> x[end] == '1')] == df[:, [1, 3]]
     @test df[:, Cols(x -> x[end] == '3')] == DataFrame()
-    @test_throws MethodError df[:, Cols(x -> true, 1)] == DataFrame()
-    @test_throws MethodError df[:, Cols(1, x -> true)] == DataFrame()
+    @test_throws ArgumentError df[:, Cols(x -> true, 1)]
+    @test_throws ArgumentError df[:, Cols(1, x -> true)]
 end
 
 @testset "views" begin
