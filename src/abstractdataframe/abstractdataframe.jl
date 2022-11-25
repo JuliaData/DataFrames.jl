@@ -1432,6 +1432,49 @@ function nonunique(df::AbstractDataFrame, cols)
 end
 
 """
+    allunique(df::AbstractDataFrame, cols=:)
+
+Return `true` if all rows of `df` are not duplicated. Two rows are duplicate if
+all their columns contain equal values (according to `isequal`).
+
+See also [`unique`](@ref) and [`nonunique`](@ref).
+
+# Arguments
+- `df` : `AbstractDataFrame`
+- `cols` : a selector specifying the column(s) or their transformations to compare.
+  Can be any column selector or transformation accepted by [`select`](@ref).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(i=1:4, x=[1, 2, 1, 2])
+4×2 DataFrame
+ Row │ i      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      1
+   4 │     4      2
+
+julia> allunique(df)
+true
+
+julia> allunique(df, :x)
+false
+
+julia> allunique(df, :i => ByRow(isodd))
+false
+```
+"""
+function Base.allunique(df::AbstractDataFrame, cols=:)
+    udf = select(df, cols, copycols=false)
+    nrow(udf) == 0 && return true
+    return row_group_slots(ntuple(i -> udf[!, i], ncol(udf)),
+                           Val(false), nothing, false, nothing)[1] == nrow(df)
+end
+
+"""
     unique(df::AbstractDataFrame; view::Bool=false)
     unique(df::AbstractDataFrame, cols; view::Bool=false)
 

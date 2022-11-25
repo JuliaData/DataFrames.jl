@@ -2254,4 +2254,23 @@ end
     @test !isempty(DataFrame(a=1))
 end
 
+@testset "allunique" begin
+    refdf = DataFrame(a=[1, 1, 2, 2, 3], b=[1, 2, 1, 2, 3], c=[1, 2, 1, 2, 3])
+    for df in (refdf[1:4, 1:2], view(refdf, 1:4, 1:2))
+        @test allunique(df)
+        @test !allunique(df, 1)
+        @test !allunique(df, :b)
+        @test allunique(df, All())
+        @test allunique(df, [])
+        
+        if df isa DataFrame
+            @test allunique(df, x -> 1:4)
+            @test allunique(df, [:a, :b] => ByRow(string))
+        else
+            @test_throws ArgumentError allunique(df, x -> 1:4)
+            @test_throws ArgumentError allunique(df, [:a, :b] => ByRow(string))
+        end
+    end
+end
+
 end # module
