@@ -182,27 +182,28 @@ function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDa
     return nothing
 end
 
-function _count_sortperm(input::AbstractVector{<:Integer})
+function _count_sortperm(input::Vector{Int})
     isempty(input) && return UInt32[]
     vmin, vmax = extrema(input)
-    @assert vmin > 0
-    Tc = vmax < typemax(UInt32) ? UInt32 : Int
+    delta = vmin - 1
+    Tc = vmax - delta < typemax(UInt32) ? UInt32 : Int
     Tp = length(input) < typemax(UInt32) ? UInt32 : Int
-    _count_sortperm(input, zeros(Tc, vmax + 1), Vector{Tp}(undef, length(input)))
+    _count_sortperm(input, zeros(Tc, vmax - delta + 1),
+                    Vector{Tp}(undef, length(input)), delta)
 end
 
-function _count_sortperm(input::AbstractVector{<:Integer},
-                         count::Vector, output::Vector)
+function _count_sortperm(input::Vector{Int}, count::Vector,
+                         output::Vector, delta::Int)
     @assert firstindex(input) == 1
     for j in input
-        count[j] += 1
+        count[j - delta] += 1
     end
     last = count[1]
     for i in 2:length(count)
         last = (count[i] += last)
     end
     for i in length(input):-1:1
-        j = input[i]
+        j = input[i] - delta
         v = (count[j] -= 1)
         output[v + 1] = i
     end
@@ -300,7 +301,8 @@ function _compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique
                                right_rename::Union{Function, AbstractString, Symbol},
                                indicator::Union{Nothing, Symbol, AbstractString},
                                left_ixs::AbstractVector, right_ixs::AbstractVector,
-                               leftonly_ixs::AbstractVector, rightonly_ixs::AbstractVector,
+                               leftonly_ixs::AbstractVector,
+                               rightonly_ixs::AbstractVector,
                                sort::Union{Nothing, Symbol})
     lil = length(left_ixs)
     ril = length(right_ixs)
@@ -371,7 +373,8 @@ function _compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique
             for col in eachcol(dfl_noon)
                 cols_i = left_idxs[col_idx]
                 Threads.@spawn _noon_compose_helper!(cols, _similar_left, cols_i,
-                                                     col, target_nrow, left_ixs, lil + 1, leftonly_ixs, loil)
+                                                     col, target_nrow, left_ixs, lil + 1,
+                                                     leftonly_ixs, loil)
                 col_idx += 1
             end
             @assert col_idx == ncol(joiner.dfl) + 1
@@ -398,19 +401,17 @@ function _compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique
 
     was_sorted = false
     if sort == :left && !(issorted(left_ixs) && isempty(leftonly_ixs))
-        left_cols_idxs = Vector{AbstractVector}(undef, 1)
-        _noon_compose_helper!(left_cols_idxs, _similar_left, 1,
-                              1:nrow(joiner.dfl), target_nrow,
-                              left_ixs, lil + 1, leftonly_ixs, loil)
-        new_order = _count_sortperm(coalesce.(left_cols_idxs[1], nrow(joiner.dfl) + 1))
+        left_cols_idxs = _sort_compose_helper(nrow(joiner.dfl) + 1,
+                                              1:nrow(joiner.dfl), target_nrow,
+                                              left_ixs, lil + 1, leftonly_ixs, loil)
+        new_order = _count_sortperm(left_cols_idxs)
         was_sorted = true
     end
     if sort == :right && !(issorted(right_ixs) && isempty(rightonly_ixs)) 
-        right_cols_idxs = Vector{AbstractVector}(undef, 1)
-        _noon_compose_helper!(right_cols_idxs, _similar_right, 1,
-                              1:nrow(joiner.dfr), target_nrow,
-                              right_ixs, lil + loil + 1, rightonly_ixs, roil)
-        new_order = _count_sortperm(coalesce.(right_cols_idxs[1], nrow(joiner.dfr) + 1))
+        right_cols_idxs = _sort_compose_helper(nrow(joiner.dfr) + 1,
+                                               1:nrow(joiner.dfr), target_nrow,
+                                               right_ixs, lil + loil + 1, rightonly_ixs, roil)
+        new_order = _count_sortperm(right_cols_idxs)
         was_sorted = true
     end
 
@@ -437,12 +438,28 @@ function _noon_compose_helper!(cols::Vector{AbstractVector}, # target container 
                                target_nrow::Integer, # target number of rows in new column
                                side_ixs::AbstractVector, # indices in col that were matched
                                offset::Integer, # offset to put non-matching indices
-                               sideonly_ixs::AbstractVector, # indices in col that were not
+                               sideonly_ixs::AbstractVector, # indices in col that were not matched
                                tocopy::Integer) # number on non-matched rows to copy
     @assert tocopy == length(sideonly_ixs)
     cols[cols_i] = similar_col(col, target_nrow)
     copyto!(cols[cols_i], view(col, side_ixs))
     copyto!(cols[cols_i], offset, view(col, sideonly_ixs), 1, tocopy)
+end
+
+function _sort_compose_helper(fillval::Int, # value to use to fill unused indices
+                              col::AbstractVector, # source column
+                              target_nrow::Integer, # target number of rows in new column
+                              side_ixs::AbstractVector, # indices in col that were matched
+                              offset::Integer, # offset to put non-matching indices
+                              sideonly_ixs::AbstractVector, # indices in col that were not matched
+                              tocopy::Integer) # number on non-matched rows to copy
+    @assert tocopy == length(sideonly_ixs)
+    outcol = Vector{Int}(undef, target_nrow)
+    copyto!(outcol, view(col, side_ixs))
+    fill!(view(outcol, length(side_ixs)+1:offset-1), fillval)
+    copyto!(outcol, offset, view(col, sideonly_ixs), 1, tocopy)
+    fill!(view(outcol, offset+tocopy:target_nrow), fillval)
+    return outcol
 end
 
 function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
