@@ -182,11 +182,55 @@ function _propagate_join_metadata!(joiner::DataFrameJoiner, dfr_noon::AbstractDa
     return nothing
 end
 
+function _count_sortperm(input::AbstractVector{<:Integer})
+    isempty(input) && return UInt32[]
+    vmin, vmax = extrema(input)
+    @assert vmin > 0
+    Tc = vmax < typemax(UInt32) ? UInt32 : Int
+    Tp = length(input) < typemax(UInt32) ? UInt32 : Int
+    _count_sortperm(input, zeros(Tc, vmax + 1), Vector{Tp}(undef, length(input)))
+end
+
+function _count_sortperm(input::AbstractVector{<:Integer},
+                         count::Vector, output::Vector)
+    @assert firstindex(input) == 1
+    for j in input
+        count[j] += 1
+    end
+    last = count[1]
+    for i in 2:length(count)
+        last = (count[i] += last)
+    end
+    for i in length(input):-1:1
+        j = input[i]
+        v = (count[j] -= 1)
+        output[v + 1] = i
+    end
+    return output
+end
+
+
 function compose_inner_table(joiner::DataFrameJoiner,
                              makeunique::Bool,
                              left_rename::Union{Function, AbstractString, Symbol},
-                             right_rename::Union{Function, AbstractString, Symbol})
+                             right_rename::Union{Function, AbstractString, Symbol},
+                             sort::Union{Nothing, Symbol})
     left_ixs, right_ixs = find_inner_rows(joiner)
+    @assert left_ixs isa Vector{Int}
+    @assert right_ixs isa Vector{Int}
+    @assert length(left_ixs) == length(right_ixs)
+
+    if sort == :left && !issorted(left_ixs)
+        csp_l = _count_sortperm(left_ixs)
+        left_ixs = left_ixs[csp_l]
+        right_ixs = right_ixs[csp_l]
+    end
+
+    if sort == :right && !issorted(right_ixs)
+        csp_r = _count_sortperm(right_ixs)
+        left_ixs = left_ixs[csp_r]
+        right_ixs = right_ixs[csp_r]
+    end
 
     if Threads.nthreads() > 1 && length(left_ixs) >= 1_000_000
         dfl_task = Threads.@spawn joiner.dfl[left_ixs, :]
@@ -227,9 +271,13 @@ end
 function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique::Bool,
                               left_rename::Union{Function, AbstractString, Symbol},
                               right_rename::Union{Function, AbstractString, Symbol},
-                              indicator::Union{Nothing, Symbol, AbstractString})
+                              indicator::Union{Nothing, Symbol, AbstractString},
+                              sort::Union{Nothing, Symbol})
     @assert kind == :left || kind == :right || kind == :outer
     left_ixs, right_ixs = find_inner_rows(joiner)
+    @assert left_ixs isa Vector{Int}
+    @assert right_ixs isa Vector{Int}
+    @assert length(left_ixs) == length(right_ixs)
 
     if kind == :left || kind == :outer
         leftonly_ixs = find_missing_idxs(left_ixs, nrow(joiner.dfl))
@@ -243,7 +291,8 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique:
         rightonly_ixs = 1:0
     end
     return _compose_joined_table(joiner, kind, makeunique, left_rename, right_rename,
-                                 indicator, left_ixs, right_ixs, leftonly_ixs, rightonly_ixs)
+                                 indicator, left_ixs, right_ixs,
+                                 leftonly_ixs, rightonly_ixs, sort)
 end
 
 function _compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique::Bool,
@@ -251,7 +300,8 @@ function _compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique
                                right_rename::Union{Function, AbstractString, Symbol},
                                indicator::Union{Nothing, Symbol, AbstractString},
                                left_ixs::AbstractVector, right_ixs::AbstractVector,
-                               leftonly_ixs::AbstractVector, rightonly_ixs::AbstractVector)
+                               leftonly_ixs::AbstractVector, rightonly_ixs::AbstractVector,
+                               sort::Union{Nothing, Symbol})
     lil = length(left_ixs)
     ril = length(right_ixs)
     loil = length(leftonly_ixs)
@@ -346,11 +396,34 @@ function _compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique
         end
     end
 
+    was_sorted = false
+    if sort == :left && !(issorted(left_ixs) && isempty(leftonly_ixs))
+        left_cols_idxs = Vector{AbstractVector}(undef, 1)
+        _noon_compose_helper!(left_cols_idxs, _similar_left, 1,
+                              1:nrow(joiner.dfl), target_nrow,
+                              left_ixs, lil + 1, leftonly_ixs, loil)
+        new_order = _count_sortperm(coalesce.(left_cols_idxs[1], nrow(joiner.dfl) + 1))
+        was_sorted = true
+    end
+    if sort == :right && !(issorted(right_ixs) && isempty(rightonly_ixs)) 
+        right_cols_idxs = Vector{AbstractVector}(undef, 1)
+        _noon_compose_helper!(right_cols_idxs, _similar_right, 1,
+                              1:nrow(joiner.dfr), target_nrow,
+                              right_ixs, lil + loil + 1, rightonly_ixs, roil)
+        new_order = _count_sortperm(coalesce.(right_cols_idxs[1], nrow(joiner.dfr) + 1))
+        was_sorted = true
+    end
+
     @assert col_idx == length(cols) + 1
 
     new_names = vcat(_rename_cols(_names(joiner.dfl), left_rename, joiner.left_on),
                      _rename_cols(_names(dfr_noon), right_rename))
     res = DataFrame(cols, new_names, makeunique=makeunique, copycols=false)
+
+    if was_sorted
+        isnothing(src_indicator) || permute!(src_indicator, new_order)
+        permute!(res, new_order)
+    end
 
     _propagate_join_metadata!(joiner, dfr_noon, res, kind)
 
@@ -363,7 +436,7 @@ function _noon_compose_helper!(cols::Vector{AbstractVector}, # target container 
                                col::AbstractVector, # source column
                                target_nrow::Integer, # target number of rows in new column
                                side_ixs::AbstractVector, # indices in col that were matched
-                               offset::Integer, # offset to put non matched indices
+                               offset::Integer, # offset to put non-matching indices
                                sideonly_ixs::AbstractVector, # indices in col that were not
                                tocopy::Integer) # number on non-matched rows to copy
     @assert tocopy == length(sideonly_ixs)
@@ -378,9 +451,13 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
                validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}},
                left_rename::Union{Function, AbstractString, Symbol},
                right_rename::Union{Function, AbstractString, Symbol},
-               matchmissing::Symbol)
+               matchmissing::Symbol, sort::Union{Nothing, Symbol})
     _check_consistency(df1)
     _check_consistency(df2)
+
+    if !(isnothing(sort) || sort in (:left, :right))
+        throw(ArgumentError("sort argument must be nothing, :left, or :right."))
+    end
 
     if on == []
         throw(ArgumentError("Missing join argument 'on'."))
@@ -464,16 +541,16 @@ function _join(df1::AbstractDataFrame, df2::AbstractDataFrame;
 
     src_indicator = nothing
     if kind == :inner
-        joined = compose_inner_table(joiner, makeunique, left_rename, right_rename)
+        joined = compose_inner_table(joiner, makeunique, left_rename, right_rename, sort)
     elseif kind == :left
         joined, src_indicator =
-            compose_joined_table(joiner, kind, makeunique, left_rename, right_rename, indicator)
+            compose_joined_table(joiner, kind, makeunique, left_rename, right_rename, indicator, sort)
     elseif kind == :right
         joined, src_indicator =
-            compose_joined_table(joiner, kind, makeunique, left_rename, right_rename, indicator)
+            compose_joined_table(joiner, kind, makeunique, left_rename, right_rename, indicator, sort)
     elseif kind == :outer
         joined, src_indicator =
-            compose_joined_table(joiner, kind, makeunique, left_rename, right_rename, indicator)
+            compose_joined_table(joiner, kind, makeunique, left_rename, right_rename, indicator, sort)
     elseif kind == :semi
         joined = joiner.dfl[find_semi_rows(joiner), :]
     elseif kind == :anti
@@ -514,15 +591,15 @@ end
 
 """
     innerjoin(df1, df2; on, makeunique=false, validate=(false, false),
-              renamecols=(identity => identity), matchmissing=:error)
+              renamecols=(identity => identity), matchmissing=:error,
+              sort=nothing)
     innerjoin(df1, df2, dfs...; on, makeunique=false,
-              validate=(false, false), matchmissing=:error)
+              validate=(false, false), matchmissing=:error,
+              sort=nothing)
 
 Perform an inner join of two or more data frame objects and return a `DataFrame`
 containing the result. An inner join includes rows with keys that match in all
 passed data frames.
-
-The order of rows in the result is undefined and may change in the future releases.
 
 In the returned data frame the type of the columns on which the data frames are
 joined is determined by the type of these columns in `df1`. This behavior may
@@ -559,6 +636,10 @@ change in future releases.
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched; if equal to `:notequal` then missings are dropped in `df1` and `df2`
   `on` columns; `isequal` is used for comparisons of rows for equality
+- `sort` : if `nothing` (the default) the order of rows in the result is
+   undefined and may change in the future releases. If `:left` then the order of
+   rows from the left data frame is retained. If `:right` then the order of rows
+   from the right data frame is retained.
 
 It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
 imaginary part of the number. If you need to perform a join on such values use
@@ -640,7 +721,8 @@ function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
                    makeunique::Bool=false,
                    validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
                    renamecols::Pair=identity => identity,
-                   matchmissing::Symbol=:error)
+                   matchmissing::Symbol=:error,
+                   sort::Union{Nothing, Symbol}=nothing)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
         throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
                             "containing functions, strings, or `Symbol`s"))
@@ -648,27 +730,26 @@ function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
     return _join(df1, df2, on=on, kind=:inner, makeunique=makeunique,
                  indicator=nothing, validate=validate,
                  left_rename=first(renamecols), right_rename=last(renamecols),
-                 matchmissing=matchmissing)
+                 matchmissing=matchmissing, sort=sort)
 end
 
 innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
           on::Union{<:OnType, AbstractVector} = Symbol[],
           makeunique::Bool=false,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-          matchmissing::Symbol=:error) =
+          matchmissing::Symbol=:error,
+          sort::Union{Nothing, Symbol}=nothing) =
     innerjoin(innerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate,
                         matchmissing=matchmissing),
               dfs..., on=on, makeunique=makeunique, validate=validate,
-              matchmissing=matchmissing)
+              matchmissing=matchmissing, sort=sort)
 
 """
     leftjoin(df1, df2; on, makeunique=false, source=nothing, validate=(false, false),
-             renamecols=(identity => identity), matchmissing=:error)
+             renamecols=(identity => identity), matchmissing=:error, sort=nothing)
 
 Perform a left join of two data frame objects and return a `DataFrame` containing
 the result. A left join includes all rows from `df1`.
-
-The order of rows in the result is undefined and may change in the future releases.
 
 In the returned data frame the type of the columns on which the data frames are
 joined is determined by the type of these columns in `df1`. This behavior may
@@ -707,6 +788,10 @@ change in future releases.
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns;
   `isequal` is used for comparisons of rows for equality
+- `sort` : if `nothing` (the default) the order of rows in the result is
+   undefined and may change in the future releases. If `:left` then the order of
+   rows from the left data frame is retained. If `:right` then the order of rows
+   from the right data frame is retained (non-matching rows are put at the end).
 
 All columns of the returned data frame will support missing values.
 
@@ -784,11 +869,12 @@ julia> leftjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase =>
 ```
 """
 function leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-         on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-         source::Union{Nothing, Symbol, AbstractString}=nothing,
-         indicator::Union{Nothing, Symbol, AbstractString}=nothing,
-         validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-         renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
+                  on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+                  source::Union{Nothing, Symbol, AbstractString}=nothing,
+                  indicator::Union{Nothing, Symbol, AbstractString}=nothing,
+                  validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+                  renamecols::Pair=identity => identity, matchmissing::Symbol=:error,
+                  sort::Union{Nothing, Symbol}=nothing)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
         throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
                             "containing functions, strings, or `Symbol`s"))
@@ -808,13 +894,13 @@ function leftjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
     return _join(df1, df2, on=on, kind=:left, makeunique=makeunique,
                  indicator=source, validate=validate,
                  left_rename=first(renamecols), right_rename=last(renamecols),
-                 matchmissing=matchmissing)
+                 matchmissing=matchmissing, sort=sort)
 end
 
 """
     rightjoin(df1, df2; on, makeunique=false, source=nothing,
               validate=(false, false), renamecols=(identity => identity),
-              matchmissing=:error)
+              matchmissing=:error, sort=nothing)
 
 Perform a right join on two data frame objects and return a `DataFrame` containing
 the result. A right join includes all rows from `df2`.
@@ -858,6 +944,10 @@ change in future releases.
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched; if equal to `:notequal` then missings are dropped in `df1` `on` columns;
   `isequal` is used for comparisons of rows for equality
+- `sort` : if `nothing` (the default) the order of rows in the result is
+   undefined and may change in the future releases. If `:left` then the order of
+   rows from the left data frame is retained (non-matching rows are put at the end).
+   If `:right` then the order of rows from the right data frame is retained.
 
 All columns of the returned data frame will support missing values.
 
@@ -935,11 +1025,12 @@ julia> rightjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase =
 ```
 """
 function rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-          source::Union{Nothing, Symbol, AbstractString}=nothing,
-          indicator::Union{Nothing, Symbol, AbstractString}=nothing,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-          renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
+                   on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+                   source::Union{Nothing, Symbol, AbstractString}=nothing,
+                   indicator::Union{Nothing, Symbol, AbstractString}=nothing,
+                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+                   renamecols::Pair=identity => identity, matchmissing::Symbol=:error,
+                   sort::Union{Nothing, Symbol}=nothing)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
         throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
                             "containing functions, strings, or `Symbol`s"))
@@ -959,14 +1050,14 @@ function rightjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
     return _join(df1, df2, on=on, kind=:right, makeunique=makeunique,
                  indicator=source, validate=validate,
                  left_rename=first(renamecols), right_rename=last(renamecols),
-                 matchmissing=matchmissing)
+                 matchmissing=matchmissing, sort=sort)
 end
 
 """
     outerjoin(df1, df2; on, makeunique=false, source=nothing, validate=(false, false),
-              renamecols=(identity => identity), matchmissing=:error)
+              renamecols=(identity => identity), matchmissing=:error, sort=nothing)
     outerjoin(df1, df2, dfs...; on, makeunique = false,
-              validate = (false, false), matchmissing=:error)
+              validate = (false, false), matchmissing=:error, sort=nothing)
 
 Perform an outer join of two or more data frame objects and return a `DataFrame`
 containing the result. An outer join includes rows with keys that appear in any
@@ -1013,6 +1104,11 @@ This behavior may change in future releases.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched; `isequal` is used for comparisons of rows for equality
+- `sort` : if `nothing` (the default) the order of rows in the result is
+   undefined and may change in the future releases. If `:left` then the order of
+   rows from the left data frame is retained (non-matching rows are put at the end).
+   If `:right` then the order of rows from the right data frame is retained
+   (non-matching rows are put at the end).
 
 All columns of the returned data frame will support missing values.
 
@@ -1099,11 +1195,12 @@ julia> outerjoin(name, job2, on = [:ID => :identifier], renamecols = uppercase =
 ```
 """
 function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
-          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-          source::Union{Nothing, Symbol, AbstractString}=nothing,
-          indicator::Union{Nothing, Symbol, AbstractString}=nothing,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-          renamecols::Pair=identity => identity, matchmissing::Symbol=:error)
+                   on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+                   source::Union{Nothing, Symbol, AbstractString}=nothing,
+                   indicator::Union{Nothing, Symbol, AbstractString}=nothing,
+                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+                   renamecols::Pair=identity => identity, matchmissing::Symbol=:error,
+                   sort::Union{Nothing, Symbol}=nothing)
     if !all(x -> x isa Union{Function, AbstractString, Symbol}, renamecols)
         throw(ArgumentError("renamecols keyword argument must be a `Pair` " *
                             "containing functions, strings, or `Symbol`s"))
@@ -1123,17 +1220,17 @@ function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
     return _join(df1, df2, on=on, kind=:outer, makeunique=makeunique,
                  indicator=source, validate=validate,
                  left_rename=first(renamecols), right_rename=last(renamecols),
-                 matchmissing=matchmissing)
+                 matchmissing=matchmissing, sort=sort)
 end
 
 outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
           on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
           validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-          matchmissing::Symbol=:error) =
+          matchmissing::Symbol=:error, sort::Union{Nothing, Symbol}=nothing) =
     outerjoin(outerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate,
                         matchmissing=matchmissing),
               dfs..., on=on, makeunique=makeunique, validate=validate,
-              matchmissing=matchmissing)
+              matchmissing=matchmissing, sort=sort)
 
 """
     semijoin(df1, df2; on, makeunique=false, validate=(false, false), matchmissing=:error)
@@ -1142,7 +1239,7 @@ Perform a semi join of two data frame objects and return a `DataFrame`
 containing the result. A semi join returns the subset of rows of `df1` that
 match with the keys in `df2`.
 
-The order of rows in the result is undefined and may change in the future releases.
+The order of rows in the result is is kept from `df1`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -1243,7 +1340,8 @@ semijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
          matchmissing::Symbol=:error) =
     _join(df1, df2, on=on, kind=:semi, makeunique=makeunique,
           indicator=nothing, validate=validate,
-          left_rename=identity, right_rename=identity, matchmissing=matchmissing)
+          left_rename=identity, right_rename=identity, matchmissing=matchmissing,
+          sort=:left)
 
 """
     antijoin(df1, df2; on, makeunique=false, validate=(false, false), matchmissing=:error)
@@ -1252,7 +1350,7 @@ Perform an anti join of two data frame objects and return a `DataFrame`
 containing the result. An anti join returns the subset of rows of `df1` that do
 not match with the keys in `df2`.
 
-The order of rows in the result is undefined and may change in the future releases.
+The order of rows in the result is is kept from `df1`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -1347,7 +1445,8 @@ antijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
     _join(df1, df2, on=on, kind=:anti, makeunique=makeunique,
           indicator=nothing, validate=validate,
           left_rename=identity, right_rename=identity,
-          matchmissing=matchmissing)
+          matchmissing=matchmissing,
+          sort=:left)
 
 """
     crossjoin(df1, df2, dfs...; makeunique = false)

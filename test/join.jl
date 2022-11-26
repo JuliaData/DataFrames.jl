@@ -2027,4 +2027,86 @@ end
                     on=:a, matchmissing=:equal) ≅ DataFrame(a=missing, b=1, c=2, d=3)
 end
 
+@testset "_count_sortperm" begin
+    Random.seed!(1234)
+    for i in 0:20, rep in 1:100
+        x = rand(min(i, 1):i, i)
+        @test sortperm(x) == DataFrames._count_sortperm(x)
+        @test issorted(x[DataFrames._count_sortperm(x)])
+    end
+    for i in 0:20, rep in 1:100
+        x = randperm(i)
+        @test sortperm(x) == DataFrames._count_sortperm(x)
+        @test issorted(x[DataFrames._count_sortperm(x)])
+        x = randperm(i) .+ i
+        @test sortperm(x) == DataFrames._count_sortperm(x)
+        @test issorted(x[DataFrames._count_sortperm(x)])
+    end
+    for i in 1:20
+        @test DataFrames._count_sortperm(ones(Int, i)) == 1:i
+        @test_throws AssertionError DataFrames._count_sortperm(zeros(Int, i))
+        @test DataFrames._count_sortperm([fill(1, i); fill(2, i)]) == 1:2*i
+        @test DataFrames._count_sortperm([fill(2, i); fill(1, i)]) == [i+1:2i; 1:i]
+    end
+end
+
+@testset "basic join tests with sort" begin
+    for fun in (innerjoin, leftjoin, rightjoin, outerjoin)
+        df1 = DataFrame(x=[0, 3, 1, 2, 4], id1=1:5)
+        df2 = DataFrame(x=[2, 5, 1, 3, 7, 6], id2=1:6)
+        ref = fun(df1, df2, on=:x)
+        res = fun(df1, df2, on=:x, sort=:left)
+        @test issorted(res.id1)
+        @test sort(ref, :id1) ≅ res
+        res = fun(df1, df2, on=:x, sort=:right)
+        @test issorted(res.id2)
+        @test sort(ref, :id2) ≅ res
+        @test issorted(semijoin(df1, df2, on=:x).id1)
+        @test issorted(semijoin(df2, df1, on=:x).id2)
+        @test issorted(antijoin(df1, df2, on=:x).id1)
+        @test issorted(antijoin(df2, df1, on=:x).id2)
+        df1.x = string.(df1.x)
+        df2.x = string.(df2.x)
+        ref = fun(df1, df2, on=:x)
+        res = fun(df1, df2, on=:x, sort=:left)
+        @test issorted(res.id1)
+        @test sort(ref, :id1) ≅ res
+        res = fun(df1, df2, on=:x, sort=:right)
+        @test issorted(res.id2)
+        @test sort(ref, :id2) ≅ res
+        @test issorted(semijoin(df1, df2, on=:x).id1)
+        @test issorted(semijoin(df2, df1, on=:x).id2)
+        @test issorted(antijoin(df1, df2, on=:x).id1)
+        @test issorted(antijoin(df2, df1, on=:x).id2)
+    end
+    for fun in (innerjoin, leftjoin, rightjoin, outerjoin)
+        df1 = DataFrame(x=[0, 1, 2, 3, 4], id1=1:5)
+        df2 = DataFrame(x=[1, 2, 3, 5, 6, 7], id2=1:6)
+        ref = fun(df1, df2, on=:x)
+        res = fun(df1, df2, on=:x, sort=:left)
+        @test issorted(res.id1)
+        @test sort(ref, :id1) ≅ res
+        res = fun(df1, df2, on=:x, sort=:right)
+        @test issorted(res.id2)
+        @test sort(ref, :id2) ≅ res
+        @test issorted(semijoin(df1, df2, on=:x).id1)
+        @test issorted(semijoin(df2, df1, on=:x).id2)
+        @test issorted(antijoin(df1, df2, on=:x).id1)
+        @test issorted(antijoin(df2, df1, on=:x).id2)
+        df1.x = string.(df1.x)
+        df2.x = string.(df2.x)
+        ref = fun(df1, df2, on=:x)
+        res = fun(df1, df2, on=:x, sort=:left)
+        @test issorted(res.id1)
+        @test sort(ref, :id1) ≅ res
+        res = fun(df1, df2, on=:x, sort=:right)
+        @test issorted(res.id2)
+        @test sort(ref, :id2) ≅ res
+        @test issorted(semijoin(df1, df2, on=:x).id1)
+        @test issorted(semijoin(df2, df1, on=:x).id2)
+        @test issorted(antijoin(df1, df2, on=:x).id1)
+        @test issorted(antijoin(df2, df1, on=:x).id2)
+    end
+end
+
 end # module
