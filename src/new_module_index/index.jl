@@ -40,54 +40,6 @@ Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.isequal(x::AbstractIndex, y::AbstractIndex) = _names(x) == _names(y) # it is enough to check names
 Base.:(==)(x::AbstractIndex, y::AbstractIndex) = isequal(x, y)
 
-function rename!(x::Index, nms::AbstractVector{Pair{Symbol, Symbol}})
-    xbackup = copy(x)
-    processedfrom = Set{Symbol}()
-    processedto = Set{Symbol}()
-    toholder = Dict{Symbol, Int}()
-    for (from, to) in nms
-        if from ∈ processedfrom
-            copy!(x.lookup, xbackup.lookup)
-            x.names .= xbackup.names
-            throw(ArgumentError("Tried renaming :$from multiple times."))
-        end
-        if to ∈ processedto
-            copy!(x.lookup, xbackup.lookup)
-            x.names .= xbackup.names
-            throw(ArgumentError("Tried renaming to :$to multiple times."))
-        end
-        push!(processedfrom, from)
-        push!(processedto, to)
-        from == to && continue # No change, nothing to do
-        if !haskey(xbackup, from)
-            copy!(x.lookup, xbackup.lookup)
-            x.names .= xbackup.names
-            if length(x) == 0
-                throw(ArgumentError("Tried renaming :$from to :$to, when " *
-                                    "data frame has no columns."))
-            else
-                throw(ArgumentError("Tried renaming :$from to :$to, when :$from " *
-                                    "does not exist in the data frame."))
-            end
-        end
-        if haskey(x, to)
-            toholder[to] = x.lookup[to]
-        end
-        col = haskey(toholder, from) ? pop!(toholder, from) : pop!(x.lookup, from)
-        x.lookup[to] = col
-        x.names[col] = to
-    end
-    if !isempty(toholder)
-        copy!(x.lookup, xbackup.lookup)
-        x.names .= xbackup.names
-        throw(ArgumentError("Tried renaming to :$(first(keys(toholder))), " *
-                            "when it already exists in the data frame."))
-    end
-    return x
-end
-
-rename!(f::Function, x::Index) = rename!(x, [(n=>Symbol(f(string(n)))) for n in x.names])
-
 # we do not define keys on purpose;
 # use names to get keys as strings with copying
 # or _names to get keys as Symbols without copying
@@ -534,15 +486,3 @@ function Base.getindex(x::SubIndex, idx::Union{AbstractVector{Symbol},
     allunique(idx) || throw(ArgumentError("Elements of $idx must be unique"))
     return [x[i] for i in idx]
 end
-
-rename!(x::SubIndex, nms::AbstractVector{Symbol}; makeunique::Bool=false) =
-    throw(ArgumentError("rename! is not supported for views other than created " *
-                        "with Colon as a column selector"))
-
-rename!(x::SubIndex, nms::AbstractVector{Pair{Symbol, Symbol}}) =
-    throw(ArgumentError("rename! is not supported for views other than created " *
-                        "with Colon as a column selector"))
-
-rename!(f::Function, x::SubIndex) =
-    throw(ArgumentError("rename! is not supported for views other than created " *
-                        "with Colon as a column selector"))

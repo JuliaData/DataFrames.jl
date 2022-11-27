@@ -13,7 +13,7 @@ using Tables: ByRow
 
 include("new_module_index/SeparateModuleIndex.jl")
 using .SeparateModuleIndex
-import .SeparateModuleIndex: _names, index, rename!, normalize_selection
+import .SeparateModuleIndex: _names, index, normalize_selection
 
 import SnoopPrecompile
 

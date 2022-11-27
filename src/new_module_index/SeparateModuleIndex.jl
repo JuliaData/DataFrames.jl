@@ -36,7 +36,6 @@ export
     MultiColumnIndex,
     normalize_selection,
     parentcols,
-    rename!,
     SubIndex,
     SymbolOrString
 
