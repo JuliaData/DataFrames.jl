@@ -2159,6 +2159,11 @@ end
     @test issorted(semijoin(df2, df1, on=:x).id2)
     @test issorted(antijoin(df1, df2, on=:x).id1)
     @test issorted(antijoin(df2, df1, on=:x).id2)
+
+    @test_throws ArgumentError innerjoin(df1, df2, on=:x, sort=:x)
+    @test_throws ArgumentError leftjoin(df1, df2, on=:x, sort=:x)
+    @test_throws ArgumentError rightjoin(df1, df2, on=:x, sort=:x)
+    @test_throws ArgumentError outerjoin(df1, df2, on=:x, sort=:x)
 end
 
 @time @testset "randomized join tests with sort" begin
