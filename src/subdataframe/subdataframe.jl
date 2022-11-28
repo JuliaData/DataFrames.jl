@@ -372,3 +372,16 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame; keep_present::Bo
 
     return sdf
 end
+
+function _try_select_no_copy(sdf::SubDataFrame, cols)
+    # try is needed here as `cols` could be AbstractVector in which case
+    # it is not possible to statically check if it is a valid column selector
+    colsidx = try
+        index(sdf)[cols]
+    catch
+        nothing
+    end 
+
+    return isnothing(colsidx) ? select(sdf, cols) : select(sdf, colsidx, copycols=false)
+end
+

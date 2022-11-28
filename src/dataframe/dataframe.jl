@@ -1546,3 +1546,8 @@ function allcombinations(::Type{DataFrame}, pairs::Pair{Symbol, <:Any}...)
     @assert size(out_df) == (target_rows, length(colnames))
     return out_df
 end
+
+# _try_select_no_copy selects cols from df; it tries to avoid copying data if possible;
+# for SubDataFrame if cols is not a simple column selector then copying is needed
+_try_select_no_copy(df::DataFrame, cols) = select(df, cols, copycols=false)
+
