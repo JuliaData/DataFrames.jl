@@ -762,7 +762,7 @@ end
         B = [
             md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)",
             md"``\frac{x^2}{x^2+y^2}``",
-            md"# Header",
+            md"`Header`",
             md"This is *very*, **very**, very, very, very, very, very, very, very long line" ,
             md"",
             Markdown.parse("∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫αγ∞1∫αγ∞2∫αγ∞3"),
@@ -783,7 +783,7 @@ end
         ─────┼──────────────────────────────────────────
            1 │     1    DataFrames.jl (http://juliadat…
            2 │     4    \\frac{x^2}{x^2+y^2}
-           3 │     9    Header\\n  ≡≡≡≡≡≡≡≡
+           3 │     9    Header
            4 │    16    This is very, very, very, very…
            5 │    25
            6 │    36    ∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6…
@@ -795,7 +795,7 @@ end
         \"A\",\"B\"
         1,\"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)\"
         4,\"\$\\\\frac{x^2}{x^2+y^2}\$\"
-        9,\"# Header\"
+        9,\"`Header`\"
         16,\"This is *very*, **very**, very, very, very, very, very, very, very long line\"
         25,\"\"
         36,\"∫αγ∞1∫αγ∞2∫αγ∞3∫αγ∞4∫αγ∞5∫αγ∞6∫αγ∞7∫αγ∞8∫αγ∞9∫αγ∞0∫αγ∞1∫αγ∞2∫αγ∞3\"
