@@ -182,6 +182,9 @@ end
 
 Base.insert!(x::Index, idx::Integer, nm::AbstractString) = insert!(x, idx, Symbol(nm))
 
+@inline Base.getindex(x::AbstractIndex, idx::T) where {T} =
+    throw(ArgumentError("invalid index: $idx of type $T"))
+
 @inline Base.getindex(x::AbstractIndex, idx::Bool) =
     throw(ArgumentError("invalid index: $idx of type Bool"))
 
@@ -240,7 +243,8 @@ end
     return getindex(x, Vector{Int}(idx))
 end
 
-@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{Bool}) = getindex(x, collect(idx))
+@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{Bool}) =
+    getindex(x, collect(idx))
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
     length(x) == length(idx) || throw(BoundsError(x, idx))
