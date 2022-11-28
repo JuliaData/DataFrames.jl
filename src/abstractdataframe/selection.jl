@@ -336,16 +336,7 @@ make_pair_concrete(@nospecialize(x::Pair)) =
     make_pair_concrete(x.first) => make_pair_concrete(x.second)
 make_pair_concrete(@nospecialize(x)) = x
 
-normalize_selection(idx::AbstractIndex, @nospecialize(sel), renamecols::Bool) =
-    try
-        idx[sel]
-    catch e
-        if e isa MethodError && e.f === getindex && e.args === (idx, sel)
-            throw(ArgumentError("Unrecognized column selector $sel"))
-        else
-            rethrow(e)
-        end
-    end
+normalize_selection(idx::AbstractIndex, @nospecialize(sel), renamecols::Bool) = idx[sel]
 
 normalize_selection(idx::AbstractIndex, @nospecialize(sel::Base.Callable), renamecols::Bool) = sel
 normalize_selection(idx::AbstractIndex, sel::Colon, renamecols::Bool) = idx[:]
