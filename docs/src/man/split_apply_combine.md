@@ -1194,7 +1194,7 @@ When discussing column-independent operations it is important to remember
 that operation specification syntax allows you to pass a function (without
 source and target column names), in which case such a function gets passed a
 `SubDataFrame` that represents a group in a `GroupedDataFrame`. Here is an
-example comparing column-independent operation and a function:
+example comparing a column-independent operation and a function:
 
 ```jldoctest sac
 julia> combine(gdf, nrow, x -> nrow(x))
@@ -1207,7 +1207,7 @@ julia> combine(gdf, nrow, x -> nrow(x))
    3 │ c                2      2
 ```
 
-Notice that columns `:nrow` and `:x1` have an identical contents. This is
+Notice that columns `:nrow` and `:x1` have identical contents. This is
 expected. We already know that `nrow` is a column-independent operation
 generating the `:nrow` column with number of rows per group. However, the
 `x -> nrow(x)` anonymous function does exactly the same as it gets a
