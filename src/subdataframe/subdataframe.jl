@@ -373,6 +373,8 @@ function _replace_columns!(sdf::SubDataFrame, newdf::DataFrame; keep_present::Bo
     return sdf
 end
 
+# _try_select_no_copy selects cols from df; it tries to avoid copying data if possible;
+# for SubDataFrame if cols is not a simple column selector then copying is needed
 function _try_select_no_copy(sdf::SubDataFrame, cols)
     # try is needed here as `cols` could be AbstractVector in which case
     # it is not possible to statically check if it is a valid column selector

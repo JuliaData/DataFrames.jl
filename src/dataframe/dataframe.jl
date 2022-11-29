@@ -1547,7 +1547,5 @@ function allcombinations(::Type{DataFrame}, pairs::Pair{Symbol, <:Any}...)
     return out_df
 end
 
-# _try_select_no_copy selects cols from df; it tries to avoid copying data if possible;
-# for SubDataFrame if cols is not a simple column selector then copying is needed
 _try_select_no_copy(df::DataFrame, cols) = select(df, cols, copycols=false)
 
