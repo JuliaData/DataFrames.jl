@@ -1210,24 +1210,24 @@ julia> combine(gdf, eachindex, sdf -> axes(sdf, 1))
    6 │ c                    2      2
 ```
 
-Notice that column independent operation `eachindex` produces the same result
-as using anonymous function `sdf -> axes(sdf, 1)` that takes a `SubDataFrame`
+Notice that the column independent operation `eachindex` produces the same result
+as using the anonymous function `sdf -> axes(sdf, 1)` that takes a `SubDataFrame`
 as its first argument and returns indices along its first axes.
-Importantly without special definition of column-independent operation
+Importantly if it wasn't defined as a column-independent operation
 the `eachindex` function would fail when being passed as you can see here:
 
 ```jldoctest sac
-julia> combine(gdf, eachindex, sdf -> eachindex(sdf))
+julia> combine(gdf, sdf -> eachindex(sdf))
 ERROR: MethodError: no method matching keys(::SubDataFrame{DataFrame, DataFrames.Index, Vector{Int64}})
 ```
 
-The reason for this error is that `eachindex` function does not allow passing a
+The reason for this error is that the `eachindex` function does not allow passing a
 `SubDataFrame` as its argument.
 
-The same situation is with `proprow` and `groupindices`. They would not work
+The same applies to `proprow` and `groupindices`: they would not work
 with a `SubDataFrame` as stand-alone functions.
 
-A bit different case is with `nrow` column-independent operation. In this case
+The `nrow` column-independent operation is a different case, as
 the `nrow` function accepts `SubDataFrame` as an argument:
 
 ```jldoctest sac
@@ -1246,7 +1246,7 @@ difference is that they do not have the same names. `nrow` is a
 column-independent operation generating the `:nrow` column name by default with
 number of rows per group. On the other hand, the `sdf -> nrow(sdf)` anonymous
 function does gets a `SubDataFrame` as its argument and returns its number of
-rows. The `:x1` column name is a default auto-generated column name when
+rows. The `:x1` column name is the default auto-generated column name when
 processing anonymous functions.
 
 Passing a function taking a `SubDataFrame` is a flexible functionality allowing
@@ -1254,14 +1254,15 @@ you to perform complex operations on your data. However, you should bear in mind
 two aspects:
 
 * Using the full operation specification syntax (where source and target column
-  names are passed) will lead to faster execution of your code (as the Julia
-  compiler is able to better optimize execution of such operations) in
-  comparison to just passing a function taking a `SubDataFrame`.
+  names are passed) or column-independent operations will lead to faster
+  execution of your code (as the Julia compiler is able to better optimize
+  execution of such operations) in comparison to passing a function
+  taking a `SubDataFrame`.
 * Although writing `nrow`, `proprow`, `groupindices`, and `eachindex` looks
   like just passing a function they internally **do not** take a `SubDataFrame`
   as their argument. As we explained in this section, `proprow`,
   `groupindices`, and `eachindex` would not work with `SubDataFrame` as their
-  argument, and `nrow` would work, but would prouce a different column name.
+  argument, and `nrow` would work, but would produce a different column name.
   Instead, these four operations are special column-independent operations that
   are exceptions to the standard operation specification syntax rules. They
   were added for user convenience.
