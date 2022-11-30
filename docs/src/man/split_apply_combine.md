@@ -519,6 +519,94 @@ Number of data points for Iris-versicolor: 50
 Number of data points for Iris-virginica: 50
 ```
 
+The value of `key` in the example above where we iterated `pairs(iris_gdf)` is
+a [`DataFrames.GroupKey`](@ref) object, which can be used in a similar fashion
+to a `NamedTuple`.
+
+Grouping a data frame using the `groupby` function can be seen as adding a
+lookup key to it. Such lookups can be performed efficiently by indexing the
+resulting `GroupedDataFrame` with [`DataFrames.GroupKey`](@ref) (as it was
+presented above) a `Tuple`, a `NamedTuple`, or a dictionary. Here are some
+more examples of such indexing.
+
+```jldoctest sac
+julia> iris_gdf[(Species="Iris-virginica",)]  # a NamedTuple
+50×5 SubDataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         6.3         3.3          6.0         2.5  Iris-virginica
+   2 │         5.8         2.7          5.1         1.9  Iris-virginica
+   3 │         7.1         3.0          5.9         2.1  Iris-virginica
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+  48 │         6.5         3.0          5.2         2.0  Iris-virginica
+  49 │         6.2         3.4          5.4         2.3  Iris-virginica
+  50 │         5.9         3.0          5.1         1.8  Iris-virginica
+                                                         44 rows omitted
+
+julia> iris_gdf[[("Iris-virginica",), ("Iris-setosa",)]] # a vector of Tuples
+GroupedDataFrame with 2 groups based on key: Species
+First Group (50 rows): Species = "Iris-virginica"
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         6.3         3.3          6.0         2.5  Iris-virginica
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+  50 │         5.9         3.0          5.1         1.8  Iris-virginica
+                                                         48 rows omitted
+⋮
+Last Group (50 rows): Species = "Iris-setosa"
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼───────────────────────────────────────────────────────────────
+   1 │         5.1         3.5          1.4         0.2  Iris-setosa
+  ⋮  │      ⋮           ⋮            ⋮           ⋮            ⋮
+  50 │         5.0         3.3          1.4         0.2  Iris-setosa
+                                                      48 rows omitted
+
+julia> key = keys(iris_gdf) |> last # last key in iris_gdf
+GroupKey: (Species = String15("Iris-virginica"),)
+
+julia> iris_gdf[key]
+50×5 SubDataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         6.3         3.3          6.0         2.5  Iris-virginica
+   2 │         5.8         2.7          5.1         1.9  Iris-virginica
+   3 │         7.1         3.0          5.9         2.1  Iris-virginica
+   4 │         6.3         2.9          5.6         1.8  Iris-virginica
+   5 │         6.5         3.0          5.8         2.2  Iris-virginica
+   6 │         7.6         3.0          6.6         2.1  Iris-virginica
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+  45 │         6.7         3.3          5.7         2.5  Iris-virginica
+  46 │         6.7         3.0          5.2         2.3  Iris-virginica
+  47 │         6.3         2.5          5.0         1.9  Iris-virginica
+  48 │         6.5         3.0          5.2         2.0  Iris-virginica
+  49 │         6.2         3.4          5.4         2.3  Iris-virginica
+  50 │         5.9         3.0          5.1         1.8  Iris-virginica
+                                                         38 rows omitted
+julia> iris_gdf[Dict("Species" => "Iris-setosa")] # a dictionary
+50×5 SubDataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼───────────────────────────────────────────────────────────────
+   1 │         5.1         3.5          1.4         0.2  Iris-setosa
+   2 │         4.9         3.0          1.4         0.2  Iris-setosa
+   3 │         4.7         3.2          1.3         0.2  Iris-setosa
+   4 │         4.6         3.1          1.5         0.2  Iris-setosa
+   5 │         5.0         3.6          1.4         0.2  Iris-setosa
+   6 │         5.4         3.9          1.7         0.4  Iris-setosa
+  ⋮  │      ⋮           ⋮            ⋮           ⋮            ⋮
+  45 │         5.1         3.8          1.9         0.4  Iris-setosa
+  46 │         4.8         3.0          1.4         0.3  Iris-setosa
+  47 │         5.1         3.8          1.6         0.2  Iris-setosa
+  48 │         4.6         3.2          1.4         0.2  Iris-setosa
+  49 │         5.3         3.7          1.5         0.2  Iris-setosa
+  50 │         5.0         3.3          1.4         0.2  Iris-setosa
+                                                      38 rows omitted
+```
+
 Note that although `GroupedDataFrame` is iterable and indexable it is not an
 `AbstractVector`. For this reason currently it was decided that it does not
 support `map` nor broadcasting (to allow for making a decision in the future
@@ -527,12 +615,6 @@ data frame and get a vector of results either use a comprehension or `collect`
 `GroupedDataFrame` into a vector first. Here are examples of both approaches:
 
 ```jldoctest sac
-julia> [nrow(sdf) for sdf in iris_gdf]
-3-element Vector{Int64}:
- 50
- 50
- 50
-
 julia> sdf_vec = collect(iris_gdf)
 3-element Vector{Any}:
  50×5 SubDataFrame
@@ -612,123 +694,32 @@ julia> nrow.(sdf_vec)
  50
 ```
 
-Note that using the split-apply-combine strategy with operation specification
-syntax in `combine`, `select` or `transform` will usually be faster than iterating
-a `GroupedDataFrame`.
-
-The value of `key` in the example above where we iterated `pairs(iris_gdf)`
-is a [`DataFrames.GroupKey`](@ref) object,
-which can be used in a similar fashion to a `NamedTuple`.
-
-Grouping a data frame using the `groupby` function can be seen as adding a
-lookup key to it. Such lookups can be performed efficiently by indexing the
-resulting `GroupedDataFrame` with [`DataFrames.GroupKey`](@ref) (as it was
-presented aboce) a `Tuple`, a `NamedTuple`, or a dictionary. Here are some
-more examples of such indexing.
+Since `GroupedDataFrame` is iterable, you can achieve the same result with a
+comprehension:
 
 ```jldoctest sac
-julia> df = DataFrame(g=repeat(1:1000, inner=5), x=1:5000)
-5000×2 DataFrame
-  Row │ g      x
-      │ Int64  Int64
-──────┼──────────────
-    1 │     1      1
-    2 │     1      2
-    3 │     1      3
-    4 │     1      4
-    5 │     1      5
-    6 │     2      6
-    7 │     2      7
-    8 │     2      8
-  ⋮   │   ⋮      ⋮
- 4994 │   999   4994
- 4995 │   999   4995
- 4996 │  1000   4996
- 4997 │  1000   4997
- 4998 │  1000   4998
- 4999 │  1000   4999
- 5000 │  1000   5000
-    4985 rows omitted
+julia> [nrow(sdf) for sdf in iris_gdf]
+3-element Vector{Int64}:
+ 50
+ 50
+ 50
+```
 
-julia> gd = groupby(df, :g)
-GroupedDataFrame with 1000 groups based on key: g
-First Group (5 rows): g = 1
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │     1      1
-   2 │     1      2
-   3 │     1      3
-   4 │     1      4
-   5 │     1      5
-⋮
-Last Group (5 rows): g = 1000
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │  1000   4996
-   2 │  1000   4997
-   3 │  1000   4998
-   4 │  1000   4999
-   5 │  1000   5000
+Note that using the split-apply-combine strategy with operation specification
+syntax in `combine`, `select` or `transform` will usually be faster for large
+`GroupedDataFrame` object than iterating it, with the difference that they
+produce a data frame. For the above examples an operation corresponding
+to the examples above is:
 
-julia> gd[(g=500,)] # a NamedTuple
-5×2 SubDataFrame
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │   500   2496
-   2 │   500   2497
-   3 │   500   2498
-   4 │   500   2499
-   5 │   500   2500
-
-julia> gd[[(500,), (501,)]] # a vector of Tuples
-GroupedDataFrame with 2 groups based on key: g
-First Group (5 rows): g = 500
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │   500   2496
-   2 │   500   2497
-   3 │   500   2498
-   4 │   500   2499
-   5 │   500   2500
-⋮
-Last Group (5 rows): g = 501
- Row │ g      x
-     │ Int64  Int64
-─────┼──────────────
-   1 │   501   2501
-   2 │   501   2502
-   3 │   501   2503
-   4 │   501   2504
-   5 │   501   2505
-
-julia> key = keys(gd) |> last # first key in gd
-GroupKey: (g = 1000,)
-
-julia> gd[key]
-5×2 SubDataFrame
- Row │ g      x     
-     │ Int64  Int64
-─────┼──────────────
-   1 │  1000   4996
-   2 │  1000   4997
-   3 │  1000   4998
-   4 │  1000   4999
-   5 │  1000   5000
-
-julia> gd[Dict("g" => 1000)] # a dictionary
-5×2 SubDataFrame
- Row │ g      x     
-     │ Int64  Int64
-─────┼──────────────
-   1 │  1000   4996
-   2 │  1000   4997
-   3 │  1000   4998
-   4 │  1000   4999
-   5 │  1000   5000
+```
+julia> combine(iris_gdf, nrow)
+3×2 DataFrame
+ Row │ Species          nrow  
+     │ String15         Int64
+─────┼────────────────────────
+   1 │ Iris-setosa         50
+   2 │ Iris-versicolor     50
+   3 │ Iris-virginica      50
 ```
 
 ## Simulating the SQL `where` clause
