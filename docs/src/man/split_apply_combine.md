@@ -724,11 +724,10 @@ julia> [nrow(sdf) for sdf in iris_gdf]
  50
 ```
 
-Note that using the split-apply-combine strategy with operation specification
+Note that using the split-apply-combine strategy with the operation specification
 syntax in `combine`, `select` or `transform` will usually be faster for large
-`GroupedDataFrame` object than iterating it, with the difference that they
-produce a data frame. For the above examples an operation corresponding
-to the examples above is:
+`GroupedDataFrame` objects than iterating them, with the difference that they
+produce a data frame. An operation corresponding to the example above is:
 
 ```
 julia> combine(iris_gdf, nrow)
@@ -1220,7 +1219,7 @@ julia> combine(gdf, eachindex, sdf -> axes(sdf, 1))
    6 │ c                    2      2
 ```
 
-Notice that the column independent operation `eachindex` produces the same result
+Notice that the column-independent operation `eachindex` produces the same result
 as using the anonymous function `sdf -> axes(sdf, 1)` that takes a `SubDataFrame`
 as its first argument and returns indices along its first axes.
 Importantly if it wasn't defined as a column-independent operation
