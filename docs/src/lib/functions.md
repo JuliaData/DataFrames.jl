@@ -183,6 +183,7 @@ eachcol
 eachrow
 values
 pairs
+Iterators.partition
 ```
 
 ## Equality

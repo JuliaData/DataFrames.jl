@@ -3301,3 +3301,63 @@ function insertcols!(df::AbstractDataFrame; after::Bool=false,
     _drop_all_nonnote_metadata!(parent(df))
     return df
 end
+
+"""
+    Iterators.partition(df::AbstractDataFrame, n::Integer)
+
+Iterate over `df` data frame `n` rows at a time, returning each block
+as a `SubDataFrame`.
+
+# Examples
+
+```jldoctest
+julia> collect(Iterators.partition(DataFrame(x=1:5), 2))
+3-element Vector{SubDataFrame{DataFrame, DataFrames.Index, UnitRange{Int64}}}:
+ 2×1 SubDataFrame
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+ 2×1 SubDataFrame
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     3
+   2 │     4
+ 1×1 SubDataFrame
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     5
+```
+"""
+function Iterators.partition(df::AbstractDataFrame, n::Integer)
+    n < 1 && throw(ArgumentError("cannot create partitions of length $n"))
+    return Iterators.PartitionIterator(df, Int(n))
+end
+
+# use autodetection of eltype
+Base.IteratorEltype(::Type{<:Iterators.PartitionIterator{<:AbstractDataFrame}}) =
+    Base.EltypeUnknown()
+
+# we do not need to be overly specific here as we rely on autodetection of eltype
+# this method is needed only to override the fallback for `PartitionIterator`
+Base.eltype(::Type{<:Iterators.PartitionIterator{<:AbstractDataFrame}}) =
+    AbstractDataFrame
+
+IteratorSize(::Type{<:Iterators.PartitionIterator{<:AbstractDataFrame}}) =
+    Base.HasLength()
+
+function Base.length(itr::Iterators.PartitionIterator{<:AbstractDataFrame})
+    l = nrow(itr.c)
+    return cld(l, itr.n)
+end
+
+function Base.iterate(itr::Iterators.PartitionIterator{<:AbstractDataFrame}, state::Int=1)
+    last_idx = nrow(itr.c)
+    state > last_idx && return nothing
+    r = min(state + itr.n - 1, last_idx)
+    return view(itr.c, state:r, :), r + 1
+end
+
