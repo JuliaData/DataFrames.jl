@@ -449,8 +449,8 @@ $METADATA_FIXED
 """
 function Base.similar(df::AbstractDataFrame, rows::Integer = size(df, 1))
     rows < 0 && throw(ArgumentError("the number of rows must be non-negative"))
-    out_df = DataFrame(AbstractVector[similar(x, rows) for x in eachcol(df)], copy(index(df)),
-                       copycols=false)
+    out_df = DataFrame(AbstractVector[similar(x, rows) for x in eachcol(df)],
+                       copy(index(df)), copycols=false)
     _copy_all_note_metadata!(out_df, df)
     return out_df
 end
@@ -565,7 +565,6 @@ $METADATA_FIXED
 @inline Base.last(df::AbstractDataFrame, n::Integer; view::Bool=false) =
     view ? Base.view(df, max(1, nrow(df)-n+1):nrow(df), :) : df[max(1, nrow(df)-n+1):nrow(df), :]
 
-
 """
     describe(df::AbstractDataFrame; cols=:)
     describe(df::AbstractDataFrame, stats::Union{Symbol, Pair}...; cols=:)
@@ -656,10 +655,10 @@ julia> describe(df, :min, sum => :sum, cols=:x)
 DataAPI.describe(df::AbstractDataFrame,
                  stats::Union{Symbol, Pair{<:Base.Callable, <:SymbolOrString}}...;
                  cols=:) =
-    _describe(select(df, cols, copycols=false), Any[s for s in stats])
+    _describe(_try_select_no_copy(df, cols), Any[s for s in stats])
 
 DataAPI.describe(df::AbstractDataFrame; cols=:) =
-    _describe(select(df, cols, copycols=false),
+    _describe(_try_select_no_copy(df, cols),
               Any[:mean, :min, :median, :max, :nmissing, :eltype])
 
 function _describe(df::AbstractDataFrame, stats::AbstractVector)
@@ -1422,13 +1421,56 @@ function nonunique(df::AbstractDataFrame)
 end
 
 function nonunique(df::AbstractDataFrame, cols)
-    udf = select(df, cols, copycols=false)
+    udf = _try_select_no_copy(df, cols)
     if ncol(df) > 0 && ncol(udf) == 0
          throw(ArgumentError("finding duplicate rows in data frame when " *
                              "`cols` selects no columns is not allowed"))
     else
         return nonunique(udf)
     end
+end
+
+"""
+    allunique(df::AbstractDataFrame, cols=:)
+
+Return `true` if all rows of `df` are not duplicated. Two rows are duplicate if
+all their columns contain equal values (according to `isequal`).
+
+See also [`unique`](@ref) and [`nonunique`](@ref).
+
+# Arguments
+- `df` : `AbstractDataFrame`
+- `cols` : a selector specifying the column(s) or their transformations to compare.
+  Can be any column selector or transformation accepted by [`select`](@ref).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(i=1:4, x=[1, 2, 1, 2])
+4×2 DataFrame
+ Row │ i      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      1
+   4 │     4      2
+
+julia> allunique(df)
+true
+
+julia> allunique(df, :x)
+false
+
+julia> allunique(df, :i => ByRow(isodd))
+false
+```
+"""
+function Base.allunique(df::AbstractDataFrame, cols=:)
+    udf = _try_select_no_copy(df, cols)
+    nrow(udf) == 0 && return true
+    return row_group_slots(ntuple(i -> udf[!, i], ncol(udf)),
+                           Val(false), nothing, false, nothing)[1] == nrow(df)
 end
 
 """

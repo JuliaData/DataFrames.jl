@@ -1546,3 +1546,6 @@ function allcombinations(::Type{DataFrame}, pairs::Pair{Symbol, <:Any}...)
     @assert size(out_df) == (target_rows, length(colnames))
     return out_df
 end
+
+_try_select_no_copy(df::DataFrame, cols) = select(df, cols, copycols=false)
+

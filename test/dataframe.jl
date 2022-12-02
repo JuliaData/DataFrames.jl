@@ -2254,6 +2254,34 @@ end
     @test !isempty(DataFrame(a=1))
 end
 
+@testset "allunique" begin
+    refdf = DataFrame(a=[1, 1, 2, 2, 3], b=[1, 2, 1, 2, 3], c=[1, 2, 1, 2, 3])
+    for df in (refdf[1:4, 1:2], view(refdf, 1:4, 1:2))
+        @test allunique(df)
+        @test !allunique(df, 1)
+        @test !allunique(df, :b)
+        @test allunique(df, All())
+        @test allunique(df, [])
+        @test allunique(df, x -> 1:4)
+        @test allunique(df, [:a, :b] => ByRow(string))
+    end
+end
+
+@testset "extra tests describe, nonunique, allunique for SubDataFrame" begin
+    refdf = DataFrame(a=[1, 1, 2, 2, 3], b=[1, 2, 1, 2, 3], c=[1, 2, 1, 2, 3])
+    sdf = @view refdf[1:4, 1:2]
+    @test describe(sdf, cols=:a => ByRow(string)) ==
+          DataFrame(variable=:a_string, mean=nothing, min="1",
+                    median=nothing, max="2", nmissing=0, eltype=String)
+    @test describe(sdf, :min, :max, cols=x -> DataFrame(x=11:14)) ==
+          DataFrame(variable=:x, min=11, max=14)
+    @test nonunique(sdf, x->[1, 1, 2, 2]) == [false, true, false, true]
+    @test nonunique(sdf, :a => x -> true) == [false, true, true, true]
+    @test !allunique(sdf, x -> [1, 1, 2, 2])
+    @test allunique(sdf, :a => x -> 1:4)
+    @test !allunique(sdf, :a => x -> true)
+end
+
 @testset "Iterators.partition" begin
     for df in (DataFrame(x=1:5), view(DataFrame(x=1:6, y=11:16), 1:5, 1:1))
         p = Iterators.partition(df, 2)
