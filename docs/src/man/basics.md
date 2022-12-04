@@ -1747,8 +1747,9 @@ julia> select(german, :Age, :Age => ByRow(sqrt))
 ```
 
 When we pass just a column (without the `=>` part) we can use any column selector
-that is allowed in indexing. Here we exclude the column `:Age` from
-the resulting data frame:
+that is allowed in indexing.
+
+Here we exclude the column `:Age` from the resulting data frame:
 
 ```jldoctest dataframe
 julia> select(german, Not(:Age))
@@ -1775,9 +1776,40 @@ julia> select(german, Not(:Age))
                                                   3 columns and 985 rows omitted
 ```
 
-In order to select a column we just passed them as argument. As another example
-let us present that the `r"S"` regular expression we used above also works
-as we have described above:
+In the next example we drop columns `"Age"`, `"Saving accounts"`,
+`"Checking account"`, `"Credit amount"`, and `"Purpose"`. Note that this time
+we use strings column selectors because some of the column names have spaces
+in them:
+
+```jldoctest dataframe
+julia> select(german, Not(["Age", "Saving accounts", "Checking account",
+                           "Credit amount", "Purpose"]))
+1000×5 DataFrame
+  Row │ id     Sex      Job    Housing  Duration 
+      │ Int64  String7  Int64  String7  Int64
+──────┼──────────────────────────────────────────
+    1 │     0  male         2  own             6
+    2 │     1  female       2  own            48
+    3 │     2  male         1  own            12
+    4 │     3  male         2  free           42
+    5 │     4  male         2  free           24
+    6 │     5  male         1  free           36
+    7 │     6  male         2  own            24
+    8 │     7  male         3  rent           36
+  ⋮   │   ⋮       ⋮       ⋮       ⋮        ⋮
+  994 │   993  male         3  own            36
+  995 │   994  male         2  own            12
+  996 │   995  female       1  own            12
+  997 │   996  male         3  own            30
+  998 │   997  male         2  own            12
+  999 │   998  male         2  free           45
+ 1000 │   999  male         2  own            45
+                                 985 rows omitted
+
+```
+
+As another example let us present that the `r"S"` regular expression we used
+above also works as we have described above:
 
 ```jldoctest dataframe
 julia> select(german, r"S")
@@ -1805,7 +1837,7 @@ julia> select(german, r"S")
 ```
 
 The benefit of `select` or `combine` over indexing is that it is easier
-to combine several column selectors, e.g.:
+to get a union of several column selectors, e.g.:
 
 ```jldoctest dataframe
 julia> select(german, r"S", "Job", 1)
