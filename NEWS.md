@@ -7,6 +7,9 @@
 * Add `allunique` and allow transformations in `cols` argument of `describe`
   and `nonunique` when working with `SubDataFrame`
   ([3232](https://github.com/JuliaData/DataFrames.jl/pull/3232))
+* Joining functions now support `order` keyword argument allowing the user
+  to specify the order of the rows in the produced table
+   ([#3233](https://github.com/JuliaData/DataFrames.jl/pull/3233))
 
 # DataFrames.jl v1.4.4 Patch Release Notes
 

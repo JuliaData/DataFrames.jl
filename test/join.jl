@@ -2050,24 +2050,24 @@ end
     end
 end
 
-@testset "basic join tests with sort" begin
+@testset "basic join tests with order" begin
     for fun in (innerjoin, leftjoin, rightjoin, outerjoin)
         df1 = DataFrame(x=[0, 3, 1, 2, 4], id1=1:5)
         df2 = DataFrame(x=[2, 5, 1, 3, 7, 6], id2=1:6)
         ref = fun(df1, df2, on=:x)
-        res = fun(df1, df2, on=:x, sort=:left)
+        res = fun(df1, df2, on=:x, order=:left)
         @test issorted(res.id1)
         @test sort(ref, :id1) ≅ res
-        res = fun(df1, df2, on=:x, sort=:right)
+        res = fun(df1, df2, on=:x, order=:right)
         @test issorted(res.id2)
         @test sort(ref, :id2) ≅ res
         df1.x = string.(df1.x)
         df2.x = string.(df2.x)
         ref = fun(df1, df2, on=:x)
-        res = fun(df1, df2, on=:x, sort=:left)
+        res = fun(df1, df2, on=:x, order=:left)
         @test issorted(res.id1)
         @test sort(ref, :id1) ≅ res
-        res = fun(df1, df2, on=:x, sort=:right)
+        res = fun(df1, df2, on=:x, order=:right)
         @test issorted(res.id2)
         @test sort(ref, :id2) ≅ res
     end
@@ -2076,19 +2076,19 @@ end
         df1 = DataFrame(x=[0, 1, 2, 3, 4], id1=1:5)
         df2 = DataFrame(x=[1, 2, 3, 5, 6, 7], id2=1:6)
         ref = fun(df1, df2, on=:x)
-        res = fun(df1, df2, on=:x, sort=:left)
+        res = fun(df1, df2, on=:x, order=:left)
         @test issorted(res.id1)
         @test sort(ref, :id1) ≅ res
-        res = fun(df1, df2, on=:x, sort=:right)
+        res = fun(df1, df2, on=:x, order=:right)
         @test issorted(res.id2)
         @test sort(ref, :id2) ≅ res
         df1.x = string.(df1.x)
         df2.x = string.(df2.x)
         ref = fun(df1, df2, on=:x)
-        res = fun(df1, df2, on=:x, sort=:left)
+        res = fun(df1, df2, on=:x, order=:left)
         @test issorted(res.id1)
         @test sort(ref, :id1) ≅ res
-        res = fun(df1, df2, on=:x, sort=:right)
+        res = fun(df1, df2, on=:x, order=:right)
         @test issorted(res.id2)
         @test sort(ref, :id2) ≅ res
     end
@@ -2097,19 +2097,19 @@ end
         df1 = DataFrame(x=[0, 3, 1, 2, 4], id1=1:5)
         df2 = DataFrame(x=[2, 5, 1, 3, 7, 6], id2=1:6)
         ref = fun(df1, df2, on=:x, source=:src)
-        res = fun(df1, df2, on=:x, sort=:left, source=:src)
+        res = fun(df1, df2, on=:x, order=:left, source=:src)
         @test issorted(res.id1)
         @test sort(ref, :id1) ≅ res
-        res = fun(df1, df2, on=:x, sort=:right, source=:src)
+        res = fun(df1, df2, on=:x, order=:right, source=:src)
         @test issorted(res.id2)
         @test sort(ref, :id2) ≅ res
         df1.x = string.(df1.x)
         df2.x = string.(df2.x)
         ref = fun(df1, df2, on=:x, source=:src)
-        res = fun(df1, df2, on=:x, sort=:left, source=:src)
+        res = fun(df1, df2, on=:x, order=:left, source=:src)
         @test issorted(res.id1)
         @test sort(ref, :id1) ≅ res
-        res = fun(df1, df2, on=:x, sort=:right, source=:src)
+        res = fun(df1, df2, on=:x, order=:right, source=:src)
         @test issorted(res.id2)
         @test sort(ref, :id2) ≅ res
     end
@@ -2118,19 +2118,19 @@ end
         df1 = DataFrame(x=[0, 1, 2, 3, 4], id1=1:5)
         df2 = DataFrame(x=[1, 2, 3, 5, 6, 7], id2=1:6)
         ref = fun(df1, df2, on=:x, source=:src)
-        res = fun(df1, df2, on=:x, sort=:left, source=:src)
+        res = fun(df1, df2, on=:x, order=:left, source=:src)
         @test issorted(res.id1)
         @test sort(ref, :id1) ≅ res
-        res = fun(df1, df2, on=:x, sort=:right, source=:src)
+        res = fun(df1, df2, on=:x, order=:right, source=:src)
         @test issorted(res.id2)
         @test sort(ref, :id2) ≅ res
         df1.x = string.(df1.x)
         df2.x = string.(df2.x)
         ref = fun(df1, df2, on=:x, source=:src)
-        res = fun(df1, df2, on=:x, sort=:left, source=:src)
+        res = fun(df1, df2, on=:x, order=:left, source=:src)
         @test issorted(res.id1)
         @test sort(ref, :id1) ≅ res
-        res = fun(df1, df2, on=:x, sort=:right, source=:src)
+        res = fun(df1, df2, on=:x, order=:right, source=:src)
         @test issorted(res.id2)
         @test sort(ref, :id2) ≅ res
     end
@@ -2160,10 +2160,10 @@ end
     @test issorted(antijoin(df1, df2, on=:x).id1)
     @test issorted(antijoin(df2, df1, on=:x).id2)
 
-    @test_throws ArgumentError innerjoin(df1, df2, on=:x, sort=:x)
-    @test_throws ArgumentError leftjoin(df1, df2, on=:x, sort=:x)
-    @test_throws ArgumentError rightjoin(df1, df2, on=:x, sort=:x)
-    @test_throws ArgumentError outerjoin(df1, df2, on=:x, sort=:x)
+    @test_throws ArgumentError innerjoin(df1, df2, on=:x, order=:x)
+    @test_throws ArgumentError leftjoin(df1, df2, on=:x, order=:x)
+    @test_throws ArgumentError rightjoin(df1, df2, on=:x, order=:x)
+    @test_throws ArgumentError outerjoin(df1, df2, on=:x, order=:x)
 end
 
 @time @testset "randomized join tests with sort" begin
@@ -2172,36 +2172,36 @@ end
         df1 = DataFrame(x=rand(0:lenl, lenl), id1=1:lenl)
         df2 = DataFrame(x=rand(0:lenr, lenr), id2=1:lenr)
         ref = innerjoin(df1, df2, on=:x)
-        res = innerjoin(df1, df2, on=:x, sort=:left)
+        res = innerjoin(df1, df2, on=:x, order=:left)
         @test issorted(res, [:id1, :id2])
         @test sort(ref, :id1) ≅ res
-        res = innerjoin(df1, df2, on=:x, sort=:right)
+        res = innerjoin(df1, df2, on=:x, order=:right)
         @test issorted(res, [:id2, :id1])
         @test sort(ref, :id2) ≅ res
         for fun in (leftjoin, rightjoin, outerjoin)
             ref = fun(df1, df2, on=:x, source=:src)
-            res = fun(df1, df2, on=:x, sort=:left, source=:src)
+            res = fun(df1, df2, on=:x, order=:left, source=:src)
             @test issorted(res, [:id1, :id2])
             @test sort(ref, :id1) ≅ res
-            res = fun(df1, df2, on=:x, sort=:right, source=:src)
+            res = fun(df1, df2, on=:x, order=:right, source=:src)
             @test issorted(res, [:id2, :id1])
             @test sort(ref, :id2) ≅ res
         end
         df1.x = string.(df1.x)
         df2.x = string.(df2.x)
         ref = innerjoin(df1, df2, on=:x)
-        res = innerjoin(df1, df2, on=:x, sort=:left)
+        res = innerjoin(df1, df2, on=:x, order=:left)
         @test issorted(res, [:id1, :id2])
         @test sort(ref, :id1) ≅ res
-        res = innerjoin(df1, df2, on=:x, sort=:right)
+        res = innerjoin(df1, df2, on=:x, order=:right)
         @test issorted(res, [:id2, :id1])
         @test sort(ref, :id2) ≅ res
         for fun in (leftjoin, rightjoin, outerjoin)
             ref = fun(df1, df2, on=:x, source=:src)
-            res = fun(df1, df2, on=:x, sort=:left, source=:src)
+            res = fun(df1, df2, on=:x, order=:left, source=:src)
             @test issorted(res, [:id1, :id2])
             @test sort(ref, :id1) ≅ res
-            res = fun(df1, df2, on=:x, sort=:right, source=:src)
+            res = fun(df1, df2, on=:x, order=:right, source=:src)
             @test issorted(res, [:id2, :id1])
             @test sort(ref, :id2) ≅ res
         end
