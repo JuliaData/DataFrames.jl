@@ -364,14 +364,15 @@ julia> df_left = DataFrame(id=[1, 2, 4, 5], left=1:4)
    4 │     5      4
 
 julia> df_right = DataFrame(id=[2, 1, 3, 6, 7], right=1:5)
-4×2 DataFrame
+5×2 DataFrame
  Row │ id     right 
      │ Int64  Int64 
 ─────┼──────────────
-   1 │     1      1
-   2 │     2      2
+   1 │     2      1
+   2 │     1      2
    3 │     3      3
    4 │     6      4
+   5 │     7      5
 
 julia> outerjoin(df_left, df_right, on=:id)
 7×3 DataFrame
