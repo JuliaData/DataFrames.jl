@@ -146,6 +146,7 @@ valuecols
 
 ## Filtering rows
 ```@docs
+allunique
 deleteat!
 empty
 empty!
@@ -183,6 +184,7 @@ eachcol
 eachrow
 values
 pairs
+Iterators.partition
 ```
 
 ## Equality

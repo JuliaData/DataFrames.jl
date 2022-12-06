@@ -315,6 +315,8 @@ end
     @test_throws BoundsError select(df, 6)
     @test_throws ArgumentError select(df, [1, 1])
     @test_throws ArgumentError select(df, :f)
+    @test_throws ArgumentError select(df, 1.0)
+    @test_throws ArgumentError select(df, true)
     @test_throws BoundsError select!(df, [true, false])
 
     @test select(df, 1:0) == DataFrame()
@@ -876,6 +878,7 @@ end
     @test select(sdf, :x1, [:x1], copycols=false) isa SubDataFrame
     @test_throws ArgumentError select(sdf, :x1 => :r1, copycols=false)
     @test_throws ArgumentError select(sdf, :x1 => identity => :r1, copycols=false)
+    @test_throws ArgumentError select(sdf, identity, copycols=false)
 end
 
 @testset "pseudo-broadcasting" begin
@@ -2731,6 +2734,14 @@ end
     @test df ≅ DataFrame(a=1:4, b='a':'d', c=["p", "q", "r", "s"],
                          d=[missing, "q", missing, "s"],
                          e=[missing, 4, missing, 8])
+end
+
+@testset "selection on a view without copying" begin
+    df = DataFrame(a=1:2)
+    for dfv in (view(df, :, :), view(df, 1:2, 1:1))
+        @test_throws ArgumentError select(dfv, x -> true, copycols=false)
+        @test_throws ArgumentError select(dfv, :a => identity, copycols=false)
+    end
 end
 
 end # module

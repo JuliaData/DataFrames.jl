@@ -1,3 +1,21 @@
+# DataFrames.jl v1.5 Release Notes
+
+## New functionalities
+
+* Add `Iterators.partition` support
+   ([#3212](https://github.com/JuliaData/DataFrames.jl/pull/3212))
+* Add `allunique` and allow transformations in `cols` argument of `describe`
+  and `nonunique` when working with `SubDataFrame`
+  ([3232](https://github.com/JuliaData/DataFrames.jl/pull/3232))
+
+# DataFrames.jl v1.4.4 Patch Release Notes
+
+## Bug fixes
+
+* Fix bug in `select` and `transform` with `copycols=false` on `SubDataFrame`
+  that incorrectly allowed passing transformations
+  ([#3231](https://github.com/JuliaData/DataFrames.jl/pull/3231))
+
 # DataFrames.jl v1.4.3 Patch Release Notes
 
 ## Bug fixes

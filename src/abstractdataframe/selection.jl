@@ -75,7 +75,7 @@ const TRANSFORMATION_COMMON_RULES =
        except `AsTable` are allowed).
     4. a `col => target_cols` pair, which renames the column `col` to `target_cols`, which
        must be single name (as a `Symbol` or a string), a vector of names or `AsTable`.
-    5. special convenience forms `function => target_cols` or just `function`
+    5. column-independent operations `function => target_cols` or just `function`
        for specific `function`s where the input columns are omitted;
        without `target_cols` the new column has the same name as `function`, otherwise
        it must be single name (as a `Symbol` or a string). Supported `function`s are:
@@ -336,16 +336,7 @@ make_pair_concrete(@nospecialize(x::Pair)) =
     make_pair_concrete(x.first) => make_pair_concrete(x.second)
 make_pair_concrete(@nospecialize(x)) = x
 
-normalize_selection(idx::AbstractIndex, @nospecialize(sel), renamecols::Bool) =
-    try
-        idx[sel]
-    catch e
-        if e isa MethodError && e.f === getindex && e.args === (idx, sel)
-            throw(ArgumentError("Unrecognized column selector $sel in AsTable constructor"))
-        else
-            rethrow(e)
-        end
-    end
+normalize_selection(idx::AbstractIndex, @nospecialize(sel), renamecols::Bool) = idx[sel]
 
 normalize_selection(idx::AbstractIndex, @nospecialize(sel::Base.Callable), renamecols::Bool) = sel
 normalize_selection(idx::AbstractIndex, sel::Colon, renamecols::Bool) = idx[:]
@@ -1267,7 +1258,7 @@ julia> select(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
    8 │     2      1      8      9
 ```
 
-# special convenience transformations
+# column-independent operations
 ```jldoctest
 julia> df = DataFrame(a=[1, 1, 1, 2, 2, 1, 1, 2],
                       b=repeat([2, 1], outer=[4]),
@@ -1807,11 +1798,7 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
                     push!(seen_single_column, ind_idx)
                 end
             else
-                newind = normalize_selection(index(dfv), make_pair_concrete(ind), renamecols)
-                if newind isa Pair
-                    throw(ArgumentError("transforming and renaming columns of a " *
-                                        "SubDataFrame is not allowed when `copycols=false`"))
-                end
+                newind = index(dfv)[ind]
                 push!(newinds, newind)
             end
         end

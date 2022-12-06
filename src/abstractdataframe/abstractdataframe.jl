@@ -449,8 +449,8 @@ $METADATA_FIXED
 """
 function Base.similar(df::AbstractDataFrame, rows::Integer = size(df, 1))
     rows < 0 && throw(ArgumentError("the number of rows must be non-negative"))
-    out_df = DataFrame(AbstractVector[similar(x, rows) for x in eachcol(df)], copy(index(df)),
-                       copycols=false)
+    out_df = DataFrame(AbstractVector[similar(x, rows) for x in eachcol(df)],
+                       copy(index(df)), copycols=false)
     _copy_all_note_metadata!(out_df, df)
     return out_df
 end
@@ -565,7 +565,6 @@ $METADATA_FIXED
 @inline Base.last(df::AbstractDataFrame, n::Integer; view::Bool=false) =
     view ? Base.view(df, max(1, nrow(df)-n+1):nrow(df), :) : df[max(1, nrow(df)-n+1):nrow(df), :]
 
-
 """
     describe(df::AbstractDataFrame; cols=:)
     describe(df::AbstractDataFrame, stats::Union{Symbol, Pair}...; cols=:)
@@ -656,10 +655,10 @@ julia> describe(df, :min, sum => :sum, cols=:x)
 DataAPI.describe(df::AbstractDataFrame,
                  stats::Union{Symbol, Pair{<:Base.Callable, <:SymbolOrString}}...;
                  cols=:) =
-    _describe(select(df, cols, copycols=false), Any[s for s in stats])
+    _describe(_try_select_no_copy(df, cols), Any[s for s in stats])
 
 DataAPI.describe(df::AbstractDataFrame; cols=:) =
-    _describe(select(df, cols, copycols=false),
+    _describe(_try_select_no_copy(df, cols),
               Any[:mean, :min, :median, :max, :nmissing, :eltype])
 
 function _describe(df::AbstractDataFrame, stats::AbstractVector)
@@ -1422,13 +1421,56 @@ function nonunique(df::AbstractDataFrame)
 end
 
 function nonunique(df::AbstractDataFrame, cols)
-    udf = select(df, cols, copycols=false)
+    udf = _try_select_no_copy(df, cols)
     if ncol(df) > 0 && ncol(udf) == 0
          throw(ArgumentError("finding duplicate rows in data frame when " *
                              "`cols` selects no columns is not allowed"))
     else
         return nonunique(udf)
     end
+end
+
+"""
+    allunique(df::AbstractDataFrame, cols=:)
+
+Return `true` if all rows of `df` are not duplicated. Two rows are duplicate if
+all their columns contain equal values (according to `isequal`).
+
+See also [`unique`](@ref) and [`nonunique`](@ref).
+
+# Arguments
+- `df` : `AbstractDataFrame`
+- `cols` : a selector specifying the column(s) or their transformations to compare.
+  Can be any column selector or transformation accepted by [`select`](@ref).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(i=1:4, x=[1, 2, 1, 2])
+4×2 DataFrame
+ Row │ i      x
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      1
+   4 │     4      2
+
+julia> allunique(df)
+true
+
+julia> allunique(df, :x)
+false
+
+julia> allunique(df, :i => ByRow(isodd))
+false
+```
+"""
+function Base.allunique(df::AbstractDataFrame, cols=:)
+    udf = _try_select_no_copy(df, cols)
+    nrow(udf) == 0 && return true
+    return row_group_slots(ntuple(i -> udf[!, i], ncol(udf)),
+                           Val(false), nothing, false, nothing)[1] == nrow(df)
 end
 
 """
@@ -3301,3 +3343,63 @@ function insertcols!(df::AbstractDataFrame; after::Bool=false,
     _drop_all_nonnote_metadata!(parent(df))
     return df
 end
+
+"""
+    Iterators.partition(df::AbstractDataFrame, n::Integer)
+
+Iterate over `df` data frame `n` rows at a time, returning each block
+as a `SubDataFrame`.
+
+# Examples
+
+```jldoctest
+julia> collect(Iterators.partition(DataFrame(x=1:5), 2))
+3-element Vector{SubDataFrame{DataFrame, DataFrames.Index, UnitRange{Int64}}}:
+ 2×1 SubDataFrame
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+ 2×1 SubDataFrame
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     3
+   2 │     4
+ 1×1 SubDataFrame
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     5
+```
+"""
+function Iterators.partition(df::AbstractDataFrame, n::Integer)
+    n < 1 && throw(ArgumentError("cannot create partitions of length $n"))
+    return Iterators.PartitionIterator(df, Int(n))
+end
+
+# use autodetection of eltype
+Base.IteratorEltype(::Type{<:Iterators.PartitionIterator{<:AbstractDataFrame}}) =
+    Base.EltypeUnknown()
+
+# we do not need to be overly specific here as we rely on autodetection of eltype
+# this method is needed only to override the fallback for `PartitionIterator`
+Base.eltype(::Type{<:Iterators.PartitionIterator{<:AbstractDataFrame}}) =
+    AbstractDataFrame
+
+IteratorSize(::Type{<:Iterators.PartitionIterator{<:AbstractDataFrame}}) =
+    Base.HasLength()
+
+function Base.length(itr::Iterators.PartitionIterator{<:AbstractDataFrame})
+    l = nrow(itr.c)
+    return cld(l, itr.n)
+end
+
+function Base.iterate(itr::Iterators.PartitionIterator{<:AbstractDataFrame}, state::Int=1)
+    last_idx = nrow(itr.c)
+    state > last_idx && return nothing
+    r = min(state + itr.n - 1, last_idx)
+    return view(itr.c, state:r, :), r + 1
+end
+
