@@ -326,7 +326,7 @@ ERROR: ArgumentError: missing values in key columns are not allowed when matchmi
 If you would prefer for `missing` values to be matched as equal pass
 `matchimssing=:equal` keyword argument:
 
-```jldoctest join
+```jldoctest joins
 julia> innerjoin(df1, df2, on=:id, matchmissing=:equal)
 2×3 DataFrame
  Row │ id       a      b     
@@ -339,7 +339,7 @@ julia> innerjoin(df1, df2, on=:id, matchmissing=:equal)
 Alternatively you might want to drop all rows with `missing` values. In this
 case pass `matchmissing=:notequal`:
 
-```jldoctest join
+```jldoctest joins
 julia> innerjoin(df1, df2, on=:id, matchmissing=:notequal)
 1×3 DataFrame
  Row │ id      a      b     
@@ -352,7 +352,7 @@ julia> innerjoin(df1, df2, on=:id, matchmissing=:notequal)
 
 By default the order of rows produced by the join operation is undefined:
 
-```jldoctest join
+```jldoctest joins
 julia> df_left = DataFrame(id=[1, 2, 4, 5], left=1:4)
 4×2 DataFrame
  Row │ id     left  
@@ -390,7 +390,7 @@ julia> outerjoin(df_left, df_right, on=:id)
 If you would like the result to keep row order of the left table pass
 `order=:left` keyword argument:
 
-```jldoctest join
+```jldoctest joins
 julia> outerjoin(df_left, df_right, on=:id, order=:left)
 7×3 DataFrame
  Row │ id     left     right   
@@ -411,7 +411,7 @@ present in the left table.
 Similarly `order=:right` keeps the order of the right table (and puts keys
 not present in it at the end):
 
-```jldoctest join
+```jldoctest joins
 julia> outerjoin(df_left, df_right, on=:id, order=:right)
 7×3 DataFrame
  Row │ id     left     right   
@@ -433,7 +433,7 @@ It is possible to perform such an in-place update using the `leftjoin!`
 function. In this case left table is updated in place with matching rows from
 the right table.
 
-```jldoctest join
+```jldoctest joins
 julia> main = DataFrame(id=1:4, main=1:4)
 4×2 DataFrame
  Row │ id     main  
