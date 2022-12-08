@@ -39,7 +39,9 @@ New users can start with the [First Steps with DataFrames.jl](@ref) section.
 
 If you do not have a significant programming experience you might find 
 [DataFramesMeta.jl](https://juliadata.github.io/DataFramesMeta.jl/stable/) package
-helpful when writing more advanced data transformations since it provides
+or one of the other convenience packages discussed in
+[Data manipulation frameworks](@ref) section of this manual
+helpful when writing more advanced data transformations. These packages provide
 convenience syntax similar to [dplyr](https://dplyr.tidyverse.org/) in R.
 
 ## DataFrames.jl and the Julia Data Ecosystem
