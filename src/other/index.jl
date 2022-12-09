@@ -263,17 +263,20 @@ end
         if all(x -> x isa Symbol, idxs)
             return getindex(x, convert(Vector{Symbol}, idxs))
         else
-            throw(ArgumentError("mixing `Symbol`s with other selectors is not allowed"))
+            throw(ArgumentError("mixing `Symbol`s with other selectors in a vector " *
+                                "is not allowed. Maybe you wanted to use `Cols` instead?"))
         end
     elseif idxs[1] isa AbstractString
         if all(x -> x isa AbstractString, idxs)
             return getindex(x, Symbol.(idxs))
         else
-            throw(ArgumentError("mixing strings with other selectors is not allowed"))
+            throw(ArgumentError("mixing `Symbol`s with other selectors in a vector " *
+                                "is not allowed. Maybe you wanted to use `Cols` instead?"))
         end
     end
     throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); only Integer, Symbol, "*
-                        "or string values allowed when indexing by vector"))
+                        "or string values allowed when indexing by vector. " *
+                        "Maybe you wanted to use `Cols` instead?"))
 end
 
 @inline Base.getindex(x::AbstractIndex, rx::Regex) =
