@@ -1285,7 +1285,7 @@ end
 
 @testset "Tables.AbstractRow insertion" begin
     tab = Tables.table([1 2 3; 4 5 6; 9 10 11; 12 13 14], header=[:a, :b, :c])
-    rows = tab |> Tables.rows |> first
+    rows = tab |> Tables.rows |> collect
     df = DataFrame()
     @test push!(df, rows[2]) == DataFrame(a=4, b=5, c=6)
     @test pushfirst!(df, rows[1], promote=false, cols=:union) ==
