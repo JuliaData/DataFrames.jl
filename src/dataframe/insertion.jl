@@ -333,9 +333,10 @@ it must be a `Tuple` or an `AbstractArray`
 and columns are matched by order of appearance. In this case `row` must contain
 the same number of elements as the number of columns in `df`.
 
-If `row` is a `DataFrameRow`, `NamedTuple` or `AbstractDict` then
-values in `row` are matched to columns in `df` based on names. The exact behavior
-depends on the `cols` argument value in the following way:
+If `row` is a `DataFrameRow`, `NamedTuple`, `AbstractDict`, or
+`Tables.AbstractRow` then values in `row` are matched to columns in `df` based
+on names. The exact behavior depends on the `cols` argument value in the
+following way:
 * If `cols == :setequal` (this is the default)
   then `row` must contain exactly the same columns as `df` (but possibly in a
   different order).
@@ -369,7 +370,8 @@ $METADATA_FIXED
 
 """
     push!(df::DataFrame, row::Union{Tuple, AbstractArray}; promote::Bool=false)
-    push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
+    push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict,
+                                    Tables.AbstractRow};
           cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
 Add one row at the end of `df` in-place, taking the values from `row`.
@@ -455,7 +457,8 @@ Base.push!(df::DataFrame, row::Any; promote::Bool=false) =
 
 """
     pushfirst!(df::DataFrame, row::Union{Tuple, AbstractArray}; promote::Bool=false)
-    pushfirst!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
+    pushfirst!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict,
+                                         Tables.AbstractRow};
                cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
 Add one row at the beginning of `df` in-place, taking the values from `row`.
@@ -541,7 +544,8 @@ Base.pushfirst!(df::DataFrame, row::Any; promote::Bool=false) =
 
 """
     insert!(df::DataFrame, index::Integer, row::Union{Tuple, AbstractArray}; promote::Bool=false)
-    insert!(df::DataFrame, index::Integer, row::Union{DataFrameRow, NamedTuple, AbstractDict};
+    insert!(df::DataFrame, index::Integer, row::Union{DataFrameRow, NamedTuple,
+                                                      AbstractDict, Tables.AbstractRow};
             cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
 Add one row to `df` at position `index` in-place, taking the values from `row`.
@@ -762,15 +766,28 @@ function _dfr_row_inserter!(df::DataFrame, loc::Integer, dfr::DataFrameRow,
     return _row_inserter!(df, loc, dfr, mode, cols, promote, nrows)
 end
 
+_abstractrow2namedtuple(row::Tables.AbstractRow) =
+    NamedTuple(n => Tables.getcolumn(row, n) for n in Tables.columnnames(row))
+
 Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
            cols::Symbol=:setequal,
            promote::Bool=(cols in [:union, :subset])) =
     _row_inserter!(df, -1, row, Val{:push}(), cols, promote, -1)
 
+Base.push!(df::DataFrame, row::Tables.AbstractRow;
+           cols::Symbol=:setequal,
+           promote::Bool=(cols in [:union, :subset])) =
+    push!(df, _abstractrow2namedtuple(row), cols=cols, promote=promote)
+
 Base.pushfirst!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
                 cols::Symbol=:setequal,
                 promote::Bool=(cols in [:union, :subset])) =
     _row_inserter!(df, -1, row, Val{:pushfirst}(), cols, promote, -1)
+
+Base.pushfirst!(df::DataFrame, row::Tables.AbstractRow;
+                cols::Symbol=:setequal,
+                promote::Bool=(cols in [:union, :subset])) =
+    pushfirst!(df, _abstractrow2namedtuple(row), cols=cols, promote=promote)
 
 function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, NamedTuple};
                       cols::Symbol=:setequal,
@@ -780,6 +797,11 @@ function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, Name
         throw(ArgumentError("invalid index: $loc for data frame with $(nrow(df)) rows"))
     return _row_inserter!(df, loc, row, Val{:insert}(), cols, promote, -1)
 end
+
+Base.insert!(df::DataFrame, loc::Integer, row::Tables.AbstractRow;
+             cols::Symbol=:setequal,
+             promote::Bool=(cols in [:union, :subset])) =
+    insert!(df, loc, _abstractrow2namedtuple(row), cols=cols, promote=promote)
 
 function _row_inserter!(df::DataFrame, loc::Integer,
                         row::Union{AbstractDict, NamedTuple, DataFrameRow},

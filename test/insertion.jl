@@ -1,4 +1,4 @@
-module TestPush
+module TestInsertion
 
 using DataFrames, Test, Logging, DataStructures
 const ≅ = isequal
@@ -1281,6 +1281,42 @@ end
     end
     @test occursin("Error adding value to column :a2", String(take!(buf)))
     @test df == refdf
+end
+
+@testset "Tables.AbstractRow insertion" begin
+    tab = Tables.table([1 2 3; 4 5 6; 9 10 11; 12 13 14], header=[:a, :b, :c])
+    row = tab |> Tables.rows |> first
+    df = DataFrame()
+    @test push!(df, rows[2]) == DataFrame(a=4, b=5, c=6)
+    @test pushfirst!(df, rows[1], promote=false, cols=:union) ==
+          DataFrame(a=[1, 4], b=[2, 5], c=[3, 6])
+    @test insert!(df, 2, rows[3], promote=true, cols=:intersect) ==
+                  DataFrame(a=[1, 9, 4], b=[2, 10, 5], c=[3, 11, 6])
+
+    tab = Tables.table(Any[15 16.5], header=[:d, :c])
+    row = tab |> Tables.rows |> first
+    @test push!(df, row, cols=:union) ≅
+                DataFrame(a=[1, 9, 4, missing],
+                          b=[2, 10, 5, missing],
+                          c=[3.0, 11.0, 6.0, 16.5],
+                          d=[missing, missing, missing, 15])
+
+    tab = Tables.table(Any[21 22.5], header=[:x, :b])
+    row = tab |> Tables.rows |> first
+    @test pushfirst!(df, row, cols=:subset) ≅
+                     DataFrame(a=[missing, 1, 9, 4, missing],
+                               b=[22.5, 2.0, 10.0, 5.0, missing],
+                               c=[missing, 3.0, 11.0, 6.0, 16.5],
+                               d=[missing, missing, missing, missing, 15])
+
+    tab = Tables.table(["a" "b" "c" "d" "e"], header=[:a, :b, :c, :d, :e])
+    row = tab |> Tables.rows |> first
+    @test_throws MethodError insert!(df, 3, row, cols=:intersect)
+    @test insert!(df, 3, row, cols=:intersect, promote=true) ≅
+                  DataFrame(a=[missing, 1, "a", 9, 4, missing],
+                            b=[22.5, 2.0, "b", 10.0, 5.0, missing],
+                            c=[missing, 3.0, "c", 11.0, 6.0, 16.5],
+                            d=[missing, missing, "d", missing, missing, 15])
 end
 
 end # module
