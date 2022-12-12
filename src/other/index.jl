@@ -232,12 +232,12 @@ end
 
 @inline function Base.getindex(x::AbstractIndex, idx::Cols) =
     isempty(idx.cols) && return Int[]
-    if idx.operation == :union
+    if idx.operator == :union
         return union(getindex.(Ref(x), idx.cols)...)
-    elseif idx.operation == :intersect
+    elseif idx.operator == :intersect
         return intersect(getindex.(Ref(x), idx.cols)...)
     else
-        throw(ArgumentError("Unsupported operation :$(idx.operation). Either " *
+        throw(ArgumentError("Unsupported operator :$(idx.operator). Either " *
                             ":union or :intersect is required"))
     end
 end

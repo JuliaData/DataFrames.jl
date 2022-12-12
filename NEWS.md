@@ -7,7 +7,7 @@
 * Add `allunique` and allow transformations in `cols` argument of `describe`
   and `nonunique` when working with `SubDataFrame`
   ([3232](https://github.com/JuliaData/DataFrames.jl/pull/3232))
-* Add support for `operation` keyword argument in `Cols`
+* Add support for `operator` keyword argument in `Cols`
   ([3224](https://github.com/JuliaData/DataFrames.jl/pull/3224))
 
 # DataFrames.jl v1.4.4 Patch Release Notes
