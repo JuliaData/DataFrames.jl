@@ -2208,4 +2208,12 @@ end
     end
 end
 
+@testset "wide joins" begin
+    dfs = [DataFrame("id" => 0, "x$i" => i) for i in 1:10000]
+    res = innerjoin(dfs..., on="id")
+    @test res == DataFrame(["id" => 0; ["x$i" => i for i in 1:10000]]) 
+    res = outerjoin(dfs..., on="id")
+    @test res == DataFrame(["id" => 0; ["x$i" => i for i in 1:10000]]) 
+end
+
 end # module

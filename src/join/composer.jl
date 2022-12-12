@@ -750,16 +750,20 @@ function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
                  matchmissing=matchmissing, order=order)
 end
 
-innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
-          on::Union{<:OnType, AbstractVector} = Symbol[],
-          makeunique::Bool=false,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-          matchmissing::Symbol=:error,
-          order::Union{Nothing, Symbol}=nothing) =
-    innerjoin(innerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate,
-                        matchmissing=matchmissing),
-              dfs..., on=on, makeunique=makeunique, validate=validate,
-              matchmissing=matchmissing, order=order)
+function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
+                   on::Union{<:OnType, AbstractVector} = Symbol[],
+                   makeunique::Bool=false,
+                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+                   matchmissing::Symbol=:error,
+                   order::Union{Nothing, Symbol}=nothing)
+    res = innerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate,
+                        matchmissing=matchmissing)
+    for dfn in dfs
+        res = innerjoin(res, dfn, on=on, makeunique=makeunique, validate=validate,
+                        matchmissing=matchmissing, order=order)
+    end
+    return res
+end
 
 """
     leftjoin(df1, df2; on, makeunique=false, source=nothing, validate=(false, false),
@@ -1240,14 +1244,18 @@ function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
                  matchmissing=matchmissing, order=order)
 end
 
-outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
-          on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
-          validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
-          matchmissing::Symbol=:error, order::Union{Nothing, Symbol}=nothing) =
-    outerjoin(outerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate,
-                        matchmissing=matchmissing),
-              dfs..., on=on, makeunique=makeunique, validate=validate,
-              matchmissing=matchmissing, order=order)
+function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::AbstractDataFrame...;
+                   on::Union{<:OnType, AbstractVector} = Symbol[], makeunique::Bool=false,
+                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
+                   matchmissing::Symbol=:error, order::Union{Nothing, Symbol}=nothing)
+    res = outerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate,
+                        matchmissing=matchmissing)
+    for dfn in dfs
+        res = outerjoin(res, dfn, on=on, makeunique=makeunique, validate=validate,
+                        matchmissing=matchmissing, order=order)
+    end
+    return res
+end
 
 """
     semijoin(df1, df2; on, makeunique=false, validate=(false, false), matchmissing=:error)
