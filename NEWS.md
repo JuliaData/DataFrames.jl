@@ -8,6 +8,7 @@
   and `nonunique` when working with `SubDataFrame`
   ([3232](https://github.com/JuliaData/DataFrames.jl/pull/3232))
 * Add support for `operator` keyword argument in `Cols`
+  to take a set operation to apply to passed selectors (`union` by default)
   ([3224](https://github.com/JuliaData/DataFrames.jl/pull/3224))
 
 # DataFrames.jl v1.4.4 Patch Release Notes

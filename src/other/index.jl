@@ -230,19 +230,12 @@ end
 @inline Base.getindex(x::AbstractIndex, idx::All) =
     isempty(idx.cols) ? (1:length(x)) : throw(ArgumentError("All(args...) is not supported: use Cols(args...) instead"))
 
-@inline function Base.getindex(x::AbstractIndex, idx::Cols) =
+@inline function Base.getindex(x::AbstractIndex, idx::Cols)
     isempty(idx.cols) && return Int[]
-    if idx.operator == :union
-        return union(getindex.(Ref(x), idx.cols)...)
-    elseif idx.operator == :intersect
-        return intersect(getindex.(Ref(x), idx.cols)...)
-    else
-        throw(ArgumentError("Unsupported operator :$(idx.operator). Either " *
-                            ":union or :intersect is required"))
-    end
+    return idx.operator(getindex.(Ref(x), idx.cols)...)
 end
-# the definition below is needed because `:` is Function
 
+# the definition below is needed because `:` is a Function
 @inline Base.getindex(x::AbstractIndex, idx::Cols{Tuple{typeof(:)}}) = x[:]
 @inline Base.getindex(x::AbstractIndex, idx::Cols{<:Tuple{Function}}) =
     findall(idx.cols[1], names(x))
