@@ -1311,12 +1311,29 @@ end
 
     tab = Tables.table(["a" "b" "c" "d" "e"], header=[:a, :b, :c, :d, :e])
     row = tab |> Tables.rows |> first
-    @test_throws MethodError insert!(df, 3, row, cols=:intersect)
+
+    buf = IOBuffer()
+    sl = SimpleLogger(buf)
+    with_logger(sl) do
+        @test_throws MethodError insert!(df, 3, row, cols=:intersect)
+    end
+    @test occursin("Error adding value to column :a", String(take!(buf)))
+
     @test insert!(df, 3, row, cols=:intersect, promote=true) ≅
                   DataFrame(a=[missing, 1, "a", 9, 4, missing],
                             b=[22.5, 2.0, "b", 10.0, 5.0, missing],
                             c=[missing, 3.0, "c", 11.0, 6.0, 16.5],
                             d=[missing, missing, "d", missing, missing, 15])
+    for i in [1, 2, 4, 8, 16, 32, 64, 100, 1000, 10000, 20_000, 100_000]
+        df = DataFrame()
+        mat = Any[a + 100 * b + (iseven(b) ? 0.5 : 0) for a in 1:2, b in 1:i]
+        tab = Tables.table(mat, header=Symbol.("x", 1:i))
+        for row in Tables.rows(tab)
+            push!(df, row)
+        end
+        @test eltype.(eachcol(df)) == [(isodd(i) ? Int : Float64) for i in 1:ncol(df)]
+        @test df == DataFrame(mat, :auto)
+    end
 end
 
 end # module

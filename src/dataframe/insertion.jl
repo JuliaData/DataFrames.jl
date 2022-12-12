@@ -359,8 +359,8 @@ allowing it is freshly allocated and stored in `df`. If `promote=false` an error
 is thrown.
 
 As a special case, if `df` has no columns and `row` is a `NamedTuple` or
-`DataFrameRow`, columns are created for all values in `row`, using their names
-and order.
+`DataFrameRow`, or `OrderedDict`, columns are created for all values in `row`,
+using their names and order.
 
 Please note that this function must not be used on a
 `DataFrame` that contains columns that are aliases (equal when compared with `===`).
@@ -766,8 +766,11 @@ function _dfr_row_inserter!(df::DataFrame, loc::Integer, dfr::DataFrameRow,
     return _row_inserter!(df, loc, dfr, mode, cols, promote, nrows)
 end
 
-_abstractrow2namedtuple(row::Tables.AbstractRow) =
-    NamedTuple(n => Tables.getcolumn(row, n) for n in Tables.columnnames(row))
+# Correctness of this conversion is ensured because dictionary constructors
+# do not perform promotion of values types
+_normalize_abstractrow(row::Tables.AbstractRow) =
+    Tables.OrderedCollections.OrderedDict(n => Tables.getcolumn(row, n) for
+                                          n in Tables.columnnames(row))
 
 Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
            cols::Symbol=:setequal,
@@ -777,7 +780,7 @@ Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
 Base.push!(df::DataFrame, row::Tables.AbstractRow;
            cols::Symbol=:setequal,
            promote::Bool=(cols in [:union, :subset])) =
-    push!(df, _abstractrow2namedtuple(row), cols=cols, promote=promote)
+    push!(df, _normalize_abstractrow(row), cols=cols, promote=promote)
 
 Base.pushfirst!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
                 cols::Symbol=:setequal,
@@ -787,7 +790,7 @@ Base.pushfirst!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
 Base.pushfirst!(df::DataFrame, row::Tables.AbstractRow;
                 cols::Symbol=:setequal,
                 promote::Bool=(cols in [:union, :subset])) =
-    pushfirst!(df, _abstractrow2namedtuple(row), cols=cols, promote=promote)
+    pushfirst!(df, _normalize_abstractrow(row), cols=cols, promote=promote)
 
 function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, NamedTuple};
                       cols::Symbol=:setequal,
@@ -801,7 +804,7 @@ end
 Base.insert!(df::DataFrame, loc::Integer, row::Tables.AbstractRow;
              cols::Symbol=:setequal,
              promote::Bool=(cols in [:union, :subset])) =
-    insert!(df, loc, _abstractrow2namedtuple(row), cols=cols, promote=promote)
+    insert!(df, loc, _normalize_abstractrow(row), cols=cols, promote=promote)
 
 function _row_inserter!(df::DataFrame, loc::Integer,
                         row::Union{AbstractDict, NamedTuple, DataFrameRow},
@@ -822,7 +825,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
     ncols = ncol(df)
     targetrows = nrows + 1
 
-    if ncols == 0 && row isa Union{NamedTuple, DataFrameRow}
+    if ncols == 0 && row isa Union{NamedTuple, DataFrameRow, Tables.OrderedCollections.OrderedDict}
         for (n, v) in pairs(row)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
         end
