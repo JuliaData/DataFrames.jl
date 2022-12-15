@@ -887,12 +887,11 @@ function Base.deleteat!(df::DataFrame, inds::AbstractVector{Bool})
     if length(inds) != size(df, 1)
         throw(BoundsError(df, (inds, :)))
     end
-    drop = _findall(inds)
     # workaround https://github.com/JuliaLang/julia/pull/41646
     if VERSION <= v"1.6.2" && drop isa UnitRange{<:Integer}
-        drop = collect(drop)
+        drop = collect(inds)
     end
-    return _deleteat!_helper(df, drop)
+    return _deleteat!_helper(df, inds)
 end
 
 Base.deleteat!(df::DataFrame, inds::Not) =
