@@ -132,11 +132,15 @@ integrated they are with DataFrames.jl.
       [GraphDataFrameBridge.jl](https://github.com/JuliaGraphs/GraphDataFrameBridge.jl)
       package.
 - **IO**:
-    - DataFrames.jl work well with a range of formats, including
-      CSVs (using [CSV.jl](https://github.com/JuliaData/CSV.jl)),
-      Apache Arrow (using [Arrow.jl](https://github.com/JuliaData/Arrow.jl))
-      Stata, SAS and SPSS files (using [ReadStatTables.jl](https://github.com/junyuan-chen/ReadStatTables.jl)),
-      and reading and writing parquet files (using [Parquet.jl](https://github.com/JuliaIO/Parquet.jl)).
+    - DataFrames.jl work well with a range of formats, including:
+        - CSVs (using [CSV.jl](https://github.com/JuliaData/CSV.jl)),
+        - Apache Arrow (using [Arrow.jl](https://github.com/JuliaData/Arrow.jl))
+        - Stata, SAS and SPSS files (using [ReadStatTables.jl](https://github.com/junyuan-chen/ReadStatTables.jl);
+          alternatively [Queryverse](https://www.queryverse.org/) users
+          can choose [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)),
+        - Parquet files
+          (using [Parquet2.jl](https://gitlab.com/ExpandingMan/Parquet2.jl)).
+        - reading R data files (.rda, .RData) (using [RData.jl](https://github.com/JuliaData/RData.jl))
 
 While not all of these libraries are tightly integrated with DataFrames.jl,
 because `DataFrame`s are essentially collections of aligned Julia vectors, so it
