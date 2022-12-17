@@ -909,7 +909,12 @@ function _deleteat!_helper(df::DataFrame, drop)
     deleteat!(col1, drop)
     newn = length(col1)
     @assert newn <= n
-
+    # the 0.05 threshold is heuristic; based on tests
+    # the assignment makes the code type-unstable but it is a small union
+    # so the overhead should be small
+    if drop isa AbstractVector{Bool} && newn < 0.05 * n
+        drop = findall(drop)
+    end
     for i in 2:length(cols)
         col = cols[i]
         # this check is done to handle column aliases
