@@ -122,6 +122,6 @@ Other data formats are supported for reading and writing in the following packag
 * Apache Avro: [Avro.jl](https://github.com/JuliaData/Avro.jl)
 * JSON: [JSONTables.jl](https://github.com/JuliaData/JSONTables.jl)
 * Parquet: [Parquet.jl](https://github.com/JuliaIO/Parquet.jl)
-* Stata, SPSS, and SAS: [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)
+* Stata, SAS and SPSS: [ReadStatTables.jl](https://github.com/junyuan-chen/ReadStatTables.jl)
 * Microsoft Excel (XLSX): [XLSX.jl](https://github.com/felipenoris/XLSX.jl)
 * Copying/pasting to clipboard, for sending data to and from spreadsheets: [ClipData.jl](https://github.com/pdeffebach/ClipData.jl)
