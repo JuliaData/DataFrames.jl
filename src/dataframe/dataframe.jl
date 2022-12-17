@@ -889,7 +889,7 @@ function Base.deleteat!(df::DataFrame, inds::AbstractVector{Bool})
     end
     # workaround https://github.com/JuliaLang/julia/pull/41646
     if VERSION <= v"1.6.2" && drop isa UnitRange{<:Integer}
-        drop = collect(inds)
+        inds = collect(inds)
     end
     return _deleteat!_helper(df, inds)
 end
@@ -909,10 +909,10 @@ function _deleteat!_helper(df::DataFrame, drop)
     deleteat!(col1, drop)
     newn = length(col1)
     @assert newn <= n
-    # the 0.05 threshold is heuristic; based on tests
+    # the 0.06 threshold is heuristic; based on tests
     # the assignment makes the code type-unstable but it is a small union
     # so the overhead should be small
-    if drop isa AbstractVector{Bool} && newn < 0.05 * n
+    if drop isa AbstractVector{Bool} && newn < 0.06 * n
         drop = findall(drop)
     end
     for i in 2:length(cols)
