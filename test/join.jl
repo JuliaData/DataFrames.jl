@@ -2209,6 +2209,17 @@ end
 end
 
 @testset "wide joins" begin
+    Random.seed!(1234)
+    # we need many repetitions to make sure we cover all cases
+    @time for _ in 1:1000, k in 2:4
+        dfs = [(n=rand(10:20);
+                DataFrame("id" => randperm(n), "x$i" => 1:n)) for i in 1:4]
+        @test issorted(innerjoin(dfs..., on="id", order=:left)[:, 2])
+        @test issorted(outerjoin(dfs..., on="id", order=:left)[:, 2])
+        @test issorted(innerjoin(dfs..., on="id", order=:right)[:, end])
+        @test issorted(outerjoin(dfs..., on="id", order=:right)[:, end])
+    end
+
     dfs = [DataFrame("id" => 0, "x$i" => i) for i in 1:10000]
     res = innerjoin(dfs..., on="id")
     @test res == DataFrame(["id" => 0; ["x$i" => i for i in 1:10000]]) 

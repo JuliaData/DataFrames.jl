@@ -778,7 +778,7 @@ function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::Abstract
         res = innerjoin(res, dfn, on=on, makeunique=makeunique, validate=validate,
                         matchmissing=matchmissing,
                         order= order === :right ?
-                               (i == length(dfn) ? :right : :undefined) :
+                               (i == length(dfs) ? :right : :undefined) :
                                order)
     end
     return res
@@ -1268,7 +1268,7 @@ function outerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::Abstract
                    validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false),
                    matchmissing::Symbol=:error, order::Symbol=:undefined)
     res = outerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate,
-                        matchmissing=matchmissing)
+                        matchmissing=matchmissing, order=order)
     for dfn in dfs
         res = outerjoin(res, dfn, on=on, makeunique=makeunique, validate=validate,
                         matchmissing=matchmissing, order=order)
