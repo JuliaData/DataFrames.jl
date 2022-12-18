@@ -757,7 +757,7 @@ function innerjoin(df1::AbstractDataFrame, df2::AbstractDataFrame, dfs::Abstract
                    matchmissing::Symbol=:error,
                    order::Union{Nothing, Symbol}=nothing)
     res = innerjoin(df1, df2, on=on, makeunique=makeunique, validate=validate,
-                        matchmissing=matchmissing)
+                    matchmissing=matchmissing, order=order)
     for dfn in dfs
         res = innerjoin(res, dfn, on=on, makeunique=makeunique, validate=validate,
                         matchmissing=matchmissing, order=order)
@@ -1264,7 +1264,7 @@ Perform a semi join of two data frame objects and return a `DataFrame`
 containing the result. A semi join returns the subset of rows of `df1` that
 match with the keys in `df2`.
 
-The order of rows in the result is is kept from `df1`.
+The order of rows in the result is kept from `df1`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
@@ -1375,7 +1375,7 @@ Perform an anti join of two data frame objects and return a `DataFrame`
 containing the result. An anti join returns the subset of rows of `df1` that do
 not match with the keys in `df2`.
 
-The order of rows in the result is is kept from `df1`.
+The order of rows in the result is kept from `df1`.
 
 # Arguments
 - `df1`, `df2`: the `AbstractDataFrames` to be joined

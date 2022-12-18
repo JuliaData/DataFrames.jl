@@ -1,6 +1,6 @@
 # Database-Style Joins
 
-## Intoduction to joins
+## Introduction to joins
 
 We often need to combine two or more data sets together to provide a complete
 picture of the topic we are studying. For example, suppose that we have the
@@ -280,8 +280,8 @@ julia> innerjoin(a, b, on=:ID, renamecols = "_left" => "_right")
    1 │    20  John       Lawyer
 ```
 
-In the above example we added `"_left"` suffix to the non-key columns from
-the left table and `"_right"` suffix to the non-key columns from the right
+In the above example we added the `"_left"` suffix to the non-key columns from
+the left table and the `"_right"` suffix to the non-key columns from the right
 table.
 
 Alternatively it is allowed to pass a function transforming column names:
@@ -323,8 +323,8 @@ julia> innerjoin(df1, df2, on=:id)
 ERROR: ArgumentError: missing values in key columns are not allowed when matchmissing == :error
 ```
 
-If you would prefer for `missing` values to be matched as equal pass
-`matchimssing=:equal` keyword argument:
+If you would prefer `missing` values to be treated as equal pass
+the `matchmissing=:equal` keyword argument:
 
 ```jldoctest joins
 julia> innerjoin(df1, df2, on=:id, matchmissing=:equal)
@@ -388,8 +388,8 @@ julia> outerjoin(df_left, df_right, on=:id)
    7 │     7  missing        5
 ```
 
-If you would like the result to keep row order of the left table pass
-`order=:left` keyword argument:
+If you would like the result to keep the row order of the left table pass
+the `order=:left` keyword argument:
 
 ```jldoctest joins
 julia> outerjoin(df_left, df_right, on=:id, order=:left)
@@ -406,8 +406,8 @@ julia> outerjoin(df_left, df_right, on=:id, order=:left)
    7 │     7  missing        5
 ```
 
-Note that in this case keys missing from left table arre put after the keys
-present in the left table.
+Note that in this case keys missing from the left table are put after the keys
+present in it.
 
 Similarly `order=:right` keeps the order of the right table (and puts keys
 not present in it at the end):
@@ -431,7 +431,7 @@ julia> outerjoin(df_left, df_right, on=:id, order=:right)
 
 A common operation is adding data from a reference table to some main table.
 It is possible to perform such an in-place update using the `leftjoin!`
-function. In this case left table is updated in place with matching rows from
+function. In this case the left table is updated in place with matching rows from
 the right table.
 
 ```jldoctest joins
