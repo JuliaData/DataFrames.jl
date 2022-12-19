@@ -228,7 +228,7 @@ function groupby(df::AbstractDataFrame, cols;
     groups = Vector{Int}(undef, nrow(df))
     ngroups, rhashes, gslots, sorted =
         row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false),
-                        groups, skipmissing, sort === true)
+                        groups, skipmissing, sort isa NamedTuple ? true : sort)
 
     gd = GroupedDataFrame(df, copy(_names(sdf)), groups, nothing, nothing, nothing, ngroups, nothing,
                           Threads.ReentrantLock())
