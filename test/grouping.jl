@@ -4378,4 +4378,9 @@ end
     @test_throws ArgumentError combine(gdf, :a => (x -> [Dict('x' => 1)]) => AsTable)
 end
 
+@testset "sorting API" begin
+    Random.seed!(1234)
+    df = DataFrame(a=rand(-10, 10, 100), b=randperm(100))
+end
+
 end # module

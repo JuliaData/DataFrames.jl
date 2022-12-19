@@ -49,7 +49,7 @@ end
 
 """
     groupby(d::AbstractDataFrame, cols;
-            sort::Union{Bool, Nothing}=nothing,
+            sort::Union{Bool, Nothing, NamedTuple}=nothing,
             skipmissing::Bool=false)
 
 Return a `GroupedDataFrame` representing a view of an `AbstractDataFrame` split
@@ -64,18 +64,23 @@ into row groups.
   if `sort=nothing` (the default) then the fastest available grouping algorithm
   is picked and in consequence the order of groups in the result is undefined
   and may change in future releases; below a description of the current
-  implementation is provided.
+  implementation is provided. Additionally `sort` can be a `NamedTuple` having
+  some or all of `alg`, `lt`, `by`, `rev`, and `order` fields. In this case
+  the groups are sorted and their order follows the [`sortperm`](@ref) order.
 - `skipmissing` : whether to skip groups with `missing` values in one of the
   grouping columns `cols`
 
 # Details
-An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
+, NamedTupleAn iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
 for each grouping into `df`.
 Within each group, the order of rows in `df` is preserved.
 
 `cols` can be any valid data frame indexing expression.
 In particular if it is an empty vector then a single-group `GroupedDataFrame`
-is created.
+is created. As a special case, if a list of columns to group by is passed
+as a vector it can contain columns wrapped in [`order`](@ref) that will be
+used to determine order of groups if `sort` is `true` or a `NamedTuple` (if
+`sort` is `nothing` or `false`, then passing `order` is an error).
 
 A `GroupedDataFrame` also supports indexing by groups, `select`, `transform`,
 and `combine` (which applies a function to each group and combines the result
@@ -209,9 +214,9 @@ julia> for g in gd
 ```
 """
 function groupby(df::AbstractDataFrame, cols;
-                 sort::Union{Bool,Nothing}=nothing, skipmissing::Bool=false)
+                 sort::Union{Bool,Nothing,NamedTuple}=nothing, skipmissing::Bool=false)
     _check_consistency(df)
-    idxcols = index(df)[cols]
+    idxcols = index(df)[normalize_grouping_cols(cols, sort === true || sort isa NamedTuple)]
     if isempty(idxcols)
         return GroupedDataFrame(df, Symbol[], ones(Int, nrow(df)),
                                 nothing, nothing, nothing, nrow(df) == 0 ? 0 : 1,
@@ -222,17 +227,19 @@ function groupby(df::AbstractDataFrame, cols;
     groups = Vector{Int}(undef, nrow(df))
     ngroups, rhashes, gslots, sorted =
         row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false),
-                        groups, skipmissing, sort)
+                        groups, skipmissing, sort === true)
 
     gd = GroupedDataFrame(df, copy(_names(sdf)), groups, nothing, nothing, nothing, ngroups, nothing,
                           Threads.ReentrantLock())
 
     # sort groups if row_group_slots hasn't already done that
-    if sort === true && !sorted
+    if (sort === true && !sorted) || (sort isa NamedTuple)
         # Find index of representative row for each group
         idx = Vector{Int}(undef, length(gd))
         fillfirst!(nothing, idx, 1:nrow(parent(gd)), gd)
-        group_invperm = invperm(sortperm(view(parent(gd)[!, gd.cols], idx, :)))
+        sort_kwargs = sort isa NamedTuple ? sort : NamedTuple()
+        group_invperm = invperm(sortperm(view(parent(gd), idx, :),
+                                         cols; sort_kwargs...))
         groups = gd.groups
         @inbounds for i in eachindex(groups)
             gix = groups[i]
@@ -241,6 +248,26 @@ function groupby(df::AbstractDataFrame, cols;
     end
 
     return gd
+end
+
+normalize_grouping_cols(cols, sort::Bool) = cols
+
+function normalize_grouping_cols(cols::UserColOrdering, sort::Bool)
+    sort || throw(ArgumentError("passing `order` is only allowed if `sort` " *
+                                "is `true` or a `NamedTuple`"))
+    return cols.col
+end
+
+function normalize_grouping_cols(cols::AbstractVector, sort::Bool)
+    has_order = any(x -> x isa UserColOrdering, cols)
+    if has_order
+        sort || throw(ArgumentError("passing `order` is only allowed if `sort` " *
+                                    "is `true` or a `NamedTuple`"))
+        return Any[x isa UserColOrdering ? x.col : x for x in cols]
+    else
+        return cols
+    end
+    return cols.col
 end
 
 function genkeymap(gd, cols)

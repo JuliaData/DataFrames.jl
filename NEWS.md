@@ -10,6 +10,8 @@
 * Add support for `operator` keyword argument in `Cols`
   to take a set operation to apply to passed selectors (`union` by default)
   ([3224](https://github.com/JuliaData/DataFrames.jl/pull/3224))
+* Improve support for setting group order in `groupby`
+  ([3253](https://github.com/JuliaData/DataFrames.jl/pull/3253))
 
 # DataFrames.jl v1.4.4 Patch Release Notes
 
