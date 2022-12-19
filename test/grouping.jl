@@ -4380,7 +4380,43 @@ end
 
 @testset "sorting API" begin
     Random.seed!(1234)
-    df = DataFrame(a=rand(-10, 10, 100), b=randperm(100))
+    df = DataFrame(a=rand(-10:10, 100), b=rand(-10:10, 100), c=1:100)
+    for col in (:a, "a", 1, :b, "b", 2, :c, "c", 3) 
+        gdf = groupby(df, col, sort=true)
+        @test issorted(DataFrame(gdf)[:, col])
+        @test all(x -> issorted(x.c), gdf)
+        gdf = groupby(df, col, sort=NamedTuple())
+        @test issorted(DataFrame(gdf)[:, col])
+        @test all(x -> issorted(x.c), gdf)
+        gdf = groupby(df, col, sort=(rev=true,))
+        @test issorted(DataFrame(gdf)[:, col], rev=true)
+        @test all(x -> issorted(x.c), gdf)
+        gdf = groupby(df, order(col, by=abs), sort=(rev=true,))
+        @test issorted(DataFrame(gdf)[:, col], rev=true, by=abs)
+        @test all(x -> issorted(x.c), gdf)
+    end
+
+    gdf = groupby(df, [:a, :b], sort=true)
+    @test issorted(DataFrame(gdf), [:a, :b])
+    @test all(x -> issorted(x.c), gdf)
+    gdf = groupby(df, [:a, :b], sort=NamedTuple())
+    @test issorted(DataFrame(gdf), [:a, :b])
+    @test all(x -> issorted(x.c), gdf)
+    gdf = groupby(df, [:a, :b], sort=(rev=true,))
+    @test issorted(DataFrame(gdf), [:a, :b], rev=true)
+    @test all(x -> issorted(x.c), gdf)
+    gdf = groupby(df, [order(:a, by=abs), :b], sort=(rev=true,))
+    @test issorted(DataFrame(gdf), [order(:a, by=abs), :b], rev=true)
+    @test all(x -> issorted(x.c), gdf)
+    gdf = groupby(df, [:a, order(:b, rev=false)], sort=(rev=true,))
+    @test issorted(DataFrame(gdf), [:a, order(:b, rev=false)], rev=true)
+    @test all(x -> issorted(x.c), gdf)
+
+    @test_throws ArgumentError groupby(df, order(:a))
+    @test_throws ArgumentError groupby(df, order(:a), sort=false)
+    @test_throws ArgumentError groupby(df, [:b, order(:a)])
+    @test_throws ArgumentError groupby(df, [:b, order(:a)], sort=false)
+    @test_throws MethodError groupby(df, :a, sort=(x=1,))
 end
 
 end # module
