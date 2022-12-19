@@ -268,7 +268,6 @@ function normalize_grouping_cols(cols::AbstractVector, sort::Bool)
     else
         return cols
     end
-    return cols.col
 end
 
 function genkeymap(gd, cols)

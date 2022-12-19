@@ -1284,10 +1284,10 @@ the source data frame of a grouping key then pass `sort=false` keyword argument
 to `groupby`:
 
 ```jldoctest sac
-julia> df
-6×3 DataFrame
+julia> push!(df, ["a", 100, 100]) # push row with large integer values to disable default sorting
+7×3 DataFrame
  Row │ customer_id  transaction_id  volume 
-     │ String       Int64           Int64
+     │ String       Int64           Int64  
 ─────┼─────────────────────────────────────
    1 │ a                        12       2
    2 │ b                        15       3
@@ -1295,28 +1295,31 @@ julia> df
    4 │ b                        17       4
    5 │ c                        13       5
    6 │ c                        11       9
+   7 │ a                       100     100
 
 julia> keys(groupby(df, :volume))
-6-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
+7-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
  GroupKey: (volume = 2,)
  GroupKey: (volume = 3,)
  GroupKey: (volume = 1,)
  GroupKey: (volume = 4,)
  GroupKey: (volume = 5,)
  GroupKey: (volume = 9,)
+ GroupKey: (volume = 100,)
 ```
 
 If you want to have them sorted in ascending order pass `sort=true`:
 
 ```
 julia> keys(groupby(df, :volume, sort=true))
-6-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
+7-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
  GroupKey: (volume = 1,)
  GroupKey: (volume = 2,)
  GroupKey: (volume = 3,)
  GroupKey: (volume = 4,)
  GroupKey: (volume = 5,)
  GroupKey: (volume = 9,)
+ GroupKey: (volume = 100,)
 ```
 
 You can also use [`order`](@ref) wrapper when passing a column name to group by
