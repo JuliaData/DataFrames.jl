@@ -71,7 +71,8 @@ into row groups.
   grouping columns `cols`
 
 # Details
-, NamedTupleAn iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
+
+An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
 for each grouping into `df`.
 Within each group, the order of rows in `df` is preserved.
 
