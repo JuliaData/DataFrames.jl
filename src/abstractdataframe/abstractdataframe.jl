@@ -970,6 +970,7 @@ julia> dropmissing(df, [:x, :y])
 @inline function dropmissing(df::AbstractDataFrame,
                              cols::Union{ColumnIndex, MultiColumnIndex}=:;
                              view::Bool=false, disallowmissing::Bool=!view)
+    # Changes to be made here
     rowidxs = completecases(df, cols)
     if view
         if disallowmissing
