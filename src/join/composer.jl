@@ -200,7 +200,7 @@ end
 # `delta` is by how much integers in `input` need to be shifted so that
 # smallest of them has index 1
 #
-# After the first loop `count` vector holds in location `i-delta` number of
+# After the first loop `count` vector holds in location `i-delta` the number of
 # times an integer `i` is present in `input`.
 # After the second loop a cumulative sum of these values is stored.
 # Third loop updates `count` to determine the locations where data should go.
