@@ -37,12 +37,12 @@ wrangling functionality through a familiar interface.
 To understand the toolchain in more detail, have a look at the tutorials in this manual.
 New users can start with the [First Steps with DataFrames.jl](@ref) section.
 
-If you do not have a significant programming experience you might find 
-[DataFramesMeta.jl](https://juliadata.github.io/DataFramesMeta.jl/stable/) package
-or one of the other convenience packages discussed in
-[Data manipulation frameworks](@ref) section of this manual
-helpful when writing more advanced data transformations. These packages provide
-convenience syntax similar to [dplyr](https://dplyr.tidyverse.org/) in R.
+You may find the [DataFramesMeta.jl](https://juliadata.github.io/DataFramesMeta.jl/stable/)
+package or one of the other convenience packages discussed in
+the [Data manipulation frameworks](@ref) section of this manual
+helpful when writing more advanced data transformations,
+especially if you do not have a significant programming experience.
+These packages provide convenience syntax similar to [dplyr](https://dplyr.tidyverse.org/) in R.
 
 ## DataFrames.jl and the Julia Data Ecosystem
 
