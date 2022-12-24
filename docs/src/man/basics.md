@@ -1778,7 +1778,7 @@ julia> select(german, Not(:Age))
 
 In the next example we drop columns `"Age"`, `"Saving accounts"`,
 `"Checking account"`, `"Credit amount"`, and `"Purpose"`. Note that this time
-we use strings column selectors because some of the column names have spaces
+we use string column selectors because some of the column names have spaces
 in them:
 
 ```jldoctest dataframe
@@ -1809,7 +1809,7 @@ julia> select(german, Not(["Age", "Saving accounts", "Checking account",
 ```
 
 As another example let us present that the `r"S"` regular expression we used
-above also works as we have described above:
+above also works with `select`:
 
 ```jldoctest dataframe
 julia> select(german, r"S")
@@ -1837,7 +1837,7 @@ julia> select(german, r"S")
 ```
 
 The benefit of `select` or `combine` over indexing is that it is easier
-to get a union of several column selectors, e.g.:
+to get the union of several column selectors, e.g.:
 
 ```jldoctest dataframe
 julia> select(german, r"S", "Job", 1)
