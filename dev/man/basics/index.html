@@ -999,7 +999,7 @@ ERROR: ArgumentError: New columns must have the same length as old columns</code
   998 │    38   6.16441
   999 │    23   4.79583
  1000 │    27   5.19615
-        985 rows omitted</code></pre><p>When we pass just a column (without the <code>=&gt;</code> part) we can use any column selector that is allowed in indexing. Here we exclude the column <code>:Age</code> from the resulting data frame:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, Not(:Age))
+        985 rows omitted</code></pre><p>When we pass just a column (without the <code>=&gt;</code> part) we can use any column selector that is allowed in indexing.</p><p>Here we exclude the column <code>:Age</code> from the resulting data frame:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, Not(:Age))
 1000×9 DataFrame
   Row │ id     Sex      Job    Housing  Saving accounts  Checking account  Cre ⋯
       │ Int64  String7  Int64  String7  String15         String15          Int ⋯
@@ -1020,7 +1020,30 @@ ERROR: ArgumentError: New columns must have the same length as old columns</code
   998 │   997  male         2  own      little           NA                    ⋯
   999 │   998  male         2  free     little           little
  1000 │   999  male         2  own      moderate         moderate
-                                                  3 columns and 985 rows omitted</code></pre><p>In order to select a column we just passed them as argument. As another example let us present that the <code>r&quot;S&quot;</code> regular expression we used above also works as we have described above:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, r&quot;S&quot;)
+                                                  3 columns and 985 rows omitted</code></pre><p>In the next example we drop columns <code>&quot;Age&quot;</code>, <code>&quot;Saving accounts&quot;</code>, <code>&quot;Checking account&quot;</code>, <code>&quot;Credit amount&quot;</code>, and <code>&quot;Purpose&quot;</code>. Note that this time we use string column selectors because some of the column names have spaces in them:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, Not([&quot;Age&quot;, &quot;Saving accounts&quot;, &quot;Checking account&quot;,
+                           &quot;Credit amount&quot;, &quot;Purpose&quot;]))
+1000×5 DataFrame
+  Row │ id     Sex      Job    Housing  Duration 
+      │ Int64  String7  Int64  String7  Int64
+──────┼──────────────────────────────────────────
+    1 │     0  male         2  own             6
+    2 │     1  female       2  own            48
+    3 │     2  male         1  own            12
+    4 │     3  male         2  free           42
+    5 │     4  male         2  free           24
+    6 │     5  male         1  free           36
+    7 │     6  male         2  own            24
+    8 │     7  male         3  rent           36
+  ⋮   │   ⋮       ⋮       ⋮       ⋮        ⋮
+  994 │   993  male         3  own            36
+  995 │   994  male         2  own            12
+  996 │   995  female       1  own            12
+  997 │   996  male         3  own            30
+  998 │   997  male         2  own            12
+  999 │   998  male         2  free           45
+ 1000 │   999  male         2  own            45
+                                 985 rows omitted
+</code></pre><p>As another example let us present that the <code>r&quot;S&quot;</code> regular expression we used above also works with <code>select</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, r&quot;S&quot;)
 1000×2 DataFrame
   Row │ Sex      Saving accounts
       │ String7  String15
@@ -1041,7 +1064,7 @@ ERROR: ArgumentError: New columns must have the same length as old columns</code
   998 │ male     little
   999 │ male     little
  1000 │ male     moderate
-                 985 rows omitted</code></pre><p>The benefit of <code>select</code> or <code>combine</code> over indexing is that it is easier to combine several column selectors, e.g.:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, r&quot;S&quot;, &quot;Job&quot;, 1)
+                 985 rows omitted</code></pre><p>The benefit of <code>select</code> or <code>combine</code> over indexing is that it is easier to get the union of several column selectors, e.g.:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, r&quot;S&quot;, &quot;Job&quot;, 1)
 1000×4 DataFrame
   Row │ Sex      Saving accounts  Job    id
       │ String7  String15         Int64  Int64
@@ -1291,4 +1314,4 @@ julia&gt; transform(df, :Age =&gt; maximum)
   998 │    38      2     40
   999 │    23      2     25
  1000 │    27      2     29
-            985 rows omitted</code></pre><p>In the examples given in this introductory tutorial we did not cover all options of the transformation mini-language. More advanced examples, in particular showing how to pass or produce multiple columns using the <code>AsTable</code> operation (which you might have seen in some DataFrames.jl demos) are given in the later sections of the manual.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../getting_started/">Getting Started »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Saturday 24 December 2022 12:18">Saturday 24 December 2022</span>. Using Julia version 1.8.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+            985 rows omitted</code></pre><p>In the examples given in this introductory tutorial we did not cover all options of the transformation mini-language. More advanced examples, in particular showing how to pass or produce multiple columns using the <code>AsTable</code> operation (which you might have seen in some DataFrames.jl demos) are given in the later sections of the manual.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../getting_started/">Getting Started »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Saturday 24 December 2022 12:40">Saturday 24 December 2022</span>. Using Julia version 1.8.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
