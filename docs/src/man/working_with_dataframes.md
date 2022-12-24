@@ -407,6 +407,12 @@ julia> df[in.(df.A, Ref([1, 5, 601])), :]
    3 │   601      7    301
 ```
 
+The `Ref` wrapper to `[1, 5, 601]` is needed to protect the vector against being
+broadcasted over (the vector will be treated as a scalar when wrapped in `Ref`).
+You could write this operation using a comprehension like this (note that it would be slower
+so it is not recommended):
+`[a in [1, 5, 601] for a in df.A]`.
+
 Equivalently, the `in` function can be called with a single argument to create
 a function object that tests whether each value belongs to the subset
 (partial application of `in`): `df[in([1, 5, 601]).(df.A), :]`.
