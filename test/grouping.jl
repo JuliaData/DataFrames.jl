@@ -4379,50 +4379,131 @@ end
 end
 
 @testset "sorting API" begin
+    # simple tests
+    df = DataFrame(x=["b", "c", "b", "a", "c"])
+    @test getindex.(keys(groupby(df, :x)), 1) == ["b", "c", "a"]
+    @test getindex.(keys(groupby(df, :x, sort=true)), 1) == ["a", "b", "c"]
+    @test getindex.(keys(groupby(df, :x, sort=NamedTuple())), 1) == ["a", "b", "c"]
+    @test getindex.(keys(groupby(df, :x, sort=false)), 1) == ["b", "c", "a"]
+    @test getindex.(keys(groupby(df, order(:x))), 1) == ["a", "b", "c"]
+    @test getindex.(keys(groupby(df, order(:x), sort=true)), 1) == ["a", "b", "c"]
+    @test_throws ArgumentError groupby(df, order(:x), sort=false)
+    @test getindex.(keys(groupby(df, order(:x), sort=NamedTuple())), 1) == ["a", "b", "c"]
+    @test getindex.(keys(groupby(df, [order(:x)])), 1) == ["a", "b", "c"]
+    @test getindex.(keys(groupby(df, [order(:x)], sort=true)), 1) == ["a", "b", "c"]
+    @test_throws ArgumentError groupby(df, [order(:x)], sort=false)
+    @test getindex.(keys(groupby(df, [order(:x)], sort=NamedTuple())), 1) == ["a", "b", "c"]
+    @test getindex.(keys(groupby(df, order(:x, rev=true))), 1) == ["c", "b", "a"]
+    @test getindex.(keys(groupby(df, order(:x, rev=true), sort=true)), 1) == ["c", "b", "a"]
+    @test getindex.(keys(groupby(df, order(:x, rev=true), sort=NamedTuple())), 1) == ["c", "b", "a"]
+    @test getindex.(keys(groupby(df, [order(:x, rev=true)])), 1) == ["c", "b", "a"]
+    @test getindex.(keys(groupby(df, [order(:x, rev=true)], sort=true)), 1) == ["c", "b", "a"]
+    @test getindex.(keys(groupby(df, [order(:x, rev=true)], sort=NamedTuple())), 1) == ["c", "b", "a"]
+    @test getindex.(keys(groupby(df, :x, sort=(;rev=true))), 1) == ["c", "b", "a"]
+    @test getindex.(keys(groupby(df, [:x], sort=(;rev=true))), 1) == ["c", "b", "a"]
+   
+    # by default sorting is not applied as range of values is wide
+    df = DataFrame(x=[2, 100, 2, 1, 100])
+    @test getindex.(keys(groupby(df, :x)), 1) == [2, 100, 1]
+    @test getindex.(keys(groupby(df, :x, sort=true)), 1) == [1, 2, 100]
+    @test getindex.(keys(groupby(df, :x, sort=NamedTuple())), 1) == [1, 2, 100]
+    @test getindex.(keys(groupby(df, :x, sort=false)), 1) == [2, 100, 1]
+    @test getindex.(keys(groupby(df, order(:x))), 1) == [1, 2, 100]
+    @test getindex.(keys(groupby(df, [order(:x)])), 1) == [1, 2, 100]
+    @test getindex.(keys(groupby(df, order(:x, rev=true))), 1) == [100, 2, 1]
+    @test getindex.(keys(groupby(df, [order(:x, rev=true)])), 1) == [100, 2, 1]
+    @test getindex.(keys(groupby(df, :x, sort=(;rev=true))), 1) == [100, 2, 1]
+    @test getindex.(keys(groupby(df, [:x], sort=(;rev=true))), 1) == [100, 2, 1]
+
+    # by default sorting is applied as range of values is wide
+    df = DataFrame(x=[2, 3, 2, 1, 3])
+    @test getindex.(keys(groupby(df, :x)), 1) == [1, 2, 3]
+    @test getindex.(keys(groupby(df, :x, sort=true)), 1) == [1, 2, 3]
+    @test getindex.(keys(groupby(df, :x, sort=NamedTuple())), 1) == [1, 2, 3]
+    @test getindex.(keys(groupby(df, :x, sort=false)), 1) == [2, 3, 1]
+    @test getindex.(keys(groupby(df, order(:x))), 1) == [1, 2, 3]
+    @test getindex.(keys(groupby(df, [order(:x)])), 1) == [1, 2, 3]
+    @test getindex.(keys(groupby(df, order(:x, rev=true))), 1) == [3, 2, 1]
+    @test getindex.(keys(groupby(df, [order(:x, rev=true)])), 1) == [3, 2, 1]
+    @test getindex.(keys(groupby(df, :x, sort=(;rev=true))), 1) == [3, 2, 1]
+    @test getindex.(keys(groupby(df, [:x], sort=(;rev=true))), 1) == [3, 2, 1]
+
+    # randomized tests
     Random.seed!(1234)
-    df = DataFrame(a=rand(-10:10, 100), b=rand(-10:10, 100), c=1:100)
-    for col in (:a, "a", 1, :b, "b", 2, :c, "c", 3) 
-        gdf = groupby(df, col, sort=true)
-        @test issorted(DataFrame(gdf)[:, col])
+    df1 = DataFrame(a=rand(-10:10, 100), b=rand(-10:10, 100), c=1:100)
+    df2 = string.(df1, pad=3)
+
+    for df in (df1, df2)
+        for col in (:a, "a", 1, :b, "b", 2, :c, "c", 3) 
+            gdf = groupby(df, order(col))
+            @test issorted(DataFrame(gdf)[:, col])
+            @test all(x -> issorted(x.c), gdf)
+            gdf = groupby(df, col, sort=true)
+            @test issorted(DataFrame(gdf)[:, col])
+            @test all(x -> issorted(x.c), gdf)
+            gdf = groupby(df, order(col), sort=true)
+            @test issorted(DataFrame(gdf)[:, col])
+            @test all(x -> issorted(x.c), gdf)
+            gdf = groupby(df, col, sort=NamedTuple())
+            @test issorted(DataFrame(gdf)[:, col])
+            @test all(x -> issorted(x.c), gdf)
+            gdf = groupby(df, order(col), sort=NamedTuple())
+            @test issorted(DataFrame(gdf)[:, col])
+            @test all(x -> issorted(x.c), gdf)
+            gdf = groupby(df, col, sort=(rev=true,))
+            @test issorted(DataFrame(gdf)[:, col], rev=true)
+            @test all(x -> issorted(x.c), gdf)
+            if eltype(df[!, col]) === Int
+                gdf = groupby(df, order(col, by=abs), sort=(rev=true,))
+                @test issorted(DataFrame(gdf)[:, col], rev=true, by=abs)
+            else
+                gdf = groupby(df, order(col, by=abs∘(x -> parse(Int, x))), sort=(rev=true,))
+                @test issorted(DataFrame(gdf)[:, col], rev=true, by=abs∘(x -> parse(Int, x)))
+            end
+            @test all(x -> issorted(x.c), gdf)
+            gdf = groupby(df, col, sort=false)
+            @test getindex.(keys(gdf), 1) == unique(df[!, col])
+            @test all(x -> issorted(x.c), gdf)
+        end
+
+        gdf = groupby(df, [:a, :b], sort=true)
+        @test issorted(DataFrame(gdf), [:a, :b])
         @test all(x -> issorted(x.c), gdf)
-        gdf = groupby(df, col, sort=NamedTuple())
-        @test issorted(DataFrame(gdf)[:, col])
+        gdf = groupby(df, [:a, order(:b)])
+        @test issorted(DataFrame(gdf), [:a, :b])
         @test all(x -> issorted(x.c), gdf)
-        gdf = groupby(df, col, sort=(rev=true,))
-        @test issorted(DataFrame(gdf)[:, col], rev=true)
+        gdf = groupby(df, [:a, order(:b)], sort=true)
+        @test issorted(DataFrame(gdf), [:a, :b])
         @test all(x -> issorted(x.c), gdf)
-        gdf = groupby(df, order(col, by=abs), sort=(rev=true,))
-        @test issorted(DataFrame(gdf)[:, col], rev=true, by=abs)
+        gdf = groupby(df, [:a, :b], sort=NamedTuple())
+        @test issorted(DataFrame(gdf), [:a, :b])
         @test all(x -> issorted(x.c), gdf)
-        gdf = groupby(df, col, sort=false)
-        @test getindex.(keys(gdf), 1) == unique(df[!, col])
+        gdf = groupby(df, [:a, order(:b)], sort=NamedTuple())
+        @test issorted(DataFrame(gdf), [:a, :b])
         @test all(x -> issorted(x.c), gdf)
+        gdf = groupby(df, [:a, :b], sort=(rev=true,))
+        @test issorted(DataFrame(gdf), [:a, :b], rev=true)
+        @test all(x -> issorted(x.c), gdf)
+        if eltype(df[!, col]) === Int
+            gdf = groupby(df, [order(:a, by=abs), :b], sort=(rev=true,))
+            @test issorted(DataFrame(gdf), [order(:a, by=abs), :b], rev=true)
+            @test all(x -> issorted(x.c), gdf)
+        else
+            gdf = groupby(df, [order(:a, by=abs∘(x -> parse(Int, x))), :b], sort=(rev=true,))
+            @test issorted(DataFrame(gdf), [order(:a, by=abs∘(x -> parse(Int, x))), :b], rev=true)
+            @test all(x -> issorted(x.c), gdf)
+        end
+        gdf = groupby(df, [:a, order(:b, rev=false)], sort=(rev=true,))
+        @test issorted(DataFrame(gdf), [:a, order(:b, rev=false)], rev=true)
+        @test all(x -> issorted(x.c), gdf)
+        gdf = groupby(df, [:a, :b], sort=false)
+        @test Tuple.(keys(gdf)) == unique(Tuple.(eachrow(df[!, [:a, :b]])))
+        @test all(x -> issorted(x.c), gdf)
+
+        @test_throws ArgumentError groupby(df, order(:a), sort=false)
+        @test_throws ArgumentError groupby(df, [:b, order(:a)], sort=false)
+        @test_throws MethodError groupby(df, :a, sort=(x=1,))
     end
-
-    gdf = groupby(df, [:a, :b], sort=true)
-    @test issorted(DataFrame(gdf), [:a, :b])
-    @test all(x -> issorted(x.c), gdf)
-    gdf = groupby(df, [:a, :b], sort=NamedTuple())
-    @test issorted(DataFrame(gdf), [:a, :b])
-    @test all(x -> issorted(x.c), gdf)
-    gdf = groupby(df, [:a, :b], sort=(rev=true,))
-    @test issorted(DataFrame(gdf), [:a, :b], rev=true)
-    @test all(x -> issorted(x.c), gdf)
-    gdf = groupby(df, [order(:a, by=abs), :b], sort=(rev=true,))
-    @test issorted(DataFrame(gdf), [order(:a, by=abs), :b], rev=true)
-    @test all(x -> issorted(x.c), gdf)
-    gdf = groupby(df, [:a, order(:b, rev=false)], sort=(rev=true,))
-    @test issorted(DataFrame(gdf), [:a, order(:b, rev=false)], rev=true)
-    @test all(x -> issorted(x.c), gdf)
-    gdf = groupby(df, [:a, :b], sort=false)
-    @test Tuple.(keys(gdf)) == unique(Tuple.(eachrow(df[!, [:a, :b]])))
-    @test all(x -> issorted(x.c), gdf)
-
-    @test_throws ArgumentError groupby(df, order(:a))
-    @test_throws ArgumentError groupby(df, order(:a), sort=false)
-    @test_throws ArgumentError groupby(df, [:b, order(:a)])
-    @test_throws ArgumentError groupby(df, [:b, order(:a)], sort=false)
-    @test_throws MethodError groupby(df, :a, sort=(x=1,))
 end
 
 end # module

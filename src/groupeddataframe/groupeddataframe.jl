@@ -63,7 +63,8 @@ into row groups.
   special case, if a list of columns to group by is passed as a vector it can
   contain columns wrapped in [`order`](@ref) that will be used to determine
   the order of groups if `sort` is `true` or a `NamedTuple` (if `sort` is
-  `nothing` or `false`, then passing `order` is an error).
+  `false`, then passing `order` is an error; if `sort` is `nothing`
+  then it is set to `true` when `order` is passed).
 - `sort` : if `sort=true` sort groups according to the values of the grouping
   columns `cols`; if `sort=false` groups are created in their order of
   appearance in `df`; if `sort=nothing` (the default) then the fastest available
@@ -109,7 +110,8 @@ and none of them is equal to `-0.0`.
 
 # See also
 
-[`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!`](@ref)
+[`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref),
+[`transform!`](@ref)
 
 # Examples
 ```jldoctest
@@ -216,7 +218,26 @@ julia> for g in gd
 function groupby(df::AbstractDataFrame, cols;
                  sort::Union{Bool,Nothing,NamedTuple}=nothing, skipmissing::Bool=false)
     _check_consistency(df)
-    idxcols = index(df)[normalize_grouping_cols(cols, sort === true || sort isa NamedTuple)]
+    if cols isa UserColOrdering ||
+       (cols isa AbstractVector && any(x -> x isa UserColOrdering, cols))
+        if isnothing(sort) || sort === true
+            # if sort === true replace it with NamedTuple to avoid sorting
+            # in row_group_slots as we will perform sorting later
+            sort = NamedTuple()
+        elseif sort === false
+            throw(ArgumentError("passing `order` is only allowed if `sort` " *
+                                "is `true`, `nothing`, or a `NamedTuple`"))
+        end
+        gcols = if cols isa UserColOrdering
+                    cols.col
+                else
+                    Any[x isa UserColOrdering ? x.col : x for x in cols]
+                end
+    else
+        gcols = cols
+    end
+
+    idxcols = index(df)[gcols]
     if isempty(idxcols)
         return GroupedDataFrame(df, Symbol[], ones(Int, nrow(df)),
                                 nothing, nothing, nothing, nrow(df) == 0 ? 0 : 1,
@@ -229,8 +250,8 @@ function groupby(df::AbstractDataFrame, cols;
         row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false),
                         groups, skipmissing, sort isa NamedTuple ? nothing : sort)
 
-    gd = GroupedDataFrame(df, copy(_names(sdf)), groups, nothing, nothing, nothing, ngroups, nothing,
-                          Threads.ReentrantLock())
+    gd = GroupedDataFrame(df, copy(_names(sdf)), groups, nothing, nothing, nothing,
+                          ngroups, nothing, Threads.ReentrantLock())
 
     # sort groups if row_group_slots hasn't already done that
     if (sort === true && !sorted) || (sort isa NamedTuple)
@@ -248,25 +269,6 @@ function groupby(df::AbstractDataFrame, cols;
     end
 
     return gd
-end
-
-normalize_grouping_cols(cols, sort::Bool) = cols
-
-function normalize_grouping_cols(cols::UserColOrdering, sort::Bool)
-    sort || throw(ArgumentError("passing `order` is only allowed if `sort` " *
-                                "is `true` or a `NamedTuple`"))
-    return cols.col
-end
-
-function normalize_grouping_cols(cols::AbstractVector, sort::Bool)
-    has_order = any(x -> x isa UserColOrdering, cols)
-    if has_order
-        sort || throw(ArgumentError("passing `order` is only allowed if `sort` " *
-                                    "is `true` or a `NamedTuple`"))
-        return Any[x isa UserColOrdering ? x.col : x for x in cols]
-    else
-        return cols
-    end
 end
 
 function genkeymap(gd, cols)
