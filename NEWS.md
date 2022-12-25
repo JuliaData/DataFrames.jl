@@ -3,7 +3,7 @@
 ## New functionalities
 
 * Add `Iterators.partition` support
-   ([#3212](https://github.com/JuliaData/DataFrames.jl/pull/3212))
+  ([#3212](https://github.com/JuliaData/DataFrames.jl/pull/3212))
 * Add `allunique` and allow transformations in `cols` argument of `describe`
   and `nonunique` when working with `SubDataFrame`
   ([3232](https://github.com/JuliaData/DataFrames.jl/pull/3232))
@@ -12,6 +12,15 @@
   ([3224](https://github.com/JuliaData/DataFrames.jl/pull/3224))
 * Improve support for setting group order in `groupby`
   ([3253](https://github.com/JuliaData/DataFrames.jl/pull/3253))
+* Joining functions now support `order` keyword argument allowing the user
+  to specify the order of the rows in the produced table
+  ([#3233](https://github.com/JuliaData/DataFrames.jl/pull/3233))
+
+## Bug fixes
+
+* passing very many data frames to `innerjoin` and `outerjoin`
+  does not lead to stack overflow
+  ([#3233](https://github.com/JuliaData/DataFrames.jl/pull/3233))
 
 # DataFrames.jl v1.4.4 Patch Release Notes
 

@@ -34,8 +34,15 @@ tool for working with tabular data in Julia -- as noted below, there are some
 other great libraries for certain use-cases -- but it provides great data
 wrangling functionality through a familiar interface.
 
-To understand the toolchain in more detail, have a look at the tutorials in this manual. New
-users can start with the [First Steps with DataFrames.jl](@ref) section.
+To understand the toolchain in more detail, have a look at the tutorials in this manual.
+New users can start with the [First Steps with DataFrames.jl](@ref) section.
+
+You may find the [DataFramesMeta.jl](https://juliadata.github.io/DataFramesMeta.jl/stable/)
+package or one of the other convenience packages discussed in
+the [Data manipulation frameworks](@ref) section of this manual
+helpful when writing more advanced data transformations,
+especially if you do not have a significant programming experience.
+These packages provide convenience syntax similar to [dplyr](https://dplyr.tidyverse.org/) in R.
 
 ## DataFrames.jl and the Julia Data Ecosystem
 
@@ -132,11 +139,15 @@ integrated they are with DataFrames.jl.
       [GraphDataFrameBridge.jl](https://github.com/JuliaGraphs/GraphDataFrameBridge.jl)
       package.
 - **IO**:
-    - DataFrames.jl work well with a range of formats, including
-      CSVs (using [CSV.jl](https://github.com/JuliaData/CSV.jl)),
-      Apache Arrow (using [Arrow.jl](https://github.com/JuliaData/Arrow.jl))
-      Stata, SPSS, and SAS files (using [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)),
-      and reading and writing parquet files (using [Parquet.jl](https://github.com/JuliaIO/Parquet.jl)).
+    - DataFrames.jl work well with a range of formats, including:
+        - CSV files (using [CSV.jl](https://github.com/JuliaData/CSV.jl)),
+        - Apache Arrow (using [Arrow.jl](https://github.com/JuliaData/Arrow.jl))
+        - reading Stata, SAS and SPSS files (using [ReadStatTables.jl](https://github.com/junyuan-chen/ReadStatTables.jl);
+          alternatively [Queryverse](https://www.queryverse.org/) users
+          can choose [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)),
+        - Parquet files
+          (using [Parquet2.jl](https://gitlab.com/ExpandingMan/Parquet2.jl)),
+        - reading R data files (.rda, .RData) (using [RData.jl](https://github.com/JuliaData/RData.jl)).
 
 While not all of these libraries are tightly integrated with DataFrames.jl,
 because `DataFrame`s are essentially collections of aligned Julia vectors, so it
