@@ -66,7 +66,7 @@ into row groups.
   `nothing` or `false`, then passing `order` is an error).
 - `sort` : if `sort=true` sort groups according to the values of the grouping
   columns `cols`; if `sort=false` groups are created in their order of
-  appearance in `df` if `sort=nothing` (the default) then the fastest available
+  appearance in `df`; if `sort=nothing` (the default) then the fastest available
   grouping algorithm is picked and in consequence the order of groups in the
   result is undefined and may change in future releases; below a description of
   the current implementation is provided. Additionally `sort` can be a
