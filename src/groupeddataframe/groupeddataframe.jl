@@ -62,8 +62,8 @@ into row groups.
   picks no columns then a single-group `GroupedDataFrame` is created. As a
   special case, if a list of columns to group by is passed as a vector it can
   contain columns wrapped in [`order`](@ref) that will be used to determine
-  order of groups if `sort` is `true` or a `NamedTuple` (if `sort` is `nothing`
-  or `false`, then passing `order` is an error).
+  the order of groups if `sort` is `true` or a `NamedTuple` (if `sort` is
+  `nothing` or `false`, then passing `order` is an error).
 - `sort` : if `sort=true` sort groups according to the values of the grouping
   columns `cols`; if `sort=false` groups are created in their order of
   appearance in `df` if `sort=nothing` (the default) then the fastest available
