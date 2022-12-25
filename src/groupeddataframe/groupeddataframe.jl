@@ -58,15 +58,21 @@ into row groups.
 # Arguments
 - `df` : an `AbstractDataFrame` to split
 - `cols` : data frame columns to group by. Can be any column selector
-  ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-- `sort` : if `sort=true` sort groups according to the values of the grouping columns
-  `cols`; if `sort=false` groups are created in their order of appearance in `df`
-  if `sort=nothing` (the default) then the fastest available grouping algorithm
-  is picked and in consequence the order of groups in the result is undefined
-  and may change in future releases; below a description of the current
-  implementation is provided. Additionally `sort` can be a `NamedTuple` having
-  some or all of `alg`, `lt`, `by`, `rev`, and `order` fields. In this case
-  the groups are sorted and their order follows the [`sortperm`](@ref) order.
+  ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR). In particular if the selector
+  picks no columns then a single-group `GroupedDataFrame` is created. As a
+  special case, if a list of columns to group by is passed as a vector it can
+  contain columns wrapped in [`order`](@ref) that will be used to determine
+  order of groups if `sort` is `true` or a `NamedTuple` (if `sort` is `nothing`
+  or `false`, then passing `order` is an error).
+- `sort` : if `sort=true` sort groups according to the values of the grouping
+  columns `cols`; if `sort=false` groups are created in their order of
+  appearance in `df` if `sort=nothing` (the default) then the fastest available
+  grouping algorithm is picked and in consequence the order of groups in the
+  result is undefined and may change in future releases; below a description of
+  the current implementation is provided. Additionally `sort` can be a
+  `NamedTuple` having some or all of `alg`, `lt`, `by`, `rev`, and `order`
+  fields. In this case the groups are sorted and their order follows the
+  [`sortperm`](@ref) order.
 - `skipmissing` : whether to skip groups with `missing` values in one of the
   grouping columns `cols`
 
@@ -75,13 +81,6 @@ into row groups.
 An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
 for each grouping into `df`.
 Within each group, the order of rows in `df` is preserved.
-
-`cols` can be any valid data frame indexing expression.
-In particular if it is an empty vector then a single-group `GroupedDataFrame`
-is created. As a special case, if a list of columns to group by is passed
-as a vector it can contain columns wrapped in [`order`](@ref) that will be
-used to determine order of groups if `sort` is `true` or a `NamedTuple` (if
-`sort` is `nothing` or `false`, then passing `order` is an error).
 
 A `GroupedDataFrame` also supports indexing by groups, `select`, `transform`,
 and `combine` (which applies a function to each group and combines the result

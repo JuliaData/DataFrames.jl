@@ -4394,6 +4394,9 @@ end
         gdf = groupby(df, order(col, by=abs), sort=(rev=true,))
         @test issorted(DataFrame(gdf)[:, col], rev=true, by=abs)
         @test all(x -> issorted(x.c), gdf)
+        gdf = groupby(df, col, sort=false)
+        @test getindex.(keys(gdf), 1) == unique(df[!, col])
+        @test all(x -> issorted(x.c), gdf)
     end
 
     gdf = groupby(df, [:a, :b], sort=true)
@@ -4410,6 +4413,9 @@ end
     @test all(x -> issorted(x.c), gdf)
     gdf = groupby(df, [:a, order(:b, rev=false)], sort=(rev=true,))
     @test issorted(DataFrame(gdf), [:a, order(:b, rev=false)], rev=true)
+    @test all(x -> issorted(x.c), gdf)
+    gdf = groupby(df, [:a, :b], sort=false)
+    @test Tuple.(keys(gdf)) == unique(Tuple.(eachrow(df[!, [:a, :b]])))
     @test all(x -> issorted(x.c), gdf)
 
     @test_throws ArgumentError groupby(df, order(:a))
