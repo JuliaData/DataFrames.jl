@@ -479,6 +479,68 @@ end
     @test df[:, Cols(x -> x[end] == '3')] == DataFrame()
     @test_throws ArgumentError df[:, Cols(x -> true, 1)]
     @test_throws ArgumentError df[:, Cols(1, x -> true)]
+
+    @test ncol(select(df, Cols(operator=intersect))) == 0
+    @test ncol(df[:, Cols(operator=intersect)]) == 0
+
+    @test select(df, Cols(:, operator=intersect)) == df[:, :]
+    @test df[:, Cols(:, operator=intersect)] == df[:, :]
+
+    df = DataFrame(a=1, b=2, c=3)
+    @test select(df, Cols(1, 2, operator=intersect)) == df[:, 2:1]
+    @test select(df, Cols(1, :b, operator=intersect)) == df[:, 2:1]
+    @test select(df, Cols(:a, 2, operator=intersect)) == df[:, 2:1]
+    @test select(df, Cols(:a, :b, operator=intersect)) == df[:, 2:1]
+    @test select(df, Cols(2, 1, operator=intersect)) == df[:, 2:1]
+    @test select(df, Cols(:b, 1, operator=intersect)) == df[:, 2:1]
+    @test select(df, Cols(2, :a, operator=intersect)) == df[:, 2:1]
+    @test select(df, Cols(:b, :a, operator=intersect)) == df[:, 2:1]
+
+    @test df[:, Cols(1, 2, operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols(1, :b, operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols(:a, 2, operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols(:a, :b, operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols(2, 1, operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols(:b, 1, operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols(2, :a, operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols(:b, :a, operator=intersect)] == df[:, 2:1]
+
+    @test df[:, Cols(1, 1, 2, operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols(:a, 1, :b, operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols(:a, 2, :b, operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols(:a, :b, 2, operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols(2, 1, :a, operator=intersect)] == df[:, 2:1]
+
+    @test select(df, Cols(1, "b", operator=intersect)) == df[:, 2:1]
+    @test select(df, Cols("a", 2, operator=intersect)) == df[:, 2:1]
+    @test select(df, Cols("a", "b", operator=intersect)) == df[:, 2:1]
+    @test select(df, Cols("b", 1, operator=intersect)) == df[:, 2:1]
+    @test select(df, Cols(2, "a", operator=intersect)) == df[:, 2:1]
+    @test select(df, Cols("b", "a", operator=intersect)) == df[:, 2:1]
+
+    @test df[:, Cols(1, "b", operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols("a", 2, operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols("a", "b", operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols("b", 1, operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols(2, "a", operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols("b", "a", operator=intersect)] == df[:, 2:1]
+
+    @test df[:, Cols("a", 1, "b", operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols("a", 2, "b", operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols("a", "b", 2, operator=intersect)] == df[:, 2:1]
+    @test df[:, Cols(2, 1, "a", operator=intersect)] == df[:, 2:1]
+
+    df = DataFrame(a1=1, a2=2, b1=3, b2=4)
+    @test df[:, Cols(r"a", Not(r"1"), operator=intersect)] == df[:, [:a2]]
+    @test df[:, Cols(Not(r"1"), r"a", operator=intersect)] == df[:, [:a2]]
+    @test df[:, Cols(4:-1:1, 2:3, operator=intersect)] == df[:, [3, 2]]
+    @test df[:, Cols(1:3, 4:-1:1, 2:3, operator=intersect)] == df[:, [2, 3]]
+    @test df[:, Cols(1:3, 4:-1:1, 1:3, :b1, operator=intersect)] == df[:, [:b1]]
+    @test df[:, Cols(x -> x[1] == 'a', operator=intersect)] == df[:, [1, 2]]
+    @test df[:, Cols(x -> x[end] == '1', operator=intersect)] == df[:, [1, 3]]
+    @test df[:, Cols(x -> x[end] == '3', operator=intersect)] == DataFrame()
+    @test_throws ArgumentError df[:, Cols(x -> true, 1, operator=intersect)]
+    @test_throws ArgumentError df[:, Cols(1, x -> true, operator=intersect)]
 end
 
 @testset "views" begin

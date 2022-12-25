@@ -229,8 +229,13 @@ end
 @inline Base.getindex(x::AbstractIndex, idx::Between) = x[idx.first]:x[idx.last]
 @inline Base.getindex(x::AbstractIndex, idx::All) =
     isempty(idx.cols) ? (1:length(x)) : throw(ArgumentError("All(args...) is not supported: use Cols(args...) instead"))
-@inline Base.getindex(x::AbstractIndex, idx::Cols) =
-    isempty(idx.cols) ? Int[] : union(getindex.(Ref(x), idx.cols)...)
+
+@inline function Base.getindex(x::AbstractIndex, idx::Cols)
+    isempty(idx.cols) && return Int[]
+    return idx.operator(getindex.(Ref(x), idx.cols)...)
+end
+
+# the definition below is needed because `:` is a Function
 @inline Base.getindex(x::AbstractIndex, idx::Cols{Tuple{typeof(:)}}) = x[:]
 @inline Base.getindex(x::AbstractIndex, idx::Cols{<:Tuple{Function}}) =
     findall(idx.cols[1], names(x))
@@ -263,17 +268,20 @@ end
         if all(x -> x isa Symbol, idxs)
             return getindex(x, convert(Vector{Symbol}, idxs))
         else
-            throw(ArgumentError("mixing `Symbol`s with other selectors is not allowed"))
+            throw(ArgumentError("mixing `Symbol`s with other selectors in a vector " *
+                                "is not allowed. Maybe you wanted to use `Cols` instead?"))
         end
     elseif idxs[1] isa AbstractString
         if all(x -> x isa AbstractString, idxs)
             return getindex(x, Symbol.(idxs))
         else
-            throw(ArgumentError("mixing strings with other selectors is not allowed"))
+            throw(ArgumentError("mixing `Symbol`s with other selectors in a vector " *
+                                "is not allowed. Maybe you wanted to use `Cols` instead?"))
         end
     end
     throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); only Integer, Symbol, "*
-                        "or string values allowed when indexing by vector"))
+                        "or string values allowed when indexing by vector. " *
+                        "Maybe you wanted to use `Cols` instead?"))
 end
 
 @inline Base.getindex(x::AbstractIndex, rx::Regex) =

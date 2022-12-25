@@ -18,7 +18,7 @@ This is a list of operations that currently make use of multi-threading:
 - `getindex` when multiple columns are selected.
 - `groupby` (both when hashing is required and when fast path using `DataAPI.refpool`
   is used).
-- `join*` functions for composing output data frame (but currently not for finding
+- `*join` functions for composing output data frame (but currently not for finding
   matching rows in joined data frames).
 - `combine`, `select[!]`, and `transform[!]` on `GroupedDataFrame` when either of the conditions below is met:
   * multiple transformations are performed (each transformation is spawned in a separate task)

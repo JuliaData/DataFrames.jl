@@ -517,6 +517,16 @@ end
     @test_throws BoundsError deleteat!(df, true:true)
     df = DataFrame(a=1, b=3.0)
     @test isempty(deleteat!(df, true:true))
+
+    Random.seed!(1234)
+    for t in 0:0.005:1.0
+        # two columns are needed as the second column is affected
+        # by the adaptive algorithm
+        df = DataFrame(i=1:10^5, j=1:10^5)
+        idxs = rand(10^5) .< t
+        deleteat!(df, idxs)
+        df.i == df.j == findall(idxs)
+    end
 end
 
 @testset "describe" begin

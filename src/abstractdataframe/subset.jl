@@ -468,7 +468,7 @@ function subset!(df::AbstractDataFrame, @nospecialize(args...);
                 skipmissing::Bool=false, threads::Bool=true)
     isempty(args) && return df
     row_selector = _get_subset_conditions(df, Ref{Any}(args), skipmissing, threads)
-    return deleteat!(df, findall(!, row_selector))
+    return deleteat!(df, .!row_selector)
 end
 
 function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Bool=false,
@@ -486,7 +486,7 @@ function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Boo
     groups = gdf.groups
     lazy_lock = gdf.lazy_lock
     row_selector = _get_subset_conditions(gdf, Ref{Any}(args), skipmissing, threads)
-    res = deleteat!(df, findall(!, row_selector))
+    res = deleteat!(df, .!row_selector)
     if nrow(res) == length(groups) # we have not removed any rows
         return ungroup ? res : gdf
     end
