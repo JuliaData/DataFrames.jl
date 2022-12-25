@@ -1296,6 +1296,10 @@ end
                   DataFrame(a=[1, 9, 4, 1], b=[2, 10, 5, 2], c=[3, 11, 6, 3])
     deleteat!(df, nrow(df))
 
+    df2 = DataFrame(d="x", a="y")
+    push!(df2, rows[1], cols=:union)
+    @test df2 ≅ DataFrame(d=["x", missing], a=["y", 1], b=[missing, 2], c=[missing, 3])
+
     tab = Tables.table(Any[15 16.5], header=[:d, :c])
     row = tab |> Tables.rows |> first
     @test push!(df, row, cols=:union) ≅
