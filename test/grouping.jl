@@ -4484,7 +4484,7 @@ end
         gdf = groupby(df, [:a, :b], sort=(rev=true,))
         @test issorted(DataFrame(gdf), [:a, :b], rev=true)
         @test all(x -> issorted(x.c), gdf)
-        if eltype(df[!, col]) === Int
+        if eltype(df[!, :a]) === Int
             gdf = groupby(df, [order(:a, by=abs), :b], sort=(rev=true,))
             @test issorted(DataFrame(gdf), [order(:a, by=abs), :b], rev=true)
             @test all(x -> issorted(x.c), gdf)
