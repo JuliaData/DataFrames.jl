@@ -1322,18 +1322,13 @@ julia> keys(groupby(df, :volume, sort=true))
  GroupKey: (volume = 100,)
 ```
 
-You can also use the [`order`](@ref) wrapper when passing a column name to group by
-or pass a named tuple containing one or more of `alg`, `lt`, `by`, `rev`, and
-`order` fields that will be treated just like in [`sortperm`](@ref):
+You can also use the [`order`](@ref) wrapper when passing a column name to group
+by or pass a named tuple as `sort` keyword argument containing one or more of
+`alg`, `lt`, `by`, `rev`, and `order` fields that will be treated just like in
+[`sortperm`](@ref):
 
 ```
-julia> keys(groupby(df, :customer_id, sort=(rev=true,)))
-3-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
- GroupKey: (customer_id = "c",)
- GroupKey: (customer_id = "b",)
- GroupKey: (customer_id = "a",)
-
-julia> keys(groupby(df, [:customer_id, order(:volume, rev=true)], sort=true))
+julia> keys(groupby(df, [:customer_id, order(:volume, rev=true)]))
 6-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
  GroupKey: (customer_id = "a", volume = 2)
  GroupKey: (customer_id = "b", volume = 4)
@@ -1342,4 +1337,10 @@ julia> keys(groupby(df, [:customer_id, order(:volume, rev=true)], sort=true))
  GroupKey: (customer_id = "c", volume = 9)
  GroupKey: (customer_id = "c", volume = 5)
 
+julia> keys(groupby(df, :customer_id, sort=(rev=true,)))
+3-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
+ GroupKey: (customer_id = "c",)
+ GroupKey: (customer_id = "b",)
+ GroupKey: (customer_id = "a",)
 ```
+
