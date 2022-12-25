@@ -359,8 +359,8 @@ allowing it is freshly allocated and stored in `df`. If `promote=false` an error
 is thrown.
 
 As a special case, if `df` has no columns and `row` is a `NamedTuple` or
-`DataFrameRow`, or `OrderedDict`, columns are created for all values in `row`,
-using their names and order.
+`DataFrameRow`, or `Tables.AbstractRow`, columns are created for all values in
+`row`, using their names and order.
 
 Please note that this function must not be used on a
 `DataFrame` that contains columns that are aliases (equal when compared with `===`).
@@ -766,33 +766,20 @@ function _dfr_row_inserter!(df::DataFrame, loc::Integer, dfr::DataFrameRow,
     return _row_inserter!(df, loc, dfr, mode, cols, promote, nrows)
 end
 
-# Correctness of this conversion is ensured because dictionary constructors
-# do not perform promotion of values types
-_normalize_abstractrow(row::Tables.AbstractRow) =
-    Tables.OrderedCollections.OrderedDict(n => Tables.getcolumn(row, n) for
-                                          n in Tables.columnnames(row))
-
-Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
+Base.push!(df::DataFrame,
+           row::Union{AbstractDict, NamedTuple, Tables.AbstractRow};
            cols::Symbol=:setequal,
            promote::Bool=(cols in [:union, :subset])) =
     _row_inserter!(df, -1, row, Val{:push}(), cols, promote, -1)
 
-Base.push!(df::DataFrame, row::Tables.AbstractRow;
-           cols::Symbol=:setequal,
-           promote::Bool=(cols in [:union, :subset])) =
-    push!(df, _normalize_abstractrow(row), cols=cols, promote=promote)
-
-Base.pushfirst!(df::DataFrame, row::Union{AbstractDict, NamedTuple};
+Base.pushfirst!(df::DataFrame,
+                row::Union{AbstractDict, NamedTuple, Tables.AbstractRow};
                 cols::Symbol=:setequal,
                 promote::Bool=(cols in [:union, :subset])) =
     _row_inserter!(df, -1, row, Val{:pushfirst}(), cols, promote, -1)
 
-Base.pushfirst!(df::DataFrame, row::Tables.AbstractRow;
-                cols::Symbol=:setequal,
-                promote::Bool=(cols in [:union, :subset])) =
-    pushfirst!(df, _normalize_abstractrow(row), cols=cols, promote=promote)
-
-function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, NamedTuple};
+function Base.insert!(df::DataFrame, loc::Integer,
+                      row::Union{AbstractDict, NamedTuple, Tables.AbstractRow};
                       cols::Symbol=:setequal,
                       promote::Bool=(cols in [:union, :subset]))
     loc isa Bool && throw(ArgumentError("invalid index: $loc of type Bool"))
@@ -801,17 +788,13 @@ function Base.insert!(df::DataFrame, loc::Integer, row::Union{AbstractDict, Name
     return _row_inserter!(df, loc, row, Val{:insert}(), cols, promote, -1)
 end
 
-Base.insert!(df::DataFrame, loc::Integer, row::Tables.AbstractRow;
-             cols::Symbol=:setequal,
-             promote::Bool=(cols in [:union, :subset])) =
-    insert!(df, loc, _normalize_abstractrow(row), cols=cols, promote=promote)
-
 function _row_inserter!(df::DataFrame, loc::Integer,
-                        row::Union{AbstractDict, NamedTuple, DataFrameRow},
+                        row::Union{AbstractDict, NamedTuple, DataFrameRow,
+                                   Tables.AbstractRow},
                         mode::Union{Val{:push}, Val{:pushfirst}, Val{:insert}},
                         cols::Symbol, promote::Bool, nrows::Int)
     if nrows == -1
-        @assert row isa Union{AbstractDict, NamedTuple}
+        @assert row isa Union{AbstractDict, NamedTuple, Tables.AbstractRow}
         possible_cols = (:orderequal, :setequal, :intersect, :subset, :union)
         if !(cols in possible_cols)
             throw(ArgumentError("`cols` keyword argument must be any of :" *
@@ -825,7 +808,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
     ncols = ncol(df)
     targetrows = nrows + 1
 
-    if ncols == 0 && row isa Union{NamedTuple, DataFrameRow, Tables.OrderedCollections.OrderedDict}
+    if ncols == 0 && row isa Union{NamedTuple, DataFrameRow, Tables.AbstractRow}
         for (n, v) in pairs(row)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
         end
@@ -860,11 +843,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
                 end
                 throw(AssertionError("Error adding value to column :$colname."))
             end
-            if haskey(row, colname)
-                val = row[colname]
-            else
-                val = missing
-            end
+            val = get(row, colname, missing)
             S = typeof(val)
             T = eltype(col)
             if S <: T || promote_type(S, T) <: T
@@ -1002,3 +981,4 @@ function _row_inserter!(df::DataFrame, loc::Integer,
     _drop_all_nonnote_metadata!(df)
     return df
 end
+
