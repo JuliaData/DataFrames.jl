@@ -358,7 +358,7 @@ the type of a pushed argument then a new column with a promoted element type
 allowing it is freshly allocated and stored in `df`. If `promote=false` an error
 is thrown.
 
-As a special case, if `df` has no columns and `row` is a `NamedTuple` or
+As a special case, if `df` has no columns and `row` is a `NamedTuple`,
 `DataFrameRow`, or `Tables.AbstractRow`, columns are created for all values in
 `row`, using their names and order.
 

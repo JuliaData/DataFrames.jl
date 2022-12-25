@@ -7,8 +7,7 @@
 * Add `allunique` and allow transformations in `cols` argument of `describe`
   and `nonunique` when working with `SubDataFrame`
   ([3232](https://github.com/JuliaData/DataFrames.jl/pull/3232))
-* Add support for `Tables.AbstractRow` for `push!`, `pushfirst!`, and `insert!`;
-  allow to push `OrderedDict` to a data frame that has no columns
+* Add support for `Tables.AbstractRow` for `push!`, `pushfirst!`, and `insert!`
    ([#3245](https://github.com/JuliaData/DataFrames.jl/pull/3245))
 
 # DataFrames.jl v1.4.4 Patch Release Notes
