@@ -80,7 +80,7 @@ Within each group, the order of rows in `df` is preserved.
 In particular if it is an empty vector then a single-group `GroupedDataFrame`
 is created. As a special case, if a list of columns to group by is passed
 as a vector it can contain columns wrapped in [`order`](@ref) that will be
-used to determine order of groups if `sort` is `true` or a `NamedTuple` (if
+used to determine the order of groups if `sort` is `true` or a `NamedTuple` (if
 `sort` is `nothing` or `false`, then passing `order` is an error).
 
 A `GroupedDataFrame` also supports indexing by groups, `select`, `transform`,

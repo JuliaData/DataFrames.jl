@@ -1280,7 +1280,7 @@ two aspects:
 
 By default order of groups produced by `groupby` is undefined.
 If you want the order of groups to follow the order of first appereance in
-the source data frame of a grouping key then pass `sort=false` keyword argument
+the source data frame of a grouping key then pass the `sort=false` keyword argument
 to `groupby`:
 
 ```jldoctest sac
@@ -1322,7 +1322,7 @@ julia> keys(groupby(df, :volume, sort=true))
  GroupKey: (volume = 100,)
 ```
 
-You can also use [`order`](@ref) wrapper when passing a column name to group by
+You can also use the [`order`](@ref) wrapper when passing a column name to group by
 or pass a named tuple containing one or more of `alg`, `lt`, `by`, `rev`, and
 `order` fields that will be treated just like in [`sortperm`](@ref):
 
