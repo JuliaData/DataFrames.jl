@@ -49,7 +49,7 @@ end
 
 """
     groupby(d::AbstractDataFrame, cols;
-            sort::Union{Bool, Nothing}=nothing,
+            sort::Union{Bool, Nothing, NamedTuple}=nothing,
             skipmissing::Bool=false)
 
 Return a `GroupedDataFrame` representing a view of an `AbstractDataFrame` split
@@ -58,24 +58,30 @@ into row groups.
 # Arguments
 - `df` : an `AbstractDataFrame` to split
 - `cols` : data frame columns to group by. Can be any column selector
-  ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
-- `sort` : if `sort=true` sort groups according to the values of the grouping columns
-  `cols`; if `sort=false` groups are created in their order of appearance in `df`
-  if `sort=nothing` (the default) then the fastest available grouping algorithm
-  is picked and in consequence the order of groups in the result is undefined
-  and may change in future releases; below a description of the current
-  implementation is provided.
+  ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR). In particular if the selector
+  picks no columns then a single-group `GroupedDataFrame` is created. As a
+  special case, if `cols` is a single column or a vector of columns then
+  it can contain columns wrapped in [`order`](@ref) that will be used to
+  determine the order of groups if `sort` is `true` or a `NamedTuple` (if `sort`
+  is `false`, then passing `order` is an error; if `sort` is `nothing`
+  then it is set to `true` when `order` is passed).
+- `sort` : if `sort=true` sort groups according to the values of the grouping
+  columns `cols`; if `sort=false` groups are created in their order of
+  appearance in `df`; if `sort=nothing` (the default) then the fastest available
+  grouping algorithm is picked and in consequence the order of groups in the
+  result is undefined and may change in future releases; below a description of
+  the current implementation is provided. Additionally `sort` can be a
+  `NamedTuple` having some or all of `alg`, `lt`, `by`, `rev`, and `order`
+  fields. In this case the groups are sorted and their order follows the
+  [`sortperm`](@ref) order.
 - `skipmissing` : whether to skip groups with `missing` values in one of the
   grouping columns `cols`
 
 # Details
+
 An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
 for each grouping into `df`.
 Within each group, the order of rows in `df` is preserved.
-
-`cols` can be any valid data frame indexing expression.
-In particular if it is an empty vector then a single-group `GroupedDataFrame`
-is created.
 
 A `GroupedDataFrame` also supports indexing by groups, `select`, `transform`,
 and `combine` (which applies a function to each group and combines the result
@@ -104,7 +110,8 @@ and none of them is equal to `-0.0`.
 
 # See also
 
-[`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref), [`transform!`](@ref)
+[`combine`](@ref), [`select`](@ref), [`select!`](@ref), [`transform`](@ref),
+[`transform!`](@ref)
 
 # Examples
 ```jldoctest
@@ -209,9 +216,29 @@ julia> for g in gd
 ```
 """
 function groupby(df::AbstractDataFrame, cols;
-                 sort::Union{Bool,Nothing}=nothing, skipmissing::Bool=false)
+                 sort::Union{Bool, Nothing, NamedTuple}=nothing,
+                 skipmissing::Bool=false)
     _check_consistency(df)
-    idxcols = index(df)[cols]
+    if cols isa UserColOrdering ||
+       (cols isa AbstractVector && any(x -> x isa UserColOrdering, cols))
+        if isnothing(sort) || sort === true
+            # if sort === true replace it with NamedTuple to avoid sorting
+            # in row_group_slots as we will perform sorting later
+            sort = NamedTuple()
+        elseif sort === false
+            throw(ArgumentError("passing `order` is only allowed if `sort` " *
+                                "is `true`, `nothing`, or a `NamedTuple`"))
+        end
+        gcols = if cols isa UserColOrdering
+                    cols.col
+                else
+                    Any[x isa UserColOrdering ? x.col : x for x in cols]
+                end
+    else
+        gcols = cols
+    end
+
+    idxcols = index(df)[gcols]
     if isempty(idxcols)
         return GroupedDataFrame(df, Symbol[], ones(Int, nrow(df)),
                                 nothing, nothing, nothing, nrow(df) == 0 ? 0 : 1,
@@ -222,17 +249,19 @@ function groupby(df::AbstractDataFrame, cols;
     groups = Vector{Int}(undef, nrow(df))
     ngroups, rhashes, gslots, sorted =
         row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false),
-                        groups, skipmissing, sort)
+                        groups, skipmissing, sort isa NamedTuple ? nothing : sort)
 
-    gd = GroupedDataFrame(df, copy(_names(sdf)), groups, nothing, nothing, nothing, ngroups, nothing,
-                          Threads.ReentrantLock())
+    gd = GroupedDataFrame(df, copy(_names(sdf)), groups, nothing, nothing, nothing,
+                          ngroups, nothing, Threads.ReentrantLock())
 
     # sort groups if row_group_slots hasn't already done that
-    if sort === true && !sorted
+    if (sort === true && !sorted) || (sort isa NamedTuple)
         # Find index of representative row for each group
         idx = Vector{Int}(undef, length(gd))
         fillfirst!(nothing, idx, 1:nrow(parent(gd)), gd)
-        group_invperm = invperm(sortperm(view(parent(gd)[!, gd.cols], idx, :)))
+        sort_kwargs = sort isa NamedTuple ? sort : NamedTuple()
+        group_invperm = invperm(sortperm(view(parent(gd), idx, :),
+                                         cols; sort_kwargs...))
         groups = gd.groups
         @inbounds for i in eachindex(groups)
             gix = groups[i]

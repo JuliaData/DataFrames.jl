@@ -139,6 +139,8 @@ include("subdataframe/subdataframe.jl")
 include("dataframerow/dataframerow.jl")
 include("dataframe/insertion.jl")
 
+include("abstractdataframe/sort.jl")
+
 include("groupeddataframe/groupeddataframe.jl")
 include("groupeddataframe/utils.jl")
 
@@ -164,8 +166,6 @@ include("abstractdataframe/show.jl")
 include("groupeddataframe/show.jl")
 include("dataframerow/show.jl")
 include("abstractdataframe/io.jl")
-
-include("abstractdataframe/sort.jl")
 
 include("other/tables.jl")
 include("other/names.jl")
