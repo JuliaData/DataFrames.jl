@@ -4415,7 +4415,7 @@ end
     @test getindex.(keys(groupby(df, :x, sort=(;rev=true))), 1) == [100, 2, 1]
     @test getindex.(keys(groupby(df, [:x], sort=(;rev=true))), 1) == [100, 2, 1]
 
-    # by default sorting is applied as range of values is wide
+    # by default sorting is applied as range of values is narrow
     df = DataFrame(x=[2, 3, 2, 1, 3])
     @test getindex.(keys(groupby(df, :x)), 1) == [1, 2, 3]
     @test getindex.(keys(groupby(df, :x, sort=true)), 1) == [1, 2, 3]
