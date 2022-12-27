@@ -60,10 +60,10 @@ into row groups.
 - `cols` : data frame columns to group by. Can be any column selector
   ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR). In particular if the selector
   picks no columns then a single-group `GroupedDataFrame` is created. As a
-  special case, if a list of columns to group by is passed as a vector it can
-  contain columns wrapped in [`order`](@ref) that will be used to determine
-  the order of groups if `sort` is `true` or a `NamedTuple` (if `sort` is
-  `false`, then passing `order` is an error; if `sort` is `nothing`
+  special case, if `cols` is a single column or a vector of columns then
+  it can contain columns wrapped in [`order`](@ref) that will be used to
+  determine the order of groups if `sort` is `true` or a `NamedTuple` (if `sort`
+  is `false`, then passing `order` is an error; if `sort` is `nothing`
   then it is set to `true` when `order` is passed).
 - `sort` : if `sort=true` sort groups according to the values of the grouping
   columns `cols`; if `sort=false` groups are created in their order of
@@ -216,7 +216,8 @@ julia> for g in gd
 ```
 """
 function groupby(df::AbstractDataFrame, cols;
-                 sort::Union{Bool,Nothing,NamedTuple}=nothing, skipmissing::Bool=false)
+                 sort::Union{Bool, Nothing, NamedTuple}=nothing,
+                 skipmissing::Bool=false)
     _check_consistency(df)
     if cols isa UserColOrdering ||
        (cols isa AbstractVector && any(x -> x isa UserColOrdering, cols))
