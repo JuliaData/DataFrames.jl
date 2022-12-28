@@ -85,6 +85,7 @@ insertcols!
 invpermute!
 mapcols
 mapcols!
+nest
 permute!
 prepend!
 push!
@@ -102,6 +103,7 @@ table_transformation
 transform
 transform!
 vcat
+unnest
 ```
 
 ## Reshaping data frames between tall and wide formats
