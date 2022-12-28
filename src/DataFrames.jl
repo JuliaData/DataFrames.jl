@@ -76,6 +76,7 @@ export AbstractDataFrame,
        mapcols,
        mapcols!,
        ncol,
+       nest,
        nonunique,
        nrow,
        order,
@@ -95,6 +96,7 @@ export AbstractDataFrame,
        transform,
        transform!,
        unique!,
+       unnest,
        unstack,
        valuecols,
        metadata,
@@ -166,6 +168,7 @@ include("abstractdataframe/show.jl")
 include("groupeddataframe/show.jl")
 include("dataframerow/show.jl")
 include("abstractdataframe/io.jl")
+include("abstractdataframe/nest.jl")
 
 include("other/tables.jl")
 include("other/names.jl")

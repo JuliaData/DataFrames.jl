@@ -431,6 +431,45 @@ end
     @test flatten(DataFrame(), All()) == DataFrame()
 end
 
+@testset "flatten with scalar" begin
+    df = DataFrame(a=[1, 2, 3],
+                   b=[[1, 2], missing, [3, 4]],
+                   c=[[5, 6], missing, missing])
+    @test flatten(df, :a) ≅ df
+    @test_throws MethodError flatten(df, :b)
+    @test flatten(df, :b, scalar=Missing) ≅
+          DataFrame(a=[1, 1, 2, 3, 3],
+                    b=[1, 2, missing, 3, 4],
+                    c=[[5, 6], [5, 6], missing, missing, missing])
+    @test flatten(df, [:b, :c], scalar=Missing) ≅
+          DataFrame(a=[1, 1, 2, 3, 3],
+                    b=[1, 2, missing, 3, 4],
+                    c=[5, 6, missing, missing, missing])
+    @test flatten(df, [:b, :c], scalar=Any) ≅ df
+
+    df = DataFrame(a=missing, b=[1], c=missing, d=[[1, 2]])
+    @test_throws ArgumentError flatten(df, All(), scalar=Missing)
+    @test flatten(df, Not(:d), scalar=Missing) ≅
+        DataFrame(a=missing, b=1, c=missing, d=[[1, 2]])
+    @test flatten(df, Not(:b), scalar=Missing) ≅
+        DataFrame(a=[missing, missing], b=[1, 1], c=[missing, missing], d=[1, 2])
+
+    df = DataFrame(a="xy", b=[[1, 2]])
+    @test flatten(df, [:a, :b]) == DataFrame(a=['x', 'y'], b=[1, 2])
+    @test flatten(df, [:a, :b], scalar=String) ==
+          DataFrame(a=["xy", "xy"], b=[1, 2])
+
+    df = DataFrame(a=[[1], [], [3, 4], missing], b = missings(4), id=1:4)
+    @test flatten(df, [:a, :b], scalar=Missing) ≅
+          DataFrame(a=[1, 3, 4, missing], b=missings(4), id=[1, 3, 3, 4])
+    df = DataFrame(id=1:10, x=[1:i-1 for i in 1:10])
+    df.y = [iseven(last(v)) ? missing : v for v in df.x]
+    @test flatten(df, [:x, :y], scalar=Missing) ≅
+          DataFrame(id=reduce(vcat, [fill(i, i-1) for i in 2:10]),
+                    x=reduce(vcat, [1:i for i in 1:9]),
+                    y=reduce(vcat, [iseven(i) ? missings(i) : (1:i) for i in 1:9]))
+end
+
 @testset "stack categorical test" begin
     Random.seed!(1234)
     d1 = DataFrame(a=repeat([1:3;], inner=[4]),
