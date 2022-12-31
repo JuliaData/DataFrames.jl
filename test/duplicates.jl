@@ -158,6 +158,13 @@ end
               sort(combine(groupby(df, cols, sort=false),
                            sdf -> nrow(sdf) == 1 ? sdf : NamedTuple()), :id)
     end
+
+    @test isempty(nonunique(DataFrame(), keep=:first))
+    @test unique(DataFrame(a=[]), keep=:last) == DataFrame(a=[])
+    @test unique!(DataFrame(), keep=:only) == DataFrame()
+    @test_throws ArgumentError nonunique(DataFrame(), keep=:a)
+    @test_throws ArgumentError unique(DataFrame(), keep=:b)
+    @test_throws ArgumentError unique!(DataFrame(), keep=:c)
 end
 
 end # module

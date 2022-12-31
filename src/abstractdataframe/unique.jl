@@ -323,7 +323,7 @@ julia> df = vcat(df, df)
    7 │     3      1
    8 │     4      2
 
-julia> unique!(df)  # modifies df
+julia> unique!(copy(df))  # modifies df
 4×2 DataFrame
  Row │ i      x
      │ Int64  Int64
