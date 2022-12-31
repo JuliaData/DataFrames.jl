@@ -15,6 +15,9 @@
 * Joining functions now support `order` keyword argument allowing the user
   to specify the order of the rows in the produced table
   ([#3233](https://github.com/JuliaData/DataFrames.jl/pull/3233))
+* Add `keep` keyword argument to `nonunique`, `unique`, and `unique!`
+  allowing to specify which duplicate rows should be kept
+  ([#3260](https://github.com/JuliaData/DataFrames.jl/pull/3260))
 
 ## Bug fixes
 

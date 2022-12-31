@@ -82,12 +82,12 @@ isequal_row(cols1::Tuple{Vararg{AbstractVector}}, r1::Int,
 
 # IntegerRefarray and IntegerRefPool are two complementary view types that allow
 # wrapping arrays with Union{Real, Missing} eltype to satisfy the DataAPI.refpool
-# and DataAPI.refarray API when calling row_group_slots.
+# and DataAPI.refarray API when calling row_group_slots!.
 # IntegerRefarray converts values to Int and replaces missing with an integer
 # (set by the caller to the maximum value + 1)
 # IntegerRefPool subtracts the minimum value - 1 and replaces back the maximum
 # value + 1 to missing. This ensures all values are in 1:length(refpool), while
-# row_group_slots knows the number of (potential) groups via length(refpool)
+# row_group_slots! knows the number of (potential) groups via length(refpool)
 # and is able to skip missing values when skipmissing=true
 
 struct IntegerRefarray{T<:AbstractArray} <: AbstractVector{Int}
@@ -157,7 +157,7 @@ function refpool_and_array(x::AbstractArray)
             minval, maxval = extrema(x)
         end
         ngroups = big(maxval) - big(minval) + 1
-        # Threshold chosen with the same rationale as the row_group_slots refpool method:
+        # Threshold chosen with the same rationale as the row_group_slots! refpool method:
         # refpool approach is faster but we should not allocate too much memory either
         # We also have to avoid overflow, including with ngroups + 1 for missing values
         # (note that it would be possible to allow minval and maxval to be outside of the
@@ -181,11 +181,12 @@ end
 # 4) whether groups are already sorted
 # Optional `groups` vector is set to the group indices of each row (starting at 1)
 # With skipmissing=true, rows with missing values are attributed index 0.
-function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
-                         hash::Val,
-                         groups::Union{Vector{Int}, Nothing},
-                         skipmissing::Bool,
-                         sort::Union{Bool, Nothing})::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
+function row_group_slots!(cols::Tuple{Vararg{AbstractVector}},
+                          hash::Val,
+                          groups::Union{Vector{Int}, Nothing},
+                          skipmissing::Bool,
+                          sort::Union{Bool, Nothing}
+                         )::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
     rpa = refpool_and_array.(cols)
     if sort === false
         refpools = nothing
@@ -194,17 +195,17 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
         refpools = first.(rpa)
         refarrays = last.(rpa)
     end
-    row_group_slots(cols, refpools, refarrays, hash, groups, skipmissing, sort === true)
+    row_group_slots!(cols, refpools, refarrays, hash, groups, skipmissing, sort === true)
 end
 
 # Generic fallback method based on open addressing hash table
-function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
-                         refpools::Any,  # Ignored
-                         refarrays::Any, # Ignored
-                         hash::Val,
-                         groups::Union{Vector{Int}, Nothing},
-                         skipmissing::Bool,
-                         sort::Bool)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
+function row_group_slots!(cols::Tuple{Vararg{AbstractVector}},
+                          refpools::Any,  # Ignored
+                          refarrays::Any, # Ignored
+                          hash::Val,
+                          groups::Union{Vector{Int}, Nothing},
+                          skipmissing::Bool,
+                          sort::Bool)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
     @assert groups === nothing || length(groups) == length(cols[1])
     rhashes, missings = hashrows(cols, skipmissing)
     # inspired by Dict code from base cf. https://github.com/JuliaData/DataTables.jl/pull/17#discussion_r102481481
@@ -251,16 +252,16 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
 end
 
 # Optimized method for arrays for which DataAPI.refpool is defined and returns an AbstractVector
-function row_group_slots(cols::NTuple{N, AbstractVector},
-                         refpools::NTuple{N, AbstractVector},
-                         refarrays::NTuple{N,
-                             Union{AbstractVector{<:Real},
-                                   Missings.EachReplaceMissing{
-                                       <:AbstractVector{<:Union{Real, Missing}}}}},
-                         hash::Val{false},
-                         groups::Vector{Int},
-                         skipmissing::Bool,
-                         sort::Bool)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} where N
+function row_group_slots!(cols::NTuple{N, AbstractVector},
+                          refpools::NTuple{N, AbstractVector},
+                          refarrays::NTuple{N,
+                              Union{AbstractVector{<:Real},
+                                    Missings.EachReplaceMissing{
+                                        <:AbstractVector{<:Union{Real, Missing}}}}},
+                          hash::Val{false},
+                          groups::Vector{Int},
+                          skipmissing::Bool,
+                          sort::Bool)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} where N
     # Computing neither hashes nor groups isn't very useful,
     # and this method needs to allocate a groups vector anyway
     @assert all(col -> length(col) == length(groups), cols)
@@ -296,7 +297,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
         newcols = (skipmissing && any(refpool -> eltype(refpool) >: Missing, refpools)) ||
                   !(refarrays isa NTuple{<:Any, AbstractVector}) ||
                   sort ? cols : refarrays
-        return invoke(row_group_slots,
+        return invoke(row_group_slots!,
                       Tuple{Tuple{Vararg{AbstractVector}}, Any, Any, Val,
                             Union{Vector{Int}, Nothing}, Bool, Bool},
                       newcols, refpools, refarrays, hash, groups, skipmissing, sort)
