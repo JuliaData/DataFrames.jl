@@ -95,7 +95,7 @@ function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
         rpa = refpool_and_array.(cols)
         refpools = first.(rpa)
         refarrays = last.(rpa)
-        if isnothing(refpools) || isnothing(refarrays)
+        if any(isnothing, refpools) || any(isnothing, refarrays)
             ngroups, _, gslots, _ = row_group_slots!(cols, Val(true), nothing,
                                                      false, nothing)
             # unique rows are the first encountered group representatives,
