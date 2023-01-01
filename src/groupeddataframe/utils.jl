@@ -178,6 +178,7 @@ end
 # 2) vector of row hashes (may be empty if hash=Val(false))
 # 3) slot array for a hash map, non-zero values are
 #    the indices of the first row in a group
+#    (returned only if hashes are generated)
 # 4) whether groups are already sorted
 # Optional `groups` vector is set to the group indices of each row (starting at 1)
 # With skipmissing=true, rows with missing values are attributed index 0.

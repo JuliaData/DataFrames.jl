@@ -89,33 +89,76 @@ function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
     end
     ncol(df) == 0 && return Bool[]
     res = fill(true, nrow(df))
+    cols = ntuple(i -> df[!, i], ncol(df))
     if keep == :first
-        gslots = row_group_slots!(ntuple(i -> df[!, i], ncol(df)), Val(false),
-                                  nothing, false, nothing)[3]
-        # unique rows are the first encountered group representatives,
-        # nonunique are everything else
-        @inbounds for g_row in gslots
-            (g_row > 0) && (res[g_row] = false)
+        # if we can take advantage of references pass groups to avoid generating hashes
+        rpa = refpool_and_array.(cols)
+        refpools = first.(rpa)
+        refarrays = last.(rpa)
+        if isnothing(refpools) || isnothing(refarrays)
+            ngroups, _, gslots, _ = row_group_slots!(cols, Val(true), nothing,
+                                                     false, nothing)
+            # unique rows are the first encountered group representatives,
+            # nonunique are everything else
+            cseen = 0
+            @inbounds for g_row in gslots
+                if g_row > 0
+                    res[g_row] = false
+                    # this check slows down the process when all rows are unique
+                    # but speeds up when we have duplicates
+                    cseen += 1
+                    cseen == ngroups && break
+                end
+            end
+        else
+            groups = Vector{Int}(undef, nrow(df))
+            ngroups = row_group_slots!(cols, refpools, refarrays,
+                                       Val(false), groups, false, false)[1]
+            seen = fill(false, ngroups)
+            cseen = 0
+            for i in 1:nrow(df)
+                g = groups[i]
+                if !seen[g]
+                    seen[g] = true
+                    res[i] = false
+                    cseen += 1
+                    cseen == ngroups && break
+                end
+            end
         end
-        return res
     else
-        # TODO: this can be potentially optimized in the future,
-        #       but the use of this code is expected to be rare
-        #       so currently a simple implementation is provided
-        #       that is already visibly faster than using groupby and combine 
-        gdf = groupby(df, All())
-        idx = gdf.idx
-        @assert length(gdf.starts) == length(gdf.ends)
+        groups = Vector{Int}(undef, nrow(df))
+        ngroups = row_group_slots!(cols, Val(false), groups, false, nothing)[1]
         if keep == :last
-            for (s, e) in zip(gdf.starts, gdf.ends)
-                # keep last index in a group
-                res[idx[e]] = false
+            seen = fill(false, ngroups)
+            cseen = 0
+            for i in nrow(df):-1:1
+                g = groups[i]
+                if !seen[g]
+                    seen[g] = true
+                    res[i] = false
+                    cseen += 1
+                    cseen == ngroups && break
+                end
             end
         else
             @assert keep == :only
-            for (s, e) in zip(gdf.starts, gdf.ends)
-                # set to false if s == e
-                res[idx[e]] = s != e
+            # -1 indicates that we have not seen the group yet
+            # positive value indicates the first position we have seen the group
+            # 0 indicates that we have seen the group at least twice
+            firstseen = fill(-1, ngroups)
+            for i in 1:nrow(df)
+                g = groups[i]
+                j = firstseen[g]
+                if j == -1
+                    # this is possibly non duplicate row
+                    firstseen[g] = i
+                    res[i] = false
+                elseif j > 0
+                    # the row had duplicate
+                    res[j] = true
+                    firstseen[g] = 0
+                end
             end
         end
     end
