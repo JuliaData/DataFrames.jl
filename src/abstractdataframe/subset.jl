@@ -75,8 +75,8 @@ function assert_bool_vec(@nospecialize(fun))
     end
 end
 
-function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
-                                (args,)::Ref{Any}, skipmissing::Bool, threads::Bool)
+function _preprocess_subset_args(df::Union{AbstractDataFrame, GroupedDataFrame},
+                                 (args,)::Ref{Any})
     cs_vec = []
     for v in map(x -> broadcast_pair(df isa GroupedDataFrame ? parent(df) : df, x), args)
         if v isa AbstractVecOrMat{<:Pair}
@@ -103,8 +103,11 @@ function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
                      else
                          throw(ArgumentError("condition specifier $a is not supported by `subset`"))
                      end for (i, a) in enumerate(cs_vec)]
-    # we handle empty conditions case outside of this function
-    @assert !isempty(conditions)
+    return conditions
+end
+
+function _get_subset_conditions(df::Union{AbstractDataFrame, GroupedDataFrame},
+                                (conditions,)::Ref{Any}, skipmissing::Bool, threads::Bool)
 
     if df isa AbstractDataFrame
         df_conditions = select(df, conditions...,
@@ -274,10 +277,11 @@ julia> subset(groupby(df, :y), :v => x -> minimum(x) > 5)
 """
 function subset(df::AbstractDataFrame, @nospecialize(args...);
                 skipmissing::Bool=false, view::Bool=false, threads::Bool=true)
-    if isempty(args)
+    conditions = _preprocess_subset_args(df, Ref{Any}(args))
+    if isempty(conditions)
         row_selector = axes(df, 1)
     else
-        row_selector = _get_subset_conditions(df, Ref{Any}(args),
+        row_selector = _get_subset_conditions(df, Ref{Any}(conditions),
                                               skipmissing, threads)
     end
     return view ? Base.view(df, row_selector, :) : df[row_selector, :]
@@ -287,7 +291,8 @@ function subset(gdf::GroupedDataFrame, @nospecialize(args...);
                 skipmissing::Bool=false, view::Bool=false,
                 ungroup::Bool=true, threads::Bool=true)
     df = parent(gdf)
-    if isempty(args)
+    conditions = _preprocess_subset_args(gdf, Ref{Any}(args))
+    if isempty(conditions)
         if nrow(parent(gdf)) > 0 && minimum(gdf.groups) == 0
             throw(ArgumentError("subset does not support " *
                                 "`GroupedDataFrame`s from which some groups have " *
@@ -295,7 +300,7 @@ function subset(gdf::GroupedDataFrame, @nospecialize(args...);
         end
         row_selector = axes(df, 1)
     else
-        row_selector = _get_subset_conditions(gdf, Ref{Any}(args),
+        row_selector = _get_subset_conditions(gdf, Ref{Any}(conditions),
                                               skipmissing, threads)
     end
     res = view ? Base.view(df, row_selector, :) : df[row_selector, :]
@@ -466,15 +471,17 @@ julia> df
 """
 function subset!(df::AbstractDataFrame, @nospecialize(args...);
                 skipmissing::Bool=false, threads::Bool=true)
-    isempty(args) && return df
-    row_selector = _get_subset_conditions(df, Ref{Any}(args), skipmissing, threads)
+    conditions = _preprocess_subset_args(df, Ref{Any}(args))
+    isempty(conditions) && return df
+    row_selector = _get_subset_conditions(df, Ref{Any}(conditions), skipmissing, threads)
     return deleteat!(df, .!row_selector)
 end
 
 function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Bool=false,
                  ungroup::Bool=true, threads::Bool=true)
     df = parent(gdf)
-    if isempty(args)
+    conditions = _preprocess_subset_args(gdf, Ref{Any}(args))
+    if isempty(conditions)
         if nrow(parent(gdf)) > 0 && minimum(gdf.groups) == 0
             throw(ArgumentError("subset! does not support " *
                                 "`GroupedDataFrame`s from which some groups have " *
@@ -485,7 +492,7 @@ function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Boo
     ngroups = length(gdf)
     groups = gdf.groups
     lazy_lock = gdf.lazy_lock
-    row_selector = _get_subset_conditions(gdf, Ref{Any}(args), skipmissing, threads)
+    row_selector = _get_subset_conditions(gdf, Ref{Any}(conditions), skipmissing, threads)
     res = deleteat!(df, .!row_selector)
     if nrow(res) == length(groups) # we have not removed any rows
         return ungroup ? res : gdf
