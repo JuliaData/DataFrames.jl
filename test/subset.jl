@@ -592,6 +592,8 @@ end
     df = DataFrame(a=1:2)
     @test subset(df, Not(:a) .=> ByRow(Returns(true))) == DataFrame(a=1:2)
     @test subset(groupby(df, :a), Not(:a) .=> ByRow(Returns(true))) == DataFrame(a=1:2)
+    @test subset!(df, Not(:a) .=> ByRow(Returns(true))) == DataFrame(a=1:2)
+    @test subset!(groupby(df, :a), Not(:a) .=> ByRow(Returns(true))) == DataFrame(a=1:2)
 end
 
 end
