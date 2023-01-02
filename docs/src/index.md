@@ -250,21 +250,21 @@ missing please kindly report an issue
     * error behavior: code that threw an exception can change exception type
       thrown or stop throwing an exception;
     * changes in display (how objects are printed);
-    * changes to the satate of global objets from Base Julia whose state
+    * changes to the state of global objects from Base Julia whose state
       normally is considered volatile (e.g. state of global random number
       generator).
 
     All types and functions that are part of public API are guaranteed to go
     through a deprecation period before a breaking change is made to them
-    changed or they would be removed.
+    or they would be removed.
 
     As a standard practice the change is implemented when a major release of
     DataFrames.jl is made (e.g. functionalities deprecated in 1.x release
     would be changed in 2.0 release).
 
     In rare cases a breaking change might be introduced in a minor release.
-    In such case the changed behavior still goes through one minor release
-    during which it is deprecated. The situations where such breaking change
+    In such a case the changed behavior still goes through one minor release
+    during which it is deprecated. The situations where such a breaking change
     might be allowed are (still such breaking changes will be avoided if
     possible):
     
