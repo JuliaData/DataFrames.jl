@@ -160,7 +160,7 @@ nest(gdf::GroupedDataFrame; view::Bool=false) =
 """
     unnest(df::AbstractDataFrame, src::ColumnIndex...;
            cols::Union{Symbol, AbstractVector{Symbol},
-                       AbstractVector{<:AbstractString}}=:setequal,
+                       AbstractVector{<:AbstractString}}=:union,
            promote::Bool=true, makeunique::Bool=false)
 
 Extract the contents of one or more columns `cols` in `df` that contain
@@ -170,7 +170,7 @@ gets appropriately repeated to match the number of rows of the unnested tables.
 The newly created columns are stored at the end of the data frame (and the
 `src` columns are dropped).
 
-`cols` (default `:setequal`) and `promote` (default `true`) keyword arguments
+`cols` (default `:union`) and `promote` (default `true`) keyword arguments
 have the same meaning as in [`push!`](@ref).
 
 If `makeunique=false` (the default) produced column names must be unique.
@@ -182,7 +182,7 @@ TODO: metadata
 """
 function unnest(df::AbstractDataFrame, src::ColumnIndex...;
                 cols::Union{Symbol, AbstractVector{Symbol},
-                            AbstractVector{<:AbstractString}}=:setequal,
+                            AbstractVector{<:AbstractString}}=:union,
                 promote::Bool=(cols in [:union, :subset]),
                 makeunique::Bool=false)
     ref_df = select(df, Not(collect(Any, src)))
@@ -207,16 +207,16 @@ end
 """
     expand(df::AbstractDataFrame, src::ColumnIndex...;
            cols::Union{Symbol, AbstractVector{Symbol},
-                       AbstractVector{<:AbstractString}}=:setequal,
+                       AbstractVector{<:AbstractString}}=:union,
            promote::Bool=true, makeunique::Bool=false)
 
 Extract the contents of one or more columns `cols` in `df` that contain
-`NamedTuple`, a `DataFrameRow`, a `Tables.AbstractRow` elements
-returning a data frame with expanded columns, in addition to original columns.
-The newly created columns are stored at the end of the data frame (and the
-`src` columns are dropped).
+`NamedTuple`, a `DataFrameRow`, an `AbstractDict` or a `Tables.AbstractRow`
+elements returning a data frame with expanded columns, in addition to original
+columns. The newly created columns are stored at the end of the data frame (and
+the `src` columns are dropped).
 
-`cols` (default `:setequal`) and `promote` (default `true`) keyword arguments
+`cols` (default `:union`) and `promote` (default `true`) keyword arguments
 have the same meaning as in [`push!`](@ref).
 
 If `makeunique=false` (the default) produced column names must be unique.
@@ -228,7 +228,7 @@ TODO: metadata
 """
 function expand(df::AbstractDataFrame, src::ColumnIndex...;
                 cols::Union{Symbol, AbstractVector{Symbol},
-                            AbstractVector{<:AbstractString}}=:setequal,
+                            AbstractVector{<:AbstractString}}=:union,
                 promote::Bool=(cols in [:union, :subset]),
                 makeunique::Bool=false)
     ref_df = select(df, Not(collect(Any, src)))
@@ -246,16 +246,16 @@ end
 """
     expand!(df::AbstractDataFrame, src::ColumnIndex...;
             cols::Union{Symbol, AbstractVector{Symbol},
-                        AbstractVector{<:AbstractString}}=:setequal,
+                        AbstractVector{<:AbstractString}}=:union,
             promote::Bool=true, makeunique::Bool=false)
 
-Extract in-place the contents of one or more columns `cols` in `df` that contain
-`NamedTuple`, a `DataFrameRow`, a `Tables.AbstractRow` elements
-returning a data frame with expanded columns, in addition to original columns.
-The newly created columns are stored at the end of the data frame (and the
-`src` columns are dropped).
+Extract in-place the contents of one or more columns `cols` in `df` that
+contain `NamedTuple`, a `DataFrameRow`, an `AbstractDict`, or a
+`Tables.AbstractRow` elements returning a data frame with expanded columns, in
+addition to original columns. The newly created columns are stored at the end
+of the data frame (and the `src` columns are dropped).
 
-`cols` (default `:setequal`) and `promote` (default `true`) keyword arguments
+`cols` (default `:union`) and `promote` (default `true`) keyword arguments
 have the same meaning as in [`push!`](@ref).
 
 If `makeunique=false` (the default) produced column names must be unique.
@@ -267,7 +267,7 @@ TODO: metadata
 """
 function expand!(df::AbstractDataFrame, src::ColumnIndex...;
                  cols::Union{Symbol, AbstractVector{Symbol},
-                             AbstractVector{<:AbstractString}}=:setequal,
+                             AbstractVector{<:AbstractString}}=:union,
                  promote::Bool=(cols in [:union, :subset]),
                  makeunique::Bool=false)
     tmp_dfs = DataFrame[]
