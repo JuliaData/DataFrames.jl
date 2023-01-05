@@ -3,15 +3,16 @@
     nest(gdf::GroupedDataFrame, cols::Pair{Symbol}...)
     nest(gdf::GroupedDataFrame)
 
-Nest multiple columns per group of `gdf` into a single column as data frames.
+Return a data frame with one row for each group in `gdf` where
+or or more columns contain a data frame of the rows that belong to that group.
 
 Every `cols` argument must be a pair `column_selector => column_name`.
 If no `cols` are passed, then by default `valuecols(gdf) => :data`
 nesting is performed.
 
-Return a data frame having all grouping columns of `gdf` followed by one
-or more columns where `column_name` is a name of the column storing data frames,
-where every data frame consists of columns picked by `column_selector` values
+The returned data frame has all grouping columns of `gdf`, followed by one
+or more columns where `column_name` is the name of the column storing data frames,
+and every data frame consists of columns picked by `column_selector` values
 computed for each group of `gdf`.
 
 TODO: metadata
@@ -91,7 +92,7 @@ julia> n2.zx
 ─────┼─────────────
    1 │ d         4
 
-julia> n3 = nest(groupby(df, :id), :x => "x", [:y, :z] => "yz")
+julia> n3 = nest(groupby(df, :id), :x => :x, [:y, :z] => :yz)
 3×3 DataFrame
  Row │ id      x              yz
      │ String  DataFrame      DataFrame     
@@ -157,8 +158,10 @@ nest(gdf::GroupedDataFrame) = nest(gdf, valuecols(gdf) => :data)
            promote::Bool=true,
            makeunique::Bool=false, flatten::Bool=true)
 
-Unnest one or more columns `src` into multiple columns. The newly created
-columns are stored at the end of the data frame (and the `src` column is
+Extract the contents of one or more columns `cols` in `df` that contain data frames,
+returning a data frame with as many rows and columns as the nested data frames contain,
+in addition to original columns.
+The newly created columns are stored at the end of the data frame (and the `src` columns are
 dropped).
 
 Each `src` column must contain a `NamedTuple`, a `DataFrameRow`, a
