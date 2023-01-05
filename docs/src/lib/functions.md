@@ -76,8 +76,8 @@ rename!
 ```@docs
 append!
 combine
-extract
-extract!
+expand
+expand!
 fillcombinations
 flatten
 hcat
