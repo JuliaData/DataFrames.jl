@@ -236,17 +236,17 @@ missing please kindly report an issue
 
     * specific floating point values computed by operations may change at any
       time; users should rely only on approximate accuracy;
-    * in functions that use the default random number generator provided by the
-      Base Julia the specific random numbers computed may change at any time;
+    * in functions that use the default random number generator provided by
+      Base Julia the specific random numbers computed may change across Julia versions;
     * if the changed functionality is classified as a bug;
     * if the changed behavior was not documented; two major cases are:
       1. in its implementation some function accepted a wider range of arguments
          that it was documented to handle - changes in handling of undocumented
-         arguments are not breaking;
-      2. the type of returned value by the funtion changes, but it still follows
+         arguments are not considered as breaking;
+      2. the type of the value returned by a function changes, but it still follows
          the contract specified in the documentation; for example if a function
          is documented to return a vector then changing its type from `Vector`
-         to `PulledVector` is not breaking;
+         to `PooledVector` is not considered as breaking;
     * error behavior: code that threw an exception can change exception type
       thrown or stop throwing an exception;
     * changes in display (how objects are printed);
@@ -258,9 +258,9 @@ missing please kindly report an issue
     through a deprecation period before a breaking change is made to them
     or they would be removed.
 
-    As a standard practice the change is implemented when a major release of
-    DataFrames.jl is made (e.g. functionalities deprecated in 1.x release
-    would be changed in 2.0 release).
+    The standard practice is that breaking changes are implemented when a major
+    release of DataFrames.jl is made (e.g. functionalities deprecated in a 1.x release
+    would be changed in the 2.0 release).
 
     In rare cases a breaking change might be introduced in a minor release.
     In such a case the changed behavior still goes through one minor release
@@ -269,9 +269,8 @@ missing please kindly report an issue
     possible):
     
     * the affected functionality was previously clearly identified in the
-      documentation as possible to be changed (for example in DataFrames.jl 1.4
-      release propagation rules of `:note`-style metadata are documented as
-      possible to be changed in the future);
+      documentation as being subject to changes (for example in DataFrames.jl 1.4
+      release propagation rules of `:note`-style metadata are documented as such);
     * the change is on the border of being classified as a bug (in rare cases
       even if a behavior of some function was documented its consequences for
       certain argument combinations could be decided to be unintended and not
