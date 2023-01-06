@@ -435,7 +435,10 @@ function _combine_process_pair_symbol(optional_i::Bool,
     @assert only(wincols) isa Union{Tuple, NamedTuple}
 
     if firstmulticol
-        throw(ArgumentError("a single value or vector result is required (got $(typeof(firstres)))"))
+        throw(ArgumentError("a single value or vector result is required " *
+                            "(got $(typeof(firstres))). Maybe you " *
+                            "forgot to wrap the return value of " *
+                            "the operation with `Ref`?"))
     end
     # if idx_agg was not computed yet it is NOTHING_IDX_AGG
     # in this case if we are not passed a vector compute it.
