@@ -7,6 +7,8 @@
 * Add `allunique` and allow transformations in `cols` argument of `describe`
   and `nonunique` when working with `SubDataFrame`
   ([3232](https://github.com/JuliaData/DataFrames.jl/pull/3232))
+* Add support for `Tables.AbstractRow` for `push!`, `pushfirst!`, and `insert!`
+   ([#3245](https://github.com/JuliaData/DataFrames.jl/pull/3245))
 * Add support for `operator` keyword argument in `Cols`
   to take a set operation to apply to passed selectors (`union` by default)
   ([3224](https://github.com/JuliaData/DataFrames.jl/pull/3224))
