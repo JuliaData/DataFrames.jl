@@ -1291,9 +1291,9 @@ end
     @test pushfirst!(df, rows[1], promote=false, cols=:union) ==
           DataFrame(a=[1, 4], b=[2, 5], c=[3, 6])
     @test insert!(df, 2, rows[3], promote=true, cols=:intersect) ==
-                  DataFrame(a=[1, 9, 4], b=[2, 10, 5], c=[3, 11, 6])
+        DataFrame(a=[1, 9, 4], b=[2, 10, 5], c=[3, 11, 6])
     @test push!(df, rows[1], promote=true, cols=:orderequal) ==
-                  DataFrame(a=[1, 9, 4, 1], b=[2, 10, 5, 2], c=[3, 11, 6, 3])
+        DataFrame(a=[1, 9, 4, 1], b=[2, 10, 5, 2], c=[3, 11, 6, 3])
     deleteat!(df, nrow(df))
 
     df2 = DataFrame(d="x", a="y")
