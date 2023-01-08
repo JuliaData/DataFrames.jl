@@ -157,11 +157,28 @@ nest(gdf::GroupedDataFrame, cols::Pair{<:Any, Symbol}...; view::Bool=false) =
 nest(gdf::GroupedDataFrame; view::Bool=false) =
     nest(gdf, valuecols(gdf) => :data, view=view)
 
+const UNNESTING_COMMON = """
+`cols` argument affects the created columns in the following way:
+* If `cols == :setequal` then each row must contain exactly the same columns
+  (but possibly in a different order).
+* If `cols == :orderequal` then each row must contain the same columns in the
+  same order (for `AbstractDict` this option requires that `keys` of row matches
+  to allow for support of ordered dicts; however, if row is a `Dict` an error is
+  thrown as it is an unordered collection).
+* If `cols == :union` (the default) then in each row can contain different
+  colums and a `missing` value is pushed to columns missing in a given row
+  that are present in other rows.
+
+If `promote=true` (the default) then `
+the type of a pushed argument then a new column with a promoted element type
+allowing it is freshly allocated and stored in `df`. If `promote=false` an error
+is thrown.
+
+"""
+
 """
     unnest(df::AbstractDataFrame, src::ColumnIndex...;
-           cols::Union{Symbol, AbstractVector{Symbol},
-                       AbstractVector{<:AbstractString}}=:union,
-           promote::Bool=true, makeunique::Bool=false)
+           makeunique::Bool=false)
 
 Extract the contents of one or more columns `cols` in `df` that contain
 Tables.jl tables, returning a data frame with as many rows and columns as the
@@ -170,8 +187,10 @@ gets appropriately repeated to match the number of rows of the unnested tables.
 The newly created columns are stored at the end of the data frame (and the
 `src` columns are dropped).
 
-`cols` (default `:union`) and `promote` (default `true`) keyword arguments
-have the same meaning as in [`push!`](@ref).
+Table stored in each row of `src` can have different columns. `missing` value is
+pushed to columns missing in a given row that are present in other rows.
+The element type of resulting column is determined by promotion of element types
+of columns in individual rows.
 
 If `makeunique=false` (the default) produced column names must be unique.
 If `makeunique=true` then duplicate column names will be suffixed with `_i`
@@ -181,9 +200,6 @@ TODO: metadata
 
 """
 function unnest(df::AbstractDataFrame, src::ColumnIndex...;
-                cols::Union{Symbol, AbstractVector{Symbol},
-                            AbstractVector{<:AbstractString}}=:union,
-                promote::Bool=(cols in [:union, :subset]),
                 makeunique::Bool=false)
     ref_df = select(df, Not(collect(Any, src)))
     col_count = ncol(ref_df)
@@ -197,7 +213,7 @@ function unnest(df::AbstractDataFrame, src::ColumnIndex...;
             else # produce NamedTuple
                 v = Tables.columntable(v)
             end
-            push!(tmp_df, v, cols=cols, promote=promote)
+            push!(tmp_df, v, cols=:union, promote=true)
         end
         hcat!(ref_df, tmp_df, makeunique=makeunique, copycols=false)
     end
@@ -206,9 +222,7 @@ end
 
 """
     expand(df::AbstractDataFrame, src::ColumnIndex...;
-           cols::Union{Symbol, AbstractVector{Symbol},
-                       AbstractVector{<:AbstractString}}=:union,
-           promote::Bool=true, makeunique::Bool=false)
+           makeunique::Bool=false)
 
 Extract the contents of one or more columns `cols` in `df` that contain
 `NamedTuple`, a `DataFrameRow`, an `AbstractDict` or a `Tables.AbstractRow`
@@ -216,8 +230,10 @@ elements returning a data frame with expanded columns, in addition to original
 columns. The newly created columns are stored at the end of the data frame (and
 the `src` columns are dropped).
 
-`cols` (default `:union`) and `promote` (default `true`) keyword arguments
-have the same meaning as in [`push!`](@ref).
+Table stored in each row of `src` can have different columns. `missing` value is
+pushed to columns missing in a given row that are present in other rows.
+The element type of resulting column is determined by promotion of element types
+of columns in individual rows.
 
 If `makeunique=false` (the default) produced column names must be unique.
 If `makeunique=true` then duplicate column names will be suffixed with `_i`
@@ -227,16 +243,13 @@ TODO: metadata
 
 """
 function expand(df::AbstractDataFrame, src::ColumnIndex...;
-                cols::Union{Symbol, AbstractVector{Symbol},
-                            AbstractVector{<:AbstractString}}=:union,
-                promote::Bool=(cols in [:union, :subset]),
                 makeunique::Bool=false)
     ref_df = select(df, Not(collect(Any, src)))
     for idx in src
         col = df[!, idx]
         tmp_df = DataFrame()
         for v in col
-            push!(tmp_df, v, cols=cols, promote=promote)
+            push!(tmp_df, v, cols=:union, promote=true)
         end
         hcat!(ref_df, tmp_df, makeunique=makeunique, copycols=false)
     end
@@ -245,9 +258,7 @@ end
 
 """
     expand!(df::AbstractDataFrame, src::ColumnIndex...;
-            cols::Union{Symbol, AbstractVector{Symbol},
-                        AbstractVector{<:AbstractString}}=:union,
-            promote::Bool=true, makeunique::Bool=false)
+            makeunique::Bool=false)
 
 Extract in-place the contents of one or more columns `cols` in `df` that
 contain `NamedTuple`, a `DataFrameRow`, an `AbstractDict`, or a
@@ -255,8 +266,10 @@ contain `NamedTuple`, a `DataFrameRow`, an `AbstractDict`, or a
 addition to original columns. The newly created columns are stored at the end
 of the data frame (and the `src` columns are dropped).
 
-`cols` (default `:union`) and `promote` (default `true`) keyword arguments
-have the same meaning as in [`push!`](@ref).
+Table stored in each row of `src` can have different columns. `missing` value is
+pushed to columns missing in a given row that are present in other rows.
+The element type of resulting column is determined by promotion of element types
+of columns in individual rows.
 
 If `makeunique=false` (the default) produced column names must be unique.
 If `makeunique=true` then duplicate column names will be suffixed with `_i`
@@ -266,16 +279,13 @@ TODO: metadata
 
 """
 function expand!(df::AbstractDataFrame, src::ColumnIndex...;
-                 cols::Union{Symbol, AbstractVector{Symbol},
-                             AbstractVector{<:AbstractString}}=:union,
-                 promote::Bool=(cols in [:union, :subset]),
                  makeunique::Bool=false)
     tmp_dfs = DataFrame[]
     for idx in src
         col = df[!, idx]
         tmp_df = DataFrame()
         for v in col
-            push!(tmp_df, v, cols=cols, promote=promote)
+            push!(tmp_df, v, cols=:union, promote=true)
         end
         push!(tmp_dfs, tmp_df)
     end
