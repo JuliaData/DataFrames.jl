@@ -23,6 +23,8 @@
 * passing very many data frames to `innerjoin` and `outerjoin`
   does not lead to stack overflow
   ([#3233](https://github.com/JuliaData/DataFrames.jl/pull/3233))
+* fixed incorrect handling of passing no conditions in `subset` and `subset!`
+  ([#3264](https://github.com/JuliaData/DataFrames.jl/pull/3264))
 
 # DataFrames.jl v1.4.4 Patch Release Notes
 
