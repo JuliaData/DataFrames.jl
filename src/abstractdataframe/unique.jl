@@ -13,14 +13,14 @@ indicated with a `false` entry.
 If `keep=:nonduplicates`, only rows without any duplicates are indicated with a
 `false` entry.
 
-See also [`unique`](@ref) and [`unique!`](@ref).
-
 # Arguments
 - `df` : `AbstractDataFrame`
 - `cols` : a selector specifying the column(s) or their transformations to
   compare. Can be any column selector or transformation accepted by
   [`select`](@ref) that returns at least one column if `df` has at least one
   column.
+
+See also [`unique`](@ref) and [`unique!`](@ref).
 
 # Examples
 
@@ -97,7 +97,7 @@ function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
         refarrays = last.(rpa)
         if any(isnothing, refpools) || any(isnothing, refarrays)
             _, _, gslots, _ = row_group_slots!(cols, Val(true), nothing,
-                                                     false, nothing, true)
+                                               false, nothing, true)
             # unique rows are the first encountered group representatives,
             # nonunique are everything else
             @inbounds for g_row in gslots
@@ -168,13 +168,13 @@ Return `true` if none of the rows of `df` are duplicated. Two rows are
 duplicates if all their columns contain equal values (according to `isequal`)
 for all columns in `cols` (by default, all columns).
 
-See also [`unique`](@ref) and [`nonunique`](@ref).
-
 # Arguments
 - `df` : `AbstractDataFrame`
 - `cols` : a selector specifying the column(s) or their transformations to
   compare. Can be any column selector or transformation accepted by
   [`select`](@ref).
+
+See also [`unique`](@ref) and [`nonunique`](@ref).
 
 # Examples
 
@@ -218,7 +218,7 @@ all columns).
 If `keep=:first` (the default), only the first occurrence of a set of duplicate
 rows is kept.
 If `keep=:last`, only the last occurrence of a set of duplicate rows is kept.
-If `keep=:nonduplicates`, only rows without any duplicates are kept.
+If `keep=:noduplicates`, only rows without any duplicates are kept.
 
 If `view=false` a freshly allocated `DataFrame` is returned, and if `view=true`
 then a `SubDataFrame` view into `df` is returned.
@@ -279,7 +279,7 @@ julia> unique(df, 2)
    1 │     1      1
    2 │     2      2
 
-julia> unique(df, keep=:nonduplicates)
+julia> unique(df, keep=:noduplicates)
 0×2 DataFrame
  Row │ i      x     
      │ Int64  Int64
@@ -310,7 +310,7 @@ all columns).
 If `keep=:first` (the default), only the first occurrence of a set of duplicate
 rows is kept.
 If `keep=:last`, only the last occurrence of a set of duplicate rows is kept.
-If `keep=:nonduplicates`, only rows without any duplicates are kept.
+If `keep=:noduplicates`, only rows without any duplicates are kept.
 
 # Arguments
 - `df` : the AbstractDataFrame
@@ -318,7 +318,6 @@ If `keep=:nonduplicates`, only rows without any duplicates are kept.
   specifying the column(s) to compare. Can be any column selector or
   transformation accepted by [`select`](@ref) that returns at least one column
   if `df` has at least one column.
-
 
 $METADATA_FIXED
 
@@ -361,7 +360,7 @@ julia> unique!(copy(df))  # modifies df
    3 │     3      1
    4 │     4      2
 
-julia> unique(df, keep=:nonduplicates)
+julia> unique(df, keep=:noduplicates)
 0×2 DataFrame
  Row │ i      x     
      │ Int64  Int64

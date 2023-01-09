@@ -106,39 +106,39 @@ end
               [false, false, false, true, true, true]
         @test nonunique(df, cols, keep=:last) ==
               [true, true, false, true, false, false]
-        @test nonunique(df, cols, keep=:nonduplicates) ==
+        @test nonunique(df, cols, keep=:noduplicates) ==
               [true, true, false, true, true, true]
         @test nonunique(select(df, cols), keep=:first) ==
               [false, false, false, true, true, true]
         @test nonunique(select(df, cols), keep=:last) ==
               [true, true, false, true, false, false]
-        @test nonunique(select(df, cols), keep=:nonduplicates) ==
+        @test nonunique(select(df, cols), keep=:noduplicates) ==
               [true, true, false, true, true, true]
 
         @test unique(df, cols, keep=:first) ==
               df[.![false, false, false, true, true, true], :]
         @test unique(df, cols, keep=:last) ==
               df[.![true, true, false, true, false, false], :]
-        @test unique(df, cols, keep=:nonduplicates) ==
+        @test unique(df, cols, keep=:noduplicates) ==
               df[.![true, true, false, true, true, true], :]
         @test unique(select(df, cols), keep=:first) ==
               df[.![false, false, false, true, true, true], Cols(cols)]
         @test unique(select(df, cols), keep=:last) ==
               df[.![true, true, false, true, false, false], Cols(cols)]
-        @test unique(select(df, cols), keep=:nonduplicates) ==
+        @test unique(select(df, cols), keep=:noduplicates) ==
               df[.![true, true, false, true, true, true], Cols(cols)]
 
         @test unique!(copy(df), cols, keep=:first) ==
               df[.![false, false, false, true, true, true], :]
         @test unique!(copy(df), cols, keep=:last) ==
               df[.![true, true, false, true, false, false], :]
-        @test unique!(copy(df), cols, keep=:nonduplicates) ==
+        @test unique!(copy(df), cols, keep=:noduplicates) ==
               df[.![true, true, false, true, true, true], :]
         @test unique!(select(df, cols), keep=:first) ==
               df[.![false, false, false, true, true, true], Cols(cols)]
         @test unique!(select(df, cols), keep=:last) ==
               df[.![true, true, false, true, false, false], Cols(cols)]
-        @test unique!(select(df, cols), keep=:nonduplicates) ==
+        @test unique!(select(df, cols), keep=:noduplicates) ==
               df[.![true, true, false, true, true, true], Cols(cols)]
     end
 
@@ -154,14 +154,14 @@ end
               combine(groupby(df, cols, sort=false), first)
         @test select(unique(df, cols, keep=:last), cols, Not(cols)) ==
               sort(combine(groupby(df, cols, sort=false), last), :id)
-        @test select(unique(df, cols, keep=:nonduplicates), cols, Not(cols)) ==
+        @test select(unique(df, cols, keep=:noduplicates), cols, Not(cols)) ==
               sort(combine(groupby(df, cols, sort=false),
                            sdf -> nrow(sdf) == 1 ? sdf : NamedTuple()), :id)
     end
 
     @test isempty(nonunique(DataFrame(), keep=:first))
     @test unique(DataFrame(a=[]), keep=:last) == DataFrame(a=[])
-    @test unique!(DataFrame(), keep=:nonduplicates) == DataFrame()
+    @test unique!(DataFrame(), keep=:noduplicates) == DataFrame()
     @test_throws ArgumentError nonunique(DataFrame(), keep=:a)
     @test_throws ArgumentError unique(DataFrame(), keep=:b)
     @test_throws ArgumentError unique!(DataFrame(), keep=:c)
@@ -172,7 +172,7 @@ end
    @test getindex.(keys(groupby(df, :x, sort=true)), 1) == [-1; 1:1000]
    @test nonunique(df, :x) == [falses(1001); trues(1001)]
    @test nonunique(df, :x, keep=:last) == [trues(1001); falses(1001)]
-   @test all(nonunique(df, :x, keep=:nonduplicates))
+   @test all(nonunique(df, :x, keep=:noduplicates))
 end
 
 end # module
