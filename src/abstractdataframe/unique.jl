@@ -151,11 +151,11 @@ function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
                 g = groups[i]
                 j = firstseen[g]
                 if j == -1
-                    # this is possibly non duplicate row
+                    # this is possibly a non duplicate row
                     firstseen[g] = i
                     res[i] = false
                 elseif j > 0
-                    # the row had duplicate
+                    # the row had a duplicate
                     res[j] = true
                     firstseen[g] = 0
                 end
@@ -170,16 +170,16 @@ function nonunique(df::AbstractDataFrame, cols; keep::Symbol=:first)
     if ncol(df) > 0 && ncol(udf) == 0
          throw(ArgumentError("finding duplicate rows in data frame when " *
                              "`cols` selects no columns is not allowed"))
-    else
-        return nonunique(udf, keep=keep)
     end
+    return nonunique(udf, keep=keep)
 end
 
 """
     allunique(df::AbstractDataFrame, cols=:)
 
-Return `true` if all rows of `df` are not duplicated. Two rows are duplicate if
-all their columns contain equal values (according to `isequal`).
+Return `true` if none of the rows of `df` are duplicated. Two rows are duplicates if
+all their columns contain equal values (according to `isequal`)
+for all columns in `cols` (by default, all columns).
 
 See also [`unique`](@ref) and [`nonunique`](@ref).
 
@@ -222,27 +222,23 @@ end
     unique(df::AbstractDataFrame; view::Bool=false, keep::Symbol=:first)
     unique(df::AbstractDataFrame, cols; view::Bool=false, keep::Symbol=:first)
 
-If `keep=:first` (the default) return a data frame containing only the first
-occurrence of unique rows in `df`.
+Return a data frame containing only unique rows in `df`.
 
-If `keep=:last` return a data frame containing only the last occurrence of
-unique rows in `df`.
-
-If `keep=:only` return a data frame containing only rows that are unique in `df`
-(in case of duplicate rows all are dropped).
-
-When `cols` is specified, the returned `DataFrame` contains complete rows,
-retaining in each case the first occurrence of a given combination of values
-in selected columns or their transformations. `cols` can be any column
-selector or transformation accepted by [`select`](@ref).
+Non-unique (duplicate) rows are those for which at least another row contains equal values
+(according to `isequal`) for all columns in `cols` (by default, all columns).
+If `keep=:first` (the default), only the first occurrence of a set of duplicate rows is kept.
+If `keep=:last`, only the last occurrence of a set of duplicate rows is kept.
+If `keep=:only`, only rows without any duplicates are kept.
 
 If `view=false` a freshly allocated `DataFrame` is returned,
 and if `view=true` then a `SubDataFrame` view into `df` is returned.
 
 # Arguments
 - `df` : the AbstractDataFrame
-- `cols` :  column indicator (`Symbol`, `Int`, `Vector{Symbol}`, `Regex`, etc.)
-specifying the column(s) to compare.
+- `cols` : a selector specifying the column(s) or their transformations to
+  compare. Can be any column selector or transformation accepted by
+  [`select`](@ref) that returns at least one column if `df` has at least one
+  column.
 
 $METADATA_FIXED
 
