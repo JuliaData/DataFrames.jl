@@ -10,7 +10,7 @@ If `keep=:first` (the default), only the first occurrence of a set of duplicate
 rows is indicated with a `false` entry.
 If `keep=:last`, only the last occurrence of a set of duplicate rows is
 indicated with a `false` entry.
-If `keep=:nonduplicates`, only rows without any duplicates are indicated with a
+If `keep=:noduplicates`, only rows without any duplicates are indicated with a
 `false` entry.
 
 # Arguments
@@ -84,8 +84,8 @@ julia> nonunique(df, 2)
 ```
 """
 function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
-    if !(keep in (:first, :last, :nonduplicates))
-        throw(ArgumentError("`keep` must be :first, :last, or :nonduplicates"))
+    if !(keep in (:first, :last, :noduplicates))
+        throw(ArgumentError("`keep` must be :first, :last, or :noduplicates"))
     end
     ncol(df) == 0 && return Bool[]
     res = fill(true, nrow(df))
@@ -129,7 +129,7 @@ function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
                 end
             end
         else
-            @assert keep == :nonduplicates
+            @assert keep == :noduplicates
             # -1 indicates that we have not seen the group yet
             # positive value indicates the first position we have seen the group
             # 0 indicates that we have seen the group at least twice
