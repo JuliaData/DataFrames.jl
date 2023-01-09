@@ -4,14 +4,13 @@
 
 Return a `Vector{Bool}` in which `true` entries indicate duplicate rows.
 
-If `keep=:first` (the default) a row is a duplicate if there exists a prior
-row with all columns containing equal values (according to `isequal`).
-
-If `keep=:last` a row is a duplicate if there exists a subsequent row with all
-columns containing equal values (according to `isequal`).
-
-If `keep=:only` a row is a duplicate if there exists any other row with all
-columns containing equal values (according to `isequal`).
+Duplicate rows are those for which at least another row contains equal values
+(according to `isequal`) for all columns in `cols` (by default, all columns).
+If `keep=:first` (the default), only the first occurrence of a set of duplicate rows
+is indicated with a `false` entry.
+If `keep=:last`, only the last occurrence of a set of duplicate rows
+is indicated with a `false` entry.
+If `keep=:only`, only rows without any duplicates are indicated with a `false` entry.
 
 See also [`unique`](@ref) and [`unique!`](@ref).
 
