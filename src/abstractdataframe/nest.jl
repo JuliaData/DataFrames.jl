@@ -205,28 +205,26 @@ function unnest(df::AbstractDataFrame, src::ColumnIndex...;
     col_count = ncol(ref_df)
     for idx in src
         col = df[!, idx]
-        tmp_df = DataFrame()
-        for v in col
-            if v isa DataFrame # produce DataFrameRow
-                v = DataFrame([n => [c] for (n, c) in pairs(eachcol(v))],
-                              copycols=false) |> only
-            else # produce NamedTuple
-                v = Tables.columntable(v)
+        if all(x -> x isa AbstractDataFrame, col)
+            tmp_df = reduce(vcat, col, cols=:union)
+        else
+            tmp_df = DataFrame()
+            for v in col
+                append!(tmp_df, v, cols=:union, promote=true)
             end
-            push!(tmp_df, v, cols=:union, promote=true)
         end
         hcat!(ref_df, tmp_df, makeunique=makeunique, copycols=false)
     end
-    return flatten(ref_df, col_count+1:ncol(ref_df), scalar=Missing)
+    return ref_df
 end
 
 """
-    expand(df::AbstractDataFrame, src::ColumnIndex...;
-           makeunique::Bool=false)
+    extract(df::AbstractDataFrame, src::ColumnIndex...;
+            makeunique::Bool=false)
 
 Extract the contents of one or more columns `cols` in `df` that contain
 `NamedTuple`, a `DataFrameRow`, an `AbstractDict` or a `Tables.AbstractRow`
-elements returning a data frame with expanded columns, in addition to original
+elements returning a data frame with extracted columns, in addition to original
 columns. The newly created columns are stored at the end of the data frame (and
 the `src` columns are dropped).
 
@@ -242,7 +240,7 @@ If `makeunique=true` then duplicate column names will be suffixed with `_i`
 TODO: metadata
 
 """
-function expand(df::AbstractDataFrame, src::ColumnIndex...;
+function extract(df::AbstractDataFrame, src::ColumnIndex...;
                 makeunique::Bool=false)
     ref_df = select(df, Not(collect(Any, src)))
     for idx in src
@@ -257,12 +255,12 @@ function expand(df::AbstractDataFrame, src::ColumnIndex...;
 end
 
 """
-    expand!(df::AbstractDataFrame, src::ColumnIndex...;
-            makeunique::Bool=false)
+    extract!(df::AbstractDataFrame, src::ColumnIndex...;
+             makeunique::Bool=false)
 
 Extract in-place the contents of one or more columns `cols` in `df` that
 contain `NamedTuple`, a `DataFrameRow`, an `AbstractDict`, or a
-`Tables.AbstractRow` elements returning a data frame with expanded columns, in
+`Tables.AbstractRow` elements returning a data frame with extracted columns, in
 addition to original columns. The newly created columns are stored at the end
 of the data frame (and the `src` columns are dropped).
 
@@ -278,7 +276,7 @@ If `makeunique=true` then duplicate column names will be suffixed with `_i`
 TODO: metadata
 
 """
-function expand!(df::AbstractDataFrame, src::ColumnIndex...;
+function extract!(df::AbstractDataFrame, src::ColumnIndex...;
                  makeunique::Bool=false)
     tmp_dfs = DataFrame[]
     for idx in src
