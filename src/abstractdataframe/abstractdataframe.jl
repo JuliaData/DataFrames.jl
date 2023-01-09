@@ -1404,8 +1404,9 @@ function fillcombinations(df::AbstractDataFrame, indexcols;
                             "must be specified"))
     end
 
+    # we use hashing algorithm here, because we assume that the tables we work with are not huge
     has_duplicates = row_group_slots!(ntuple(i -> df[!, colind[i]], length(colind)),
-                                      Val(false), nothing, false, nothing)[1] != nrow(df)
+                                      Val(false), nothing, false, nothing, false)[1] != nrow(df)
     if has_duplicates && !allowduplicates
         throw(ArgumentError("duplicate combinations of `indexcols` are not " *
                             "allowed in input when `allowduplicates=false`"))

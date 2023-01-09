@@ -106,39 +106,39 @@ end
               [false, false, false, true, true, true]
         @test nonunique(df, cols, keep=:last) ==
               [true, true, false, true, false, false]
-        @test nonunique(df, cols, keep=:only) ==
+        @test nonunique(df, cols, keep=:nonduplicates) ==
               [true, true, false, true, true, true]
         @test nonunique(select(df, cols), keep=:first) ==
               [false, false, false, true, true, true]
         @test nonunique(select(df, cols), keep=:last) ==
               [true, true, false, true, false, false]
-        @test nonunique(select(df, cols), keep=:only) ==
+        @test nonunique(select(df, cols), keep=:nonduplicates) ==
               [true, true, false, true, true, true]
 
         @test unique(df, cols, keep=:first) ==
               df[.![false, false, false, true, true, true], :]
         @test unique(df, cols, keep=:last) ==
               df[.![true, true, false, true, false, false], :]
-        @test unique(df, cols, keep=:only) ==
+        @test unique(df, cols, keep=:nonduplicates) ==
               df[.![true, true, false, true, true, true], :]
         @test unique(select(df, cols), keep=:first) ==
               df[.![false, false, false, true, true, true], Cols(cols)]
         @test unique(select(df, cols), keep=:last) ==
               df[.![true, true, false, true, false, false], Cols(cols)]
-        @test unique(select(df, cols), keep=:only) ==
+        @test unique(select(df, cols), keep=:nonduplicates) ==
               df[.![true, true, false, true, true, true], Cols(cols)]
 
         @test unique!(copy(df), cols, keep=:first) ==
               df[.![false, false, false, true, true, true], :]
         @test unique!(copy(df), cols, keep=:last) ==
               df[.![true, true, false, true, false, false], :]
-        @test unique!(copy(df), cols, keep=:only) ==
+        @test unique!(copy(df), cols, keep=:nonduplicates) ==
               df[.![true, true, false, true, true, true], :]
         @test unique!(select(df, cols), keep=:first) ==
               df[.![false, false, false, true, true, true], Cols(cols)]
         @test unique!(select(df, cols), keep=:last) ==
               df[.![true, true, false, true, false, false], Cols(cols)]
-        @test unique!(select(df, cols), keep=:only) ==
+        @test unique!(select(df, cols), keep=:nonduplicates) ==
               df[.![true, true, false, true, true, true], Cols(cols)]
     end
 
@@ -154,17 +154,25 @@ end
               combine(groupby(df, cols, sort=false), first)
         @test select(unique(df, cols, keep=:last), cols, Not(cols)) ==
               sort(combine(groupby(df, cols, sort=false), last), :id)
-        @test select(unique(df, cols, keep=:only), cols, Not(cols)) ==
+        @test select(unique(df, cols, keep=:nonduplicates), cols, Not(cols)) ==
               sort(combine(groupby(df, cols, sort=false),
                            sdf -> nrow(sdf) == 1 ? sdf : NamedTuple()), :id)
     end
 
     @test isempty(nonunique(DataFrame(), keep=:first))
     @test unique(DataFrame(a=[]), keep=:last) == DataFrame(a=[])
-    @test unique!(DataFrame(), keep=:only) == DataFrame()
+    @test unique!(DataFrame(), keep=:nonduplicates) == DataFrame()
     @test_throws ArgumentError nonunique(DataFrame(), keep=:a)
     @test_throws ArgumentError unique(DataFrame(), keep=:b)
     @test_throws ArgumentError unique!(DataFrame(), keep=:c)
+end
+
+@testset "case when groups are not compressed in row_group_slots!" begin
+   df = DataFrame(x=repeat([1:1000; -1], 2));
+   @test getindex.(keys(groupby(df, :x, sort=true)), 1) == [-1; 1:1000]
+   @test nonunique(df, :x) == [falses(1001); trues(1001)]
+   @test nonunique(df, :x, keep=:last) == [trues(1001); falses(1001)]
+   @test all(nonunique(df, :x, keep=:nonduplicates))
 end
 
 end # module

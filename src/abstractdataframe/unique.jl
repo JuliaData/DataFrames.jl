@@ -6,11 +6,12 @@ Return a `Vector{Bool}` in which `true` entries indicate duplicate rows.
 
 Duplicate rows are those for which at least another row contains equal values
 (according to `isequal`) for all columns in `cols` (by default, all columns).
-If `keep=:first` (the default), only the first occurrence of a set of duplicate rows
-is indicated with a `false` entry.
-If `keep=:last`, only the last occurrence of a set of duplicate rows
-is indicated with a `false` entry.
-If `keep=:only`, only rows without any duplicates are indicated with a `false` entry.
+If `keep=:first` (the default), only the first occurrence of a set of duplicate
+rows is indicated with a `false` entry.
+If `keep=:last`, only the last occurrence of a set of duplicate rows is
+indicated with a `false` entry.
+If `keep=:nonduplicates`, only rows without any duplicates are indicated with a
+`false` entry.
 
 See also [`unique`](@ref) and [`unique!`](@ref).
 
@@ -83,8 +84,8 @@ julia> nonunique(df, 2)
 ```
 """
 function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
-    if !(keep in (:first, :last, :only))
-        throw(ArgumentError("`keep` must be :first, :last, or :none"))
+    if !(keep in (:first, :last, :nonduplicates))
+        throw(ArgumentError("`keep` must be :first, :last, or :nonduplicates"))
     end
     ncol(df) == 0 && return Bool[]
     res = fill(true, nrow(df))
@@ -95,53 +96,40 @@ function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
         refpools = first.(rpa)
         refarrays = last.(rpa)
         if any(isnothing, refpools) || any(isnothing, refarrays)
-            ngroups, _, gslots, _ = row_group_slots!(cols, Val(true), nothing,
-                                                     false, nothing)
+            _, _, gslots, _ = row_group_slots!(cols, Val(true), nothing,
+                                                     false, nothing, true)
             # unique rows are the first encountered group representatives,
             # nonunique are everything else
-            cseen = 0
             @inbounds for g_row in gslots
-                if g_row > 0
-                    res[g_row] = false
-                    # this check slows down the process when all rows are unique
-                    # but speeds up when we have duplicates
-                    cseen += 1
-                    cseen == ngroups && break
-                end
+                g_row > 0 && (res[g_row] = false)
             end
         else
             groups = Vector{Int}(undef, nrow(df))
             ngroups = row_group_slots!(cols, refpools, refarrays,
-                                       Val(false), groups, false, false)[1]
+                                       Val(false), groups, false, false, true)[1]
             seen = fill(false, ngroups)
-            cseen = 0
             for i in 1:nrow(df)
                 g = groups[i]
                 if !seen[g]
                     seen[g] = true
                     res[i] = false
-                    cseen += 1
-                    cseen == ngroups && break
                 end
             end
         end
     else
         groups = Vector{Int}(undef, nrow(df))
-        ngroups = row_group_slots!(cols, Val(false), groups, false, nothing)[1]
+        ngroups = row_group_slots!(cols, Val(false), groups, false, nothing, true)[1]
         if keep == :last
             seen = fill(false, ngroups)
-            cseen = 0
             for i in nrow(df):-1:1
                 g = groups[i]
                 if !seen[g]
                     seen[g] = true
                     res[i] = false
-                    cseen += 1
-                    cseen == ngroups && break
                 end
             end
         else
-            @assert keep == :only
+            @assert keep == :nonduplicates
             # -1 indicates that we have not seen the group yet
             # positive value indicates the first position we have seen the group
             # 0 indicates that we have seen the group at least twice
@@ -176,16 +164,17 @@ end
 """
     allunique(df::AbstractDataFrame, cols=:)
 
-Return `true` if none of the rows of `df` are duplicated. Two rows are duplicates if
-all their columns contain equal values (according to `isequal`)
+Return `true` if none of the rows of `df` are duplicated. Two rows are
+duplicates if all their columns contain equal values (according to `isequal`)
 for all columns in `cols` (by default, all columns).
 
 See also [`unique`](@ref) and [`nonunique`](@ref).
 
 # Arguments
 - `df` : `AbstractDataFrame`
-- `cols` : a selector specifying the column(s) or their transformations to compare.
-  Can be any column selector or transformation accepted by [`select`](@ref).
+- `cols` : a selector specifying the column(s) or their transformations to
+  compare. Can be any column selector or transformation accepted by
+  [`select`](@ref).
 
 # Examples
 
@@ -214,7 +203,7 @@ function Base.allunique(df::AbstractDataFrame, cols=:)
     udf = _try_select_no_copy(df, cols)
     nrow(udf) == 0 && return true
     return row_group_slots!(ntuple(i -> udf[!, i], ncol(udf)),
-                            Val(false), nothing, false, nothing)[1] == nrow(df)
+                            Val(false), nothing, false, nothing, false)[1] == nrow(df)
 end
 
 """
@@ -223,14 +212,16 @@ end
 
 Return a data frame containing only unique rows in `df`.
 
-Non-unique (duplicate) rows are those for which at least another row contains equal values
-(according to `isequal`) for all columns in `cols` (by default, all columns).
-If `keep=:first` (the default), only the first occurrence of a set of duplicate rows is kept.
+Non-unique (duplicate) rows are those for which at least another row contains
+equal values (according to `isequal`) for all columns in `cols` (by default,
+all columns).
+If `keep=:first` (the default), only the first occurrence of a set of duplicate
+rows is kept.
 If `keep=:last`, only the last occurrence of a set of duplicate rows is kept.
-If `keep=:only`, only rows without any duplicates are kept.
+If `keep=:nonduplicates`, only rows without any duplicates are kept.
 
-If `view=false` a freshly allocated `DataFrame` is returned,
-and if `view=true` then a `SubDataFrame` view into `df` is returned.
+If `view=false` a freshly allocated `DataFrame` is returned, and if `view=true`
+then a `SubDataFrame` view into `df` is returned.
 
 # Arguments
 - `df` : the AbstractDataFrame
@@ -288,7 +279,7 @@ julia> unique(df, 2)
    1 │     1      1
    2 │     2      2
 
-julia> unique(df, keep=:only)
+julia> unique(df, keep=:nonduplicates)
 0×2 DataFrame
  Row │ i      x     
      │ Int64  Int64
@@ -311,24 +302,23 @@ end
     unique!(df::AbstractDataFrame; keep::Symbol=:first)
     unique!(df::AbstractDataFrame, cols; keep::Symbol=:first)
 
-If `keep=:first` (the default) update `df` in place to contain only the first
-occurrence of unique rows in `df`.
+Update `df` in-place to containi only unique rows.
 
-If `keep=:last` update `df` in place to contain only the last occurrence of
-unique rows in `df`.
-
-If `keep=:only` update `df` in place to contain only rows that are unique in `df`
-(in case of duplicate rows all are dropped).
-
-When `cols` is specified, the returned `DataFrame` contains complete rows,
-retaining in each case the first occurrence of a given combination of values
-in selected columns or their transformations. `cols` can be any column
-selector or transformation accepted by [`select`](@ref).
+Non-unique (duplicate) rows are those for which at least another row contains
+equal values (according to `isequal`) for all columns in `cols` (by default,
+all columns).
+If `keep=:first` (the default), only the first occurrence of a set of duplicate
+rows is kept.
+If `keep=:last`, only the last occurrence of a set of duplicate rows is kept.
+If `keep=:nonduplicates`, only rows without any duplicates are kept.
 
 # Arguments
 - `df` : the AbstractDataFrame
 - `cols` :  column indicator (`Symbol`, `Int`, `Vector{Symbol}`, `Regex`, etc.)
-specifying the column(s) to compare.
+  specifying the column(s) to compare. Can be any column selector or
+  transformation accepted by [`select`](@ref) that returns at least one column
+  if `df` has at least one column.
+
 
 $METADATA_FIXED
 
@@ -371,7 +361,7 @@ julia> unique!(copy(df))  # modifies df
    3 │     3      1
    4 │     4      2
 
-julia> unique(df, keep=:only)
+julia> unique(df, keep=:nonduplicates)
 0×2 DataFrame
  Row │ i      x     
      │ Int64  Int64
