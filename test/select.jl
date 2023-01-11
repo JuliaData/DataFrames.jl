@@ -2744,4 +2744,196 @@ end
     end
 end
 
+@testset "corner cases of fast aggregations" begin
+    df = DataFrame(id=[1, 1, 2],
+                   a=[1, 2, 4], a2=Any[1, 2, 4],
+                   b=Any[2, 3, 3],
+                   c1=missing, c2=missing,
+                   d1=missings(Int, 3), d2=missings(Int, 3))
+    gdf = groupby(df, [])
+
+    for table in (df, gdf)
+        for mode in [true, false]
+            p, q = mode ? (:a, :b) : (:b, :a)
+            @test combine(table, AsTable([p, q]) => sum => :x) ==
+                  DataFrame(x=3:2:7)
+            @test combine(table, AsTable([p, q]) => ByRow(sum) => :x) ==
+                  DataFrame(x=3:2:7)
+            @test combine(table, AsTable([p, q]) => ByRow(sum∘skipmissing) => :x) ==
+                  DataFrame(x=3:2:7)
+            @test combine(table, AsTable([p, q]) => length => :x) ==
+                  DataFrame(x=2)
+            @test combine(table, AsTable([p, q]) => ByRow(length) => :x) ==
+                  DataFrame(x=[2, 2, 2])
+            if table isa DataFrame
+                @test combine(table, AsTable([p, q]) => ByRow(length∘skipmissing) => :x) ==
+                      DataFrame(x=[2, 2, 2])
+            end
+            @test combine(table, AsTable([p, q]) => mean => :x) ==
+                  DataFrame(x=[1.5, 2.5, 3.5])
+            @test combine(table, AsTable([p, q]) => ByRow(mean) => :x) ==
+                  DataFrame(x=[1.5, 2.5, 3.5])
+            @test combine(table, AsTable([p, q]) => ByRow(mean∘skipmissing) => :x) ==
+                  DataFrame(x=[1.5, 2.5, 3.5])
+            @test combine(table, AsTable([p, q]) => ByRow(var) => :x) ==
+                  DataFrame(x=[0.5, 0.5, 0.5])
+            @test combine(table, AsTable([p, q]) => ByRow(var∘skipmissing) => :x) ==
+                  DataFrame(x=[0.5, 0.5, 0.5])
+            @test combine(table, AsTable([p, q]) => ByRow(std) => :x) ≈
+                  DataFrame(x=.√[0.5, 0.5, 0.5])
+            @test combine(table, AsTable([p, q]) => ByRow(std∘skipmissing) => :x) ≈
+                  DataFrame(x=.√[0.5, 0.5, 0.5])
+            @test combine(table, AsTable([p, q]) => ByRow(median) => :x) ==
+                  DataFrame(x=[1.5, 2.5, 3.5])
+            @test combine(table, AsTable([p, q]) => ByRow(median∘skipmissing) => :x) ==
+                  DataFrame(x=[1.5, 2.5, 3.5])
+            @test combine(table, AsTable([p, q]) => minimum => :x) ==
+                  DataFrame(x=[1, 2, 4])
+            @test combine(table, AsTable([p, q]) => ByRow(minimum) => :x) ==
+                  DataFrame(x=[1, 2, 3])
+            @test combine(table, AsTable([p, q]) => ByRow(minimum∘skipmissing) => :x) ==
+                  DataFrame(x=[1, 2, 3])
+            @test combine(table, AsTable([p, q]) => maximum => :x) ==
+                  DataFrame(x=[2, 3, 3])
+            @test combine(table, AsTable([p, q]) => ByRow(maximum) => :x) ==
+                  DataFrame(x=[2, 3, 4])
+            @test combine(table, AsTable([p, q]) => ByRow(maximum∘skipmissing) => :x) ==
+                  DataFrame(x=[2, 3, 4])
+            @test combine(table, AsTable([p, q]) => ByRow(extrema) => :x) ==
+                  DataFrame(x=[(1, 2), (2, 3), (3, 4)])
+            @test combine(table, AsTable([p, q]) => ByRow(extrema∘skipmissing) => :x) ==
+                  DataFrame(x=[(1, 2), (2, 3), (3, 4)])
+        end
+
+        for p in [:a, :a2], q in [:c1, :d1], mode in [true, false]
+            if mode
+                p, q = q, p
+            end
+            @test combine(table, AsTable([p, q]) => sum => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test combine(table, AsTable([p, q]) => ByRow(sum) => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test combine(table, AsTable([p, q]) => ByRow(sum∘skipmissing) => :x) ≅
+                  DataFrame(x=[1, 2, 4])
+            @test combine(table, AsTable([p, q]) => length => :x) ==
+                  DataFrame(x=2)
+            @test combine(table, AsTable([p, q]) => ByRow(length) => :x) ==
+                  DataFrame(x=[2, 2, 2])
+            if table isa DataFrame
+                @test combine(table, AsTable([p, q]) => ByRow(length∘skipmissing) => :x) ==
+                      DataFrame(x=[1, 1, 1])
+            end
+            @test combine(table, AsTable([p, q]) => mean => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test combine(table, AsTable([p, q]) => ByRow(mean) => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test combine(table, AsTable([p, q]) => ByRow(mean∘skipmissing) => :x) ≅
+                  DataFrame(x=[1, 2, 4])
+            if table isa DataFrame
+                @test combine(table, AsTable([p, q]) => ByRow(var) => :x) ≅
+                      DataFrame(x=[missing, missing, missing])
+                @test combine(table, AsTable([p, q]) => ByRow(var∘skipmissing) => :x) ≅
+                      DataFrame(x=[NaN, NaN, NaN])
+                @test combine(table, AsTable([p, q]) => ByRow(std) => :x) ≅
+                      DataFrame(x=[missing, missing, missing])
+                @test combine(table, AsTable([p, q]) => ByRow(std∘skipmissing) => :x) ≅
+                      DataFrame(x=[NaN, NaN, NaN])
+            end
+            @test combine(table, AsTable([p, q]) => ByRow(median) => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test combine(table, AsTable([p, q]) => ByRow(median∘skipmissing) => :x) ==
+                  DataFrame(x=[1, 2, 4])
+            # a bit surpriting how non-broadcasted and broadcasted minimum works
+            @test combine(table, AsTable([p, q]) => minimum => :x) ==
+                  DataFrame(x=[1, 2, 4])
+            @test combine(table, AsTable([p, q]) => ByRow(minimum) => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test combine(table, AsTable([p, q]) => ByRow(minimum∘skipmissing) => :x) ==
+                  DataFrame(x=[1, 2, 4])
+            @test combine(table, AsTable([p, q]) => maximum => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test combine(table, AsTable([p, q]) => ByRow(maximum) => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test combine(table, AsTable([p, q]) => ByRow(maximum∘skipmissing) => :x) ==
+                  DataFrame(x=[1, 2, 4])
+            @test combine(table, AsTable([p, q]) => ByRow(extrema) => :x) ≅
+                  DataFrame(x=[(missing, missing), (missing, missing), (missing, missing)])
+            @test combine(table, AsTable([p, q]) => ByRow(extrema∘skipmissing) => :x) ==
+                  DataFrame(x=[(1, 1), (2, 2), (4, 4)])
+        end
+
+        for p in [:c1, :d1], q in [:c2, :d2]
+            @test combine(table, AsTable([p, q]) => sum => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test combine(table, AsTable([p, q]) => ByRow(sum) => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            if p == :c1 && q == :c2
+                @test_throws ArgumentError combine(table, AsTable([p, q]) =>
+                                                          ByRow(sum∘skipmissing) => :x)
+            else
+                @test combine(table, AsTable([p, q]) => ByRow(sum∘skipmissing) => :x) ≅
+                      DataFrame(x=[0, 0, 0])
+            end
+            @test combine(table, AsTable([p, q]) => length => :x) ==
+                  DataFrame(x=2)
+            @test combine(table, AsTable([p, q]) => ByRow(length) => :x) ==
+                  DataFrame(x=[2, 2, 2])
+            if table isa DataFrame
+                @test combine(table, AsTable([p, q]) => ByRow(length∘skipmissing) => :x) ==
+                      DataFrame(x=[0, 0, 0])
+            end
+            @test combine(table, AsTable([p, q]) => mean => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test combine(table, AsTable([p, q]) => ByRow(mean) => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            if p == :c1 && q == :c2
+                @test_throws ArgumentError combine(table, AsTable([p, q]) =>
+                                                          ByRow(mean∘skipmissing) => :x)
+            else
+                @test combine(table, AsTable([p, q]) => ByRow(mean∘skipmissing) => :x) ≅
+                      DataFrame(x=[NaN, NaN, NaN])
+            end
+            if table isa DataFrame
+                @test combine(table, AsTable([p, q]) => ByRow(var) => :x) ≅
+                      DataFrame(x=[missing, missing, missing])
+                if p == :c1 && q == :c2
+                    @test_throws MethodError combine(table, AsTable([p, q]) =>
+                                                            ByRow(var∘skipmissing) => :x)
+                else
+                    @test combine(table, AsTable([p, q]) => ByRow(var∘skipmissing) => :x) ≅
+                          DataFrame(x=[NaN, NaN, NaN])
+                end
+                @test combine(table, AsTable([p, q]) => ByRow(std) => :x) ≅
+                      DataFrame(x=[missing, missing, missing])
+                if p == :c1 && q == :c2
+                    @test_throws MethodError combine(table, AsTable([p, q]) =>
+                                                            ByRow(std∘skipmissing) => :x)
+                else
+                    @test combine(table, AsTable([p, q]) => ByRow(std∘skipmissing) => :x) ≅
+                          DataFrame(x=[NaN, NaN, NaN])
+                end
+            end
+            @test combine(table, AsTable([p, q]) => ByRow(median) => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test_throws ArgumentError combine(table, AsTable([p, q]) => ByRow(median∘skipmissing) => :x)
+            @test combine(table, AsTable([p, q]) => minimum => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test combine(table, AsTable([p, q]) => ByRow(minimum) => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test_throws Union{MethodError, ArgumentError} combine(table, AsTable([p, q]) =>
+                                                                          ByRow(minimum∘skipmissing) => :x)
+            @test combine(table, AsTable([p, q]) => maximum => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test combine(table, AsTable([p, q]) => ByRow(maximum) => :x) ≅
+                  DataFrame(x=[missing, missing, missing])
+            @test_throws Union{MethodError, ArgumentError} combine(table, AsTable([p, q]) =>
+                                                                          ByRow(maximum∘skipmissing) => :x)
+            @test combine(table, AsTable([p, q]) => ByRow(extrema) => :x) ≅
+                  DataFrame(x=[(missing, missing), (missing, missing), (missing, missing)])
+            @test_throws Union{MethodError, ArgumentError} combine(table, AsTable([p, q]) =>
+                                                                          ByRow(extrema∘skipmissing) => :x)
+        end
+    end
+end
+
 end # module

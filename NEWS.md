@@ -25,6 +25,9 @@
   ([#3233](https://github.com/JuliaData/DataFrames.jl/pull/3233))
 * fixed incorrect handling of passing no conditions in `subset` and `subset!`
   ([#3264](https://github.com/JuliaData/DataFrames.jl/pull/3264))
+* fixed error in fast aggregation in `sum` and `mean` of columns only having
+  `missing` values
+  ([#3268](https://github.com/JuliaData/DataFrames.jl/pull/3268))
 
 # DataFrames.jl v1.4.4 Patch Release Notes
 

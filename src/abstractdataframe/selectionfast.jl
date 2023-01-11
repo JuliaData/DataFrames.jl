@@ -190,6 +190,9 @@ function _sum_fast(cols::Vector{<:AbstractVector})
     else
         Tres = typeof(sumz)
     end
+
+    Tres === Missing && return missings(length(cols[1]))
+
     res = fill!(Tables.allocatecolumn(Tres, length(cols[1])), sumz)
 
     for (i, col) in enumerate(cols)
@@ -311,6 +314,9 @@ function _mean_fast(cols::Vector{<:AbstractVector})
     else
         Tres = typeof(sumz)
     end
+
+    Tres === Missing && return missings(length(cols[1]))
+
     res = fill!(Tables.allocatecolumn(Tres, length(cols[1])), sumz)
 
     for (i, col) in enumerate(cols)
