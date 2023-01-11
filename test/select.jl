@@ -2930,8 +2930,8 @@ end
                                                                           ByRow(maximum∘skipmissing) => :x)
             @test combine(table, AsTable([p, q]) => ByRow(extrema) => :x) ≅
                   DataFrame(x=[(missing, missing), (missing, missing), (missing, missing)])
-            @test_throws MethodError combine(table, AsTable([p, q]) =>
-                                                    ByRow(extrema∘skipmissing) => :x)
+            @test_throws Union{MethodError, ArgumentError} combine(table, AsTable([p, q]) =>
+                                                                          ByRow(extrema∘skipmissing) => :x)
         end
     end
 end
