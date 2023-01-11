@@ -2869,7 +2869,7 @@ end
                   DataFrame(x=[missing, missing, missing])
             if p == :c1 && q == :c2
                 @test_throws ArgumentError combine(table, AsTable([p, q]) =>
-                                                   ByRow(sum∘skipmissing) => :x)
+                                                          ByRow(sum∘skipmissing) => :x)
             else
                 @test combine(table, AsTable([p, q]) => ByRow(sum∘skipmissing) => :x) ≅
                       DataFrame(x=[0, 0, 0])
@@ -2888,7 +2888,7 @@ end
                   DataFrame(x=[missing, missing, missing])
             if p == :c1 && q == :c2
                 @test_throws ArgumentError combine(table, AsTable([p, q]) =>
-                                                   ByRow(mean∘skipmissing) => :x)
+                                                          ByRow(mean∘skipmissing) => :x)
             else
                 @test combine(table, AsTable([p, q]) => ByRow(mean∘skipmissing) => :x) ≅
                       DataFrame(x=[NaN, NaN, NaN])
@@ -2898,7 +2898,7 @@ end
                       DataFrame(x=[missing, missing, missing])
                 if p == :c1 && q == :c2
                     @test_throws MethodError combine(table, AsTable([p, q]) =>
-                                                     ByRow(var∘skipmissing) => :x)
+                                                            ByRow(var∘skipmissing) => :x)
                 else
                     @test combine(table, AsTable([p, q]) => ByRow(var∘skipmissing) => :x) ≅
                           DataFrame(x=[NaN, NaN, NaN])
@@ -2907,7 +2907,7 @@ end
                       DataFrame(x=[missing, missing, missing])
                 if p == :c1 && q == :c2
                     @test_throws MethodError combine(table, AsTable([p, q]) =>
-                                                     ByRow(std∘skipmissing) => :x)
+                                                            ByRow(std∘skipmissing) => :x)
                 else
                     @test combine(table, AsTable([p, q]) => ByRow(std∘skipmissing) => :x) ≅
                           DataFrame(x=[NaN, NaN, NaN])
@@ -2921,17 +2921,17 @@ end
             @test combine(table, AsTable([p, q]) => ByRow(minimum) => :x) ≅
                   DataFrame(x=[missing, missing, missing])
             @test_throws Union{MethodError, ArgumentError} combine(table, AsTable([p, q]) =>
-                                               ByRow(minimum∘skipmissing) => :x)
+                                                                          ByRow(minimum∘skipmissing) => :x)
             @test combine(table, AsTable([p, q]) => maximum => :x) ≅
                   DataFrame(x=[missing, missing, missing])
             @test combine(table, AsTable([p, q]) => ByRow(maximum) => :x) ≅
                   DataFrame(x=[missing, missing, missing])
             @test_throws Union{MethodError, ArgumentError} combine(table, AsTable([p, q]) =>
-                                               ByRow(maximum∘skipmissing) => :x)
+                                                                          ByRow(maximum∘skipmissing) => :x)
             @test combine(table, AsTable([p, q]) => ByRow(extrema) => :x) ≅
                   DataFrame(x=[(missing, missing), (missing, missing), (missing, missing)])
             @test_throws MethodError combine(table, AsTable([p, q]) =>
-                                             ByRow(extrema∘skipmissing) => :x)
+                                                    ByRow(extrema∘skipmissing) => :x)
         end
     end
 end
