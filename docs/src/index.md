@@ -34,8 +34,15 @@ tool for working with tabular data in Julia -- as noted below, there are some
 other great libraries for certain use-cases -- but it provides great data
 wrangling functionality through a familiar interface.
 
-To understand the toolchain in more detail, have a look at the tutorials in this manual. New
-users can start with the [First Steps with DataFrames.jl](@ref) section.
+To understand the toolchain in more detail, have a look at the tutorials in this manual.
+New users can start with the [First Steps with DataFrames.jl](@ref) section.
+
+You may find the [DataFramesMeta.jl](https://juliadata.github.io/DataFramesMeta.jl/stable/)
+package or one of the other convenience packages discussed in
+the [Data manipulation frameworks](@ref) section of this manual
+helpful when writing more advanced data transformations,
+especially if you do not have a significant programming experience.
+These packages provide convenience syntax similar to [dplyr](https://dplyr.tidyverse.org/) in R.
 
 ## DataFrames.jl and the Julia Data Ecosystem
 
@@ -132,11 +139,15 @@ integrated they are with DataFrames.jl.
       [GraphDataFrameBridge.jl](https://github.com/JuliaGraphs/GraphDataFrameBridge.jl)
       package.
 - **IO**:
-    - DataFrames.jl work well with a range of formats, including
-      CSVs (using [CSV.jl](https://github.com/JuliaData/CSV.jl)),
-      Apache Arrow (using [Arrow.jl](https://github.com/JuliaData/Arrow.jl))
-      Stata, SPSS, and SAS files (using [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)),
-      and reading and writing parquet files (using [Parquet.jl](https://github.com/JuliaIO/Parquet.jl)).
+    - DataFrames.jl work well with a range of formats, including:
+        - CSV files (using [CSV.jl](https://github.com/JuliaData/CSV.jl)),
+        - Apache Arrow (using [Arrow.jl](https://github.com/JuliaData/Arrow.jl))
+        - reading Stata, SAS and SPSS files (using [ReadStatTables.jl](https://github.com/junyuan-chen/ReadStatTables.jl);
+          alternatively [Queryverse](https://www.queryverse.org/) users
+          can choose [StatFiles.jl](https://github.com/queryverse/StatFiles.jl)),
+        - Parquet files
+          (using [Parquet2.jl](https://gitlab.com/ExpandingMan/Parquet2.jl)),
+        - reading R data files (.rda, .RData) (using [RData.jl](https://github.com/JuliaData/RData.jl)).
 
 While not all of these libraries are tightly integrated with DataFrames.jl,
 because `DataFrame`s are essentially collections of aligned Julia vectors, so it
@@ -216,8 +227,56 @@ all such objects are documented in this manual (in case some documentation is
 missing please kindly report an issue
 [here](https://github.com/JuliaData/DataFrames.jl/issues/new)).
 
-All types and functions that are part of public API are guaranteed to go through
-a deprecation period before being changed or removed.
+!!! note
+
+    Breaking changes to public and documented API are avoided in
+    DataFrames.jl where possible.
+
+    The following changes are not considered breaking:
+
+    * specific floating point values computed by operations may change at any
+      time; users should rely only on approximate accuracy;
+    * in functions that use the default random number generator provided by
+      Base Julia the specific random numbers computed may change across Julia versions;
+    * if the changed functionality is classified as a bug;
+    * if the changed behavior was not documented; two major cases are:
+      1. in its implementation some function accepted a wider range of arguments
+         that it was documented to handle - changes in handling of undocumented
+         arguments are not considered as breaking;
+      2. the type of the value returned by a function changes, but it still follows
+         the contract specified in the documentation; for example if a function
+         is documented to return a vector then changing its type from `Vector`
+         to `PooledVector` is not considered as breaking;
+    * error behavior: code that threw an exception can change exception type
+      thrown or stop throwing an exception;
+    * changes in display (how objects are printed);
+    * changes to the state of global objects from Base Julia whose state
+      normally is considered volatile (e.g. state of global random number
+      generator).
+
+    All types and functions that are part of public API are guaranteed to go
+    through a deprecation period before a breaking change is made to them
+    or they would be removed.
+
+    The standard practice is that breaking changes are implemented when a major
+    release of DataFrames.jl is made (e.g. functionalities deprecated in a 1.x release
+    would be changed in the 2.0 release).
+
+    In rare cases a breaking change might be introduced in a minor release.
+    In such a case the changed behavior still goes through one minor release
+    during which it is deprecated. The situations where such a breaking change
+    might be allowed are (still such breaking changes will be avoided if
+    possible):
+    
+    * the affected functionality was previously clearly identified in the
+      documentation as being subject to changes (for example in DataFrames.jl 1.4
+      release propagation rules of `:note`-style metadata are documented as such);
+    * the change is on the border of being classified as a bug (in rare cases
+      even if a behavior of some function was documented its consequences for
+      certain argument combinations could be decided to be unintended and not
+      wanted);
+    * the change is needed to adjust DataFrames.jl functionality to changes in
+      Base Julia.
 
 Please be warned that while Julia allows you to access internal functions or
 types of DataFrames.jl these can change without warning between versions of

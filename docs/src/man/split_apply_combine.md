@@ -1276,3 +1276,71 @@ two aspects:
   are exceptions to the standard operation specification syntax rules. They
   were added for user convenience.
 
+## Specifying group order in `groupby`
+
+By default order of groups produced by `groupby` is undefined.
+If you want the order of groups to follow the order of first appereance in
+the source data frame of a grouping key then pass the `sort=false` keyword argument
+to `groupby`:
+
+```jldoctest sac
+julia> push!(df, ["a", 100, 100]) # push row with large integer values to disable default sorting
+7×3 DataFrame
+ Row │ customer_id  transaction_id  volume 
+     │ String       Int64           Int64  
+─────┼─────────────────────────────────────
+   1 │ a                        12       2
+   2 │ b                        15       3
+   3 │ b                        19       1
+   4 │ b                        17       4
+   5 │ c                        13       5
+   6 │ c                        11       9
+   7 │ a                       100     100
+
+julia> keys(groupby(df, :volume))
+7-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
+ GroupKey: (volume = 2,)
+ GroupKey: (volume = 3,)
+ GroupKey: (volume = 1,)
+ GroupKey: (volume = 4,)
+ GroupKey: (volume = 5,)
+ GroupKey: (volume = 9,)
+ GroupKey: (volume = 100,)
+```
+
+If you want to have them sorted in ascending order pass `sort=true`:
+
+```
+julia> keys(groupby(df, :volume, sort=true))
+7-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
+ GroupKey: (volume = 1,)
+ GroupKey: (volume = 2,)
+ GroupKey: (volume = 3,)
+ GroupKey: (volume = 4,)
+ GroupKey: (volume = 5,)
+ GroupKey: (volume = 9,)
+ GroupKey: (volume = 100,)
+```
+
+You can also use the [`order`](@ref) wrapper when passing a column name to group
+by or pass a named tuple as `sort` keyword argument containing one or more of
+`alg`, `lt`, `by`, `rev`, and `order` fields that will be treated just like in
+[`sortperm`](@ref):
+
+```
+julia> keys(groupby(df, [:customer_id, order(:volume, rev=true)]))
+6-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
+ GroupKey: (customer_id = "a", volume = 2)
+ GroupKey: (customer_id = "b", volume = 4)
+ GroupKey: (customer_id = "b", volume = 3)
+ GroupKey: (customer_id = "b", volume = 1)
+ GroupKey: (customer_id = "c", volume = 9)
+ GroupKey: (customer_id = "c", volume = 5)
+
+julia> keys(groupby(df, :customer_id, sort=(rev=true,)))
+3-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
+ GroupKey: (customer_id = "c",)
+ GroupKey: (customer_id = "b",)
+ GroupKey: (customer_id = "a",)
+```
+

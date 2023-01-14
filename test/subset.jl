@@ -588,4 +588,12 @@ end
     @test gdf == groupby(DataFrame(a=1:3), :a)[[3, 1]]
 end
 
+@testset "empty conditions in subset" begin
+    df = DataFrame(a=1:2)
+    @test subset(df, Not(:a) .=> ByRow(x -> true)) == DataFrame(a=1:2)
+    @test subset(groupby(df, :a), Not(:a) .=> ByRow(x -> true)) == DataFrame(a=1:2)
+    @test subset!(df, Not(:a) .=> ByRow(x -> true)) == DataFrame(a=1:2)
+    @test subset!(groupby(df, :a), Not(:a) .=> ByRow(x -> true)) == DataFrame(a=1:2)
+end
+
 end
