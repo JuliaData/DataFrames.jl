@@ -625,6 +625,45 @@ Base.getindex(df::DataFrame, row_ind::Colon, col_inds::MultiColumnIndex) =
 Base.getindex(df::DataFrame, row_ind::typeof(!), col_inds::MultiColumnIndex) =
     select(df, index(df)[col_inds], copycols=false)
 
+# Gets a subset of a DataFrame by `row_inds` and disallows missing values in columns specified by `col_disallowmissing_inds` 
+# Called by dropmissing()
+function _getindex_disallowmissing(df::DataFrame, row_inds::AbstractVector{T},
+    col_disallowmissing_inds::Union{ColumnIndex,MultiColumnIndex,Colon}) where {T<:Integer}
+
+    # With knowledge of exact indices we can skip a lot of loop iterations (as opposed to filtering by a mask)
+    selected_rows = T === Bool ? _findall(row_inds) : row_inds
+    new_columns = Vector{AbstractVector}(undef, ncol(df))
+    df_columns = DataFrames._columns(df)
+
+    # We need to know the exact indices of columns that disallowmissing should be applied to
+    disallowmissing_columns_inds = index(df)[col_disallowmissing_inds]
+
+    # Threading decision rule borrowed from `_threaded_getindex`
+    if Threads.nthreads() > 1 && ncol(df) > 1 && length(selected_rows) >= 1_000_000
+        @sync for i in eachindex(new_columns)
+            # for each column, check if disallowmissing should be applied
+            Threads.@spawn if i in disallowmissing_columns_inds
+                @inbounds new_columns[i] = _getindex_disallowmissing(df_columns[i], selected_rows)
+            else
+                @inbounds new_columns[i] = df_columns[i][selected_rows]
+            end
+        end
+    else
+        @inbounds for i in eachindex(new_columns)
+            if i in disallowmissing_columns_inds
+                new_columns[i] = _getindex_disallowmissing(df_columns[i], selected_rows)
+            else
+                new_columns[i] = df_columns[i][selected_rows]
+            end
+        end
+    end
+
+    newdf = DataFrame(new_columns, copy(DataFrames.index(df)), copycols=false)
+    _copy_all_note_metadata!(newdf, df)
+
+    return newdf
+end
+
 ##############################################################################
 ##
 ## setindex!()

@@ -984,6 +984,26 @@ julia> dropmissing(df, [:x, :y])
     end
 end
 
+# new implementation; to be swapped with the above if design is okay
+@inline function _dropmissing(df::AbstractDataFrame,
+    cols::Union{ColumnIndex,MultiColumnIndex}=:;
+    view::Bool=false, disallowmissing::Bool=!view)
+    rowidxs = completecases(df, cols)
+    if view
+        if disallowmissing
+            throw(ArgumentError("disallowmissing=true is incompatible with view=true"))
+        end
+        return Base.view(df, rowidxs, :)
+    else
+        if disallowmissing
+            newdf = _getindex_disallowmissing(df, rowidxs, cols)
+        else
+            newdf = df[rowidxs, :]
+        end
+        return newdf
+    end
+end
+
 """
     dropmissing!(df::AbstractDataFrame, cols=:; disallowmissing::Bool=true)
 
