@@ -984,6 +984,16 @@ julia> dropmissing(df, [:x, :y])
     end
 end
 
+@inline function _getindex_disallowmissing(df::AbstractDataFrame,
+    row_inds::AbstractVector{T},
+    col_disallowmissing_inds::Union{ColumnIndex,MultiColumnIndex}) where {T<:Integer}
+
+    newdf = df[row_inds, :]
+    disallowmissing!(newdf, col_disallowmissing_inds)
+
+    return df
+end
+
 # new implementation; to be swapped with the above if design is okay
 @inline function _dropmissing(df::AbstractDataFrame,
     cols::Union{ColumnIndex,MultiColumnIndex}=:;
