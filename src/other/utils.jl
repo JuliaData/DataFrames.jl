@@ -488,5 +488,5 @@ function _getindex_disallowmissing(vect::AbstractVector{T}, inds::AbstractVector
     for i in eachindex(inds)
         output[last_ind+=1] = vect[inds[i]]
     end
-    output
+    return output
 end
