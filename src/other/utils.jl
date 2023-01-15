@@ -485,8 +485,9 @@ end
 function _getindex_disallowmissing(vect::AbstractVector{T}, inds::AbstractVector{<:Integer}) where {T}
     output = Vector{nonmissingtype(T)}(undef, length(inds))
     last_ind = 0
-    for i in eachindex(inds)
-        output[last_ind+=1] = vect[inds[i]]
+    @inbounds for i in eachindex(inds)
+        last_ind += 1
+        output[last_ind] = vect[inds[i]]
     end
     return output
 end
