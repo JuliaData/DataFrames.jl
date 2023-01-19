@@ -10,6 +10,11 @@ level. This is supported using the functions defined by the DataAPI.jl interface
 * for column-level metatadata: [`colmetadata`](@ref), [`colmetadatakeys`](@ref),
   [`colmetadata!`](@ref), [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
+Additionally you might find the
+[TableMetadataTools.jl](https://github.com/JuliaData/TableMetadataTools.jl)
+package useful. This package defines several convenience functions for
+performing typical metadata operations.
+
 Assume that we work with a data frame-like object `df` that has a column `col`
 (referred to either via a `Symbol`, a string or an integer index).
 
