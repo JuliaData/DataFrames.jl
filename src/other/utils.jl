@@ -483,16 +483,5 @@ end
 # unsafe because it does not check for `inds` values to be not missing (ensured by the caller)
 # Called by `_getindex_disallowmissing(df,...)`
 function _getindex_disallowmissing(vect::AbstractVector{T}, inds::AbstractVector{<:Integer}) where {T}
-    # General fallback, relies on custom vectors' own methods
-    return vect[inds]|>disallowmissing
-end
-
-function _getindex_disallowmissing(vect::Vector{T}, inds::AbstractVector{<:Integer}) where {T}
-    output = Vector{nonmissingtype(T)}(undef, length(inds))
-    last_ind = 0
-    @inbounds for i in eachindex(inds)
-        last_ind += 1
-        output[last_ind] = vect[inds[i]]
-    end
-    return output
+    return disallowmissing(@view vect[inds])
 end
