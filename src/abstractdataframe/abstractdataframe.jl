@@ -970,7 +970,7 @@ julia> dropmissing(df, [:x, :y])
 @inline function dropmissing(df::AbstractDataFrame,
                              cols::Union{ColumnIndex, MultiColumnIndex}=:;
                              view::Bool=false, disallowmissing::Bool=!view)
-    # Changes to be made here
+    # Identify Bool mask of which rows have no Missings
     rowidxs = completecases(df, cols)
     if view
         if disallowmissing
@@ -978,38 +978,44 @@ julia> dropmissing(df, [:x, :y])
         end
         return Base.view(df, rowidxs, :)
     else
-        newdf = df[rowidxs, :]
-        disallowmissing && disallowmissing!(newdf, cols)
-        return newdf
-    end
-end
-
-@inline function _getindex_disallowmissing(df::AbstractDataFrame,
-    row_inds::AbstractVector{T},
-    col_disallowmissing_inds::Union{ColumnIndex,MultiColumnIndex}) where {T<:Integer}
-
-    newdf = df[row_inds, :]
-    disallowmissing!(newdf, col_disallowmissing_inds)
-
-    return df
-end
-
-# new implementation; to be swapped with the above if design is okay
-@inline function _dropmissing(df::AbstractDataFrame,
-    cols::Union{ColumnIndex,MultiColumnIndex}=:;
-    view::Bool=false, disallowmissing::Bool=!view)
-    rowidxs = completecases(df, cols)
-    if view
-        if disallowmissing
-            throw(ArgumentError("disallowmissing=true is incompatible with view=true"))
+        # With exact indices we can skip a lot of iterations (as opposed to indexing via a mask)
+        selected_rows = _findall(rowidxs)
+        new_columns = Vector{AbstractVector}(undef, ncol(df))
+        df_columns = if typeof(df) == DataFrame 
+            _columns(df)
+        else 
+            # for SubDataFrame
+            collect(eachcol(df))
         end
-        return Base.view(df, rowidxs, :)
-    else
-        if disallowmissing
-            newdf = _getindex_disallowmissing(df, rowidxs, cols)
+
+        # What column indices should disallowmissing be applied to
+        cols_inds = index(df)[cols]
+
+        # Threading decision rule borrowed from `_threaded_getindex`
+        if Threads.nthreads() > 1 && ncol(df) > 1 && length(selected_rows) >= 1_000_000
+            @sync for i in eachindex(new_columns)
+                # for each column, check if disallowmissing should be applied
+                Threads.@spawn if disallowmissing && (i in cols_inds)
+                    new_columns[i] = Missings.disallowmissing(@view df_columns[i][selected_rows])
+                else
+                    new_columns[i] = df_columns[i][selected_rows]
+                end
+            end
         else
-            newdf = df[rowidxs, :]
+            for i in eachindex(new_columns)
+                if disallowmissing && (i in cols_inds)
+                    new_columns[i] = Missings.disallowmissing(@view df_columns[i][selected_rows])
+                else
+                    new_columns[i] = df_columns[i][selected_rows]
+                end
+            end
         end
+        # Output will be DataFrame even if SubDataFrame is provided
+        # (assuming that view=false means user wants a DataFrame)
+        newdf = DataFrame(new_columns, copy(DataFrames.index(df)), copycols=false)
+
+        # technically, disallowmissing! drops all nonnote metadata but we never copied it, so no need to drop
+        _copy_all_note_metadata!(newdf, df)
         return newdf
     end
 end

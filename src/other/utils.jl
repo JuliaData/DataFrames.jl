@@ -477,11 +477,3 @@ function _findall(B::BitVector)::Union{UnitRange{Int}, Vector{Int}}
     end
     @assert false "should not be reached"
 end
-
-# Creates a vector like `vect` without the missing type and copies only data at indices in `inds`
-# Fuses two operations that were previously done by getindex + disallowmissing
-# unsafe because it does not check for `inds` values to be not missing (ensured by the caller)
-# Called by `_getindex_disallowmissing(df,...)`
-function _getindex_disallowmissing(vect::AbstractVector{T}, inds::AbstractVector{<:Integer}) where {T}
-    return disallowmissing(@view vect[inds])
-end
