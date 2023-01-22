@@ -217,7 +217,7 @@ end
     @test eltype(dropmissing(df).b) == Int
     @test eltype(dropmissing!(df).b) == Int
 
-    # disallowmissing=false
+    # disallowmissing argument
     a = Union{Int, Missing}[3, 4]
     b = Union{Int, Missing}[1, 2]
     df = DataFrame(;a,b)
