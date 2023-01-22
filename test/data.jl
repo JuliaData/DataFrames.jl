@@ -190,6 +190,16 @@ end
     @test eltype(df2.a) == Union{Int, Missing}
     @test df.a == df2.a == [1, 3]
 
+    # view=true
+    df = DataFrame(a=[1, missing, 3])
+    @test dropmissing(df, view=false) == DataFrame(a=[1, 3])
+    @test dropmissing(df, view=true) == view(df, [1, 3], :)
+    @test typeof(dropmissing(df, view=true)) <: SubDataFrame
+    @test eltype(dropmissing(df, view=true, disallowmissing=false).a) == Union{Int, Missing}
+    @test_throws ArgumentError dropmissing(df, view=true, disallowmissing=true)
+    @test eltype(dropmissing(df, view=false, disallowmissing=false).a) == Union{Int, Missing}
+    @test eltype(dropmissing(df, view=false, disallowmissing=true).a) == Int
+
     a = [1, 2]
     df = DataFrame(a=a, copycols=false)
     @test dropmissing!(df) === df
