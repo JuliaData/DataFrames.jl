@@ -978,15 +978,11 @@ julia> dropmissing(df, [:x, :y])
         end
         return Base.view(df, rowidxs, :)
     else
-        # With exact indices we can skip a lot of iterations (as opposed to indexing via a mask)
+        # Faster when there are many columns (Indexing with Integers than via Bool mask)
+        # or when there are many Missing (as we skip a lot of iterations)
         selected_rows = _findall(rowidxs)
         new_columns = Vector{AbstractVector}(undef, ncol(df))
-        df_columns = if typeof(df) == DataFrame 
-            _columns(df)
-        else 
-            # for SubDataFrame
-            collect(eachcol(df))
-        end
+        df_columns = df isa DataFrame ? _columns(df) : collect(AbstractVector, eachcol(df))
 
         # What column indices should disallowmissing be applied to
         cols_inds = index(df)[cols]
@@ -1010,11 +1006,8 @@ julia> dropmissing(df, [:x, :y])
                 end
             end
         end
-        # Output will be DataFrame even if SubDataFrame is provided
-        # (assuming that view=false means user wants a DataFrame)
         newdf = DataFrame(new_columns, copy(DataFrames.index(df)), copycols=false)
 
-        # technically, disallowmissing! drops all nonnote metadata but we never copied it, so no need to drop
         _copy_all_note_metadata!(newdf, df)
         return newdf
     end
