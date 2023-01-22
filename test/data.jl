@@ -171,8 +171,8 @@ end
     # Zero column case
     isempty(dropmissing(DataFrame())) && dropmissing(DataFrame()) isa DataFrame
     isempty(dropmissing!(DataFrame())) && dropmissing!(DataFrame()) isa DataFrame
-    @test_throws ArgumentError dropmissing(df1,[]) 
-    @test_throws ArgumentError dropmissing!(df1,[]) 
+    @test_throws ArgumentError dropmissing(df1, []) 
+    @test_throws ArgumentError dropmissing!(df1, []) 
     
     df = DataFrame(a=[1, missing, 3])
     sdf = view(df, :, :)
