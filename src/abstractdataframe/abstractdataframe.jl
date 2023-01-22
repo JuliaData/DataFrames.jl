@@ -992,7 +992,7 @@ julia> dropmissing(df, [:x, :y])
             @sync for i in eachindex(new_columns)
                 # for each column, check if disallowmissing should be applied
                 Threads.@spawn if disallowmissing && (i in cols_inds)
-                    new_columns[i] = Missings.disallowmissing(@view df_columns[i][selected_rows])
+                    new_columns[i] = Missings.disallowmissing(view(df_columns[i],selected_rows))
                 else
                     new_columns[i] = df_columns[i][selected_rows]
                 end
@@ -1000,7 +1000,7 @@ julia> dropmissing(df, [:x, :y])
         else
             for i in eachindex(new_columns)
                 if disallowmissing && (i in cols_inds)
-                    new_columns[i] = Missings.disallowmissing(@view df_columns[i][selected_rows])
+                    new_columns[i] = Missings.disallowmissing(view(df_columns[i],selected_rows))
                 else
                     new_columns[i] = df_columns[i][selected_rows]
                 end
