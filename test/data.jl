@@ -218,10 +218,17 @@ end
     @test eltype(dropmissing!(df).b) == Int
 
     # disallowmissing=false
+    a = Union{Int, Missing}[3, 4]
     b = Union{Int, Missing}[1, 2]
-    df = DataFrame(b=b)
-    @test eltype(dropmissing(df, disallowmissing=false).b) == Union{Int, Missing}
-    @test eltype(dropmissing!(df, disallowmissing=false).b) == Union{Int, Missing}
+    df = DataFrame(;a,b)
+    @test eltype(dropmissing(df, disallowmissing=false).a) == Union{Int, Missing}
+    @test eltype(dropmissing!(copy(df), disallowmissing=false).a) == Union{Int, Missing}
+    @test eltype(dropmissing(df, disallowmissing=true).a) == Int
+    @test eltype(dropmissing!(copy(df), disallowmissing=true).a) == Int
+    @test eltype(dropmissing(df, :a, disallowmissing=true).a) == Int
+    @test eltype(dropmissing!(copy(df), :a, disallowmissing=true).a) == Int
+    @test eltype(dropmissing(df, :b, disallowmissing=true).a) == Union{Int, Missing}
+    @test eltype(dropmissing!(copy(df), :b, disallowmissing=true).a) == Union{Int, Missing}
 
     # CategoricalArrays
     c = Union{Int64, Missing}[1,2,1,missing]|>categorical
