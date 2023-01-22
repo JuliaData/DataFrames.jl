@@ -231,7 +231,7 @@ end
     @test eltype(dropmissing!(copy(df), :b, disallowmissing=true).a) == Union{Int, Missing}
 
     # CategoricalArrays
-    c = Union{Int64, Missing}[1,2,1,missing]|>categorical
+    c = categorical([1, 2, 1, missing])
     df = DataFrame(c=c)
     @test dropmissing(df) == DataFrame(c=categorical([1, 2, 1]))
     @test eltype(dropmissing(df).c) == CategoricalValue{Int64, UInt32}
