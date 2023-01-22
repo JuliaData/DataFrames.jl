@@ -234,8 +234,8 @@ end
     c = categorical([1, 2, 1, missing])
     df = DataFrame(c=c)
     @test dropmissing(df) == DataFrame(c=categorical([1, 2, 1]))
-    @test eltype(dropmissing(df).c) == CategoricalValue{Int64, UInt32}
-    @test eltype(dropmissing!(df).c) == CategoricalValue{Int64, UInt32}
+    @test eltype(dropmissing(df).c) == CategoricalValue{Int, UInt32}
+    @test eltype(dropmissing!(df).c) == CategoricalValue{Int, UInt32}
 end
 
 @testset "deleteat! https://github.com/JuliaLang/julia/pull/41646 bug workaround" begin
