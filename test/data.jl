@@ -168,6 +168,10 @@ end
         @test df1b == df1
     end
 
+    # Zero column case
+    isempty(dropmissing(DataFrame())) && dropmissing(DataFrame()) isa DataFrame
+    @test_throws ArgumentError dropmissing(df1,[])
+    
     df = DataFrame(a=[1, missing, 3])
     sdf = view(df, :, :)
     @test dropmissing(sdf) == DataFrame(a=[1, 3])
@@ -200,6 +204,13 @@ end
     df = DataFrame(b=b)
     @test eltype(dropmissing(df).b) == Int
     @test eltype(dropmissing!(df).b) == Int
+
+    # CategoricalArrays
+    c = Union{Int64, Missing}[1,2,1,missing]|>categorical
+    df = DataFrame(c=c)
+    @test dropmissing(df) == DataFrame(c=categorical([1, 2, 1]))
+    @test eltype(dropmissing(df).c) == CategoricalValue{Int64, UInt32}
+    @test eltype(dropmissing!(df).c) == CategoricalValue{Int64, UInt32}
 end
 
 @testset "deleteat! https://github.com/JuliaLang/julia/pull/41646 bug workaround" begin
