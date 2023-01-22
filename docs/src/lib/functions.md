@@ -26,7 +26,7 @@ This is a list of operations that currently make use of multi-threading:
     is a custom function (i.e. not for standard reductions, which use
     optimized single-threaded methods).
 - `dropmissing` when the provided `DataFrame` has more than 1 column and `view=false` 
-  (subset-ing into a column without `Missing` is spawned in a separate task for each column).
+  (subset-ing of individual columns is spawned in separate tasks).
 
 In general at least Julia 1.4 is required to ensure that multi-threading is used
 and the Julia process must be started with more than one thread. Some operations
