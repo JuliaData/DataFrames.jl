@@ -217,6 +217,12 @@ end
     @test eltype(dropmissing(df).b) == Int
     @test eltype(dropmissing!(df).b) == Int
 
+    # disallowmissing=false
+    b = Union{Int, Missing}[1, 2]
+    df = DataFrame(b=b)
+    @test eltype(dropmissing(df, disallowmissing=false).b) == Union{Int, Missing}
+    @test eltype(dropmissing!(df, disallowmissing=false).b) == Union{Int, Missing}
+
     # CategoricalArrays
     c = Union{Int64, Missing}[1,2,1,missing]|>categorical
     df = DataFrame(c=c)
