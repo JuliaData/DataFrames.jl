@@ -986,27 +986,16 @@ julia> dropmissing(df, [:x, :y])
 
         # What column indices should disallowmissing be applied to
         cols_inds = index(df)[cols]
-
-        # Threading decision rule borrowed from `_threaded_getindex`
-        if Threads.nthreads() > 1 && ncol(df) > 1 && length(selected_rows) >= 1_000_000
-            @sync for i in eachindex(new_columns)
-                # for each column, check if disallowmissing should be applied
-                Threads.@spawn if disallowmissing && (i in cols_inds)
-                    new_columns[i] = Missings.disallowmissing(Base.view(df_columns[i], selected_rows))
-                else
-                    new_columns[i] = df_columns[i][selected_rows]
-                end
-            end
-        else
-            for i in eachindex(new_columns)
-                if disallowmissing && (i in cols_inds)
-                    # implicit imports of functions due to name clash with keyword arguments!
-                    new_columns[i] = Missings.disallowmissing(Base.view(df_columns[i],selected_rows))
-                else
-                    new_columns[i] = df_columns[i][selected_rows]
-                end
+        
+        use_threads = Threads.nthreads() > 1 && ncol(df) > 1 && length(selected_rows) >= 100_000
+        @sync for i in eachindex(new_columns)
+            @spawn_or_run use_threads if disallowmissing && (i in cols_inds)
+                new_columns[i] = Missings.disallowmissing(Base.view(df_columns[i], selected_rows))
+            else
+                new_columns[i] = df_columns[i][selected_rows]
             end
         end
+
         newdf = DataFrame(new_columns, copy(DataFrames.index(df)), copycols=false)
 
         _copy_all_note_metadata!(newdf, df)
