@@ -238,7 +238,7 @@ end
     @test eltype(dropmissing!(df).c) == CategoricalValue{Int, UInt32}
 
     # Multithreaded execution test (must be at least ncol > 1, nrow > 100_000)
-    N_rows, N_cols = 10^7, 4
+    N_rows, N_cols = 200_000, 3
     df = DataFrame([rand(N_rows) for i in 1:N_cols], :auto) |> allowmissing
     # Deterministic drop mask: IF remainder of index position divided by 10 == column index THEN missing
     for i in 1:ncol(df)
