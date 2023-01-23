@@ -236,6 +236,26 @@ end
     @test dropmissing(df) == DataFrame(c=categorical([1, 2, 1]))
     @test eltype(dropmissing(df).c) == CategoricalValue{Int, UInt32}
     @test eltype(dropmissing!(df).c) == CategoricalValue{Int, UInt32}
+
+    # Multithreaded execution test (must be at least ncol > 1, nrow > 100_000)
+    N_rows, N_cols = 10^7, 4
+    df = DataFrame([rand(N_rows) for i in 1:N_cols], :auto) |> allowmissing
+    # Deterministic drop mask: IF remainder of index position divided by 10 == column index THEN missing
+    for i in 1:ncol(df)
+        missing_mask = (eachindex(df[!,i]) .% 10) .== i
+        df[missing_mask,i] .= missing 
+    end
+    
+    notmissing_rows = [i for i in 1:N_rows if i % 10 == 0 || i % 10 > ncol(df)]
+    @test isequal(dropmissing(df), df[notmissing_rows, :])
+    
+    cols = [:x1, :x2]
+    notmissing_rows = [i for i in 1:N_rows if i % 10 == 0 || i % 10 > length(cols)]
+    returned = dropmissing(df, cols)
+    @test isequal(returned, df[notmissing_rows, :])
+    @test eltype(returned[:, cols[1]]) == nonmissingtype(eltype(df[:, cols[1]]))
+    @test eltype(returned[:, cols[2]]) == nonmissingtype(eltype(df[:, cols[2]]))
+    @test eltype(returned[:, ncol(df)]) == eltype(df[:, ncol(df)])
 end
 
 @testset "deleteat! https://github.com/JuliaLang/julia/pull/41646 bug workaround" begin
