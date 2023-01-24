@@ -25,7 +25,7 @@ This is a list of operations that currently make use of multi-threading:
   * a transformation produces one row per group and the passed transformation
     is a custom function (i.e. not for standard reductions, which use
     optimized single-threaded methods).
-- `dropmissing` when the provided `DataFrame` has more than 1 column and `view=false` 
+- `dropmissing` when the provided data frame has more than 1 column and `view=false` 
   (subsetting of individual columns is spawned in separate tasks).
 
 In general at least Julia 1.4 is required to ensure that multi-threading is used

@@ -978,7 +978,7 @@ julia> dropmissing(df, [:x, :y])
         end
         return Base.view(df, rowidxs, :)
     else
-        # Faster when there are many columns (Indexing with Integers than via Bool mask)
+        # Faster when there are many columns (indexing with integers than via Bool mask)
         # or when there are many Missing (as we skip a lot of iterations)
         selected_rows = _findall(rowidxs)
         new_columns = Vector{AbstractVector}(undef, ncol(df))
@@ -996,7 +996,7 @@ julia> dropmissing(df, [:x, :y])
             end
         end
 
-        newdf = DataFrame(new_columns, copy(DataFrames.index(df)), copycols=false)
+        newdf = DataFrame(new_columns, copy(index(df)), copycols=false)
 
         _copy_all_note_metadata!(newdf, df)
         return newdf
