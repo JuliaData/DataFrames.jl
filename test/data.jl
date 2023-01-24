@@ -169,8 +169,12 @@ end
     end
 
     # Zero column case
-    isempty(dropmissing(DataFrame())) && dropmissing(DataFrame()) isa DataFrame
-    isempty(dropmissing!(DataFrame())) && dropmissing!(DataFrame()) isa DataFrame
+    @test isempty(dropmissing(DataFrame())) && dropmissing(DataFrame()) isa DataFrame
+    @test isempty(dropmissing!(DataFrame())) && dropmissing!(DataFrame()) isa DataFrame
+    df = DataFrame(a=1:3, b=4:6)
+    dfv = @view df[:, 2:1]
+    @test isempty(dropmissing(dfv) && dropmissing(dfv) isa DataFrame
+    @test_throws ArgumentError dropmissing!(DataFrame())
     @test_throws ArgumentError dropmissing(df1, []) 
     @test_throws ArgumentError dropmissing!(df1, []) 
     
@@ -238,12 +242,12 @@ end
     @test eltype(dropmissing!(df).c) == CategoricalValue{Int, UInt32}
 
     # Multithreaded execution test (must be at least ncol > 1, nrow > 100_000)
-    N_rows, N_cols = 200_000, 3
+    N_rows, N_cols = 110_000, 3
     df = DataFrame([rand(N_rows) for i in 1:N_cols], :auto) |> allowmissing
     # Deterministic drop mask: IF remainder of index position divided by 10 == column index THEN missing
     for i in 1:ncol(df)
-        missing_mask = (eachindex(df[!,i]) .% 10) .== i
-        df[missing_mask,i] .= missing 
+        missing_mask = (eachindex(df[!, i]) .% 10) .== i
+        df[missing_mask, i] .= missing 
     end
     
     notmissing_rows = [i for i in 1:N_rows if i % 10 == 0 || i % 10 > ncol(df)]
