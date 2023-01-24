@@ -28,6 +28,9 @@
 * fixed error in fast aggregation in `sum` and `mean` of columns only having
   `missing` values
   ([#3268](https://github.com/JuliaData/DataFrames.jl/pull/3268))
+* fixed error in indexing of `SubDataFrame` that has no columns selected from
+  its parent
+  ([#3273](https://github.com/JuliaData/DataFrames.jl/pull/3273))
 
 # DataFrames.jl v1.4.4 Patch Release Notes
 
