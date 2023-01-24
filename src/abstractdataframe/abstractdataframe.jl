@@ -981,18 +981,17 @@ julia> dropmissing(df, [:x, :y])
         # Faster when there are many columns (indexing with integers than via Bool mask)
         # or when there are many Missing (as we skip a lot of iterations)
         selected_rows = _findall(rowidxs)
-        new_columns = Vector{AbstractVector}(undef, ncol(df))
-        df_columns = df isa DataFrame ? _columns(df) : collect(AbstractVector, eachcol(df))
+        new_columns = df isa DataFrame ? copy(_columns(df)) : collect(AbstractVector, eachcol(df))
 
         # What column indices should disallowmissing be applied to
         cols_inds = index(df)[cols]
         
         use_threads = Threads.nthreads() > 1 && ncol(df) > 1 && length(selected_rows) >= 100_000
-        @sync for i in eachindex(new_columns)
+        @sync for (i, col) in enumerate(new_columns)
             @spawn_or_run use_threads if disallowmissing && (i in cols_inds)
-                new_columns[i] = Missings.disallowmissing(Base.view(df_columns[i], selected_rows))
+                new_columns[i] = Missings.disallowmissing(Base.view(col, selected_rows))
             else
-                new_columns[i] = df_columns[i][selected_rows]
+                new_columns[i] = col[selected_rows]
             end
         end
 
