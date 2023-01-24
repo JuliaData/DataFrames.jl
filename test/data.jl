@@ -175,7 +175,7 @@ end
     dfv = @view df[:, 2:1]
     # TODO: re-enable after https://github.com/JuliaData/DataFrames.jl/issues/3272 is resolved
     # @test isempty(dropmissing(dfv)) && dropmissing(dfv) isa DataFrame
-    @test_throws ArgumentError dropmissing!(DataFrame())
+    @test_throws ArgumentError dropmissing!(dfv)
     @test_throws ArgumentError dropmissing(df1, []) 
     @test_throws ArgumentError dropmissing!(df1, []) 
     
