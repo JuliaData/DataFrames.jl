@@ -3722,10 +3722,10 @@ end
 end
 
 @testset "groupby multithreading" begin
-    for x in (PooledArray(rand(1:10, 110_000)),
-              PooledArray(rand([1:9; missing], 110_000))),
-        y in (PooledArray(rand(["a", "b", "c", "d"], 110_000)),
-              PooledArray(rand(["a"; "b"; "c"; missing], 110_000)))
+    for x in (PooledArray(rand(1:10, 210_000)),
+              PooledArray(rand([1:9; missing], 210_000))),
+        y in (PooledArray(rand(["a", "b", "c", "d"], 210_000)),
+              PooledArray(rand(["a"; "b"; "c"; missing], 210_000)))
         df = DataFrame(x=x, y=y)
 
         # Checks are done by groupby_checked
@@ -3777,7 +3777,7 @@ end
     end
 
     Random.seed!(1234)
-    for levs in (100, 89_000), sz in (90_000, 110_000)
+    for levs in (100, 89_000), sz in (90_000, 210_000)
         df = DataFrame(x_int=rand(1:levs, sz))
         df.x_str = string.(df.x_int, pad=5)
         df.x_pool = PooledArray(df.x_str)
@@ -4401,7 +4401,7 @@ end
     @test getindex.(keys(groupby(df, [order(:x, rev=true)], sort=NamedTuple())), 1) == ["c", "b", "a"]
     @test getindex.(keys(groupby(df, :x, sort=(;rev=true))), 1) == ["c", "b", "a"]
     @test getindex.(keys(groupby(df, [:x], sort=(;rev=true))), 1) == ["c", "b", "a"]
-   
+
     # by default sorting is not applied as range of values is wide
     df = DataFrame(x=[2, 100, 2, 1, 100])
     @test getindex.(keys(groupby(df, :x)), 1) == [2, 100, 1]
@@ -4434,7 +4434,7 @@ end
     df2 = string.(df1, pad=3)
 
     for df in (df1, df2)
-        for col in (:a, "a", 1, :b, "b", 2, :c, "c", 3) 
+        for col in (:a, "a", 1, :b, "b", 2, :c, "c", 3)
             gdf = groupby(df, order(col))
             @test issorted(DataFrame(gdf)[:, col])
             @test all(x -> issorted(x.c), gdf)

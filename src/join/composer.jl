@@ -422,7 +422,7 @@ function _compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique
                                               left_ixs, lil + 1, leftonly_ixs, loil)
         new_order = _count_sortperm(left_cols_idxs)
     end
-    if order == :right && !(issorted(right_ixs) && isempty(rightonly_ixs)) 
+    if order == :right && !(issorted(right_ixs) && isempty(rightonly_ixs))
         right_cols_idxs = _sort_compose_helper(nrow(joiner.dfr) + 1,
                                                1:nrow(joiner.dfr), target_nrow,
                                                right_ixs, lil + loil + 1, rightonly_ixs, roil)

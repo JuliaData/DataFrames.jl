@@ -5,7 +5,9 @@ function hashrows_col!(h::Vector{UInt},
                        v::AbstractVector{T},
                        rp::Nothing,
                        firstcol::Bool) where T
-    @spawn_for_chunks 100_000 for i in eachindex(h)
+    min_chunk_size = clamp(length(h) ÷ Threads.nthreads(),
+                           100_000, 10_000_000)
+    @spawn_for_chunks min_chunk_size for i in eachindex(h)
         @inbounds begin
             el = v[i]
             h[i] = hash(el, h[i])
@@ -23,6 +25,8 @@ function hashrows_col!(h::Vector{UInt},
                        v::AbstractVector,
                        rp::Any,
                        firstcol::Bool)
+    min_chunk_size = clamp(length(h) ÷ Threads.nthreads(),
+                           100_000, 10_000_000)
     # When hashing the first column, no need to take into account previous hash,
     # which is always zero
     # also when the number of values in the pool is more than half the length
@@ -33,18 +37,18 @@ function hashrows_col!(h::Vector{UInt},
         fira = firstindex(ra)
 
         hashes = Vector{UInt}(undef, length(rp))
-        @spawn_for_chunks 100_000 for i in eachindex(hashes)
+        @spawn_for_chunks min_chunk_size for i in eachindex(hashes)
             @inbounds hashes[i] = hash(rp[i+firp-1])
         end
 
         # here we rely on the fact that `DataAPI.refpool` has a continuous
         # block of indices
-        @spawn_for_chunks 100_000 for i in eachindex(h)
+        @spawn_for_chunks min_chunk_size for i in eachindex(h)
             @inbounds ref = ra[i+fira-1]
             @inbounds h[i] = hashes[ref+1-firp]
         end
     else
-        @spawn_for_chunks 100_000 for i in eachindex(h, v)
+        @spawn_for_chunks min_chunk_size for i in eachindex(h, v)
             @inbounds h[i] = hash(v[i], h[i])
         end
     end
@@ -322,7 +326,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
     lg = length(groups)
     nt = Threads.nthreads()
     # disable threading if we are processing a small data frame or number of groups is large
-    if lg < 100_000 || ngroups > lg * (0.5 - 1 / (2 * nt)) / (2 * nt)
+    if lg < 100_000 * nt || ngroups > lg * (0.5 - 1 / (2 * nt)) / (2 * nt)
        nt = 1
     end
     seen = fill(false, ngroups)
