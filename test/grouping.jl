@@ -3722,10 +3722,10 @@ end
 end
 
 @testset "groupby multithreading" begin
-    for x in (PooledArray(rand(1:10, 1_100_000)),
-              PooledArray(rand([1:9; missing], 1_100_000))),
-        y in (PooledArray(rand(["a", "b", "c", "d"], 1_100_000)),
-              PooledArray(rand(["a"; "b"; "c"; missing], 1_100_000)))
+    for x in (PooledArray(rand(1:10, 110_000)),
+              PooledArray(rand([1:9; missing], 110_000))),
+        y in (PooledArray(rand(["a", "b", "c", "d"], 110_000)),
+              PooledArray(rand(["a"; "b"; "c"; missing], 110_000)))
         df = DataFrame(x=x, y=y)
 
         # Checks are done by groupby_checked
@@ -3777,7 +3777,7 @@ end
     end
 
     Random.seed!(1234)
-    for levs in (100, 99_000), sz in (100_000, 1_100_000)
+    for levs in (100, 9_000), sz in (90_000, 110_000)
         df = DataFrame(x_int=rand(1:levs, sz))
         df.x_str = string.(df.x_int, pad=5)
         df.x_pool = PooledArray(df.x_str)

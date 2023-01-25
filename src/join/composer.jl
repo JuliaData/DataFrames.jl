@@ -249,9 +249,9 @@ function compose_inner_table(joiner::DataFrameJoiner,
         right_ixs = right_ixs[csp_r]
     end
 
-    if Threads.nthreads() > 1 && length(left_ixs) >= 1_000_000
-        dfl_task = Threads.@spawn joiner.dfl[left_ixs, :]
-        dfr_noon_task = Threads.@spawn joiner.dfr[right_ixs, Not(joiner.right_on)]
+    if Threads.nthreads() > 1 && length(left_ixs) >= 100_000
+        dfl_task = @spawn joiner.dfl[left_ixs, :]
+        dfr_noon_task = @spawn joiner.dfr[right_ixs, Not(joiner.right_on)]
         dfl = fetch(dfl_task)
         dfr_noon = fetch(dfr_noon_task)
     else
@@ -384,20 +384,20 @@ function _compose_joined_table(joiner::DataFrameJoiner, kind::Symbol, makeunique
 
     @assert col_idx == ncol(joiner.dfl_on) + 1
 
-    if Threads.nthreads() > 1 && target_nrow >= 1_000_000 && length(cols) > col_idx
+    if Threads.nthreads() > 1 && target_nrow >= 100_000 && length(cols) > col_idx
         @sync begin
             for col in eachcol(dfl_noon)
                 cols_i = left_idxs[col_idx]
-                Threads.@spawn _noon_compose_helper!(cols, _similar_left, cols_i,
-                                                     col, target_nrow, left_ixs, lil + 1,
-                                                     leftonly_ixs, loil)
+                @spawn _noon_compose_helper!(cols, _similar_left, cols_i,
+                                             col, target_nrow, left_ixs, lil + 1,
+                                             leftonly_ixs, loil)
                 col_idx += 1
             end
             @assert col_idx == ncol(joiner.dfl) + 1
             for col in eachcol(dfr_noon)
                 cols_i = col_idx
-                Threads.@spawn _noon_compose_helper!(cols, _similar_right, cols_i, col, target_nrow,
-                                                     right_ixs, lil + loil + 1, rightonly_ixs, roil)
+                @spawn _noon_compose_helper!(cols, _similar_right, cols_i, col, target_nrow,
+                                             right_ixs, lil + loil + 1, rightonly_ixs, roil)
                 col_idx += 1
             end
         end

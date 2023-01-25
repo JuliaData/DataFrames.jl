@@ -212,9 +212,9 @@ mutable struct DataFrame <: AbstractDataFrame
 
         # we write into columns as we know that it is guaranteed
         # that it was freshly allocated in the outer constructor
-        if copycols && len >= 1_000_000 && length(columns) > 1 && Threads.nthreads() > 1
+        if copycols && len >= 100_000 && length(columns) > 1 && Threads.nthreads() > 1
             @sync for i in eachindex(columns)
-                Threads.@spawn columns[i] = _preprocess_column(columns[i], len, copycols)
+                @spawn columns[i] = _preprocess_column(columns[i], len, copycols)
             end
         else
             for i in eachindex(columns)
@@ -558,10 +558,10 @@ function _threaded_getindex(selected_rows::AbstractVector,
                             selected_columns::AbstractVector,
                             df_columns::AbstractVector,
                             idx::AbstractIndex)
-    if length(selected_rows) >= 1_000_000 && Threads.nthreads() > 1
+    if length(selected_rows) >= 100_000 && Threads.nthreads() > 1
         new_columns = Vector{AbstractVector}(undef, length(selected_columns))
         @sync for i in eachindex(new_columns)
-            Threads.@spawn new_columns[i] = df_columns[selected_columns[i]][selected_rows]
+            @spawn new_columns[i] = df_columns[selected_columns[i]][selected_rows]
         end
         return DataFrame(new_columns, idx, copycols=false)
     else

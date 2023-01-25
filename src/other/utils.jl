@@ -175,13 +175,13 @@ function _spawn_for_chunks_helper(iter, lbody, basesize)
             nt = Threads.nthreads()
             len = length(x)
             if nt > 1 && len > basesize
-                tasks = [Threads.@spawn begin
-                                for i in p
-                                    local $(esc(lidx)) = @inbounds x[i]
-                                    $(esc(lbody))
-                                end
-                            end
-                            for p in split_indices(len, basesize)]
+                tasks = [@spawn begin
+                             for i in p
+                                 local $(esc(lidx)) = @inbounds x[i]
+                                 $(esc(lbody))
+                             end
+                         end
+                         for p in split_indices(len, basesize)]
                 foreach(wait, tasks)
             else
                 for i in eachindex(x)
