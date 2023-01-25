@@ -325,9 +325,15 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
 
     lg = length(groups)
     nt = Threads.nthreads()
-    # disable threading if we are processing a small data frame or number of groups is large
-    if lg < 100_000 * nt || ngroups > lg * (0.5 - 1 / (2 * nt)) / (2 * nt)
-       nt = 1
+    # make sure we are processing at least 100_000 rows per task if we do threading
+    if lg < 100_000 * nt
+       nt = max(1, lg ÷ 100_000)
+    end
+    # if there are many groups limit the number of threads used
+    if 16 * Int(ngroups) > lg
+        nt = 1
+    else
+        nt = clamp(floor(Int, lg * (sqrt(max(0.0, 1 - 16 * (ngroups / lg))) + 1) / (8 * ngroups)), 2, nt)
     end
     seen = fill(false, ngroups)
     seen_vec = Vector{Vector{Bool}}(undef, nt)
