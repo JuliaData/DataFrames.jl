@@ -252,12 +252,12 @@ end
     end
     
     notmissing_rows = [i for i in 1:N_rows if i % 10 == 0 || i % 10 > ncol(df)]
-    @test isequal(dropmissing(df), df[notmissing_rows, :])
+    @test dropmissing(df) ≅ df[notmissing_rows, :]
     
     cols = [:x1, :x2]
     notmissing_rows = [i for i in 1:N_rows if i % 10 == 0 || i % 10 > length(cols)]
     returned = dropmissing(df, cols)
-    @test isequal(returned, df[notmissing_rows, :])
+    @test returned ≅ df[notmissing_rows, :]
     @test eltype(returned[:, cols[1]]) == nonmissingtype(eltype(df[:, cols[1]]))
     @test eltype(returned[:, cols[2]]) == nonmissingtype(eltype(df[:, cols[2]]))
     @test eltype(returned[:, ncol(df)]) == eltype(df[:, ncol(df)])

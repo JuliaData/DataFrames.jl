@@ -979,12 +979,12 @@ julia> dropmissing(df, [:x, :y])
         return Base.view(df, rowidxs, :)
     else
         # Faster when there are many columns (indexing with integers than via Bool mask)
-        # or when there are many Missing (as we skip a lot of iterations)
+        # or when there are few Missing (as we skip a lot of iterations)
         selected_rows = _findall(rowidxs)
         new_columns = Vector{AbstractVector}(undef, ncol(df))
 
         # What column indices should disallowmissing be applied to
-        cols_inds = index(df)[cols]
+        cols_inds = BitSet(index(df)[cols])
         
         use_threads = Threads.nthreads() > 1 && ncol(df) > 1 && length(selected_rows) >= 100_000
         @sync for (i, col) in enumerate(eachcol(df))
