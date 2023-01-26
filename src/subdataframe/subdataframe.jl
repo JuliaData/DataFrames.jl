@@ -110,16 +110,23 @@ Base.@propagate_inbounds function SubDataFrame(parent::DataFrame, rows::Abstract
     return SubDataFrame(parent, convert(Vector{Int}, rows), cols)
 end
 
-Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, rowind, cols) =
-    SubDataFrame(parent(sdf), rows(sdf)[rowind], parentcols(index(sdf), cols))
+Base.@propagate_inbounds function SubDataFrame(sdf::SubDataFrame, rowind, cols)
+    new_rows = ncol(sdf) == 0 ? (Int[])[rowind] : rows(sdf)[rowind]
+    return SubDataFrame(parent(sdf), new_rows, parentcols(index(sdf), cols))
+end
+
 Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, rowind::Bool, cols) =
     throw(ArgumentError("invalid row index of type Bool"))
-Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, rowind, ::Colon) =
+
+Base.@propagate_inbounds function SubDataFrame(sdf::SubDataFrame, rowind, ::Colon)
+    new_rows = ncol(sdf) == 0 ? (Int[])[rowind] : rows(sdf)[rowind]
     if index(sdf) isa Index # sdf was created using : as row selector
-        SubDataFrame(parent(sdf), rows(sdf)[rowind], :)
+        return SubDataFrame(parent(sdf), new_rows, :)
     else
-        SubDataFrame(parent(sdf), rows(sdf)[rowind], parentcols(index(sdf), :))
+        return SubDataFrame(parent(sdf), new_rows, parentcols(index(sdf), :))
     end
+end
+
 Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, rowind::Bool, ::Colon) =
     throw(ArgumentError("invalid row index of type Bool"))
 Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, ::Colon, cols) =
@@ -157,27 +164,30 @@ index(sdf::SubDataFrame) = getfield(sdf, :colindex)
 nrow(sdf::SubDataFrame) = ncol(sdf) > 0 ? length(rows(sdf))::Int : 0
 
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex) =
-    parent(sdf)[rows(sdf)[rowind], parentcols(index(sdf), colind)]
+    parent(sdf)[!, parentcols(index(sdf), colind)][rows(sdf)[rowind]]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowind::Bool, colind::ColumnIndex) =
     throw(ArgumentError("invalid row index of type Bool"))
-
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::Union{AbstractVector, Not},
                                        colind::ColumnIndex) =
-    parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colind)]
+    parent(sdf)[!, parentcols(index(sdf), colind)][rows(sdf)[rowinds]]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon, colind::ColumnIndex) =
     parent(sdf)[rows(sdf), parentcols(index(sdf), colind)]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::typeof(!), colind::ColumnIndex) =
     view(parent(sdf), rows(sdf), parentcols(index(sdf), colind))
 
-Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::Union{AbstractVector, Not},
-                                       colinds::MultiColumnIndex) =
-    parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colinds)]
+Base.@propagate_inbounds function Base.getindex(sdf::SubDataFrame,
+                                                rowinds::Union{AbstractVector, Not},
+                                                colinds::MultiColumnIndex)
+    new_rows = ncol(sdf) == 0 ? (Int[])[rowinds] : rows(sdf)[rowinds]
+    return parent(sdf)[new_rows, parentcols(index(sdf), colinds)]
+end
+
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon,
                                        colinds::MultiColumnIndex) =
     parent(sdf)[rows(sdf), parentcols(index(sdf), colinds)]
-Base.@propagate_inbounds Base.getindex(df::SubDataFrame, row_ind::typeof(!),
+Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, row_ind::typeof(!),
                                        col_inds::MultiColumnIndex) =
-    select(df, index(df)[col_inds], copycols=false)
+    select(sdf, index(sdf)[col_inds], copycols=false)
 
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, idx::CartesianIndex{2})
     return setindex!(sdf, val, idx[1], idx[2])
