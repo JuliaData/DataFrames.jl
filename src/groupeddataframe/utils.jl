@@ -325,7 +325,7 @@ function row_group_slots(cols::NTuple{N, AbstractVector},
     if lg < 100_000 * nt
        nt = max(1, lg ÷ 100_000)
     end
-    # if there are many groups limit the number of threads used
+    # if there are few rows per group limit the number of threads used
     if 16 * Int(ngroups) > lg
         nt = 1
     else
