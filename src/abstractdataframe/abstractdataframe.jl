@@ -1406,7 +1406,7 @@ function fillcombinations(df::AbstractDataFrame, indexcols;
 
     # we use hashing algorithm here, because we assume that the tables we work with are not huge
     has_duplicates = row_group_slots!(ntuple(i -> df[!, colind[i]], length(colind)),
-                                      Val(false), nothing, false, nothing, false)[1] != nrow(df)
+                                      Val(false), nothing, false, nothing, true)[1] != nrow(df)
     if has_duplicates && !allowduplicates
         throw(ArgumentError("duplicate combinations of `indexcols` are not " *
                             "allowed in input when `allowduplicates=false`"))
@@ -3131,4 +3131,3 @@ function Base.iterate(itr::Iterators.PartitionIterator{<:AbstractDataFrame}, sta
     r = min(state + itr.n - 1, last_idx)
     return view(itr.c, state:r, :), r + 1
 end
-

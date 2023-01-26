@@ -183,16 +183,17 @@ end
 # Optional `groups` vector is set to the group indices of each row (starting at 1)
 # With skipmissing=true, rows with missing values are attributed index 0.
 #
-# Also the last argument is nonunique. If it is `true` then groups are not
-# compressed to form a continuous sequence. Normally `false` should be passed
+# Also the last argument is `compress`. If it is `false` then groups are not
+# compressed to form a continuous sequence. Normally `true` should be passed
 # as this ensures that returned `ngroups` indeed indicates the number of groups
-# but in `nonunique` we do not use this information so compressing can be skipped
+# but e.g. in `nonunique` we do not use this information so compressing
+# can be skipped by passing `compress=false`
 function row_group_slots!(cols::Tuple{Vararg{AbstractVector}},
                           hash::Val,
                           groups::Union{Vector{Int}, Nothing},
                           skipmissing::Bool,
                           sort::Union{Bool, Nothing},
-                          nonunique::Bool
+                          compress::Bool
                          )::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
     rpa = refpool_and_array.(cols)
     if sort === false
@@ -203,7 +204,7 @@ function row_group_slots!(cols::Tuple{Vararg{AbstractVector}},
         refarrays = last.(rpa)
     end
     row_group_slots!(cols, refpools, refarrays, hash, groups, skipmissing,
-                     sort === true, nonunique)
+                     sort === true, compress)
 end
 
 # Generic fallback method based on open addressing hash table
@@ -214,7 +215,7 @@ function row_group_slots!(cols::Tuple{Vararg{AbstractVector}},
                           groups::Union{Vector{Int}, Nothing},
                           skipmissing::Bool,
                           sort::Bool,
-                          nonunique::Bool)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
+                          compress::Bool)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
     @assert groups === nothing || length(groups) == length(cols[1])
     rhashes, missings = hashrows(cols, skipmissing)
     # inspired by Dict code from base cf. https://github.com/JuliaData/DataTables.jl/pull/17#discussion_r102481481
@@ -271,7 +272,7 @@ function row_group_slots!(cols::NTuple{N, AbstractVector},
                           groups::Vector{Int},
                           skipmissing::Bool,
                           sort::Bool,
-                          nonunique::Bool)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} where N
+                          compress::Bool)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} where N
     # Computing neither hashes nor groups isn't very useful,
     # and this method needs to allocate a groups vector anyway
     @assert all(col -> length(col) == length(groups), cols)
@@ -310,7 +311,7 @@ function row_group_slots!(cols::NTuple{N, AbstractVector},
         return invoke(row_group_slots!,
                       Tuple{Tuple{Vararg{AbstractVector}}, Any, Any, Val,
                             Union{Vector{Int}, Nothing}, Bool, Bool, Bool},
-                      newcols, refpools, refarrays, hash, groups, skipmissing, sort, nonunique)
+                      newcols, refpools, refarrays, hash, groups, skipmissing, sort, compress)
     end
 
     strides = (cumprod(collect(reverse(ngroupstup)))[end-1:-1:1]..., 1)::NTuple{N, Int}
@@ -440,8 +441,8 @@ function row_group_slots!(cols::NTuple{N, AbstractVector},
     # sum(seen) is faster than all(seen) when not short-circuiting,
     # and short-circuit would only happen in the slower case anyway
     #
-    # This process is not needed if row_group_slots! is called from nonunique
-    if !nonunique && sum(seen) < length(seen)
+    # This process is not needed if row_group_slots! is called with compress=false
+    if compress && sum(seen) < length(seen)
         oldngroups = ngroups
         remap = zeros(Int, ngroups)
         ngroups = 0

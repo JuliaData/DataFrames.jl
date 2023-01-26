@@ -97,7 +97,7 @@ function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
         refarrays = last.(rpa)
         if any(isnothing, refpools) || any(isnothing, refarrays)
             _, _, gslots, _ = row_group_slots!(cols, Val(true), nothing,
-                                               false, nothing, true)
+                                               false, nothing, false)
             # unique rows are the first encountered group representatives,
             # nonunique are everything else
             @inbounds for g_row in gslots
@@ -106,7 +106,7 @@ function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
         else
             groups = Vector{Int}(undef, nrow(df))
             ngroups = row_group_slots!(cols, refpools, refarrays,
-                                       Val(false), groups, false, false, true)[1]
+                                       Val(false), groups, false, false, false)[1]
             seen = fill(false, ngroups)
             for i in 1:nrow(df)
                 g = groups[i]
@@ -118,7 +118,7 @@ function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
         end
     else
         groups = Vector{Int}(undef, nrow(df))
-        ngroups = row_group_slots!(cols, Val(false), groups, false, nothing, true)[1]
+        ngroups = row_group_slots!(cols, Val(false), groups, false, nothing, false)[1]
         if keep == :last
             seen = fill(false, ngroups)
             for i in nrow(df):-1:1
@@ -203,7 +203,7 @@ function Base.allunique(df::AbstractDataFrame, cols=:)
     udf = _try_select_no_copy(df, cols)
     nrow(udf) == 0 && return true
     return row_group_slots!(ntuple(i -> udf[!, i], ncol(udf)),
-                            Val(false), nothing, false, nothing, false)[1] == nrow(df)
+                            Val(false), nothing, false, nothing, true)[1] == nrow(df)
 end
 
 """
@@ -281,7 +281,7 @@ julia> unique(df, 2)
 
 julia> unique(df, keep=:noduplicates)
 0×2 DataFrame
- Row │ i      x     
+ Row │ i      x
      │ Int64  Int64
 ─────┴──────────────
 ```
@@ -362,7 +362,7 @@ julia> unique!(copy(df))  # modifies df
 
 julia> unique(df, keep=:noduplicates)
 0×2 DataFrame
- Row │ i      x     
+ Row │ i      x
      │ Int64  Int64
 ─────┴──────────────
 ```
@@ -373,4 +373,3 @@ Base.unique!(df::AbstractDataFrame, cols::AbstractVector; keep::Symbol=:first) =
     deleteat!(df, _findall(nonunique(df, cols, keep=keep)))
 Base.unique!(df::AbstractDataFrame, cols; keep::Symbol=:first) =
     deleteat!(df, _findall(nonunique(df, cols, keep=keep)))
-
