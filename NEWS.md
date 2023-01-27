@@ -32,6 +32,11 @@
   its parent
   ([#3273](https://github.com/JuliaData/DataFrames.jl/pull/3273))
 
+## Performance improvements
+
+* `dropmissing` creates new columns in a single pass if `disallowmissing=true`
+  ([#3256](https://github.com/JuliaData/DataFrames.jl/pull/3256))
+
 # DataFrames.jl v1.4.4 Patch Release Notes
 
 ## Bug fixes

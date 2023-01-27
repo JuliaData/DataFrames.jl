@@ -1472,6 +1472,7 @@ allcombinations(::Type{DataFrame}, pairs::Pair{<:AbstractString, <:Any}...) =
     allcombinations(DataFrame; kwargs...)
 
 Create a `DataFrame` from all combinations of values in passed arguments.
+The first passed values vary fastest.
 
 Arguments associating a column name with values to expand can be specified
 either as `Pair`s passed as positional arguments, or as keyword arguments.

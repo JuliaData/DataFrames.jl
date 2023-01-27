@@ -985,11 +985,19 @@ julia> dropmissing(df, [:x, :y])
 
         # What column indices should disallowmissing be applied to
         cols_inds = BitSet(index(df)[cols])
-        
+
         use_threads = Threads.nthreads() > 1 && ncol(df) > 1 && length(selected_rows) >= 100_000
         @sync for (i, col) in enumerate(eachcol(df))
-            @spawn_or_run use_threads if disallowmissing && (i in cols_inds)
-                new_columns[i] = Missings.disallowmissing(Base.view(col, selected_rows))
+            @spawn_or_run use_threads if disallowmissing && (i in cols_inds) &&
+                          (Missing <: eltype(col) && eltype(col) !== Any)
+                # Perform this path only if column eltype allows missing values
+                # except Any, as nonmissingtype(Any) == Any.
+                # Under these conditions Missings.disallowmissing must allocate
+                # a fresh column
+                col_sel = Base.view(col, selected_rows)
+                new_col = Missings.disallowmissing(col_sel)
+                @assert new_col !== col_sel
+                new_columns[i] = new_col
             else
                 new_columns[i] = col[selected_rows]
             end
@@ -3421,4 +3429,3 @@ function Base.iterate(itr::Iterators.PartitionIterator{<:AbstractDataFrame}, sta
     r = min(state + itr.n - 1, last_idx)
     return view(itr.c, state:r, :), r + 1
 end
-
