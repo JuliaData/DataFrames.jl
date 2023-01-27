@@ -168,6 +168,17 @@ end
         @test df1b == df1
     end
 
+    # Zero column case
+    @test isempty(dropmissing(DataFrame())) && dropmissing(DataFrame()) isa DataFrame
+    @test isempty(dropmissing!(DataFrame())) && dropmissing!(DataFrame()) isa DataFrame
+    df = DataFrame(a=1:3, b=4:6)
+    dfv = @view df[:, 2:1]
+    # TODO: re-enable after https://github.com/JuliaData/DataFrames.jl/issues/3272 is resolved
+    # @test isempty(dropmissing(dfv)) && dropmissing(dfv) isa DataFrame
+    @test_throws ArgumentError dropmissing!(dfv)
+    @test_throws ArgumentError dropmissing(df1, []) 
+    @test_throws ArgumentError dropmissing!(df1, []) 
+    
     df = DataFrame(a=[1, missing, 3])
     sdf = view(df, :, :)
     @test dropmissing(sdf) == DataFrame(a=[1, 3])
@@ -186,6 +197,16 @@ end
     @test eltype(df2.a) == Union{Int, Missing}
     @test df.a == df2.a == [1, 3]
 
+    # view=true
+    df = DataFrame(a=[1, missing, 3])
+    @test dropmissing(df, view=false) == DataFrame(a=[1, 3])
+    @test dropmissing(df, view=true) == view(df, [1, 3], :)
+    @test typeof(dropmissing(df, view=true)) <: SubDataFrame
+    @test eltype(dropmissing(df, view=true, disallowmissing=false).a) == Union{Int, Missing}
+    @test_throws ArgumentError dropmissing(df, view=true, disallowmissing=true)
+    @test eltype(dropmissing(df, view=false, disallowmissing=false).a) == Union{Int, Missing}
+    @test eltype(dropmissing(df, view=false, disallowmissing=true).a) == Int
+
     a = [1, 2]
     df = DataFrame(a=a, copycols=false)
     @test dropmissing!(df) === df
@@ -200,6 +221,46 @@ end
     df = DataFrame(b=b)
     @test eltype(dropmissing(df).b) == Int
     @test eltype(dropmissing!(df).b) == Int
+
+    # disallowmissing argument
+    a = Union{Int, Missing}[3, 4]
+    b = Union{Int, Missing}[1, 2]
+    df = DataFrame(;a,b)
+    @test eltype(dropmissing(df, disallowmissing=false).a) == Union{Int, Missing}
+    @test eltype(dropmissing!(copy(df), disallowmissing=false).a) == Union{Int, Missing}
+    @test eltype(dropmissing(df, disallowmissing=true).a) == Int
+    @test eltype(dropmissing!(copy(df), disallowmissing=true).a) == Int
+    @test eltype(dropmissing(df, :a, disallowmissing=true).a) == Int
+    @test eltype(dropmissing!(copy(df), :a, disallowmissing=true).a) == Int
+    @test eltype(dropmissing(df, :b, disallowmissing=true).a) == Union{Int, Missing}
+    @test eltype(dropmissing!(copy(df), :b, disallowmissing=true).a) == Union{Int, Missing}
+
+    # CategoricalArrays
+    c = categorical([1, 2, 1, missing])
+    df = DataFrame(c=c)
+    @test dropmissing(df) == DataFrame(c=categorical([1, 2, 1]))
+    @test eltype(dropmissing(df).c) == CategoricalValue{Int, UInt32}
+    @test eltype(dropmissing!(df).c) == CategoricalValue{Int, UInt32}
+
+    # Multithreaded execution test (must be at least ncol > 1, nrow > 100_000)
+    N_rows, N_cols = 110_000, 3
+    df = DataFrame([rand(N_rows) for i in 1:N_cols], :auto) |> allowmissing
+    # Deterministic drop mask: IF remainder of index position divided by 10 == column index THEN missing
+    for i in 1:ncol(df)
+        missing_mask = (eachindex(df[!, i]) .% 10) .== i
+        df[missing_mask, i] .= missing 
+    end
+    
+    notmissing_rows = [i for i in 1:N_rows if i % 10 == 0 || i % 10 > ncol(df)]
+    @test dropmissing(df) ≅ df[notmissing_rows, :]
+    
+    cols = [:x1, :x2]
+    notmissing_rows = [i for i in 1:N_rows if i % 10 == 0 || i % 10 > length(cols)]
+    returned = dropmissing(df, cols)
+    @test returned ≅ df[notmissing_rows, :]
+    @test eltype(returned[:, cols[1]]) == nonmissingtype(eltype(df[:, cols[1]]))
+    @test eltype(returned[:, cols[2]]) == nonmissingtype(eltype(df[:, cols[2]]))
+    @test eltype(returned[:, ncol(df)]) == eltype(df[:, ncol(df)])
 end
 
 @testset "deleteat! https://github.com/JuliaLang/julia/pull/41646 bug workaround" begin

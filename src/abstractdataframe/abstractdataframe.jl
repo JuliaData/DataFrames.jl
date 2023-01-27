@@ -970,6 +970,7 @@ julia> dropmissing(df, [:x, :y])
 @inline function dropmissing(df::AbstractDataFrame,
                              cols::Union{ColumnIndex, MultiColumnIndex}=:;
                              view::Bool=false, disallowmissing::Bool=!view)
+    # Identify Bool mask of which rows have no missings
     rowidxs = completecases(df, cols)
     if view
         if disallowmissing
@@ -977,8 +978,26 @@ julia> dropmissing(df, [:x, :y])
         end
         return Base.view(df, rowidxs, :)
     else
-        newdf = df[rowidxs, :]
-        disallowmissing && disallowmissing!(newdf, cols)
+        # Faster when there are many columns (indexing with integers than via Bool mask)
+        # or when there are many missings (as we skip a lot of iterations)
+        selected_rows = _findall(rowidxs)
+        new_columns = Vector{AbstractVector}(undef, ncol(df))
+
+        # What column indices should disallowmissing be applied to
+        cols_inds = BitSet(index(df)[cols])
+        
+        use_threads = Threads.nthreads() > 1 && ncol(df) > 1 && length(selected_rows) >= 100_000
+        @sync for (i, col) in enumerate(eachcol(df))
+            @spawn_or_run use_threads if disallowmissing && (i in cols_inds)
+                new_columns[i] = Missings.disallowmissing(Base.view(col, selected_rows))
+            else
+                new_columns[i] = col[selected_rows]
+            end
+        end
+
+        newdf = DataFrame(new_columns, copy(index(df)), copycols=false)
+
+        _copy_all_note_metadata!(newdf, df)
         return newdf
     end
 end

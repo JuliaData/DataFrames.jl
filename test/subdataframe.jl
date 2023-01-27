@@ -307,4 +307,45 @@ end
     @test_throws ArgumentError SubDataFrame(sdf, DataFrames.index(sdf), [1])
 end
 
+@testset "subdataframe with no columns" begin
+    df = DataFrame(a=1:3, b=4:6)
+    dfv = @view df[[3, 1], 2:1]
+    @test nrow(SubDataFrame(dfv, Int[], :)) == 0
+    @test nrow(SubDataFrame(dfv, Bool[], :)) == 0
+    @test nrow(SubDataFrame(dfv, :, :)) == 0
+    @test nrow(SubDataFrame(dfv, Not(:), :)) == 0
+    @test nrow(SubDataFrame(dfv, Int[], [])) == 0
+    @test nrow(SubDataFrame(dfv, Bool[], [])) == 0
+    @test nrow(SubDataFrame(dfv, :, [])) == 0
+    @test nrow(SubDataFrame(dfv, Not(:), [])) == 0
+    @test_throws BoundsError SubDataFrame(dfv, [1, 2], :)
+
+    @test nrow(view(dfv, Int[], :)) == 0
+    @test nrow(view(dfv, Bool[], :)) == 0
+    @test nrow(view(dfv, :, :)) == 0
+    @test nrow(view(dfv, !, :)) == 0
+    @test nrow(view(dfv, Not(:), :)) == 0
+    @test nrow(view(dfv, Int[], [])) == 0
+    @test nrow(view(dfv, Bool[], [])) == 0
+    @test nrow(view(dfv, :, [])) == 0
+    @test nrow(view(dfv, !, [])) == 0
+    @test nrow(view(dfv, Not(:), [])) == 0
+    @test_throws BoundsError view(dfv, [1, 2], :)
+
+    @test_throws BoundsError dfv[1, 1]
+    @test_throws BoundsError dfv[[1, 2], 1]
+
+    @test nrow(getindex(dfv, Int[], :)) == 0
+    @test nrow(getindex(dfv, Bool[], :)) == 0
+    @test nrow(getindex(dfv, :, :)) == 0
+    @test nrow(getindex(dfv, !, :)) == 0
+    @test nrow(getindex(dfv, Not(:), :)) == 0
+    @test nrow(getindex(dfv, Int[], [])) == 0
+    @test nrow(getindex(dfv, Bool[], [])) == 0
+    @test nrow(getindex(dfv, :, [])) == 0
+    @test nrow(getindex(dfv, !, [])) == 0
+    @test nrow(getindex(dfv, Not(:), [])) == 0
+    @test_throws BoundsError getindex(dfv, [1, 2], :)
+end
+
 end # module
