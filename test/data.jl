@@ -173,12 +173,11 @@ end
     @test isempty(dropmissing!(DataFrame())) && dropmissing!(DataFrame()) isa DataFrame
     df = DataFrame(a=1:3, b=4:6)
     dfv = @view df[:, 2:1]
-    # TODO: re-enable after https://github.com/JuliaData/DataFrames.jl/issues/3272 is resolved
-    # @test isempty(dropmissing(dfv)) && dropmissing(dfv) isa DataFrame
+    @test isempty(dropmissing(dfv)) && dropmissing(dfv) isa DataFrame
     @test_throws ArgumentError dropmissing!(dfv)
-    @test_throws ArgumentError dropmissing(df1, []) 
-    @test_throws ArgumentError dropmissing!(df1, []) 
-    
+    @test_throws ArgumentError dropmissing(df1, [])
+    @test_throws ArgumentError dropmissing!(df1, [])
+
     df = DataFrame(a=[1, missing, 3])
     sdf = view(df, :, :)
     @test dropmissing(sdf) == DataFrame(a=[1, 3])
@@ -248,12 +247,12 @@ end
     # Deterministic drop mask: IF remainder of index position divided by 10 == column index THEN missing
     for i in 1:ncol(df)
         missing_mask = (eachindex(df[!, i]) .% 10) .== i
-        df[missing_mask, i] .= missing 
+        df[missing_mask, i] .= missing
     end
-    
+
     notmissing_rows = [i for i in 1:N_rows if i % 10 == 0 || i % 10 > ncol(df)]
     @test dropmissing(df) ≅ df[notmissing_rows, :]
-    
+
     cols = [:x1, :x2]
     notmissing_rows = [i for i in 1:N_rows if i % 10 == 0 || i % 10 > length(cols)]
     returned = dropmissing(df, cols)
