@@ -260,6 +260,13 @@ end
     @test eltype(returned[:, cols[1]]) == nonmissingtype(eltype(df[:, cols[1]]))
     @test eltype(returned[:, cols[2]]) == nonmissingtype(eltype(df[:, cols[2]]))
     @test eltype(returned[:, ncol(df)]) == eltype(df[:, ncol(df)])
+
+    # correct handling of not propagating views
+    df = DataFrame(a=1:3, b=Any[11, missing, 13])
+    df2 = dropmissing(df)
+    @test df2 == DataFrame(a=[1, 3], b=[11, 13])
+    @test df2.a isa Vector{Int}
+    @test df2.b isa Vector{Any}
 end
 
 @testset "deleteat! https://github.com/JuliaLang/julia/pull/41646 bug workaround" begin
