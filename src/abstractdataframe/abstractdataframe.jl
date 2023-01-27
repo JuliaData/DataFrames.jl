@@ -970,7 +970,7 @@ julia> dropmissing(df, [:x, :y])
 @inline function dropmissing(df::AbstractDataFrame,
                              cols::Union{ColumnIndex, MultiColumnIndex}=:;
                              view::Bool=false, disallowmissing::Bool=!view)
-    # Identify Bool mask of which rows have no Missings
+    # Identify Bool mask of which rows have no missings
     rowidxs = completecases(df, cols)
     if view
         if disallowmissing
@@ -979,7 +979,7 @@ julia> dropmissing(df, [:x, :y])
         return Base.view(df, rowidxs, :)
     else
         # Faster when there are many columns (indexing with integers than via Bool mask)
-        # or when there are few Missing (as we skip a lot of iterations)
+        # or when there are many missings (as we skip a lot of iterations)
         selected_rows = _findall(rowidxs)
         new_columns = Vector{AbstractVector}(undef, ncol(df))
 
