@@ -91,10 +91,10 @@ function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
     res = fill(true, nrow(df))
     cols = ntuple(i -> df[!, i], ncol(df))
     if keep == :first
-        # if we can take advantage of references pass groups to avoid generating hashes
         rpa = refpool_and_array.(cols)
         refpools = first.(rpa)
         refarrays = last.(rpa)
+        # if refarray cannot be used, we can avoid allocating a groups vector
         if any(isnothing, refpools) || any(isnothing, refarrays)
             _, _, gslots, _ = row_group_slots!(cols, Val(true), nothing,
                                                false, nothing, false)
@@ -103,7 +103,7 @@ function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
             @inbounds for g_row in gslots
                 g_row > 0 && (res[g_row] = false)
             end
-        else
+        else # faster refarray method but allocates a groups vector
             groups = Vector{Int}(undef, nrow(df))
             ngroups = row_group_slots!(cols, refpools, refarrays,
                                        Val(false), groups, false, false, false)[1]
@@ -117,6 +117,7 @@ function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
             end
         end
     else
+       # always allocate a group vector, use refarray automatically if possible
         groups = Vector{Int}(undef, nrow(df))
         ngroups = row_group_slots!(cols, Val(false), groups, false, nothing, false)[1]
         if keep == :last
