@@ -193,8 +193,7 @@ function row_group_slots!(cols::Tuple{Vararg{AbstractVector}},
                           groups::Union{Vector{Int}, Nothing},
                           skipmissing::Bool,
                           sort::Union{Bool, Nothing},
-                          compress::Bool
-                         )::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
+                          compress::Bool)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
     rpa = refpool_and_array.(cols)
     if sort === false
         refpools = nothing
