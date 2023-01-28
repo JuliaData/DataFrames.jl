@@ -134,6 +134,7 @@ include("other/utils.jl")
 include("other/index.jl")
 
 include("abstractdataframe/abstractdataframe.jl")
+include("abstractdataframe/unique.jl")
 include("dataframe/dataframe.jl")
 include("subdataframe/subdataframe.jl")
 include("dataframerow/dataframerow.jl")

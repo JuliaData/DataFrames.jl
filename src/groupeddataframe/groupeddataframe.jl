@@ -223,7 +223,7 @@ function groupby(df::AbstractDataFrame, cols;
        (cols isa AbstractVector && any(x -> x isa UserColOrdering, cols))
         if isnothing(sort) || sort === true
             # if sort === true replace it with NamedTuple to avoid sorting
-            # in row_group_slots as we will perform sorting later
+            # in row_group_slots! as we will perform sorting later
             sort = NamedTuple()
         elseif sort === false
             throw(ArgumentError("passing `order` is only allowed if `sort` " *
@@ -248,13 +248,14 @@ function groupby(df::AbstractDataFrame, cols;
 
     groups = Vector{Int}(undef, nrow(df))
     ngroups, rhashes, gslots, sorted =
-        row_group_slots(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false),
-                        groups, skipmissing, sort isa NamedTuple ? nothing : sort)
+        row_group_slots!(ntuple(i -> sdf[!, i], ncol(sdf)), Val(false),
+                         groups, skipmissing,
+                         sort isa NamedTuple ? nothing : sort, true)
 
     gd = GroupedDataFrame(df, copy(_names(sdf)), groups, nothing, nothing, nothing,
                           ngroups, nothing, Threads.ReentrantLock())
 
-    # sort groups if row_group_slots hasn't already done that
+    # sort groups if row_group_slots! hasn't already done that
     if (sort === true && !sorted) || (sort isa NamedTuple)
         # Find index of representative row for each group
         idx = Vector{Int}(undef, length(gd))

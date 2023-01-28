@@ -296,62 +296,6 @@ end
     @test_throws ArgumentError dropmissing(df, view=true, disallowmissing=true)
 end
 
-@testset "nonunique, nonunique, unique! with extra argument" begin
-    df1 = DataFrame(a=Union{String, Missing}["a", "b", "a", "b", "a", "b"],
-                    b=Vector{Union{Int, Missing}}(1:6),
-                    c=Union{Int, Missing}[1:3;1:3])
-    df = vcat(df1, df1)
-    @test findall(nonunique(df)) == collect(7:12)
-    @test findall(nonunique(df, :)) == collect(7:12)
-    @test findall(nonunique(df, Colon())) == collect(7:12)
-    @test findall(nonunique(df, :a)) == collect(3:12)
-    @test findall(nonunique(df, "a")) == collect(3:12)
-    @test findall(nonunique(df, [:a, :c])) == collect(7:12)
-    @test findall(nonunique(df, ["a", "c"])) == collect(7:12)
-    @test findall(nonunique(df, r"[ac]")) == collect(7:12)
-    @test findall(nonunique(df, Not(2))) == collect(7:12)
-    @test findall(nonunique(df, Not([2]))) == collect(7:12)
-    @test findall(nonunique(df, Not(:b))) == collect(7:12)
-    @test findall(nonunique(df, Not([:b]))) == collect(7:12)
-    @test findall(nonunique(df, Not([false, true, false]))) == collect(7:12)
-    @test findall(nonunique(df, [1, 3])) == collect(7:12)
-    @test findall(nonunique(df, 1)) == collect(3:12)
-    @test findall(nonunique(df, :a => x -> 1)) == 2:12
-
-    @test unique(df) == df1
-    @test unique(df, :) == df1
-    @test unique(df, Colon()) == df1
-    @test unique(df, 2:3) == df1
-    @test unique(df, 3) == df1[1:3, :]
-    @test unique(df, [1, 3]) == df1
-    @test unique(df, [:a, :c]) == df1
-    @test unique(df, ["a", "c"]) == df1
-    @test unique(df, r"[ac]") == df1
-    @test unique(df, Not(2)) == df1
-    @test unique(df, Not([2])) == df1
-    @test unique(df, Not(:b)) == df1
-    @test unique(df, Not([:b])) == df1
-    @test unique(df, Not([false, true, false])) == df1
-    @test unique(df, :a) == df1[1:2, :]
-    @test unique(df, "a") == df1[1:2, :]
-    @test unique(df, :a => x -> 1) == df[1:1, :]
-    @test unique(DataFrame()) == DataFrame()
-    @test isempty(nonunique(DataFrame())) && nonunique(DataFrame()) isa Vector{Bool}
-    @test_throws ArgumentError nonunique(DataFrame(a=1:3), [])
-    @test_throws ArgumentError unique(DataFrame(a=1:3), [])
-
-    @test unique(copy(df1), "a") == unique(copy(df1), :a) == unique(copy(df1), 1) ==
-          df1[1:2, :]
-
-    unique!(df, [1, 3])
-    @test df == df1
-    for cols in (r"[ac]", Not(:b), Not(2), Not([:b]), Not([2]), Not([false, true, false]))
-        df = vcat(df1, df1)
-        unique!(df, cols)
-        @test df == df1
-    end
-end
-
 @testset "filter() and filter!()" begin
     df = DataFrame(x=[3, 1, 2, 1], y=["b", "c", "a", "b"])
     @test filter(r -> r[:x] > 1, df) == DataFrame(x=[3, 2], y=["b", "a"])
