@@ -539,8 +539,20 @@ end
     @test df[:, Cols(x -> x[1] == 'a', operator=intersect)] == df[:, [1, 2]]
     @test df[:, Cols(x -> x[end] == '1', operator=intersect)] == df[:, [1, 3]]
     @test df[:, Cols(x -> x[end] == '3', operator=intersect)] == DataFrame()
-    @test_throws ArgumentError df[:, Cols(x -> true, 1, operator=intersect)]
-    @test_throws ArgumentError df[:, Cols(1, x -> true, operator=intersect)]
+    @test df[:, Cols(x -> true, 1, operator=intersect)] == df[:, 1:1]
+    @test df[:, Cols(1, x -> true, operator=intersect)] == df[:, 1:1]
+
+    @test df[:, Cols(startswith("a"), endswith("2"))] ==
+          select(df, Cols(startswith("a"), endswith("2"))) ==
+          df[:, ["a1", "a2", "b2"]]
+    @test df[:, Cols(startswith("a"), endswith("2"), operator=intersect)] ==
+          df[:, Cols(startswith("a"), :, endswith("2"), operator=intersect)] ==
+          select(df, Cols(startswith("a"), endswith("2"), operator=intersect)) ==
+          df[:, ["a2"]]
+    @test df[:, Cols(startswith("a"), endswith("2"), operator=setdiff)] ==
+          select(df, Cols(startswith("a"), endswith("2"), operator=setdiff)) ==
+          df[:, ["a1"]]
+    @test df[:, Cols(startswith("a"), endswith("2"), :, operator=setdiff)] == DataFrame()
 end
 
 @testset "views" begin
