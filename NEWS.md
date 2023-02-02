@@ -14,7 +14,7 @@
   ([3224](https://github.com/JuliaData/DataFrames.jl/pull/3224))
 * Allow to pass multiple predicates in `Cols` and mix them with
   other selectors
-  ([3278](https://github.com/JuliaData/DataFrames.jl/pull/3278))
+  ([3279](https://github.com/JuliaData/DataFrames.jl/pull/3279))
 * Improve support for setting group order in `groupby`
   ([3253](https://github.com/JuliaData/DataFrames.jl/pull/3253))
 * Joining functions now support `order` keyword argument allowing the user
