@@ -477,8 +477,10 @@ end
     @test df[:, Cols(x -> x[1] == 'a')] == df[:, [1, 2]]
     @test df[:, Cols(x -> x[end] == '1')] == df[:, [1, 3]]
     @test df[:, Cols(x -> x[end] == '3')] == DataFrame()
-    @test_throws ArgumentError df[:, Cols(x -> true, 1)]
-    @test_throws ArgumentError df[:, Cols(1, x -> true)]
+    @test df[:, Cols(x -> true, 1)] == df
+    @test df[:, Cols(1, x -> true)] == df
+    @test df[:, Cols(x -> true, 1, operator=intersect)] == DataFrame(a1=1)
+    @test df[:, Cols(1, x -> true, operator=intersect)] == DataFrame(a1=1)
 
     @test ncol(select(df, Cols(operator=intersect))) == 0
     @test ncol(df[:, Cols(operator=intersect)]) == 0
