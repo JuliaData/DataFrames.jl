@@ -2395,13 +2395,16 @@ function flatten(df::AbstractDataFrame,
     length(idxcols) > 1 && sort!(idxcols)
     for col in idxcols
         col_to_flatten = df[!, col]
-        fast_path = eltype(col_to_flatten) isa AbstractVector &&
+        fast_path = eltype(col_to_flatten) <: AbstractVector &&
                     !isempty(col_to_flatten)
         flattened_col = if fast_path
+                @info "1"
                 reduce(vcat, col_to_flatten)
             elseif scalar === Union{}
+                @info "2"
                 collect(Iterators.flatten(col_to_flatten))
             else
+                @info "3"
                 collect(Iterators.flatten(v isa scalar ? Iterators.repeated(v, l) : v
                                           for (l, v) in zip(lengths, col_to_flatten)))
             end
