@@ -26,6 +26,8 @@
 * Add `haskey` and `get` methods to `DataFrameColumns`
   to make it support dictionary interface more completely
   ([#3282](https://github.com/JuliaData/DataFrames.jl/pull/3282))
+* Allow passing `scalar` keyword argument in `flatten`
+  ([#3283](https://github.com/JuliaData/DataFrames.jl/pull/3283))
 
 ## Bug fixes
 
