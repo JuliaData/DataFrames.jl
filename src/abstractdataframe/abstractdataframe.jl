@@ -2259,7 +2259,8 @@ function Missings.allowmissing(df::AbstractDataFrame,
 end
 
 """
-    flatten(df::AbstractDataFrame, cols; scalar::Type)
+    flatten(df::AbstractDataFrame, cols; scalar::Type=Union{})
+
 When columns `cols` of data frame `df` have iterable elements that define
 `length` (for example a `Vector` of `Vector`s), return a `DataFrame` where each
 element of each `col` in `cols` is flattened, meaning the column corresponding
@@ -2274,8 +2275,8 @@ returned `DataFrame` will affect `df`.
 
 If `scalar` is passed then values that have this type in flattened columns
 are treated as scalars and broadcasted as many times as is needed to match
-lengths of values stored in other columns. One row is produced if all
-corresponding values are scalars.
+lengths of values stored in other columns. If all values in a row are scalars,
+a single row is produced.
 
 $METADATA_FIXED
 
@@ -2349,6 +2350,7 @@ julia> df4 = DataFrame(a=[1, 2, 3],
    1 │     1  [1, 2]   [5, 6]
    2 │     2  missing  missing
    3 │     3  missing  [7, 8]
+
 julia> flatten(df4, [:b, :c], scalar=Missing)
 5×3 DataFrame
  Row │ a      b        c
@@ -2411,7 +2413,7 @@ function flatten(df::AbstractDataFrame,
 end
 
 function update_lengths!(lengths::Vector{Int}, col::AbstractVector, scalar::Type,
-                         df::AbstractDataFrame, col1, coli)
+                         df::AbstractDataFrame, col1::Integer, coli::Integer)
     for (i, v) in enumerate(col)
         v isa scalar && continue
         lv = length(v)
