@@ -9,9 +9,9 @@ anyerrors = false
 using DataFrames, Dates, Test, Random, InlineStrings
 
 if Threads.nthreads() < 2
-    @warn("Running with only one thread: correctness of parallel operations is not tested")
+    @warn("Running tests with only one thread: correctness of parallel operations is not checked")
 else
-    @show Threads.nthreads()
+    @info("Running tests with $(Threads.nthreads()) threads")
 end
 
 ambiguities_vec = Test.detect_ambiguities(DataFrames, recursive=true)

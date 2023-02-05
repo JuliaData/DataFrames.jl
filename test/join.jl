@@ -1510,79 +1510,77 @@ end
     @test m1[!, :a] == m2[!, :a]
 end
 
-if Sys.WORD_SIZE == 64
-    @testset "threaded correctness" begin
-        df1 = DataFrame(id=[1:10^6; 10^7+1:10^7+2])
-        df1.left_row = axes(df1, 1)
-        df2 = DataFrame(id=[1:10^6; 10^8+1:10^8+4])
-        df2.right_row = axes(df2, 1)
+@testset "threaded correctness" begin
+    df1 = DataFrame(id=[1:10^5; 10^7+1:10^7+2])
+    df1.left_row = axes(df1, 1)
+    df2 = DataFrame(id=[1:10^5; 10^8+1:10^8+4])
+    df2.right_row = axes(df2, 1)
 
-        @test innerjoin(df1, df2, on=:id) ≅
-              DataFrame(id=1:10^6, left_row=1:10^6, right_row=1:10^6)
-        @test leftjoin(df1, df2, on=:id) ≅
-              DataFrame(id=[1:10^6; 10^7+1:10^7+2], left_row=1:10^6+2,
-                        right_row=[1:10^6; missing; missing])
-        @test rightjoin(df1, df2, on=:id) ≅
-              DataFrame(id=[1:10^6; 10^8+1:10^8+4],
-                        left_row=[1:10^6; fill(missing, 4)],
-                        right_row=1:10^6+4)
-        @test outerjoin(df1, df2, on=:id) ≅
-              DataFrame(id=[1:10^6; 10^7+1:10^7+2; 10^8+1:10^8+4],
-                      left_row=[1:10^6+2; fill(missing, 4)],
-                      right_row=[1:10^6; missing; missing; 10^6+1:10^6+4])
-        @test semijoin(df1, df2, on=:id) ≅
-              DataFrame(id=1:10^6, left_row=1:10^6)
-        @test antijoin(df1, df2, on=:id) ≅
-              DataFrame(id=10^7+1:10^7+2, left_row=10^6+1:10^6+2)
+    @test innerjoin(df1, df2, on=:id) ≅
+          DataFrame(id=1:10^5, left_row=1:10^5, right_row=1:10^5)
+    @test leftjoin(df1, df2, on=:id) ≅
+          DataFrame(id=[1:10^5; 10^7+1:10^7+2], left_row=1:10^5+2,
+                    right_row=[1:10^5; missing; missing])
+    @test rightjoin(df1, df2, on=:id) ≅
+          DataFrame(id=[1:10^5; 10^8+1:10^8+4],
+                    left_row=[1:10^5; fill(missing, 4)],
+                    right_row=1:10^5+4)
+    @test outerjoin(df1, df2, on=:id) ≅
+          DataFrame(id=[1:10^5; 10^7+1:10^7+2; 10^8+1:10^8+4],
+                  left_row=[1:10^5+2; fill(missing, 4)],
+                  right_row=[1:10^5; missing; missing; 10^5+1:10^5+4])
+    @test semijoin(df1, df2, on=:id) ≅
+          DataFrame(id=1:10^5, left_row=1:10^5)
+    @test antijoin(df1, df2, on=:id) ≅
+          DataFrame(id=10^7+1:10^7+2, left_row=10^5+1:10^5+2)
 
-        Random.seed!(1234)
-        for i in 1:4
-            df1 = df1[shuffle(axes(df1, 1)), :]
-            df2 = df2[shuffle(axes(df2, 1)), :]
+    Random.seed!(1234)
+    for i in 1:4
+        df1 = df1[shuffle(axes(df1, 1)), :]
+        df2 = df2[shuffle(axes(df2, 1)), :]
 
-            @test sort!(innerjoin(df1, df2, on=:id)) ≅
-                  DataFrame(id=1:10^6, left_row=1:10^6, right_row=1:10^6)
-            @test sort!(leftjoin(df1, df2, on=:id)) ≅
-                  DataFrame(id=[1:10^6; 10^7+1:10^7+2], left_row=1:10^6+2,
-                          right_row=[1:10^6; missing; missing])
-            @test sort!(rightjoin(df1, df2, on=:id)) ≅
-                  DataFrame(id=[1:10^6; 10^8+1:10^8+4],
-                              left_row=[1:10^6; fill(missing, 4)],
-                              right_row=1:10^6+4)
-            @test sort!(outerjoin(df1, df2, on=:id)) ≅
-                  DataFrame(id=[1:10^6; 10^7+1:10^7+2; 10^8+1:10^8+4],
-                          left_row=[1:10^6+2; fill(missing, 4)],
-                          right_row=[1:10^6; missing; missing; 10^6+1:10^6+4])
-            @test sort!(semijoin(df1, df2, on=:id)) ≅
-                  DataFrame(id=1:10^6, left_row=1:10^6)
-            @test sort!(antijoin(df1, df2, on=:id)) ≅
-                  DataFrame(id=10^7+1:10^7+2, left_row=10^6+1:10^6+2)
-        end
-
-        # test correctness of column order
-        df1 = DataFrame(a=Int8(1), id2=-[1:10^6; 10^7+1:10^7+2], b=Int8(2),
-                        id1=[1:10^6; 10^7+1:10^7+2], c=Int8(3), d=Int8(4))
-        df2 = DataFrame(e=Int8(5), id1=[1:10^6; 10^8+1:10^8+4], f=Int8(6), g=Int8(7),
-                        id2=-[1:10^6; 10^8+1:10^8+4], h=Int8(8))
-
-        @test innerjoin(df1, df2, on=[:id1, :id2]) ≅
-              DataFrame(a=Int8(1), id2=-(1:10^6), b=Int8(2), id1=1:10^6,
-                      c=Int8(3), d=Int8(4), e=Int8(5), f=Int8(6), g=Int8(7), h=Int8(8))
-        @test leftjoin(df1, df2, on=[:id1, :id2])[1:10^6, :] ≅
-              DataFrame(a=Int8(1), id2=-(1:10^6), b=Int8(2), id1=1:10^6,
-                      c=Int8(3), d=Int8(4), e=Int8(5), f=Int8(6), g=Int8(7), h=Int8(8))
-        @test rightjoin(df1, df2, on=[:id1, :id2])[1:10^6, :] ≅
-              DataFrame(a=Int8(1), id2=-(1:10^6), b=Int8(2), id1=1:10^6,
-                      c=Int8(3), d=Int8(4), e=Int8(5), f=Int8(6), g=Int8(7), h=Int8(8))
-        @test outerjoin(df1, df2, on=[:id1, :id2])[1:10^6, :] ≅
-              DataFrame(a=Int8(1), id2=-(1:10^6), b=Int8(2), id1=1:10^6,
-                      c=Int8(3), d=Int8(4), e=Int8(5), f=Int8(6), g=Int8(7), h=Int8(8))
-        @test semijoin(df1, df2, on=[:id1, :id2]) ≅
-              DataFrame(a=Int8(1), id2=-(1:10^6), b=Int8(2), id1=1:10^6, c=Int8(3), d=Int8(4))
-        @test antijoin(df1, df2, on=[:id1, :id2]) ≅
-              DataFrame(a=Int8(1), id2=-(10^7+1:10^7+2), b=Int8(2), id1=(10^7+1:10^7+2),
-                      c=Int8(3), d=Int8(4))
+        @test sort!(innerjoin(df1, df2, on=:id)) ≅
+              DataFrame(id=1:10^5, left_row=1:10^5, right_row=1:10^5)
+        @test sort!(leftjoin(df1, df2, on=:id)) ≅
+              DataFrame(id=[1:10^5; 10^7+1:10^7+2], left_row=1:10^5+2,
+                      right_row=[1:10^5; missing; missing])
+        @test sort!(rightjoin(df1, df2, on=:id)) ≅
+              DataFrame(id=[1:10^5; 10^8+1:10^8+4],
+                          left_row=[1:10^5; fill(missing, 4)],
+                          right_row=1:10^5+4)
+        @test sort!(outerjoin(df1, df2, on=:id)) ≅
+              DataFrame(id=[1:10^5; 10^7+1:10^7+2; 10^8+1:10^8+4],
+                      left_row=[1:10^5+2; fill(missing, 4)],
+                      right_row=[1:10^5; missing; missing; 10^5+1:10^5+4])
+        @test sort!(semijoin(df1, df2, on=:id)) ≅
+              DataFrame(id=1:10^5, left_row=1:10^5)
+        @test sort!(antijoin(df1, df2, on=:id)) ≅
+              DataFrame(id=10^7+1:10^7+2, left_row=10^5+1:10^5+2)
     end
+
+    # test correctness of column order
+    df1 = DataFrame(a=Int8(1), id2=-[1:10^5; 10^7+1:10^7+2], b=Int8(2),
+                    id1=[1:10^5; 10^7+1:10^7+2], c=Int8(3), d=Int8(4))
+    df2 = DataFrame(e=Int8(5), id1=[1:10^5; 10^8+1:10^8+4], f=Int8(6), g=Int8(7),
+                    id2=-[1:10^5; 10^8+1:10^8+4], h=Int8(8))
+
+    @test innerjoin(df1, df2, on=[:id1, :id2]) ≅
+          DataFrame(a=Int8(1), id2=-(1:10^5), b=Int8(2), id1=1:10^5,
+                  c=Int8(3), d=Int8(4), e=Int8(5), f=Int8(6), g=Int8(7), h=Int8(8))
+    @test leftjoin(df1, df2, on=[:id1, :id2])[1:10^5, :] ≅
+          DataFrame(a=Int8(1), id2=-(1:10^5), b=Int8(2), id1=1:10^5,
+                  c=Int8(3), d=Int8(4), e=Int8(5), f=Int8(6), g=Int8(7), h=Int8(8))
+    @test rightjoin(df1, df2, on=[:id1, :id2])[1:10^5, :] ≅
+          DataFrame(a=Int8(1), id2=-(1:10^5), b=Int8(2), id1=1:10^5,
+                  c=Int8(3), d=Int8(4), e=Int8(5), f=Int8(6), g=Int8(7), h=Int8(8))
+    @test outerjoin(df1, df2, on=[:id1, :id2])[1:10^5, :] ≅
+          DataFrame(a=Int8(1), id2=-(1:10^5), b=Int8(2), id1=1:10^5,
+                  c=Int8(3), d=Int8(4), e=Int8(5), f=Int8(6), g=Int8(7), h=Int8(8))
+    @test semijoin(df1, df2, on=[:id1, :id2]) ≅
+          DataFrame(a=Int8(1), id2=-(1:10^5), b=Int8(2), id1=1:10^5, c=Int8(3), d=Int8(4))
+    @test antijoin(df1, df2, on=[:id1, :id2]) ≅
+          DataFrame(a=Int8(1), id2=-(10^7+1:10^7+2), b=Int8(2), id1=(10^7+1:10^7+2),
+                  c=Int8(3), d=Int8(4))
 end
 
 @testset "matchmissing :notequal correctness" begin

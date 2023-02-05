@@ -5,7 +5,7 @@ function hashrows_col!(h::Vector{UInt},
                        v::AbstractVector{T},
                        rp::Nothing,
                        firstcol::Bool) where T
-    @spawn_for_chunks 1_000_000 for i in eachindex(h)
+    @spawn_for_chunks 100_000 for i in eachindex(h)
         @inbounds begin
             el = v[i]
             h[i] = hash(el, h[i])
@@ -33,18 +33,18 @@ function hashrows_col!(h::Vector{UInt},
         fira = firstindex(ra)
 
         hashes = Vector{UInt}(undef, length(rp))
-        @spawn_for_chunks 1_000_000 for i in eachindex(hashes)
+        @spawn_for_chunks 100_000 for i in eachindex(hashes)
             @inbounds hashes[i] = hash(rp[i+firp-1])
         end
 
         # here we rely on the fact that `DataAPI.refpool` has a continuous
         # block of indices
-        @spawn_for_chunks 1_000_000 for i in eachindex(h)
+        @spawn_for_chunks 100_000 for i in eachindex(h)
             @inbounds ref = ra[i+fira-1]
             @inbounds h[i] = hashes[ref+1-firp]
         end
     else
-        @spawn_for_chunks 1_000_000 for i in eachindex(h, v)
+        @spawn_for_chunks 100_000 for i in eachindex(h, v)
             @inbounds h[i] = hash(v[i], h[i])
         end
     end
@@ -332,10 +332,13 @@ function row_group_slots!(cols::NTuple{N, AbstractVector},
 
     lg = length(groups)
     nt = Threads.nthreads()
-    # disable threading if we are processing a small data frame or number of groups is large
-    if lg < 1_000_000 || ngroups > lg * (0.5 - 1 / (2 * nt)) / (2 * nt)
-       nt = 1
+    # make sure we are processing at least 100_000 rows per task if we do threading
+    if lg < 100_000 * nt
+       nt = max(1, lg ÷ 100_000)
     end
+    # if there are few rows per group limit the number of threads used
+    nt = clamp(round(Int, (lg / 4) / ngroups - 2), 1, nt)
+
     seen = fill(false, ngroups)
     seen_vec = Vector{Vector{Bool}}(undef, nt)
     seen_vec[1] = seen

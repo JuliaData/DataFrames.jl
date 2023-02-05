@@ -2022,7 +2022,7 @@ end
 include("indexing_offset.jl")
 
 @testset "threading correctness tests" begin
-    for x in (10, 1_100_000), y in 1:4
+    for x in (10, 110_000), y in 1:4
         vecvec = [rand(Int8, x) for _ in 1:y]
         df = DataFrame(vecvec, :auto, copycols=false)
         for rowrange in [:, 1:nrow(df)-5, collect(1:nrow(df)-5), axes(df, 1) .< nrow(df)-5],

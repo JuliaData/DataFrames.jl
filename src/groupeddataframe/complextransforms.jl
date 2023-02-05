@@ -248,7 +248,6 @@ function _combine_rows_with_first!((firstrow,)::Ref{Any},
     @assert colnames isa NTuple{N, Symbol} where N
     @assert length(colnames) == length(outcols)
     len = length(gd)
-    gdidx = gd.idx
     starts = gd.starts
     ends = gd.ends
 

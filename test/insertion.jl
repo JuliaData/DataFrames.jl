@@ -1331,7 +1331,7 @@ end
                             b=[22.5, 2.0, "b", 10.0, 5.0, missing],
                             c=[missing, 3.0, "c", 11.0, 6.0, 16.5],
                             d=[missing, missing, "d", missing, missing, 15])
-    for i in [1, 2, 4, 8, 16, 32, 64, 100, 1000, 10000, 20_000, 100_000]
+    for i in [1, 2, 4, 8, 16, 32, 64, 100, 1000, 10000, 20_000, 210_000]
         df = DataFrame()
         mat = Any[a + 100 * b + (iseven(b) ? 0.5 : 0) for a in 1:2, b in 1:i]
         tab = Tables.table(mat, header=Symbol.("x", 1:i))

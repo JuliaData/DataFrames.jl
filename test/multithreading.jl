@@ -2,15 +2,6 @@ module TestMultithreading
 
 using Test, DataFrames
 
-
-@testset "pre-Julia 1.3 @spawn replacement" begin
-    t = @sync DataFrames.@spawn begin
-        sleep(1)
-        true
-    end
-    @test fetch(t) === true
-end
-
 @testset "split_indices" begin
     for len in 1:100, basesize in 1:10
         x = DataFrames.split_indices(len, basesize)
