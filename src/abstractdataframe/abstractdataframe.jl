@@ -2259,8 +2259,7 @@ function Missings.allowmissing(df::AbstractDataFrame,
 end
 
 """
-    flatten(df::AbstractDataFrame, cols)
-
+    flatten(df::AbstractDataFrame, cols; scalar::Type)
 When columns `cols` of data frame `df` have iterable elements that define
 `length` (for example a `Vector` of `Vector`s), return a `DataFrame` where each
 element of each `col` in `cols` is flattened, meaning the column corresponding
@@ -2272,6 +2271,11 @@ elements are not copied, and thus if they are mutable changing them in the
 returned `DataFrame` will affect `df`.
 
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+
+If `scalar` is passed then values that have this type in flattened columns
+are treated as scalars and broadcasted as many times as is needed to match
+lengths of values stored in other columns. One row is produced if all
+corresponding values are scalars.
 
 $METADATA_FIXED
 
@@ -2334,10 +2338,32 @@ julia> df3 = DataFrame(a=[1, 2], b=[[1, 2], [3, 4]], c=[[5, 6], [7]])
 
 julia> flatten(df3, [:b, :c])
 ERROR: ArgumentError: Lengths of iterables stored in columns :b and :c are not the same in row 2
+
+julia> df4 = DataFrame(a=[1, 2, 3],
+                       b=[[1, 2], missing, missing],
+                       c=[[5, 6], missing, [7, 8]])
+3×3 DataFrame
+ Row │ a      b        c
+     │ Int64  Array…?  Array…?
+─────┼─────────────────────────
+   1 │     1  [1, 2]   [5, 6]
+   2 │     2  missing  missing
+   3 │     3  missing  [7, 8]
+julia> flatten(df4, [:b, :c], scalar=Missing)
+5×3 DataFrame
+ Row │ a      b        c
+     │ Int64  Int64?   Int64?
+─────┼─────────────────────────
+   1 │     1        1        5
+   2 │     1        2        6
+   3 │     2  missing  missing
+   4 │     3  missing        7
+   5 │     3  missing        8
 ```
 """
 function flatten(df::AbstractDataFrame,
-                 cols::Union{ColumnIndex, MultiColumnIndex})
+                 cols::Union{ColumnIndex, MultiColumnIndex};
+                 scalar::Type=Union{})
     _check_consistency(df)
 
     idxcols = index(df)[cols]
@@ -2348,15 +2374,16 @@ function flatten(df::AbstractDataFrame,
     end
 
     col1 = first(idxcols)
-    lengths = length.(df[!, col1])
-    for col in idxcols
-        v = df[!, col]
-        if any(x -> length(x[1]) != x[2], zip(v, lengths))
-            r = findfirst(x -> x != 0, length.(v) .- lengths)
-            colnames = _names(df)
-            throw(ArgumentError("Lengths of iterables stored in columns :$(colnames[col1]) " *
-                                "and :$(colnames[col]) are not the same in row $r"))
-        end
+    lengths = Int[x isa scalar ? -1 : length(x) for x in df[!, col1]]
+    for (i, coli) in enumerate(idxcols)
+        i == 1 && continue
+        update_lengths!(lengths, df[!, coli], scalar, df, col1, coli)
+    end
+
+    # handle case where in all columns we had a scalar
+    # in this case we keep it one time
+    for i in 1:length(lengths)
+        lengths[i] == -1 && (lengths[i] = 1)
     end
 
     new_df = similar(df[!, Not(cols)], sum(lengths))
@@ -2368,14 +2395,34 @@ function flatten(df::AbstractDataFrame,
         col_to_flatten = df[!, col]
         fast_path = eltype(col_to_flatten) isa AbstractVector &&
                     !isempty(col_to_flatten)
-        flattened_col = fast_path ?
-            reduce(vcat, col_to_flatten) :
-            collect(Iterators.flatten(col_to_flatten))
+        flattened_col = if fast_path
+                reduce(vcat, col_to_flatten)
+            elseif scalar === Union{}
+                collect(Iterators.flatten(col_to_flatten))
+            else
+                collect(Iterators.flatten(v isa scalar ? Iterators.repeated(v, l) : v
+                                          for (l, v) in zip(lengths, col_to_flatten)))
+            end
         insertcols!(new_df, col, _names(df)[col] => flattened_col)
     end
 
     _copy_all_note_metadata!(new_df, df)
     return new_df
+end
+
+function update_lengths!(lengths::Vector{Int}, col::AbstractVector, scalar::Type,
+                         df::AbstractDataFrame, col1, coli)
+    for (i, v) in enumerate(col)
+        v isa scalar && continue
+        lv = length(v)
+        if lengths[i] == -1
+            lengths[i] = lv
+        elseif lengths[i] != lv
+            colnames = _names(df)
+            throw(ArgumentError("Lengths of iterables stored in columns :$(colnames[col1]) " *
+                                "and :$(colnames[coli]) are not the same in row $i"))
+        end
+    end
 end
 
 function repeat_lengths!(longnew::AbstractVector, shortold::AbstractVector,
