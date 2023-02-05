@@ -15,7 +15,7 @@
 * Joining functions now support `order` keyword argument allowing the user
   to specify the order of the rows in the produced table
   ([#3233](https://github.com/JuliaData/DataFrames.jl/pull/3233))
-* Add `nest`, `unnest`, `extract`, and `extract!` functions; improve `flatten`
+* Add `nest`, `unnest`, `extract`, and `extract!` functions
   ([#3258](https://github.com/JuliaData/DataFrames.jl/pull/3258))
 
 ## Bug fixes
