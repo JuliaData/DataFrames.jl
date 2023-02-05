@@ -9,7 +9,7 @@ anyerrors = false
 using DataFrames, Dates, Test, Random, InlineStrings
 
 if Threads.nthreads() < 2
-    @warn("Running tests with only one thread: correctness of parallel operations is not tested")
+    @warn("Running tests with only one thread: correctness of parallel operations is not checked")
 else
     @info("Running tests with $(Threads.nthreads()) threads")
 end
