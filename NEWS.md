@@ -23,6 +23,9 @@
 * Add `keep` keyword argument to `nonunique`, `unique`, and `unique!`
   allowing to specify which duplicate rows should be kept
   ([#3260](https://github.com/JuliaData/DataFrames.jl/pull/3260))
+* Add `haskey` and `get` methods to `DataFrameColumns`
+  to make it support dictionary interface more completely
+  ([#3282](https://github.com/JuliaData/DataFrames.jl/pull/3282))
 
 ## Bug fixes
 

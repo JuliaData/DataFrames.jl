@@ -247,6 +247,39 @@ end
         @test parent(er3) isa SubDataFrame
         @test parentindices(parent(er3))[1] == 1:2
     end
+
+end
+
+@testset "haskey and get for DataFrameColumns" begin
+    df_ref = DataFrame(a=1:3, b=2:4, c=3:5)
+    for df in (df_ref, @view df_ref[1:3, 1:2])
+        dfc = eachcol(df)
+        @test !haskey(dfc, 0)
+        @test haskey(dfc, 1)
+        @test haskey(dfc, 2)
+        @test !haskey(dfc, 4)
+        @test !haskey(dfc, 0x0)
+        @test haskey(dfc, 0x1)
+        @test !haskey(dfc, :x)
+        @test !haskey(dfc, "x")
+        @test !haskey(dfc, Test.GenericString("x"))
+        @test haskey(dfc, :a)
+        @test haskey(dfc, "a")
+        @test haskey(dfc, Test.GenericString("a"))
+
+        @test get(dfc, 0, "error") == "error"
+        @test get(dfc, 1, "error") == 1:3
+        @test get(dfc, 4, "error") == "error"
+        @test get(dfc, 0x0, "error") == "error"
+        @test get(dfc, 0x1, "error") == 1:3
+        @test get(dfc, :x, "error") == "error"
+        @test get(dfc, "x", "error") == "error"
+        @test get(dfc, Test.GenericString("x"), "error") == "error"
+        @test get(dfc, :a, "error") == 1:3
+        @test get(dfc, "a", "error") == 1:3
+        @test get(dfc, Test.GenericString("a"), "error") == 1:3
+        @test_throws MethodError get(dfc, "a")
+    end
 end
 
 end # module

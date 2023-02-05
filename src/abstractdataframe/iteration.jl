@@ -240,6 +240,14 @@ with the corresponding column vector, i.e. `name => col`
 where `name` is the column name of the column `col`.
 """
 Base.pairs(itr::DataFrameColumns) = Base.Iterators.Pairs(itr, keys(itr))
+
+Base.haskey(itr::DataFrameColumns, col::Union{AbstractString, Symbol}) =
+    columnindex(parent(itr), col) > 0
+Base.haskey(itr::DataFrameColumns, col::Union{Signed, Unsigned}) =
+    0 < col <= ncol(parent(itr))
+Base.get(itr::DataFrameColumns, col::ColumnIndex, default) =
+    haskey(itr, col) ? itr[col] : default
+
 Base.findnext(f::Function, itr::DataFrameColumns, i::Integer) =
     findnext(f, values(itr), i)
 Base.findnext(f::Function, itr::DataFrameColumns, i::Union{Symbol, AbstractString}) =
