@@ -2504,6 +2504,7 @@ end
 
 """
     flatten(df::AbstractDataFrame, cols)
+
 When columns `cols` of data frame `df` have iterable elements that define
 `length` (for example a `Vector` of `Vector`s), return a `DataFrame` where each
 element of each `col` in `cols` is flattened, meaning the column corresponding
@@ -2513,8 +2514,11 @@ according to the length of `df[i, col]`. These lengths must therefore be the
 same for each `col` in `cols`, or else an error is raised. Note that these
 elements are not copied, and thus if they are mutable changing them in the
 returned `DataFrame` will affect `df`.
+
 `cols` can be any column selector ($COLUMNINDEX_STR; $MULTICOLUMNINDEX_STR).
+
 $METADATA_FIXED
+
 # Examples
 ```jldoctest
 julia> df1 = DataFrame(a=[1, 2], b=[[1, 2], [3, 4]], c=[[5, 6], [7, 8]])
@@ -2524,6 +2528,7 @@ julia> df1 = DataFrame(a=[1, 2], b=[[1, 2], [3, 4]], c=[[5, 6], [7, 8]])
 ─────┼───────────────────────
    1 │     1  [1, 2]  [5, 6]
    2 │     2  [3, 4]  [7, 8]
+
 julia> flatten(df1, :b)
 4×3 DataFrame
  Row │ a      b      c
@@ -2533,6 +2538,7 @@ julia> flatten(df1, :b)
    2 │     1      2  [5, 6]
    3 │     2      3  [7, 8]
    4 │     2      4  [7, 8]
+
 julia> flatten(df1, [:b, :c])
 4×3 DataFrame
  Row │ a      b      c
@@ -2542,6 +2548,7 @@ julia> flatten(df1, [:b, :c])
    2 │     1      2      6
    3 │     2      3      7
    4 │     2      4      8
+
 julia> df2 = DataFrame(a=[1, 2], b=[("p", "q"), ("r", "s")])
 2×2 DataFrame
  Row │ a      b
@@ -2549,6 +2556,7 @@ julia> df2 = DataFrame(a=[1, 2], b=[("p", "q"), ("r", "s")])
 ─────┼───────────────────
    1 │     1  ("p", "q")
    2 │     2  ("r", "s")
+
 julia> flatten(df2, :b)
 4×2 DataFrame
  Row │ a      b
@@ -2558,6 +2566,7 @@ julia> flatten(df2, :b)
    2 │     1  q
    3 │     2  r
    4 │     2  s
+
 julia> df3 = DataFrame(a=[1, 2], b=[[1, 2], [3, 4]], c=[[5, 6], [7]])
 2×3 DataFrame
  Row │ a      b       c
@@ -2565,6 +2574,7 @@ julia> df3 = DataFrame(a=[1, 2], b=[[1, 2], [3, 4]], c=[[5, 6], [7]])
 ─────┼───────────────────────
    1 │     1  [1, 2]  [5, 6]
    2 │     2  [3, 4]  [7]
+
 julia> flatten(df3, [:b, :c])
 ERROR: ArgumentError: Lengths of iterables stored in columns :b and :c are not the same in row 2
 ```
