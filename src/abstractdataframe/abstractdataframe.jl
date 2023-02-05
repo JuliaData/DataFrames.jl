@@ -2520,6 +2520,7 @@ returned `DataFrame` will affect `df`.
 $METADATA_FIXED
 
 # Examples
+
 ```jldoctest
 julia> df1 = DataFrame(a=[1, 2], b=[[1, 2], [3, 4]], c=[[5, 6], [7, 8]])
 2×3 DataFrame
