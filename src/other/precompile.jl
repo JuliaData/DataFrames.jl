@@ -66,4 +66,8 @@ SnoopPrecompile.@precompile_all_calls begin
     unstack(long, :variable, :value, combine=sum)
     flatten(DataFrame(a=[[1, 2], [3, 4]], b=[1, 2]), :a)
     dropmissing(DataFrame(a=[1, 2, 3, missing], b=["a", missing, "c", "d"]))
+    df = DataFrame(rand(20, 2), :auto)
+    df.id = repeat(1:2, 10)
+    combine(df, AsTable(r"x") .=> [ByRow(sum), ByRow(mean)])
+    combine(groupby(df, :id), AsTable(r"x") .=> [ByRow(sum), ByRow(mean)])
 end
