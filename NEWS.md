@@ -12,6 +12,9 @@
 * Add support for `operator` keyword argument in `Cols`
   to take a set operation to apply to passed selectors (`union` by default)
   ([3224](https://github.com/JuliaData/DataFrames.jl/pull/3224))
+* Allow to pass multiple predicates in `Cols` and mix them with
+  other selectors
+  ([3279](https://github.com/JuliaData/DataFrames.jl/pull/3279))
 * Improve support for setting group order in `groupby`
   ([3253](https://github.com/JuliaData/DataFrames.jl/pull/3253))
 * Joining functions now support `order` keyword argument allowing the user

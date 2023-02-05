@@ -230,15 +230,15 @@ end
 @inline Base.getindex(x::AbstractIndex, idx::All) =
     isempty(idx.cols) ? (1:length(x)) : throw(ArgumentError("All(args...) is not supported: use Cols(args...) instead"))
 
+@inline _getindex_cols(x::AbstractIndex, idx::Any) = x[idx]
+@inline _getindex_cols(x::AbstractIndex, idx::Function) = findall(idx, names(x))
+# the definition below is needed because `:` is a Function
+@inline _getindex_cols(x::AbstractIndex, idx::Colon) = x[idx]
+
 @inline function Base.getindex(x::AbstractIndex, idx::Cols)
     isempty(idx.cols) && return Int[]
-    return idx.operator(getindex.(Ref(x), idx.cols)...)
+    return idx.operator(_getindex_cols.(Ref(x), idx.cols)...)
 end
-
-# the definition below is needed because `:` is a Function
-@inline Base.getindex(x::AbstractIndex, idx::Cols{Tuple{typeof(:)}}) = x[:]
-@inline Base.getindex(x::AbstractIndex, idx::Cols{<:Tuple{Function}}) =
-    findall(idx.cols[1], names(x))
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
