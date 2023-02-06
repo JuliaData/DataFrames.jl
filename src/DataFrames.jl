@@ -11,6 +11,7 @@ using PrettyTables
 using Random
 using Tables: ByRow
 import SnoopPrecompile
+import CSV
 
 import DataAPI,
        DataAPI.allcombinations,

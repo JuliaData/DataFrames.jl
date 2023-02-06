@@ -70,4 +70,5 @@ SnoopPrecompile.@precompile_all_calls begin
     df.id = repeat(1:2, 10)
     combine(df, AsTable(r"x") .=> [ByRow(sum), ByRow(mean)])
     combine(groupby(df, :id), AsTable(r"x") .=> [ByRow(sum), ByRow(mean)])
+    CSV.read(IOBuffer("a,b,c\n1,1.0,a"), DataFrame)
 end
