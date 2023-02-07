@@ -1,14 +1,6 @@
 import SnoopPrecompile
 
 SnoopPrecompile.@precompile_all_calls begin
-    import CSV
-
-    # definition needed to avoid dispatch ambiguity
-    Base.reduce(::typeof(vcat),
-                dfs::CSV.SentinelArrays.ChainedVector{T, A} where {T<:AbstractDataFrame,
-                                                                A<:AbstractVector{T}}) =
-        reduce(vcat, collect(AbstractDataFrame, dfs))
-
     df = DataFrame(a=[2, 5, 3, 1, 0], b=["a", "b", "c", "a", "b"], c=1:5,
                    p=PooledArray(["a", "b", "c", "a", "b"]),
                    q=[true, false, true, false, true],
@@ -19,8 +11,8 @@ SnoopPrecompile.@precompile_all_calls begin
     combine(df, :c, [:c :f] .=> [sum, mean, std], :c => :d, [:a, :c] => cor)
     transform(df, :c, [:c :f] .=> [sum, mean, std], :c => :d, [:a, :c] => cor)
     groupby(df, :a)
-    groupby(df, :q)
     groupby(df, :p)
+    groupby(df, :q)
     gdf = groupby(df, :b)
     combine(gdf, :c, [:c :f] .=> [sum, mean, std], :c => :d, [:a, :c] => cor)
     transform(gdf, :c, [:c :f] .=> [sum, mean, std], :c => :d, [:a, :c] => cor)
@@ -78,5 +70,4 @@ SnoopPrecompile.@precompile_all_calls begin
     df.id = repeat(1:2, 10)
     combine(df, AsTable(r"x") .=> [ByRow(sum), ByRow(mean)])
     combine(groupby(df, :id), AsTable(r"x") .=> [ByRow(sum), ByRow(mean)])
-    CSV.read(IOBuffer("a,b,c\n1,1.0,a"), DataFrame)
 end

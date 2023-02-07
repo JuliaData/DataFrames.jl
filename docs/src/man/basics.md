@@ -52,34 +52,37 @@ The most fundamental type provided by DataFrames.jl is `DataFrame`, where
 typically each row is interpreted as an observation and each column as a
 feature.
 
-!!! note
+!!! note "Advanced installation configuration"
 
-    DataFrames.jl uses precompilation to improve its responsiveness. However,
-    in some scenarios users might want to avoid precompilaion to improve
-    package installation time and load time. To disable precompilation of
-    DataFrames.jl in your current project you need to install the
+    **Advanced installation settings.**
+    DataFrames.jl puts in extra time and effort when the package is being built
+    (precompiled) to make sure it is more responsive when you are using it.
+    However, in some scenarios users might want to avoid this extra
+    precompilaion effort to reduce the time needed to build the package and
+    later to load it. To disable precompilation of DataFrames.jl in your current
+    project you need to install the
     [SnoopPrecompile.jl](https://github.com/timholy/SnoopCompile.jl/tree/master/SnoopPrecompile)
-    package and then run the following code:
+    and [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl)
+    packages and then run the following code:
     ```
-    using SnoopPrecompile
-    SnoopPrecompile.Preferences.set_preferences!(SnoopPrecompile,
-        "skip_precompile" =>
-        union(SnoopPrecompile.Preferences.load_preference(SnoopPrecompile,
-                                                          "skip_precompile",
-                                                          String[]),
-              ["DataFrames"]);
+    using SnoopPrecompile, Preferences
+    Preferences.set_preferences!(SnoopPrecompile,
+        "skip_precompile" => union(Preferences.load_preference(SnoopPrecompile,
+                                                               "skip_precompile",
+                                                               String[]),
+                                   ["DataFrames"]);
         force=true)
     ```
     If you later would want to re-enable precompilation of DataFrames.jl you
     can do it using the following commands:
     ```
-    using SnoopPrecompile
-    SnoopPrecompile.Preferences.set_preferences!(SnoopPrecompile,
+    using SnoopPrecompile, Preferences
+    Preferences.set_preferences!(SnoopPrecompile,
         "skip_precompile" =>
         filter(!=("DataFrames"),
-               SnoopPrecompile.Preferences.load_preference(SnoopPrecompile,
-                                                           "skip_precompile",
-                                                           String[]));
+               Preferences.load_preference(SnoopPrecompile,
+                                           "skip_precompile",
+                                           String[]));
         force=true)
     ```
 
