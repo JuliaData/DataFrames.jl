@@ -1,6 +1,14 @@
 import SnoopPrecompile
 
 SnoopPrecompile.@precompile_all_calls begin
+    import CSV
+
+    # definition needed to avoid dispatch ambiguity
+    Base.reduce(::typeof(vcat),
+                dfs::CSV.SentinelArrays.ChainedVector{T, A} where {T<:AbstractDataFrame,
+                                                                A<:AbstractVector{T}}) =
+        reduce(vcat, collect(AbstractDataFrame, dfs))
+
     df = DataFrame(a=[2, 5, 3, 1, 0], b=["a", "b", "c", "a", "b"], c=1:5,
                    p=PooledArray(["a", "b", "c", "a", "b"]),
                    q=[true, false, true, false, true],

@@ -16,7 +16,7 @@ or
 ```julia
 julia> ] # ']' should be pressed
 
-(@v1.6) pkg> add DataFrames
+(@v1.9) pkg> add DataFrames
 ```
 
 If you want to make sure everything works as expected you can run the tests
@@ -35,9 +35,9 @@ you have installed with the `status` command.
 ```julia
 julia> ]
 
-(@v1.6) pkg> status DataFrames
-      Status `C:\Users\TeAmp0is0N\.julia\environments\v1.6\Project.toml`
-  [a93c6f00] DataFrames v1.1.1
+(@v1.9) pkg> status DataFrames
+      Status `~\v1.6\Project.toml`
+  [a93c6f00] DataFrames v1.5.0
 ```
 
 Throughout the rest of the tutorial we will assume that you have installed the
@@ -51,6 +51,37 @@ julia> using DataFrames
 The most fundamental type provided by DataFrames.jl is `DataFrame`, where
 typically each row is interpreted as an observation and each column as a
 feature.
+
+!!! note
+
+    DataFrames.jl uses precompilation to improve its responsiveness. However,
+    in some scenarios users might want to avoid precompilaion to improve
+    package installation time and load time. To disable precompilation of
+    DataFrames.jl in your current project you need to install the
+    [SnoopPrecompile.jl](https://github.com/timholy/SnoopCompile.jl/tree/master/SnoopPrecompile)
+    package and then run the following code:
+    ```
+    using SnoopPrecompile
+    SnoopPrecompile.Preferences.set_preferences!(SnoopPrecompile,
+        "skip_precompile" =>
+        union(SnoopPrecompile.Preferences.load_preference(SnoopPrecompile,
+                                                          "skip_precompile",
+                                                          String[]),
+              ["DataFrames"]);
+        force=true)
+    ```
+    If you later would want to re-enable precompilation of DataFrames.jl you
+    can do it using the following commands:
+    ```
+    using SnoopPrecompile
+    SnoopPrecompile.Preferences.set_preferences!(SnoopPrecompile,
+        "skip_precompile" =>
+        filter(!=("DataFrames"),
+               SnoopPrecompile.Preferences.load_preference(SnoopPrecompile,
+                                                           "skip_precompile",
+                                                           String[]));
+        force=true)
+    ```
 
 ## Constructors and Basic Utility Functions
 
@@ -1785,7 +1816,7 @@ in them:
 julia> select(german, Not(["Age", "Saving accounts", "Checking account",
                            "Credit amount", "Purpose"]))
 1000×5 DataFrame
-  Row │ id     Sex      Job    Housing  Duration 
+  Row │ id     Sex      Job    Housing  Duration
       │ Int64  String7  Int64  String7  Int64
 ──────┼──────────────────────────────────────────
     1 │     0  male         2  own             6
