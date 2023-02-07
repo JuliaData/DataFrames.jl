@@ -1893,7 +1893,7 @@ end
 end
 
 @testset "vcat ChainedVector ambiguity" begin
-    dfs = DataFrames.CSV.SentinelArrays.ChainedVector([[DataFrame(a=1)], [DataFrame(a=2)]])
+    dfs = DataFrames.SentinelArrays.ChainedVector([[DataFrame(a=1)], [DataFrame(a=2)]])
     @test reduce(vcat, dfs) == DataFrame(a=1:2)
 end
 
