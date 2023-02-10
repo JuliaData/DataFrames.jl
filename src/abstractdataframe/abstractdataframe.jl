@@ -1895,7 +1895,7 @@ end
 # definition needed to avoid dispatch ambiguity
 Base.reduce(::typeof(vcat),
             dfs::SentinelArrays.ChainedVector{T, A} where {T<:AbstractDataFrame,
-                                                            A<:AbstractVector{T}}) =
+                                                           A<:AbstractVector{T}}) =
     reduce(vcat, collect(AbstractDataFrame, dfs))
 
 function _vcat(dfs::AbstractVector{AbstractDataFrame};
