@@ -54,7 +54,6 @@ feature.
 
 !!! note "Advanced installation configuration"
 
-    **Advanced installation settings.**
     DataFrames.jl puts in extra time and effort when the package is being built
     (precompiled) to make sure it is more responsive when you are using it.
     However, in some scenarios users might want to avoid this extra
