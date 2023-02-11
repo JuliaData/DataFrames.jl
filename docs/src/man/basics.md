@@ -1508,9 +1508,9 @@ julia> german[Not(5), r"S"]
                 984 rows omitted
 ```
 
-## Basic Usage of Transformation Functions
+## Basic Usage of Manipulation Functions
 
-In DataFrames.jl there are seven functions that can be used to transform data frame columns:
+In DataFrames.jl there are seven functions that can be used to manipulate data frame columns:
 
 | Function     | Memory Usage                     | Column Retention                             | Row Retention                                       |
 | ------------ | -------------------------------- | -------------------------------------------- | --------------------------------------------------- |
@@ -1522,17 +1522,17 @@ In DataFrames.jl there are seven functions that can be used to transform data fr
 | `subset!`    | Modifies an existing data frame. | Retains both source and transformed columns. | Number of rows is determined by the transformation. |
 | `combine`    | Creates a new data frame.        | Retains only transformed columns.            | Number of rows is determined by the transformation. |
 
-### Constructing Transformation Pairs
+### Constructing Operation Pairs
 All of the functions above use the same syntax which is commonly
-`transformation_function(source_dataframe, transformation)`.
-The `transformation` argument is a `Pair` which defines the
-transformation to be applied to the `source_dataframe`,
+`manipulation_function(dataframe, operation)`.
+The `operation` argument is a `Pair` which defines the
+operation to be applied to the source `dataframe`,
 and it can take any of the forms listed below:
 
-- `source_column_selector => function`
+- `source_column_selector => operation_function`
   - passes source column(s) to function
   - automatically names the resulting column(s)
-- `source_column_selector => function => new_column_names`
+- `source_column_selector => operation_function => new_column_names`
   - passes source column(s) to function
   - names the resulting column(s) `new_column_names`
     - *cannot be used with `subset` or `subset!`*
@@ -1548,10 +1548,58 @@ and it can take any of the forms listed below:
 #### `source_column_selector`
 The most basic `source_column_selector` is a column name,
 but there are many more ways to select columns as explained
-in the first section of the [Indexing](@ref) API.
+in the [Indexing](@ref) API.
 
-#### `function`
-Here `function` is a function which operates on an entire data frame
+##### Examples
+```julia
+julia> df = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> select(df, :b)
+3×1 DataFrame
+ Row │ b
+     │ Int64
+─────┼───────
+   1 │     4
+   2 │     5
+   3 │     6
+
+julia> select(df, "b")
+3×1 DataFrame
+ Row │ b
+     │ Int64
+─────┼───────
+   1 │     4
+   2 │     5
+   3 │     6
+
+julia> select(df, 2)
+3×1 DataFrame
+ Row │ b
+     │ Int64
+─────┼───────
+   1 │     4
+   2 │     5
+   3 │     6
+
+julia> select(df, Not(:a))
+3×1 DataFrame
+ Row │ b
+     │ Int64
+─────┼───────
+   1 │     4
+   2 │     5
+   3 │     6
+```
+
+#### `operation_function`
+Here `operation_function` is a function which operates on an entire data frame
 column passed as a vector.
 If you instead want to apply a function to each element in the column,
 then you can wrap your element-wise function in `ByRow` like
@@ -1559,13 +1607,91 @@ then you can wrap your element-wise function in `ByRow` like
 This will apply `my_elementwise_function` to every element in the column
 and then collect the results back into a vector.
 
+##### Examples
+```julia
+julia> df = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> combine(df, :b => sum)
+1×1 DataFrame
+ Row │ b_sum
+     │ Int64
+─────┼───────
+   1 │    15
+
+julia> select(df, :b => sum)
+3×1 DataFrame
+ Row │ b_sum
+     │ Int64
+─────┼───────
+   1 │    15
+   2 │    15
+   3 │    15
+
+julia> select(df, :b => ByRow(x -> x + 2))
+3×1 DataFrame
+ Row │ b_function
+     │ Int64
+─────┼────────────
+   1 │          6
+   2 │          7
+   3 │          8
+```
+
 When multiple columns are selected by `source_column_selector`,
-the `function` will receive the columns as multiple positional arguments in the
+the `operation_function` will receive the columns as multiple positional arguments in the
 order they are selected like `f(column1, column2, column3)`.
 Slurping and splatting with `...` can be used to define a function which can
 accept any number of columns returned by `source_column_selector`.
 For example, the function `f(columns...) = max.(columns...)` will return a new column
 containing the largest element from each row for any number of input columns.
+
+##### Examples
+```julia
+julia> df = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> transform(df, [:a, :b] => +)
+3×3 DataFrame
+ Row │ a      b      a_b_+
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      5
+   2 │     2      5      7
+   3 │     3      6      9
+
+julia> transform(df, [:a, :b] => ByRow((x, y) -> x * y))
+3×3 DataFrame
+ Row │ a      b      a_b_function
+     │ Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      4             4
+   2 │     2      5            10
+   3 │     3      6            18
+
+julia> transform(df, Cols(:) => ByRow(max))
+3×3 DataFrame
+ Row │ a      b      a_b_max
+     │ Int64  Int64  Int64
+─────┼───────────────────────
+   1 │     1      4        4
+   2 │     2      5        5
+   3 │     3      6        6
+
+
+```
 
 #### `new_column_names`
 The results of the transformation will be placed into new columns
