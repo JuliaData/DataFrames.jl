@@ -1892,6 +1892,12 @@ function Base.reduce(::typeof(vcat),
     return res
 end
 
+# definition needed to avoid dispatch ambiguity
+Base.reduce(::typeof(vcat),
+            dfs::SentinelArrays.ChainedVector{T, A} where {T<:AbstractDataFrame,
+                                                           A<:AbstractVector{T}}) =
+    reduce(vcat, collect(AbstractDataFrame, dfs))
+
 function _vcat(dfs::AbstractVector{AbstractDataFrame};
                cols::Union{Symbol, AbstractVector{Symbol},
                            AbstractVector{<:AbstractString}}=:setequal)

@@ -11,6 +11,8 @@ using PrettyTables
 using Random
 using Tables: ByRow
 import SnoopPrecompile
+import SentinelArrays
+import InlineStrings
 
 import DataAPI,
        DataAPI.allcombinations,

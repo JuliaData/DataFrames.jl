@@ -1892,6 +1892,11 @@ end
                            DataFrame(c=[missing, missing]))
 end
 
+@testset "vcat ChainedVector ambiguity" begin
+    dfs = DataFrames.SentinelArrays.ChainedVector([[DataFrame(a=1)], [DataFrame(a=2)]])
+    @test reduce(vcat, dfs) == DataFrame(a=1:2)
+end
+
 @testset "names for Type, predicate + standard tests of cols" begin
     df_long = DataFrame(a1=1:3, a2=[1, missing, 3],
                         b1=1.0:3.0, b2=[1.0, missing, 3.0],
