@@ -61,7 +61,7 @@ feature.
     precompilaion effort to reduce the time needed to build the package and
     later to load it. To disable precompilation of DataFrames.jl in your current
     project you need to install the
-    [SnoopPrecompile.jl](https://github.com/timholy/SnoopCompile.jl/tree/master/SnoopPrecompile)
+    [SnoopPrecompile.jl](https://timholy.github.io/SnoopCompile.jl/stable/snoop_pc/)
     and [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl)
     packages and then run the following code:
     ```
