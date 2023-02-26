@@ -75,8 +75,8 @@ rows having the index value of `'c'`.
 
 | Operation                | pandas                                                         | DataFrames.jl                               |
 |:-------------------------|:---------------------------------------------------------------|:--------------------------------------------|
-| Reduce multiple values   | `df['z'].mean(skipna = False)`                                 | `mean(df.z)`                                |
-|                          | `df['z'].mean()`                                               | `mean(skipmissing(df.z))`                   |
+| Reduce multiple values   | `df['z'].mean()`                                               | `mean(df.z)`                                |
+|                          | `df['z'].mean(skipna = False)`                                 | `mean(skipmissing(df.z))`                   |
 |                          | `df[['z']].agg(['mean'])`                                      | `combine(df, :z => mean ∘ skipmissing)`     |
 | Add new columns          | `df.assign(z1 = df['z'] + 1)`                                  | `transform(df, :z => (v -> v .+ 1) => :z1)` |
 | Rename columns           | `df.rename(columns = {'x': 'x_new'})`                          | `rename(df, :x => :x_new)`                  |
