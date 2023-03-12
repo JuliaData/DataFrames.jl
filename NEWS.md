@@ -1,3 +1,10 @@
+# DataFrames.jl v1.6 Release Notes
+
+## New functionalities
+
+* Add `Iterators.partition` support for `DataFrameRows`
+  ([#3299](https://github.com/JuliaData/DataFrames.jl/pull/3299))
+
 # DataFrames.jl v1.5 Release Notes
 
 ## New functionalities

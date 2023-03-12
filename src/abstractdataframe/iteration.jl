@@ -92,6 +92,66 @@ Compat.hasproperty(itr::DataFrameRows, s::AbstractString) = haskey(index(parent(
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(parent(itr))
 
+"""
+    Iterators.partition(dfr::DataFrameRows, n::Integer)
+
+Iterate over `dfr` `DataFrameRows` `n` rows at a time, returning each block
+as a `DataFraneRows` over a view of rows of parent of `dfr`.
+
+# Examples
+
+```jldoctest
+julia> collect(Iterators.partition(eachrow(DataFrame(x=1:5)), 2))
+3-element Vector{DataFrames.DataFrameRows{SubDataFrame{DataFrame, DataFrames.Index, UnitRange{Int64}}}}:
+ 2×1 DataFrameRows
+ Row │ x     
+     │ Int64 
+─────┼───────
+   1 │     1
+   2 │     2
+ 2×1 DataFrameRows
+ Row │ x     
+     │ Int64 
+─────┼───────
+   1 │     3
+   2 │     4
+ 1×1 DataFrameRows
+ Row │ x     
+     │ Int64 
+─────┼───────
+   1 │     5
+```
+"""
+function Iterators.partition(dfr::DataFrameRows, n::Integer)
+    n < 1 && throw(ArgumentError("cannot create partitions of length $n"))
+    return Iterators.PartitionIterator(dfr, Int(n))
+end
+
+# use autodetection of eltype
+Base.IteratorEltype(::Type{<:Iterators.PartitionIterator{<:DataFrameRows}}) =
+    Base.EltypeUnknown()
+
+# we do not need to be overly specific here as we rely on autodetection of eltype
+# this method is needed only to override the fallback for `PartitionIterator`
+Base.eltype(::Type{<:Iterators.PartitionIterator{<:DataFrameRows}}) =
+    DataFrameRows
+
+IteratorSize(::Type{<:Iterators.PartitionIterator{<:DataFrameRows}}) =
+    Base.HasLength()
+
+function Base.length(itr::Iterators.PartitionIterator{<:DataFrameRows})
+    l = nrow(parent(itr.c))
+    return cld(l, itr.n)
+end
+
+function Base.iterate(itr::Iterators.PartitionIterator{<:DataFrameRows}, state::Int=1)
+    df = parent(itr.c)
+    last_idx = nrow(df)
+    state > last_idx && return nothing
+    r = min(state + itr.n - 1, last_idx)
+    return eachrow(view(df, state:r, :)), r + 1
+end
+
 # Iteration by columns
 
 const DATAFRAMECOLUMNS_DOCSTR = """
