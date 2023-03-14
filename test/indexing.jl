@@ -19,6 +19,15 @@ using Test, DataFrames, Unicode, Random
         @test dfx[!, 1] === df[!, names(dfx)[1]]
     end
 
+    @test df[!, Not(1, 2)] == DataFrame(c=7:9)
+    @test df[!, Not(:b, 1)] == DataFrame(c=7:9)
+    @test df[!, Not("c", :a)] == DataFrame(b=4:6)
+    @test df[!, Not(:b, "c", :a)] == DataFrame()
+    @test df[!, Not([1, 2], :b)] == DataFrame(c=7:9)
+    @test df[!, Not([:c, :a], :b)] == DataFrame()
+    @test df[!, Not([1, 2], 2)] == DataFrame(c=7:9)
+    @test df[!, Not([1, 2], [1, 2])] == DataFrame(c=7:9)
+
     @test df[1, 1] == 1
     @test df[1, 1:2] isa DataFrameRow
     @test df[1, r"[ab]"] isa DataFrameRow

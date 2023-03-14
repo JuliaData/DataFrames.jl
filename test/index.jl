@@ -115,6 +115,9 @@ end
     si7 = SubIndex(i, Not(1:2))
     si8 = SubIndex(i, ["C", "D", "E"])
     si9 = SubIndex(i, Not(Not(["C", "D", "E"])))
+    si10 = SubIndex(i, Not(1, 2))
+    si11 = SubIndex(i, Not(:A, :B))
+    si12 = SubIndex(i, Not(2, "A"))
 
     @test copy(si1) == i
     @test copy(si2) == Index([:C, :D, :E])
@@ -125,6 +128,9 @@ end
     @test copy(si7) == Index([:C, :D, :E])
     @test copy(si8) == Index([:C, :D, :E])
     @test copy(si9) == Index([:C, :D, :E])
+    @test copy(si10) == Index([:C, :D, :E])
+    @test copy(si11) == Index([:C, :D, :E])
+    @test copy(si12) == Index([:C, :D, :E])
 
     @test_throws ArgumentError SubIndex(i, 1)
     @test_throws ArgumentError SubIndex(i, :A)
@@ -327,6 +333,8 @@ end
     push!(i, :x131)
     push!(i, :y13)
     push!(i, :yy13)
+    @test i[Not(2, 4, 5)] == [1, 3]
+    @test i[Not(2, :y13, "yy13")] == [1, 3]
     @test i[Not(Not(r"x1."))] == [2, 3]
     @test isempty(i[Not(Not(r"xx"))])
     @test i[Not(Not(r""))] == 1:5

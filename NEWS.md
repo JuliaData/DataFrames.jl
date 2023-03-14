@@ -1,3 +1,11 @@
+# DataFrames.jl v1.6 Release Notes
+
+## New functionalities
+
+* `Not` allows for passing multiple postiional arguments that are
+  treated as if they were wrapped in `Cols`
+  ([#3302](https://github.com/JuliaData/DataFrames.jl/pull/3302))
+
 # DataFrames.jl v1.5 Release Notes
 
 ## New functionalities
