@@ -904,6 +904,11 @@ function _deleteat!_helper(df::DataFrame, drop)
         return df
     end
 
+    selfdrop = findfirst(c -> c === drop, cols)
+    if !isnothing(selfdrop) && selfdrop < length(cols)
+        drop = copy(drop)
+    end
+
     n = nrow(df)
     col1 = cols[1]
     deleteat!(col1, drop)

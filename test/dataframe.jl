@@ -518,6 +518,13 @@ end
     df = DataFrame(a=1, b=3.0)
     @test isempty(deleteat!(df, true:true))
 
+    df = DataFrame(a=[false, true, true], b=1:3, c=4:6)
+    @test deleteat!(df, df.a) == DataFrame(a=false, b=1, c=4)
+    df = DataFrame(a=1:3, b=[false, true, true], c=4:6)
+    @test deleteat!(df, df.b) == DataFrame(a=1, b=false, c=4)
+    df = DataFrame(a=1:3, b=4:6, c=[false, true, true])
+    @test deleteat!(df, df.c) == DataFrame(a=1, b=4, c=false)
+
     Random.seed!(1234)
     for t in 0:0.005:1.0
         # two columns are needed as the second column is affected
