@@ -111,7 +111,7 @@ It is recommended to add the header `# Examples` above the doctests.
 * If you make a PR please try to avoid pushing many small commits to GitHub in
   a sequence as each such commit triggers a separate CI job, which takes over
   an hour. This has a consequence of making other PRs in packages from the JuliaData
-  ecosystem wait for such CI jobs to finish as hey share a common pool of CI resources.
+  ecosystem wait for such CI jobs to finish as they share a common pool of CI resources.
 
 ## Style Guidelines
 
