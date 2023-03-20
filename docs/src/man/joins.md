@@ -268,8 +268,8 @@ produce errors as the keys defined in both source data frames were unique.
 
 ## Renaming joined columns
 
-Often you want to keep track of the source data frame of a given column.
-This feature is supported with the `ranamecols` keyword argument:
+Often you want to keep track of the source data frame.
+This feature is supported with the `renamecols` keyword argument:
 
 ```jldoctest joins
 julia> innerjoin(a, b, on=:ID, renamecols = "_left" => "_right")
