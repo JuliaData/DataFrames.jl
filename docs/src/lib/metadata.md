@@ -7,7 +7,7 @@ level. This is supported using the functions defined by the DataAPI.jl interface
 
 * for table-level metadata: [`metadata`](@ref), [`metadatakeys`](@ref),
   [`metadata!`](@ref), [`deletemetadata!`](@ref), [`emptymetadata!`](@ref);
-* for column-level metatadata: [`colmetadata`](@ref), [`colmetadatakeys`](@ref),
+* for column-level metadata: [`colmetadata`](@ref), [`colmetadatakeys`](@ref),
   [`colmetadata!`](@ref), [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
 Additionally you might find the
@@ -185,7 +185,7 @@ julia> colmetadatakeys(df)
 
 ## Propagation of `:note`-style metadata
 
-An important design feature of `:note`-style metatada is how it is handled when
+An important design feature of `:note`-style metadata is how it is handled when
 data frames are transformed.
 
 !!! note
@@ -265,7 +265,7 @@ metadata is always dropped). These are:
    metadata.
 * broadcasted assignment does not change target metadata;
   under Julia earlier than 1.7 operation of kind `df.a .= s` does not drop non-`:note`-style
-  metadata; under Julia 1.7 or later this operation perserves only `:note`-style
+  metadata; under Julia 1.7 or later this operation preserves only `:note`-style
   metadata
 * broadcasting propagates table-level metadata if some key is present
   in all passed data frames and value associated with it is identical in all

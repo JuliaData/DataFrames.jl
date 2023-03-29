@@ -33,7 +33,7 @@ object from your data frame using the `groupby` function that takes two argument
 
 Operations can then be applied on each group using one of the following functions:
 * `combine`: does not put restrictions on number of rows returned per group;
-  the returned values are vertically concatenaded following order of groups in
+  the returned values are vertically concatenated following order of groups in
   `GroupedDataFrame`; it is typically used to compute summary statistics by group;
   for `GroupedDataFrame` if grouping columns are kept they are put as first columns
   in the result;
@@ -1279,7 +1279,7 @@ two aspects:
 ## Specifying group order in `groupby`
 
 By default order of groups produced by `groupby` is undefined.
-If you want the order of groups to follow the order of first appereance in
+If you want the order of groups to follow the order of first appearance in
 the source data frame of a grouping key then pass the `sort=false` keyword argument
 to `groupby`:
 

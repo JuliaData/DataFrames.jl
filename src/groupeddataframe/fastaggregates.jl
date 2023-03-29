@@ -189,7 +189,7 @@ function groupreduce!(res::AbstractVector, f, op, condf, adjust, checkempty::Boo
 
     groupreduce!_helper(res, f, op, condf, adjust, checkempty,
                              incol, groups, counts, batches)
-    # handle the case of an unitialized reduction
+    # handle the case of an uninitialized reduction
     if eltype(res) === Any
         if op === Base.add_sum
             initf = zero
