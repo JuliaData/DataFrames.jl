@@ -33,7 +33,9 @@ The following values are a valid column index:
     * a `Not` expression (see
       [InvertedIndices.jl](https://github.com/JuliaData/InvertedIndices.jl));
       `Not(idx)` selects all indices not in the passed `idx`;
-      when passed as column selector `Not(idx...)` is equivalent to `Not(Cols(idx...))`.
+      when passed as column selector `Not(idx...)` is equivalent to
+      `Not([idx...])` if all indices are integers or to
+      `Not(Cols(idx...))` otherwise.
     * a `Cols` expression (see
       [DataAPI.jl](https://github.com/JuliaData/DataAPI.jl)); `Cols(idxs...)`
       selects the union of the selections in `idxs`; in particular `Cols()`

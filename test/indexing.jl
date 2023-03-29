@@ -20,8 +20,11 @@ using Test, DataFrames, Unicode, Random
     end
 
     @test df[!, Not(1, 2)] == DataFrame(c=7:9)
+    @test_throws ArgumentError df[!, Not(1, 1, 2)]
     @test df[!, Not(:b, 1)] == DataFrame(c=7:9)
+    @test df[!, Not(:b, :b, 1)] == DataFrame(c=7:9)
     @test df[!, Not("c", :a)] == DataFrame(b=4:6)
+    @test df[!, Not("c", "c", :a)] == DataFrame(b=4:6)
     @test df[!, Not(:b, "c", :a)] == DataFrame()
     @test df[!, Not([1, 2], :b)] == DataFrame(c=7:9)
     @test df[!, Not([:c, :a], :b)] == DataFrame()
