@@ -575,7 +575,7 @@ end
     @test unstack(df, [:id, :id2], :var, :val) == unstack(df, :var, :val) ==
           DataFrame(id=1:3, id2=1:3, a=1:3:7, b=2:3:8, c=3:3:9)
 
-    # make sure we always use order of appereance
+    # make sure we always use order of appearance
     Random.seed!(1234)
     # Use a large value to test several orders of appearance
     for i in 1:16

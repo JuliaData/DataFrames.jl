@@ -88,7 +88,7 @@ rules of `vcat`.
 
 The stacked `DataFrame` that results includes all of the columns not specified
 to be stacked. These are repeated for each stacked column. These are normally
-refered to as identifier (id) columns. In addition to the id columns, two
+referred to as identifier (id) columns. In addition to the id columns, two
 additional columns labeled `:variable` and `:values` contain the column
 identifier and the stacked columns.
 
