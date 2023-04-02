@@ -232,7 +232,8 @@ function @inline Base.getindex(x::AbstractIndex, notidx::Not{<:AbstractVector})
     todrop = getindex(x, eltype(skip) === Bool ? skip : unique(skip))
     return setdiff(1:length(x), todrop)
 end
-    @inline Base.getindex(x::AbstractIndex, notidx::Not{InvertedIndices.NotMultiIndex}) =
+
+@inline Base.getindex(x::AbstractIndex, notidx::Not{InvertedIndices.NotMultiIndex}) =
     setdiff(1:length(x), getindex(x, Cols(notidx.skip.indices...)))
 @inline Base.getindex(x::AbstractIndex, idx::Between) = x[idx.first]:x[idx.last]
 @inline Base.getindex(x::AbstractIndex, idx::All) =
