@@ -227,7 +227,7 @@ end
 @inline Base.getindex(x::AbstractIndex, notidx::Not) =
     setdiff(1:length(x), getindex(x, notidx.skip))
 
-function @inline Base.getindex(x::AbstractIndex, notidx::Not{<:AbstractVector})
+@inline function Base.getindex(x::AbstractIndex, notidx::Not{<:AbstractVector})
     skip = notidx.skip
     todrop = getindex(x, eltype(skip) === Bool ? skip : unique(skip))
     return setdiff(1:length(x), todrop)
