@@ -20,9 +20,10 @@ Random.seed!(1234)
     df = DataFrame(a=1, b=2, c=3, d=4, e=5)
     @test_throws BoundsError select!(df, Not(0))
     @test_throws BoundsError select!(df, Not(6))
-    @test_throws ArgumentError select!(df, Not([1, 1]))
     @test_throws ArgumentError select!(df, Not(:f))
     @test_throws BoundsError select!(df, Not([true, false]))
+
+    @test select!(copy(df), Not([1, 1])) == df[!, 2:end]
 
     d = copy(df)
     select!(d, Not([:a, :e, :c]))

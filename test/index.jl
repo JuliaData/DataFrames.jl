@@ -50,9 +50,13 @@ using DataFrames: Index, SubIndex, fuzzymatch
     @test_throws ArgumentError i[Not(:x)]
     @test_throws ArgumentError i[Not("x")]
     @test_throws BoundsError i[Not(1:3)]
-    @test_throws ArgumentError i[Not([1, 1])]
-    @test_throws ArgumentError i[Not([:A, :A])]
-    @test_throws ArgumentError i[Not(["A", "A"])]
+    
+    @test i[Not([1, 1])] == [2]
+    @test i[Not([:A, :A])] == [2]
+    @test i[Not(["A", "A"])] == [2]
+    @test isempty(i[Not([true, true])])
+    @test i[Not([false, false])] == 1:2
+    @test i[Not([true, false])] == [2]
 
     @test i[1:1] == 1:1
 
