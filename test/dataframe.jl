@@ -1892,9 +1892,34 @@ end
                            DataFrame(c=[missing, missing]))
 end
 
+@testset "vcat init" begin
+    dfs = [DataFrame(a=1), DataFrame(b=2)]
+    @test reduce(vcat, dfs, cols=:union, source=:x, init=DataFrame(c=[])) ≅
+          DataFrame(c=missing, a=[1, missing], b=[missing, 2], x=1:2)
+    @test reduce(vcat, dfs, cols=:union, source=:x => ["a", "b"], init=DataFrame(c=[])) ≅
+          DataFrame(c=missing, a=[1, missing], b=[missing, 2], x=["a", "b"])
+
+    dfs = [DataFrame(a=1), DataFrame(a=2)]
+    df_init = DataFrame(c=[])
+    metadata!(df_init, "k1", "v1", style=:note)
+    colmetadata!(df_init, :c, "kc", "vc", style=:note)
+    metadata!(dfs[1], "k2", "v2", style=:note)
+    metadata!(dfs[2], "k2", "v2", style=:note)
+    colmetadata!(dfs[1], :a, "ka", "va", style=:note)
+    colmetadata!(dfs[2], :a, "ka", "va", style=:note)
+    res = reduce(vcat, dfs, cols=:union, source=:x => ["a", "b"], init=df_init)
+    @test metadata(res) == Dict("k2" => "v2")
+    @test colmetadata(res) == Dict(:a => Dict("ka" => "va"))
+
+    @test_throws ArgumentError reduce(vcat, dfs, cols=:union, source=:x, init=DataFrame(c=[1]))
+end
+
 @testset "vcat ChainedVector ambiguity" begin
     dfs = DataFrames.SentinelArrays.ChainedVector([[DataFrame(a=1)], [DataFrame(a=2)]])
     @test reduce(vcat, dfs) == DataFrame(a=1:2)
+    dfs = DataFrames.SentinelArrays.ChainedVector([[DataFrame(a=1)], [DataFrame(b=2)]])
+    @test reduce(vcat, dfs, cols=:union, source=:x, init=DataFrame(c=[])) ≅
+          DataFrame(c=missing, a=[1, missing], b=[missing, 2], x=1:2)
 end
 
 @testset "names for Type, predicate + standard tests of cols" begin

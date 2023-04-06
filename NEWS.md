@@ -6,6 +6,9 @@
   treated as if they were wrapped in `Cols` and does not throw an error
   when a vector of duplicate indices is passed when doing column selection
   ([#3302](https://github.com/JuliaData/DataFrames.jl/pull/3302))
+* `reduce` performing `vcat` on a collection of data frames
+  now accepts `init` keyword argument
+  ([#3310](https://github.com/JuliaData/DataFrames.jl/pull/3310))
 
 # DataFrames.jl v1.5 Release Notes
 
