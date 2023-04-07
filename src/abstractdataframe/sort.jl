@@ -357,7 +357,8 @@ column in the corresponding position in `cols`.
              lt::Union{Function, AbstractVector{<:Function}}=isless,
              by::Union{Function, AbstractVector{<:Function}}=identity,
              rev::Union{Bool, AbstractVector{Bool}}=false,
-             order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
+             order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+             checkunique::Bool=false)
 
 Test whether data frame `df` sorted by column(s) `cols`. Checking against
 multiple columns is done lexicographically.
@@ -397,13 +398,19 @@ function Base.issorted(df::AbstractDataFrame, cols=All();
                        lt::Union{Function, AbstractVector{<:Function}}=isless,
                        by::Union{Function, AbstractVector{<:Function}}=identity,
                        rev::Union{Bool, AbstractVector{Bool}}=false,
-                       order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
+                       order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+                       checkunique::Bool=false)
     to_scalar(x::AbstractVector) = only(x)
     to_scalar(x::Any) = x
 
     # exclude AbstractVector as in that case cols can contain order(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
+    end
+    if checkunique
+        if !allunique(df, cols)
+            error("Non-unique elements found. Multiple orders are valid.")
+        end
     end
     if cols isa ColumnIndex
         return issorted(df[!, cols], lt=to_scalar(lt), by=to_scalar(by),
@@ -427,7 +434,8 @@ Base.issorted(::AbstractDataFrame, ::Base.Order.Ordering) =
          by::Union{Function, AbstractVector{<:Function}}=identity,
          rev::Union{Bool, AbstractVector{Bool}}=false,
          order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
-         view::Bool=false)
+         view::Bool=false,
+         checkunique::Bool=false)
 
 Return a data frame containing the rows in `df` sorted by column(s) `cols`.
 Sorting on multiple columns is done lexicographically.
@@ -506,8 +514,9 @@ julia> sort(df, [:x, order(:y, rev=true)])
                            by::Union{Function, AbstractVector{<:Function}}=identity,
                            rev::Union{Bool, AbstractVector{Bool}}=false,
                            order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
-                           view::Bool=false)
-    rowidxs = sortperm(df, cols, alg=alg, lt=lt, by=by, rev=rev, order=order)
+                           view::Bool=false,
+                           checkunique::Bool=false)
+    rowidxs = sortperm(df, cols, alg=alg, lt=lt, by=by, rev=rev, order=order, checkunique=checkunique)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
@@ -517,7 +526,8 @@ end
              lt::Union{Function, AbstractVector{<:Function}}=isless,
              by::Union{Function, AbstractVector{<:Function}}=identity,
              rev::Union{Bool, AbstractVector{Bool}}=false,
-             order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
+             order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+             checkunique::Bool=false)
 
 Return a permutation vector of row indices of data frame `df` that puts them in
 sorted order according to column(s) `cols`.
@@ -579,10 +589,16 @@ function Base.sortperm(df::AbstractDataFrame, cols=All();
                        lt::Union{Function, AbstractVector{<:Function}}=isless,
                        by::Union{Function, AbstractVector{<:Function}}=identity,
                        rev::Union{Bool, AbstractVector{Bool}}=false,
-                       order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
+                       order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+                       checkunique::Bool=false)
     # exclude AbstractVector as in that case cols can contain order(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
+    end
+    if checkunique
+        if !allunique(df, cols)
+            error("Non-unique elements found. Multiple valid sorts.")
+        end
     end
     ord = ordering(df, cols, lt, by, rev, order)
     _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
@@ -601,7 +617,8 @@ _sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) =
           lt::Union{Function, AbstractVector{<:Function}}=isless,
           by::Union{Function, AbstractVector{<:Function}}=identity,
           rev::Union{Bool, AbstractVector{Bool}}=false,
-          order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
+          order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+          checkunique::Bool=false)
 
 Sort data frame `df` by column(s) `cols` by permuting its rows in-place.
 Sorting on multiple columns is done lexicographicallly.
@@ -682,16 +699,29 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
                     lt::Union{Function, AbstractVector{<:Function}}=isless,
                     by::Union{Function, AbstractVector{<:Function}}=identity,
                     rev::Union{Bool, AbstractVector{Bool}}=false,
-                    order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
+                    order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+                    checkunique::Bool=false)
 
     # exclude AbstractVector as in that case cols can contain order(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
+    end
+    if checkunique
+        if !allunique(df, cols)
+            error("Non-unique elements found. Multiple valid sorts.")
+        end
     end
     ord = ordering(df, cols, lt, by, rev, order)
     _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
     return sort!(df, _alg, ord)
 end
 
-Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering) =
+function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm,
+                    o::Base.Sort.Ordering, checkunique::Bool=false)
+    if checkunique
+        if !allunique(df) # Necessary to check all cols AFAIU
+            error("Non-unique elements found. Multiple valid sorts.")
+        end
+    end
     permute!(df, _sortperm(df, a, o))
+end
