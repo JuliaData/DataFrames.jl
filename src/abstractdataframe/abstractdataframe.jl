@@ -1780,7 +1780,7 @@ Efficiently reduce the given vector or tuple of `AbstractDataFrame`s with
 `vcat`.
 
 The keyword argument `init` is the initial value to use in the reductions.
-It must be a data frame that has zero rows. It is not icluded when specifying
+It must be a data frame that has zero rows. It is not included when specifying
 `source` keyword argument and when determining metadata of the produced data frame.
 
 The column order, names, and types of the resulting `DataFrame`, and the
