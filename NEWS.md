@@ -2,6 +2,9 @@
 
 ## New functionalities
 
+* `DataFrameRows` and `DataFrameColumns` now support
+  `nrow`, `ncol`, and `Tables.subset`
+  ([#3311](https://github.com/JuliaData/DataFrames.jl/pull/3311))
 * `Not` allows passing multiple positional arguments that are
   treated as if they were wrapped in `Cols` and does not throw an error
   when a vector of duplicate indices is passed when doing column selection

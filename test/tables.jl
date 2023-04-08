@@ -324,8 +324,9 @@ end
 end
 
 @testset "Tables.subset" begin
-    df = DataFrame(a=1:3, b=4:6)
+    dfref = DataFrame(a=1:3, b=4:6)
 
+    df = dfref
     res = @inferred Tables.subset(df, :)
     @test res isa DataFrame
     @test res == DataFrame(a=1:3, b=4:6)
@@ -356,15 +357,79 @@ end
     @test res isa SubDataFrame
     @test res == DataFrame(a=[1, 3], b=[4, 6])
 
-    res = @inferred Tables.subset(df, 2)
-    @test res isa DataFrameRow
-    @test res == DataFrame(a=2, b=5)[1, :]
-    res = Tables.subset(df, 2, viewhint=false)
-    @test res isa NamedTuple{(:a, :b), Tuple{Int, Int}}
-    @test res == (a=2, b=5)
-    res = Tables.subset(df, 2, viewhint=true)
-    @test res isa DataFrameRow
-    @test res == DataFrame(a=2, b=5)[1, :]
+    df = eachcol(dfref)
+    res = @inferred Tables.subset(df, :)
+    @test res isa DataFrames.DataFrameColumns
+    @test res == eachcol(DataFrame(a=1:3, b=4:6))
+    res = Tables.subset(df, :, viewhint=false)
+    @test res isa DataFrames.DataFrameColumns
+    @test res == eachcol(DataFrame(a=1:3, b=4:6))
+    res = Tables.subset(df, :, viewhint=true)
+    @test res isa DataFrames.DataFrameColumns
+    @test res == eachcol(DataFrame(a=1:3, b=4:6))
+
+    res = @inferred Tables.subset(df, [3, 1])
+    @test res isa DataFrames.DataFrameColumns
+    @test res == eachcol(DataFrame(a=[3, 1], b=[6, 4]))
+    res = Tables.subset(df, [3, 1], viewhint=false)
+    @test res isa DataFrames.DataFrameColumns
+    @test res == eachcol(DataFrame(a=[3, 1], b=[6, 4]))
+    res = Tables.subset(df, [3, 1], viewhint=true)
+    @test res isa DataFrames.DataFrameColumns
+    @test res == eachcol(DataFrame(a=[3, 1], b=[6, 4]))
+
+    res = @inferred Tables.subset(df, [true, false, true])
+    @test res isa DataFrames.DataFrameColumns
+    @test res == eachcol(DataFrame(a=[1, 3], b=[4, 6]))
+    res = Tables.subset(df, [1, 3], viewhint=false)
+    @test res isa DataFrames.DataFrameColumns
+    @test res == eachcol(DataFrame(a=[1, 3], b=[4, 6]))
+    res = Tables.subset(df, [1, 3], viewhint=true)
+    @test res isa DataFrames.DataFrameColumns
+    @test res == eachcol(DataFrame(a=[1, 3], b=[4, 6]))
+
+    df = eachrow(dfref)
+    res = @inferred Tables.subset(df, :)
+    @test res isa DataFrames.DataFrameRows
+    @test res == eachrow(DataFrame(a=1:3, b=4:6))
+    res = Tables.subset(df, :, viewhint=false)
+    @test res isa DataFrames.DataFrameRows
+    @test res == eachrow(DataFrame(a=1:3, b=4:6))
+    res = Tables.subset(df, :, viewhint=true)
+    @test res isa DataFrames.DataFrameRows
+    @test res == eachrow(DataFrame(a=1:3, b=4:6))
+
+    res = @inferred Tables.subset(df, [3, 1])
+    @test res isa DataFrames.DataFrameRows
+    @test res == eachrow(DataFrame(a=[3, 1], b=[6, 4]))
+    res = Tables.subset(df, [3, 1], viewhint=false)
+    @test res isa DataFrames.DataFrameRows
+    @test res == eachrow(DataFrame(a=[3, 1], b=[6, 4]))
+    res = Tables.subset(df, [3, 1], viewhint=true)
+    @test res isa DataFrames.DataFrameRows
+    @test res == eachrow(DataFrame(a=[3, 1], b=[6, 4]))
+
+    res = @inferred Tables.subset(df, [true, false, true])
+    @test res isa DataFrames.DataFrameRows
+    @test res == eachrow(DataFrame(a=[1, 3], b=[4, 6]))
+    res = Tables.subset(df, [1, 3], viewhint=false)
+    @test res isa DataFrames.DataFrameRows
+    @test res == eachrow(DataFrame(a=[1, 3], b=[4, 6]))
+    res = Tables.subset(df, [1, 3], viewhint=true)
+    @test res isa DataFrames.DataFrameRows
+    @test res == eachrow(DataFrame(a=[1, 3], b=[4, 6]))
+
+    for df in (dfref, eachcol(dfref), eachrow(dfref))
+        res = @inferred Tables.subset(df, 2)
+        @test res isa DataFrameRow
+        @test res == DataFrame(a=2, b=5)[1, :]
+        res = Tables.subset(df, 2, viewhint=false)
+        @test res isa NamedTuple{(:a, :b), Tuple{Int, Int}}
+        @test res == (a=2, b=5)
+        res = Tables.subset(df, 2, viewhint=true)
+        @test res isa DataFrameRow
+        @test res == DataFrame(a=2, b=5)[1, :]
+    end
 end
 
 end # module
