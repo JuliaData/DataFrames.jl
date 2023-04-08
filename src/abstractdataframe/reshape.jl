@@ -667,8 +667,8 @@ RepeatedVector(parent::AbstractVector, inner::Int, outer::Int)
 
 # Arguments
 - `parent` : the AbstractVector that's repeated
-- `inner` : the numer of times each element is repeated
-- `outer` : the numer of times the whole vector is repeated after
+- `inner` : the number of times each element is repeated
+- `outer` : the number of times the whole vector is repeated after
   expanded by `inner`
 
 `inner` and `outer` have the same meaning as similarly named arguments

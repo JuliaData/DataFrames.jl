@@ -33,7 +33,7 @@ object from your data frame using the `groupby` function that takes two argument
 
 Operations can then be applied on each group using one of the following functions:
 * `combine`: does not put restrictions on number of rows returned per group;
-  the returned values are vertically concatenaded following order of groups in
+  the returned values are vertically concatenated following order of groups in
   `GroupedDataFrame`; it is typically used to compute summary statistics by group;
   for `GroupedDataFrame` if grouping columns are kept they are put as first columns
   in the result;
@@ -195,9 +195,9 @@ We show several examples of these functions applied to the `iris` dataset below:
 ```jldoctest sac
 julia> using DataFrames, CSV, Statistics
 
-julia> iris = CSV.read((joinpath(dirname(pathof(DataFrames)),
-                                 "..", "docs", "src", "assets", "iris.csv")),
-                       DataFrame)
+julia> path = joinpath(pkgdir(DataFrames), "docs", "src", "assets", "iris.csv");
+
+julia> iris = CSV.read(path, DataFrame)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
      │ Float64      Float64     Float64      Float64     String15
@@ -637,8 +637,8 @@ data frame and get a vector of results either use a comprehension or `collect`
 julia> sdf_vec = collect(iris_gdf)
 3-element Vector{Any}:
  50×5 SubDataFrame
- Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species     
-     │ Float64      Float64     Float64      Float64     String15    
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼───────────────────────────────────────────────────────────────
    1 │         5.1         3.5          1.4         0.2  Iris-setosa
    2 │         4.9         3.0          1.4         0.2  Iris-setosa
@@ -659,7 +659,7 @@ julia> sdf_vec = collect(iris_gdf)
                                                       35 rows omitted
  50×5 SubDataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String15        
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼───────────────────────────────────────────────────────────────────
    1 │         7.0         3.2          4.7         1.4  Iris-versicolor
    2 │         6.4         3.2          4.5         1.5  Iris-versicolor
@@ -679,8 +679,8 @@ julia> sdf_vec = collect(iris_gdf)
   50 │         5.7         2.8          4.1         1.3  Iris-versicolor
                                                           35 rows omitted
  50×5 SubDataFrame
- Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species        
-     │ Float64      Float64     Float64      Float64     String15       
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
 ─────┼──────────────────────────────────────────────────────────────────
    1 │         6.3         3.3          6.0         2.5  Iris-virginica
    2 │         5.8         2.7          5.1         1.9  Iris-virginica
@@ -732,7 +732,7 @@ produce a data frame. An operation corresponding to the example above is:
 ```
 julia> combine(iris_gdf, nrow)
 3×2 DataFrame
- Row │ Species          nrow  
+ Row │ Species          nrow
      │ String15         Int64
 ─────┼────────────────────────
    1 │ Iris-setosa         50
@@ -1068,7 +1068,7 @@ julia> combine(gdf, groupindices)
 
 julia> transform(gdf, groupindices)
 6×4 DataFrame
- Row │ customer_id  transaction_id  volume  groupindices 
+ Row │ customer_id  transaction_id  volume  groupindices
      │ String       Int64           Int64   Int64
 ─────┼───────────────────────────────────────────────────
    1 │ a                        12       2             1
@@ -1124,7 +1124,7 @@ julia> combine(gdf, eachindex)
 
 julia> select(gdf, eachindex, groupindices)
 6×3 DataFrame
- Row │ customer_id  eachindex  groupindices 
+ Row │ customer_id  eachindex  groupindices
      │ String       Int64      Int64
 ─────┼──────────────────────────────────────
    1 │ a                    1             1
@@ -1208,8 +1208,8 @@ example comparing a column-independent operation and a function:
 ```jldoctest sac
 julia> combine(gdf, eachindex, sdf -> axes(sdf, 1))
 6×3 DataFrame
- Row │ customer_id  eachindex  x1    
-     │ String       Int64      Int64 
+ Row │ customer_id  eachindex  x1
+     │ String       Int64      Int64
 ─────┼───────────────────────────────
    1 │ a                    1      1
    2 │ b                    1      1
@@ -1279,15 +1279,15 @@ two aspects:
 ## Specifying group order in `groupby`
 
 By default order of groups produced by `groupby` is undefined.
-If you want the order of groups to follow the order of first appereance in
+If you want the order of groups to follow the order of first appearance in
 the source data frame of a grouping key then pass the `sort=false` keyword argument
 to `groupby`:
 
 ```jldoctest sac
 julia> push!(df, ["a", 100, 100]) # push row with large integer values to disable default sorting
 7×3 DataFrame
- Row │ customer_id  transaction_id  volume 
-     │ String       Int64           Int64  
+ Row │ customer_id  transaction_id  volume
+     │ String       Int64           Int64
 ─────┼─────────────────────────────────────
    1 │ a                        12       2
    2 │ b                        15       3

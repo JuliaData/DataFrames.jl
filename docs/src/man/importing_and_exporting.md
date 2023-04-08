@@ -39,9 +39,9 @@ post-processing:
 ```jldoctest readdlm
 julia> using DelimitedFiles, DataFrames
 
-julia> data, header = readdlm(joinpath(dirname(pathof(DataFrames)),
-                                       "..", "docs", "src", "assets", "iris.csv"),
-                              ',', header=true);
+julia> path = joinpath(pkgdir(DataFrames), "docs", "src", "assets", "iris.csv");
+
+julia> data, header = readdlm(path, ',', header=true);
 
 julia> iris_raw = DataFrame(data, vec(header))
 150×5 DataFrame

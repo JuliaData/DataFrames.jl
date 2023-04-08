@@ -74,6 +74,9 @@ julia> eachrow(view(df, [4, 3], [2, 1]))
 """
 Base.eachrow(df::AbstractDataFrame) = DataFrameRows(df)
 
+nrow(itr::DataFrameRows) = nrow(parent(itr))
+ncol(itr::DataFrameRows) = ncol(parent(itr))
+
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
 Base.size(itr::DataFrameRows) = (size(parent(itr), 1), )
 
@@ -233,6 +236,9 @@ julia> sum.(eachcol(df))
 ```
 """
 Base.eachcol(df::AbstractDataFrame) = DataFrameColumns(df)
+
+nrow(itr::DataFrameColumns) = nrow(parent(itr))
+ncol(itr::DataFrameColumns) = ncol(parent(itr))
 
 Base.IteratorSize(::Type{<:DataFrameColumns}) = Base.HasShape{1}()
 Base.size(itr::DataFrameColumns) = (size(parent(itr), 2),)

@@ -114,3 +114,13 @@ TableTraits.isiterabletable(x::AbstractDataFrame) = true
         return res
     end
 end
+
+@inline function Tables.subset(itr::DataFrameRows, inds; viewhint::Union{Bool, Nothing}=nothing)
+    res = Tables.subset(parent(itr), inds, viewhint=viewhint)
+    return res isa AbstractDataFrame ? eachrow(res) : res
+end
+
+@inline function Tables.subset(itr::DataFrameColumns, inds; viewhint::Union{Bool, Nothing}=nothing)
+    res = Tables.subset(parent(itr), inds, viewhint=viewhint)
+    return res isa AbstractDataFrame ? eachcol(res) : res
+end

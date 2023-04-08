@@ -6,6 +6,8 @@ using Test, DataFrames
 @testset "eachrow and eachcol" begin
     df = DataFrame(A=Vector{Union{Int, Missing}}(1:2), B=Vector{Union{Int, Missing}}(2:3))
 
+    @test nrow(eachrow(df)) == nrow(df)
+    @test ncol(eachrow(df)) == ncol(df)
     @test size(eachrow(df)) == (size(df, 1),)
     @test parent(eachrow(df)) === df
     @test names(eachrow(df)) == names(df)
@@ -22,6 +24,8 @@ using Test, DataFrames
         @test collect(pairs(row)) isa Vector{Pair{Symbol, Int}}
     end
 
+    @test nrow(eachcol(df)) == nrow(df)
+    @test ncol(eachcol(df)) == ncol(df)
     @test Base.IteratorSize(eachcol(df)) == Base.HasShape{1}()
     @test parent(eachcol(df)) === df
     @test names(eachcol(df)) == names(df)

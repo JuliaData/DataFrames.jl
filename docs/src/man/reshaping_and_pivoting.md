@@ -5,9 +5,9 @@ Reshape data from wide to long format using the `stack` function:
 ```jldoctest reshape
 julia> using DataFrames, CSV
 
-julia> iris = CSV.read((joinpath(dirname(pathof(DataFrames)),
-                                 "..", "docs", "src", "assets", "iris.csv")),
-                       DataFrame)
+julia> path = joinpath(pkgdir(DataFrames), "docs", "src", "assets", "iris.csv");
+
+julia> iris = CSV.read(path, DataFrame)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
      │ Float64      Float64     Float64      Float64     String15
@@ -88,7 +88,7 @@ rules of `vcat`.
 
 The stacked `DataFrame` that results includes all of the columns not specified
 to be stacked. These are repeated for each stacked column. These are normally
-refered to as identifier (id) columns. In addition to the id columns, two
+referred to as identifier (id) columns. In addition to the id columns, two
 additional columns labeled `:variable` and `:values` contain the column
 identifier and the stacked columns.
 
