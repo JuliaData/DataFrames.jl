@@ -16,7 +16,10 @@ using DataFrames, Random, Test, CategoricalArrays
     @test issorted(DataFrame())
     @test sortperm(d) == sortperm(dv1)
     @test sortperm(d[:, [:dv3, :dv1]]) == sortperm(dv3)
+    @test_broken sortperm(df, checkunique=true)
+    @test_broken sortperm(df, [:cv1, :dv1], checkunique=true)
     @test sort(d, :dv1)[!, :dv3] == sort(d, "dv1")[!, "dv3"] == sortperm(dv1)
+    @test_broken sort(d, [:dv1, :dv2], checkunique=true)
     @test sort(d, :dv2)[!, :dv3] == sortperm(dv1)
     @test sort(d, :cv1)[!, :dv3] == sortperm(dv1)
     @test sort(d, [:dv1, :cv1])[!, :dv3] == sortperm(dv1)
@@ -30,6 +33,7 @@ using DataFrames, Random, Test, CategoricalArrays
     @test issorted(sort(df, rev=true), rev=true)
     @test issorted(sort(df, [:chrom, :pos])[:, [:chrom, :pos]])
     @test issorted(sort(df, ["chrom", "pos"])[:, ["chrom", "pos"]])
+    @test_broken issorted(sort(df), :rank, checkunique=true)
 
     ds = sort(df, [order(:rank, rev=true), :chrom, :pos])
     @test issorted(ds, [order(:rank, rev=true), :chrom, :pos])
