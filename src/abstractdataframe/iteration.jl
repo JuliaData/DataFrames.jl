@@ -95,8 +95,8 @@ Base.propertynames(itr::DataFrameRows, private::Bool=false) = propertynames(pare
 """
     Iterators.partition(dfr::DataFrameRows, n::Integer)
 
-Iterate over `dfr` `DataFrameRows` `n` rows at a time, returning each block
-as a `DataFraneRows` over a view of rows of parent of `dfr`.
+Iterate over `DataFrameRows` `dfr` `n` rows at a time, returning each block
+as a `DataFrameRows` over a view of rows of parent of `dfr`.
 
 # Examples
 
@@ -136,7 +136,7 @@ Base.IteratorEltype(::Type{<:Iterators.PartitionIterator{<:DataFrameRows}}) =
 Base.eltype(::Type{<:Iterators.PartitionIterator{<:DataFrameRows}}) =
     DataFrameRows
 
-IteratorSize(::Type{<:Iterators.PartitionIterator{<:DataFrameRows}}) =
+Base.IteratorSize(::Type{<:Iterators.PartitionIterator{<:DataFrameRows}}) =
     Base.HasLength()
 
 function Base.length(itr::Iterators.PartitionIterator{<:DataFrameRows})
