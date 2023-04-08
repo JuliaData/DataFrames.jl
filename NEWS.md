@@ -6,12 +6,10 @@
   treated as if they were wrapped in `Cols` and does not throw an error
   when a vector of duplicate indices is passed when doing column selection
   ([#3302](https://github.com/JuliaData/DataFrames.jl/pull/3302))
-
-* Sorting related functions (`issorted`, `sort`, `sort!` and `sortperm`) have a
-  new keyword argument `checkunique::Bool` set to `false` by default. When
-  `checkunique` is set to `true` and duplicates elements in the relevant columns
-  are found an error is thrown. The efects of `by` and `lt` are not yet taken
-  into account when detecting possible duplicates.
+* Added the kwarg `checkunique` to sorting related functions (`issorted`,
+  `sort`, `sort!` and `sortperm`) that throws an error when duplicate elements
+  make multiple sort orders valid
+  ([#2159](https://github.com/JuliaData/DataFrames.jl/issues/2159))
 
 # DataFrames.jl v1.5 Release Notes
 

@@ -409,7 +409,8 @@ function Base.issorted(df::AbstractDataFrame, cols=All();
     end
     if checkunique
         if !allunique(df, cols)
-            error("Non-unique elements found. Multiple orders are valid.")
+            throw(ArgumentError("Non-unique elements found. Multiple orders " *
+                                "are valid"))
         end
     end
     if cols isa ColumnIndex
@@ -597,7 +598,8 @@ function Base.sortperm(df::AbstractDataFrame, cols=All();
     end
     if checkunique
         if !allunique(df, cols)
-            error("Non-unique elements found. Multiple valid sorts.")
+            throw(ArgumentError("Non-unique elements found. Multiple orders " *
+                                "are valid"))
         end
     end
     ord = ordering(df, cols, lt, by, rev, order)
@@ -708,7 +710,8 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
     end
     if checkunique
         if !allunique(df, cols)
-            error("Non-unique elements found. Multiple valid sorts.")
+            throw(ArgumentError("Non-unique elements found. Multiple orders " *
+                                "are valid"))
         end
     end
     ord = ordering(df, cols, lt, by, rev, order)
@@ -720,7 +723,8 @@ function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm,
                     o::Base.Sort.Ordering, checkunique::Bool=false)
     if checkunique
         if !allunique(df) # Necessary to check all cols AFAIU
-            error("Non-unique elements found. Multiple valid sorts.")
+            throw(ArgumentError("Non-unique elements found. Multiple orders " *
+                                "are valid"))
         end
     end
     permute!(df, _sortperm(df, a, o))
