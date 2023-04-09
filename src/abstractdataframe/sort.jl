@@ -408,7 +408,12 @@ function Base.issorted(df::AbstractDataFrame, cols=All();
         cols = index(df)[cols]
     end
     if checkunique
-        if !allunique(df, cols)
+        newcols = Int[]
+
+        for col in cols
+            push!(newcols, index(df)[(_getcol(col))])
+        end
+        if !allunique(df, newcols)
             throw(ArgumentError("Non-unique elements found. Multiple orders " *
                                 "are valid"))
         end
@@ -596,14 +601,19 @@ function Base.sortperm(df::AbstractDataFrame, cols=All();
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
     end
+    ord = ordering(df, cols, lt, by, rev, order)
+    _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
     if checkunique
-        if !allunique(df, cols)
+        newcols = Int[]
+
+        for col in cols
+            push!(newcols, index(df)[(_getcol(col))])
+        end
+        if !allunique(df, newcols)
             throw(ArgumentError("Non-unique elements found. Multiple orders " *
                                 "are valid"))
         end
     end
-    ord = ordering(df, cols, lt, by, rev, order)
-    _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
     return _sortperm(df, _alg, ord)
 end
 
@@ -708,14 +718,19 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
     end
+    ord = ordering(df, cols, lt, by, rev, order)
+    _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
     if checkunique
-        if !allunique(df, cols)
+        newcols = Int[]
+
+        for col in cols
+            push!(newcols, index(df)[(_getcol(col))])
+        end
+        if !allunique(df, newcols)
             throw(ArgumentError("Non-unique elements found. Multiple orders " *
                                 "are valid"))
         end
     end
-    ord = ordering(df, cols, lt, by, rev, order)
-    _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
     return sort!(df, _alg, ord)
 end
 

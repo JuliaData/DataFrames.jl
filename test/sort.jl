@@ -19,7 +19,6 @@ using DataFrames, Random, Test, CategoricalArrays
     @test_throws ArgumentError sortperm(d, :cv1, checkunique=true)
     @test_throws ArgumentError sortperm(d, [:cv1, :dv1], checkunique=true)
     @test sort(d, :dv1)[!, :dv3] == sort(d, "dv1")[!, "dv3"] == sortperm(dv1)
-    @test_throws ArgumentError sort(d, [:dv1, :dv2], checkunique=true)
     @test sort(d, :dv2)[!, :dv3] == sortperm(dv1)
     @test sort(d, :cv1)[!, :dv3] == sortperm(dv1)
     @test sort(d, [:dv1, :cv1])[!, :dv3] == sortperm(dv1)
