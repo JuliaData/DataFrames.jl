@@ -341,10 +341,15 @@ If `rev` is `true`, reverse sorting is performed. To enable reverse sorting only
 for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
 corresponding column index (see example below).
 
+Since having repeated elements makes multiple sorting orders valid, if `checkunique`
+is `true` some basic uniqueness checks are made. If duplicate elements are 
+found, an `ArgumentError` will be thrown.
+
 The `by` keyword allows providing a function that will be applied to each
 cell before comparison; the `lt` keyword allows providing a custom "less
 than" function. If both `by` and `lt` are specified, the `lt` function is
-applied to the result of the `by` function.
+applied to the result of the `by` function. Neither `by` nor `lt` can be used
+if `checkunique` is `true`, including inside `order(...)` clauses.
 
 All the keyword arguments can be either a single value, which is applied to
 all columns, or a vector of length equal to the number of columns that the
@@ -407,17 +412,7 @@ function Base.issorted(df::AbstractDataFrame, cols=All();
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
     end
-    if checkunique
-        newcols = Int[]
-
-        for col in cols
-            push!(newcols, index(df)[(_getcol(col))])
-        end
-        if !allunique(df, newcols)
-            throw(ArgumentError("Non-unique elements found. Multiple orders " *
-                                "are valid"))
-        end
-    end
+    checkunique && _perform_uniqueness_checks(df, cols, lt, by)
     if cols isa ColumnIndex
         return issorted(df[!, cols], lt=to_scalar(lt), by=to_scalar(by),
                         rev=to_scalar(rev), order=to_scalar(order))
@@ -603,17 +598,7 @@ function Base.sortperm(df::AbstractDataFrame, cols=All();
     end
     ord = ordering(df, cols, lt, by, rev, order)
     _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
-    if checkunique
-        newcols = Int[]
-
-        for col in cols
-            push!(newcols, index(df)[(_getcol(col))])
-        end
-        if !allunique(df, newcols)
-            throw(ArgumentError("Non-unique elements found. Multiple orders " *
-                                "are valid"))
-        end
-    end
+    checkunique && _perform_uniqueness_checks(df, cols, lt, by)
     return _sortperm(df, _alg, ord)
 end
 
@@ -720,17 +705,7 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
     end
     ord = ordering(df, cols, lt, by, rev, order)
     _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
-    if checkunique
-        newcols = Int[]
-
-        for col in cols
-            push!(newcols, index(df)[(_getcol(col))])
-        end
-        if !allunique(df, newcols)
-            throw(ArgumentError("Non-unique elements found. Multiple orders " *
-                                "are valid"))
-        end
-    end
+    checkunique && _perform_uniqueness_checks(df, cols, lt, by)
     return sort!(df, _alg, ord)
 end
 
@@ -743,4 +718,42 @@ function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm,
         end
     end
     permute!(df, _sortperm(df, a, o))
+end
+
+# Internal function that aids in uniqueness checks
+function _perform_uniqueness_checks(df, cols, lt, by)
+    if !(lt == isless && by == identity)
+        throw(ArgumentError("Passing either lt or by along with checkunique=" *
+                            "true is not supported."))
+    end
+    # Easiest case, cols contains numeric indexes already
+    if cols isa AbstractVector{<:ColumnIndex}
+        by_or_lt_set = false
+        col_idxs = cols
+    # Second easiest, multicol index (no vector with orders clauses mixed in)
+    elseif cols isa MultiColumnIndex && !(cols isa AbstractVector) || cols isa ColumnIndex
+        by_or_lt_set = false
+        col_idxs = index(df)[cols]
+    elseif cols isa UserColOrdering
+        by_or_lt_set = any(haskey(cols.kwargs, key) for key in [:by, :lt])
+        col_idxs = index(df)[(_getcol(cols))]
+    # Multicol indexes mixed in
+    elseif cols isa AbstractVector
+        newcols = Int[]
+        by_or_lt_set = false
+        for col in cols
+            if col isa UserColOrdering
+                by_or_lt_set = any(haskey(col.kwargs, key) for key in [:by, :lt])
+            end
+
+            push!(newcols, index(df)[(_getcol(col))])
+        end
+        col_idxs = newcols
+    end
+    if by_or_lt_set
+        throw(ArgumentError("Order clauses with either by or lt set in combination " *
+                            "with checkunique=true are not supported"))
+    end
+    !allunique(df, col_idxs) && throw(ArgumentError("Non-unique elements found. " *
+                                                       "Multiple orders are valid"))
 end
