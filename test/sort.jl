@@ -6,9 +6,10 @@ using DataFrames, Random, Test, CategoricalArrays
     dv1 = [9, 1, 8, missing, 3, 3, 7, missing]
     dv2 = [9, 1, 8, missing, 3, 3, 7, missing]
     dv3 = Vector{Union{Int, Missing}}(1:8)
+    dv4 = 8:-1:1
     cv1 = CategoricalArray(dv1, ordered=true)
 
-    d = DataFrame(dv1=dv1, dv2=dv2, dv3=dv3, cv1=cv1)
+    d = DataFrame(dv1=dv1, dv2=dv2, dv3=dv3, dv4=dv4, cv1=cv1)
 
     @test sort(DataFrame()) == DataFrame()
     @test sort!(DataFrame()) == DataFrame()
@@ -16,8 +17,6 @@ using DataFrames, Random, Test, CategoricalArrays
     @test issorted(DataFrame())
     @test sortperm(d) == sortperm(dv1)
     @test sortperm(d[:, [:dv3, :dv1]]) == sortperm(dv3)
-    @test_throws ArgumentError sortperm(d, :cv1, checkunique=true)
-    @test_throws ArgumentError sortperm(d, [:cv1, :dv1], checkunique=true)
     @test sort(d, :dv1)[!, :dv3] == sort(d, "dv1")[!, "dv3"] == sortperm(dv1)
     @test sort(d, :dv2)[!, :dv3] == sortperm(dv1)
     @test sort(d, :cv1)[!, :dv3] == sortperm(dv1)
@@ -32,7 +31,6 @@ using DataFrames, Random, Test, CategoricalArrays
     @test issorted(sort(df, rev=true), rev=true)
     @test issorted(sort(df, [:chrom, :pos])[:, [:chrom, :pos]])
     @test issorted(sort(df, ["chrom", "pos"])[:, ["chrom", "pos"]])
-    @test_throws ArgumentError issorted(sort(df), :rank, checkunique=true)
 
     ds = sort(df, [order(:rank, rev=true), :chrom, :pos])
     @test issorted(ds, [order(:rank, rev=true), :chrom, :pos])
@@ -143,6 +141,64 @@ using DataFrames, Random, Test, CategoricalArrays
             end
         end
     end
+end
+
+@testset "correctness of checkunique keyword" begin
+    dv1 = [9, 1, 8, missing, 3, 3, 7, missing]
+    dv2 = [9, 1, 8, missing, 3, 3, 7, missing]
+    dv3 = Vector{Union{Int, Missing}}(1:8)
+    dv4 = 8:-1:1
+    cv1 = CategoricalArray(dv1, ordered=true)
+
+    d = DataFrame(dv1=dv1, dv2=dv2, dv3=dv3, dv4=dv4, cv1=cv1)
+
+    ## logic:
+    ### Test each every selector in the following order:
+    ### Symbol, String, Vect{ColumnIndex}, Order, Vect{ColIndex, Order}
+
+    # issorted
+    @test_throws ArgumentError issorted(d, :dv1, checkunique=true)
+    @test issorted(d, :dv3, checkunique=true)
+    @test issorted(d, "dv3", checkunique=true)
+    @test issorted(d, ["dv3", "dv4"], checkunique=true)
+    @test issorted(d, :dv4, rev = true, checkunique=true)
+    @test issorted(d, order(:dv4, rev=true), checkunique=true)
+    @test_throws ArgumentError issorted(d, order(:dv4, by=x -> -x), checkunique=true)
+    @test_throws ArgumentError issorted(d, order(:dv4, lt= >), checkunique=true)
+    @test issorted(d, [:dv3, order(:dv4, rev=true)], checkunique=true)
+    @test issorted(d, [:dv3, :dv4], rev = [false, true], checkunique=true)
+    @test_throws ArgumentError issorted(d, :dv3, by=x-> -x, checkunique=true)
+    @test_throws ArgumentError issorted(d, :dv3, lt = >, checkunique=true)
+    @test issorted(d, [order(:dv3, rev=false), order(:dv4, rev=true)], checkunique=true)
+    @test issorted(d, [order(:dv3, by=identity), order(:dv4, rev=true)], checkunique=true)
+
+    # sort
+    @test_throws ArgumentError sort(d, :dv1, checkunique=true)
+    @test_throws ArgumentError sort(d, "dv1", checkunique=true)
+    @test_throws ArgumentError sort(d, 1, checkunique=true)
+    @test_throws ArgumentError sort(d, [:dv1, :dv2], checkunique=true)
+    @test_throws ArgumentError sort(d, ["dv1", "dv2"], checkunique=true)
+    @test_throws ArgumentError sort(d, order(:dv1, rev=true), checkunique=true)
+    @test_throws ArgumentError sort(d, order(:dv1, by=x -> -x), checkunique=true)
+    @test_throws ArgumentError sort(d, order(:dv1, lt= >), checkunique=true)
+    @test_throws ArgumentError sort(d, [:dv2, order(:dv1, rev=true)], checkunique=true)
+    @test_throws ArgumentError sort(d, [:dv1, :dv2], rev = [false, false], checkunique=true)
+    @test_throws ArgumentError sort(d, :dv1, by = x -> -x, checkunique=true)
+    @test_throws ArgumentError sort(d, :dv1, lt = >, checkunique=true)
+    
+    # sortperm
+    @test_throws ArgumentError sortperm(d, :dv1, checkunique=true)
+    @test_throws ArgumentError sortperm(d, "dv1", checkunique=true)
+    @test_throws ArgumentError sortperm(d, 1, checkunique=true)
+    @test_throws ArgumentError sortperm(d, [:dv1, :dv2], checkunique=true)
+    @test_throws ArgumentError sortperm(d, ["dv1", "dv2"], checkunique=true)
+    @test_throws ArgumentError sortperm(d, order(:dv1, rev=true), checkunique=true)
+    @test_throws ArgumentError sortperm(d, order(:dv1, by=x -> -x), checkunique=true)
+    @test_throws ArgumentError sortperm(d, order(:dv1, lt= >), checkunique=true)
+    @test_throws ArgumentError sortperm(d, [:dv2, order(:dv1, rev=true)], checkunique=true)
+    @test_throws ArgumentError sortperm(d, [:dv1, :dv2], rev = [false, false], checkunique=true)
+    @test_throws ArgumentError sortperm(d, :dv1, by = x -> -x, checkunique=true)
+    @test_throws ArgumentError sortperm(d, :dv1, lt = >, checkunique=true)
 end
 
 @testset "non standard selectors" begin
