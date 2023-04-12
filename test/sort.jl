@@ -186,6 +186,20 @@ end
     @test_throws ArgumentError sort(d, :dv1, by = x -> -x, checkunique=true)
     @test_throws ArgumentError sort(d, :dv1, lt = >, checkunique=true)
     
+    # sort!
+    @test_throws ArgumentError sort!(d, :dv1, checkunique=true)
+    @test_throws ArgumentError sort!(d, "dv1", checkunique=true)
+    @test_throws ArgumentError sort!(d, 1, checkunique=true)
+    @test_throws ArgumentError sort!(d, [:dv1, :dv2], checkunique=true)
+    @test_throws ArgumentError sort!(d, ["dv1", "dv2"], checkunique=true)
+    @test_throws ArgumentError sort!(d, order(:dv1, rev=true), checkunique=true)
+    @test_throws ArgumentError sort!(d, order(:dv1, by=x -> -x), checkunique=true)
+    @test_throws ArgumentError sort!(d, order(:dv1, lt= >), checkunique=true)
+    @test_throws ArgumentError sort!(d, [:dv2, order(:dv1, rev=true)], checkunique=true)
+    @test_throws ArgumentError sort!(d, [:dv1, :dv2], rev = [false, false], checkunique=true)
+    @test_throws ArgumentError sort!(d, :dv1, by = x -> -x, checkunique=true)
+    @test_throws ArgumentError sort!(d, :dv1, lt = >, checkunique=true)
+
     # sortperm
     @test_throws ArgumentError sortperm(d, :dv1, checkunique=true)
     @test_throws ArgumentError sortperm(d, "dv1", checkunique=true)
