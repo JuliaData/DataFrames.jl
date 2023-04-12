@@ -15,11 +15,12 @@ added to `df1`.
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
 
 # Keyword Arguments
-- `on` : A column name to join `df1` and `df2` on. If the columns on which
-  `df1` and `df2` will be joined have different names, then a `left=>right`
-  pair can be passed. It is also allowed to perform a join on multiple columns,
-  in which case a vector of column names or column name pairs can be passed
-  (mixing names and pairs is allowed).
+- `on` : The names of the key columns on which to join the data frames.
+  This can be a single name, or a vector of names (for joining on multiple
+  columns). A `left=>right` pair of names can be used instead of a name, for
+  the case where a key has different names in `df1` and `df2` (it is allowed to
+  mix names and name pairs in a vector). Key values are compared using
+  `isequal`. `on` is a required argument.
 - `makeunique` : if `false` (the default), an error will be raised
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
@@ -30,8 +31,7 @@ added to `df1`.
   the column name will be modified if `makeunique=true`.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns;
-  `isequal` is used for comparisons of rows for equality
+  matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns.
 
 The columns added to `df1` from `df2` will support missing values.
 

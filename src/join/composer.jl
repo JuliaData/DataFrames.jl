@@ -640,13 +640,12 @@ change in future releases.
 - `df1`, `df2`, `dfs...`: the `AbstractDataFrames` to be joined
 
 # Keyword Arguments
-- `on` : A column name to join `df1` and `df2` on. If the columns on which
-  `df1` and `df2` will be joined have different names, then a `left=>right`
-  pair can be passed. It is also allowed to perform a join on multiple columns,
-  in which case a vector of column names or column name pairs can be passed
-  (mixing names and pairs is allowed). If more than two data frames are joined
-  then only a column name or a vector of column names are allowed.
-  `on` is a required argument.
+- `on` : The names of the key columns on which to join the data frames.
+  This can be a single name, or a vector of names (for joining on multiple
+  columns). When joining only two data frames, a `left=>right` pair of names
+  can be used instead of a name, for the case where a key has different names
+  in `df1` and `df2` (it is allowed to mix names and name pairs in a vector).
+  Key values are compared using `isequal`. `on` is a required argument.
 - `makeunique` : if `false` (the default), an error will be raised
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
@@ -666,7 +665,7 @@ change in future releases.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched; if equal to `:notequal` then missings are dropped in `df1` and `df2`
-  `on` columns; `isequal` is used for comparisons of rows for equality
+  `on` columns.
 - `order` : if `:undefined` (the default) the order of rows in the result is
    undefined and may change in future releases. If `:left` then the order of
    rows from the left data frame is retained. If `:right` then the order of rows
@@ -799,11 +798,12 @@ change in future releases.
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
 
 # Keyword Arguments
-- `on` : A column name to join `df1` and `df2` on. If the columns on which
-  `df1` and `df2` will be joined have different names, then a `left=>right`
-  pair can be passed. It is also allowed to perform a join on multiple columns,
-  in which case a vector of column names or column name pairs can be passed
-  (mixing names and pairs is allowed).
+- `on` : The names of the key columns on which to join the data frames.
+  This can be a single name, or a vector of names (for joining on multiple
+  columns). A `left=>right` pair of names can be used instead of a name, for
+  the case where a key has different names in `df1` and `df2` (it is allowed to
+  mix names and name pairs in a vector). Key values are compared using
+  `isequal`. `on` is a required argument.
 - `makeunique` : if `false` (the default), an error will be raised
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
@@ -826,8 +826,7 @@ change in future releases.
   data frame and left unchanged.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns;
-  `isequal` is used for comparisons of rows for equality
+  matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns.
 - `order` : if `:undefined` (the default) the order of rows in the result is
    undefined and may change in future releases. If `:left` then the order of
    rows from the left data frame is retained. If `:right` then the order of rows
@@ -955,11 +954,12 @@ change in future releases.
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
 
 # Keyword Arguments
-- `on` : A column name to join `df1` and `df2` on. If the columns on which
-  `df1` and `df2` will be joined have different names, then a `left=>right`
-  pair can be passed. It is also allowed to perform a join on multiple columns,
-  in which case a vector of column names or column name pairs can be passed
-  (mixing names and pairs is allowed).
+- `on` : The names of the key columns on which to join the data frames.
+  This can be a single name, or a vector of names (for joining on multiple
+  columns). A `left=>right` pair of names can be used instead of a name, for
+  the case where a key has different names in `df1` and `df2` (it is allowed to
+  mix names and name pairs in a vector). Key values are compared using
+  `isequal`. `on` is a required argument.
 - `makeunique` : if `false` (the default), an error will be raised
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
@@ -982,8 +982,7 @@ change in future releases.
   data frame and left unchanged.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched; if equal to `:notequal` then missings are dropped in `df1` `on` columns;
-  `isequal` is used for comparisons of rows for equality
+  matched; if equal to `:notequal` then missings are dropped in `df1` `on` columns.
 - `order` : if `:undefined` (the default) the order of rows in the result is
    undefined and may change in future releases. If `:left` then the order of
    rows from the left data frame is retained (non-matching rows are put at the end).
@@ -1113,13 +1112,12 @@ This behavior may change in future releases.
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
 
 # Keyword Arguments
-- `on` : A column name to join `df1` and `df2` on. If the columns on which
-  `df1` and `df2` will be joined have different names, then a `left=>right`
-  pair can be passed. It is also allowed to perform a join on multiple columns,
-  in which case a vector of column names or column name pairs can be passed
-  (mixing names and pairs is allowed). If more than two data frames are joined
-  then only a column name or a vector of column names are allowed.
-  `on` is a required argument.
+- `on` : The names of the key columns on which to join the data frames.
+  This can be a single name, or a vector of names (for joining on multiple
+  columns). When joining only two data frames, a `left=>right` pair of names
+  can be used instead of a name, for the case where a key has different names
+  in `df1` and `df2` (it is allowed to mix names and name pairs in a vector).
+  Key values are compared using `isequal`. `on` is a required argument.
 - `makeunique` : if `false` (the default), an error will be raised
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
@@ -1143,7 +1141,7 @@ This behavior may change in future releases.
   data frame and left unchanged.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched; `isequal` is used for comparisons of rows for equality
+  matched.
 - `order` : if `:undefined` (the default) the order of rows in the result is
    undefined and may change in future releases. If `:left` then the order of
    rows from the left data frame is retained (non-matching rows are put at the end).
@@ -1289,11 +1287,12 @@ The order of rows in the result is kept from `df1`.
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
 
 # Keyword Arguments
-- `on` : A column name to join `df1` and `df2` on. If the columns on which
-  `df1` and `df2` will be joined have different names, then a `left=>right`
-  pair can be passed. It is also allowed to perform a join on multiple columns,
-  in which case a vector of column names or column name pairs can be passed
-  (mixing names and pairs is allowed).
+- `on` : The names of the key columns on which to join the data frames.
+  This can be a single name, or a vector of names (for joining on multiple
+  columns). A `left=>right` pair of names can be used instead of a name, for
+  the case where a key has different names in `df1` and `df2` (it is allowed to
+  mix names and name pairs in a vector). Key values are compared using
+  `isequal`. `on` is a required argument.
 - `makeunique` : ignored as no columns are added to `df1` columns
   (it is provided for consistency with other functions).
 - `indicator` : Default: `nothing`. If a `Symbol` or string, adds categorical indicator
@@ -1307,8 +1306,7 @@ The order of rows in the result is kept from `df1`.
    By default no check is performed.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns;
-  `isequal` is used for comparisons of rows for equality
+  matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns.
 
 It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
 imaginary part of the number. If you need to perform a join on such values use
@@ -1400,11 +1398,12 @@ The order of rows in the result is kept from `df1`.
 - `df1`, `df2`: the `AbstractDataFrames` to be joined
 
 # Keyword Arguments
-- `on` : A column name to join `df1` and `df2` on. If the columns on which
-  `df1` and `df2` will be joined have different names, then a `left=>right`
-  pair can be passed. It is also allowed to perform a join on multiple columns,
-  in which case a vector of column names or column name pairs can be passed
-  (mixing names and pairs is allowed).
+- `on` : The names of the key columns on which to join the data frames.
+  This can be a single name, or a vector of names (for joining on multiple
+  columns). A `left=>right` pair of names can be used instead of a name, for
+  the case where a key has different names in `df1` and `df2` (it is allowed to
+  mix names and name pairs in a vector). Key values are compared using
+  `isequal`. `on` is a required argument.
 - `makeunique` : ignored as no columns are added to `df1` columns
   (it is provided for consistency with other functions).
 - `validate` : whether to check that columns passed as the `on` argument
@@ -1414,8 +1413,7 @@ The order of rows in the result is kept from `df1`.
    By default no check is performed.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
-  matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns;
-  `isequal` is used for comparisons of rows for equality
+  matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns.
 
 It is not allowed to join on columns that contain `NaN` or `-0.0` in real or
 imaginary part of the number. If you need to perform a join on such values use
