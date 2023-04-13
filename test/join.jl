@@ -72,7 +72,16 @@ anti = left[Bool[ismissing(x) for x in left.Job], [:ID, :Name]]
                       C=[3, 4, 5, 3, 4, 5])
 
     @test crossjoin(df1, df2) == cross
-
+    @test crossjoin(df1, df2, renamecols="_left" => "_right") ==
+          rename(cross, [:A_left, :B_left, :C_right])
+    @test crossjoin(df1, df2, renamecols=(x -> x * "_left") => x -> x * "_right") ==
+          rename(cross, [:A_left, :B_left, :C_right])
+    @test crossjoin(df1, df2, renamecols=(x -> Symbol(x * "_left")) => x -> Symbol(x * "_right")) ==
+          rename(cross, [:A_left, :B_left, :C_right])
+    @test_throws ArgumentError crossjoin(df1, df2, renamecols=(x -> "a") => x -> "a")
+    @test crossjoin(df1, df2, renamecols=(x -> "a") => x -> "a", makeunique=true) ==
+          rename(cross, [:a, :a_1, :a_2])
+          
     # Cross joins handle naming collisions
     @test size(crossjoin(df1, df1, makeunique=true)) == (4, 4)
 
