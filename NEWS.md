@@ -4,6 +4,8 @@
 
 * Add `Iterators.partition` support for `DataFrameRows`
   ([#3299](https://github.com/JuliaData/DataFrames.jl/pull/3299))
+* Add support for `renamecols` keyword argument in `crossjoin`
+  ([#3314](https://github.com/JuliaData/DataFrames.jl/pull/3314))
 * `DataFrameRows` and `DataFrameColumns` now support
   `nrow`, `ncol`, and `Tables.subset`
   ([#3311](https://github.com/JuliaData/DataFrames.jl/pull/3311))
