@@ -341,20 +341,24 @@ If `rev` is `true`, reverse sorting is performed. To enable reverse sorting only
 for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
 corresponding column index (see example below).
 
-Since having repeated elements makes multiple sorting orders valid, if `checkunique`
-is `true` some basic uniqueness checks are made. If duplicate elements are 
-found, an `ArgumentError` will be thrown.
+Since having repeated elements makes multiple sorting orders valid, the
+`checkunique` keyword allows for the situation to be caught. If `checkunique` is
+`true` and duplicate elements are found an `ArgumentError` will be thrown. The
+use of the `checkunique` keyword is only supported when neither the `by` nor
+`lt` keywords are being used, as their application can create duplicate items
+inadvertently. Similarly, the use of `order(...)` clauses that specify either
+`by` or `lt` are not supported, but specifying `rev` by itself is allowed.
 
 The `by` keyword allows providing a function that will be applied to each
 cell before comparison; the `lt` keyword allows providing a custom "less
 than" function. If both `by` and `lt` are specified, the `lt` function is
-applied to the result of the `by` function. Neither `by` nor `lt` can be used
-if `checkunique` is `true`, including inside `order(...)` clauses.
+applied to the result of the `by` function.
 
-All the keyword arguments can be either a single value, which is applied to
-all columns, or a vector of length equal to the number of columns that the
-operation is performed on. In such a case each entry is used for the
-column in the corresponding position in `cols`.
+Keyword arguments specifying sorting order (such as `lt` or `by`) can either be
+a single value, or a vector of length equal to the number of columns the
+operation is performed on. When a single value is passed, it's applied to all
+columns. When a vector is passed, each entry is applied to the column in the
+corresponding position in `cols`.
 """
 
 """
@@ -712,7 +716,7 @@ end
 function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm,
                     o::Base.Sort.Ordering, checkunique::Bool=false)
     if checkunique
-        if !allunique(df) # Necessary to check all cols AFAIU
+        if !allunique(df)
             throw(ArgumentError("Non-unique elements found. Multiple orders " *
                                 "are valid"))
         end
@@ -721,8 +725,9 @@ function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm,
 end
 
 # Internal function that aids in uniqueness checks
+# Converts column selectors to indices and checks necessary conditions for uniqueness check
 function _perform_uniqueness_checks(df, cols, lt, by)
-    if !(lt == isless && by == identity)
+    if !(lt === isless && by === identity)
         throw(ArgumentError("Passing either lt or by along with checkunique=" *
                             "true is not supported."))
     end
@@ -737,7 +742,7 @@ function _perform_uniqueness_checks(df, cols, lt, by)
     elseif cols isa UserColOrdering
         by_or_lt_set = any(haskey(cols.kwargs, key) for key in [:by, :lt])
         col_idxs = index(df)[(_getcol(cols))]
-    # Multicol indexes mixed in
+    # Mix of ColOrdering and other ColumnSelectors
     elseif cols isa AbstractVector
         newcols = Int[]
         by_or_lt_set = false
