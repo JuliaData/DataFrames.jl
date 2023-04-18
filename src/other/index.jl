@@ -110,6 +110,8 @@ end
 
 rename!(f::Function, x::Index) = rename!(x, [(n=>Symbol(f(string(n)))) for n in x.names])
 
+rename(x::Index, nms) = rename!(copy(x), nms)
+
 # we do not define keys on purpose;
 # use names to get keys as strings with copying
 # or _names to get keys as Symbols without copying
@@ -589,3 +591,10 @@ rename!(x::SubIndex, nms::AbstractVector{Pair{Symbol, Symbol}}) =
 rename!(f::Function, x::SubIndex) =
     throw(ArgumentError("rename! is not supported for views other than created " *
                         "with Colon as a column selector"))
+
+function rename(x::SubIndex, nms)
+    index = getfield(x, :parent)
+    newindex = myrename(index, nms)
+    cols = parentcols(x)
+    SubIndex(newindex, cols, getfield(x, :remap))
+end

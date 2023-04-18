@@ -397,3 +397,8 @@ function _try_select_no_copy(sdf::SubDataFrame, cols)
     return isnothing(colsidx) ? select(sdf, cols) : select(sdf, colsidx, copycols=false)
 end
 
+function rename(x::SubDataFrame, p::Pair{Symbol,Symbol})
+    idx = index(x)
+    newidx = rename(idx, [p])
+    SubDataFrame(parent(x), newidx, rows(x))
+end
