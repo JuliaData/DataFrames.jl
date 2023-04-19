@@ -1493,6 +1493,8 @@ antijoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
           order=:left)
 
 """
+    crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+              makeunique::Bool=false, renamecols=identity => identity)
     crossjoin(df1, df2, dfs...; makeunique = false)
 
 Perform a cross join of two or more data frame objects and return a `DataFrame`
@@ -1509,6 +1511,11 @@ dimension that changes the fastest.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
+- `renamecols` : a `Pair` specifying how columns of left and right data frames should
+  be renamed in the resulting data frame. Each element of the pair can be a
+  string or a `Symbol` can be passed in which case it is appended to the original
+  column name; alternatively a function can be passed in which case it is applied
+  to each column name, which is passed to it as a `String`.
 
 If more than two data frames are passed, the join is performed
 recursively with left associativity.
@@ -1552,14 +1559,17 @@ julia> crossjoin(df1, df2)
    6 │     3  b
 ```
 """
-function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::Bool=false)
+function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame;
+                   makeunique::Bool=false, renamecols::Pair=identity => identity)
     _check_consistency(df1)
     _check_consistency(df2)
     r1, r2 = size(df1, 1), size(df2, 1)
-    colindex = merge(index(df1), index(df2), makeunique=makeunique)
+
+    new_names = vcat(_rename_cols(_names(df1), first(renamecols)),
+                     _rename_cols(_names(df2), last(renamecols)))
     cols = Any[[repeat(c, inner=r2) for c in eachcol(df1)];
                [repeat(c, outer=r1) for c in eachcol(df2)]]
-    res = DataFrame(cols, colindex, copycols=false)
+    res = DataFrame(cols, new_names, copycols=false, makeunique=makeunique)
 
     for i in 1:ncol(df1)
         _copy_col_note_metadata!(res, i, df1, i)
