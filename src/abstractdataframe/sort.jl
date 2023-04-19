@@ -356,8 +356,8 @@ applied to the result of the `by` function.
 
 Keyword arguments specifying sorting order (such as `lt` or `by`) can either be
 a single value, or a vector of length equal to the number of columns the
-operation is performed on. When a single value is passed, it's applied to all
-columns. When a vector is passed, each entry is applied to the column in the
+operation is performed on. When a single value is passed, it applies to all
+columns. When a vector is passed, each entry applies to the column in the
 corresponding position in `cols`.
 """
 
@@ -521,7 +521,8 @@ julia> sort(df, [:x, order(:y, rev=true)])
                            order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
                            view::Bool=false,
                            checkunique::Bool=false)
-    rowidxs = sortperm(df, cols, alg=alg, lt=lt, by=by, rev=rev, order=order, checkunique=checkunique)
+    rowidxs = sortperm(df, cols, alg=alg, lt=lt, by=by, rev=rev, order=order,
+                       checkunique=checkunique)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
@@ -718,14 +719,14 @@ function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm,
     if checkunique
         if !allunique(df)
             throw(ArgumentError("Non-unique elements found. Multiple orders " *
-                                "are valid"))
+                                "are valid."))
         end
     end
     permute!(df, _sortperm(df, a, o))
 end
 
 # Internal function that aids in uniqueness checks
-# Converts column selectors to indices and checks necessary conditions for uniqueness check
+# Converts column selectors to indices and checks necessary conditions for uniqueness
 function _perform_uniqueness_checks(df, cols, lt, by)
     if !(lt === isless && by === identity)
         throw(ArgumentError("Passing either lt or by along with checkunique=" *
@@ -740,18 +741,18 @@ function _perform_uniqueness_checks(df, cols, lt, by)
         by_or_lt_set = false
         col_idxs = index(df)[cols]
     elseif cols isa UserColOrdering
-        by_or_lt_set = any(haskey(cols.kwargs, key) for key in [:by, :lt])
-        col_idxs = index(df)[(_getcol(cols))]
+        by_or_lt_set = haskey(cols.kwargs, :lt) || haskey(cols.kwargs, :by)
+        col_idxs = index(df)[_getcol(cols)]
     # Mix of ColOrdering and other ColumnSelectors
     elseif cols isa AbstractVector
         newcols = Int[]
         by_or_lt_set = false
         for col in cols
             if col isa UserColOrdering
-                by_or_lt_set = any(haskey(col.kwargs, key) for key in [:by, :lt])
+                by_or_lt_set = haskey(cols.kwargs, :lt) || haskey(cols.kwargs, :by)
             end
 
-            push!(newcols, index(df)[(_getcol(col))])
+            push!(newcols, index(df)[_getcol(col)])
         end
         col_idxs = newcols
     end
@@ -759,6 +760,6 @@ function _perform_uniqueness_checks(df, cols, lt, by)
         throw(ArgumentError("Order clauses with either by or lt set in combination " *
                             "with checkunique=true are not supported"))
     end
-    !allunique(df, col_idxs) && throw(ArgumentError("Non-unique elements found. " *
-                                                       "Multiple orders are valid"))
+    !allunique(df, col_idxs) &&
+        throw(ArgumentError("Non-unique elements found. Multiple orders are valid."))
 end
