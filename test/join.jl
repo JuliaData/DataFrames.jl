@@ -73,6 +73,9 @@ anti = left[Bool[ismissing(x) for x in left.Job], [:ID, :Name]]
 
     @test crossjoin(df1, df2) == cross
     @test crossjoin(df1, df2, renamecols="_left" => "_right") ==
+          crossjoin(df1, df2, renamecols=:_left => :_right) ==
+          crossjoin(df1, df2, renamecols="_left" => :_right) ==
+          crossjoin(df1, df2, renamecols=:_left => "_right") ==
           rename(cross, [:A_left, :B_left, :C_right])
     @test crossjoin(df1, df2, renamecols=(x -> x * "_left") => x -> x * "_right") ==
           rename(cross, [:A_left, :B_left, :C_right])
