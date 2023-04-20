@@ -13,6 +13,9 @@
   treated as if they were wrapped in `Cols` and does not throw an error
   when a vector of duplicate indices is passed when doing column selection
   ([#3302](https://github.com/JuliaData/DataFrames.jl/pull/3302))
+* Allow to pass column names in `DataFrame` constructor that replace
+  the column created by default
+  ([#3320](https://github.com/JuliaData/DataFrames.jl/pull/3320))
 
 # DataFrames.jl v1.5 Release Notes
 
