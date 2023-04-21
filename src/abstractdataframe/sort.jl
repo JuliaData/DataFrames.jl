@@ -354,7 +354,7 @@ cell before comparison; the `lt` keyword allows providing a custom "less
 than" function. If both `by` and `lt` are specified, the `lt` function is
 applied to the result of the `by` function.
 
-Keyword arguments specifying sorting order (such as `lt` or `by`) can either be
+Keyword arguments specifying sorting order (`rev`, `lt` or `by`) can either be
 a single value, or a vector of length equal to the number of columns the
 operation is performed on. When a single value is passed, it applies to all
 columns. When a vector is passed, each entry applies to the column in the
@@ -416,7 +416,7 @@ function Base.issorted(df::AbstractDataFrame, cols=All();
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
     end
-    checkunique && _perform_uniqueness_checks(df, cols, lt, by)
+    checkunique && _perform_uniqueness_checks(df, cols, lt, by, order)
     if cols isa ColumnIndex
         return issorted(df[!, cols], lt=to_scalar(lt), by=to_scalar(by),
                         rev=to_scalar(rev), order=to_scalar(order))
@@ -603,7 +603,7 @@ function Base.sortperm(df::AbstractDataFrame, cols=All();
     end
     ord = ordering(df, cols, lt, by, rev, order)
     _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
-    checkunique && _perform_uniqueness_checks(df, cols, lt, by)
+    checkunique && _perform_uniqueness_checks(df, cols, lt, by, order)
     return _sortperm(df, _alg, ord)
 end
 
@@ -710,7 +710,7 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
     end
     ord = ordering(df, cols, lt, by, rev, order)
     _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
-    checkunique && _perform_uniqueness_checks(df, cols, lt, by)
+    checkunique && _perform_uniqueness_checks(df, cols, lt, by, order)
     return sort!(df, _alg, ord)
 end
 
@@ -727,21 +727,43 @@ end
 
 # Internal function that aids in uniqueness checks
 # Converts column selectors to indices and checks necessary conditions for uniqueness
-function _perform_uniqueness_checks(df, cols, lt, by)
+function _perform_uniqueness_checks(df::AbstractDataFrame, cols,
+                                    lt::Union{Function, AbstractVector{<:Function}},
+                                    by::Union{Function, AbstractVector{<:Function}},
+                                    order::Union{Ordering, AbstractVector{<:Ordering}})
+    is_complex(o::Ordering) = o isa Union{Order.By, Order.Lt} # Order w/ nonstandard lt or by
+    is_complex(o::UserColOrdering) = haskey(o.kwargs, :lt) || haskey(o.kwargs, :by)
+
     if !(lt === isless && by === identity)
         throw(ArgumentError("Passing either lt or by along with checkunique=" *
                             "true is not supported."))
     end
-    # Easiest case, cols contains numeric indexes already
+
+    # Validating the order argument
+    if order isa Ordering
+        order = [order]
+    end
+
+    for o in order
+        if is_complex(o)
+            throw(ArgumentError("Using either lt or by functions through the " *
+                                "order keyword argument simultaneously with " *
+                                "checkunique=true is not supported. Order " *
+                                "$(o) was found."))
+        end
+    end
+
+    # Easiest case, cols contains column indexes already
     if cols isa AbstractVector{<:ColumnIndex}
         by_or_lt_set = false
         col_idxs = cols
     # Second easiest, multicol index (no vector with orders clauses mixed in)
-    elseif cols isa MultiColumnIndex && !(cols isa AbstractVector) || cols isa ColumnIndex
+    elseif (cols isa MultiColumnIndex && !(cols isa AbstractVector)) || cols isa ColumnIndex
         by_or_lt_set = false
         col_idxs = index(df)[cols]
     elseif cols isa UserColOrdering
-        by_or_lt_set = haskey(cols.kwargs, :lt) || haskey(cols.kwargs, :by)
+        # by_or_lt_set = haskey(cols.kwargs, :lt) || haskey(cols.kwargs, :by)
+        by_or_lt_set = is_complex(cols)
         col_idxs = index(df)[_getcol(cols)]
     # Mix of ColOrdering and other ColumnSelectors
     elseif cols isa AbstractVector
@@ -749,7 +771,7 @@ function _perform_uniqueness_checks(df, cols, lt, by)
         by_or_lt_set = false
         for col in cols
             if col isa UserColOrdering
-                by_or_lt_set = haskey(cols.kwargs, :lt) || haskey(cols.kwargs, :by)
+                by_or_lt_set = is_complex(col) || by_or_lt_set
             end
 
             push!(newcols, index(df)[_getcol(col)])

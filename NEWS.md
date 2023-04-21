@@ -14,7 +14,7 @@
 * Added the kwarg `checkunique` to sorting related functions (`issorted`,
   `sort`, `sort!` and `sortperm`) that throws an error when duplicate elements
   make multiple sort orders valid
-  ([#2159](https://github.com/JuliaData/DataFrames.jl/issues/2159))
+  ([#3312](https://github.com/JuliaData/DataFrames.jl/pull/3312))
 
 # DataFrames.jl v1.5 Release Notes
 
