@@ -725,14 +725,23 @@ function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm,
     permute!(df, _sortperm(df, a, o))
 end
 
+is_complex(o::Ordering) = o isa Union{Order.By, Order.Lt} # Order w/ nonstandard lt or by
+function is_complex(o::UserColOrdering)
+    if !haskey(o.kwargs, :lt) && !haskey(o.kwargs, :by)
+        return false
+    elseif haskey(o.kwargs, :lt)
+        return o.kwargs[:lt] !== isless
+    elseif haskey(o.kwargs, :by)
+        return o.kwargs[:by] !== identity
+    end
+end
+
 # Internal function that aids in uniqueness checks
 # Converts column selectors to indices and checks necessary conditions for uniqueness
 function _perform_uniqueness_checks(df::AbstractDataFrame, cols,
                                     lt::Union{Function, AbstractVector{<:Function}},
                                     by::Union{Function, AbstractVector{<:Function}},
                                     order::Union{Ordering, AbstractVector{<:Ordering}})
-    is_complex(o::Ordering) = o isa Union{Order.By, Order.Lt} # Order w/ nonstandard lt or by
-    is_complex(o::UserColOrdering) = haskey(o.kwargs, :lt) || haskey(o.kwargs, :by)
 
     if !(lt === isless && by === identity)
         throw(ArgumentError("Passing either lt or by along with checkunique=" *
@@ -762,7 +771,6 @@ function _perform_uniqueness_checks(df::AbstractDataFrame, cols,
         by_or_lt_set = false
         col_idxs = index(df)[cols]
     elseif cols isa UserColOrdering
-        # by_or_lt_set = haskey(cols.kwargs, :lt) || haskey(cols.kwargs, :by)
         by_or_lt_set = is_complex(cols)
         col_idxs = index(df)[_getcol(cols)]
     # Mix of ColOrdering and other ColumnSelectors
