@@ -715,13 +715,7 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
 end
 
 function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm,
-                    o::Base.Sort.Ordering, checkunique::Bool=false)
-    if checkunique
-        if !allunique(df)
-            throw(ArgumentError("Non-unique elements found. Multiple orders " *
-                                "are valid."))
-        end
-    end
+                    o::Base.Sort.Ordering)
     permute!(df, _sortperm(df, a, o))
 end
 
@@ -752,13 +746,11 @@ function _perform_uniqueness_checks(df::AbstractDataFrame, cols,
     if order isa Ordering
         order = [order]
     end
-
     for o in order
         if is_complex(o)
             throw(ArgumentError("Using either lt or by functions through the " *
                                 "order keyword argument simultaneously with " *
-                                "checkunique=true is not supported. Order " *
-                                "$(o) was found."))
+                                "checkunique=true is not supported."))
         end
     end
 
@@ -790,6 +782,6 @@ function _perform_uniqueness_checks(df::AbstractDataFrame, cols,
         throw(ArgumentError("Order clauses with either by or lt set in combination " *
                             "with checkunique=true are not supported"))
     end
-    !allunique(df, col_idxs) &&
+    allunique(df, col_idxs) ||
         throw(ArgumentError("Non-unique elements found. Multiple orders are valid."))
 end

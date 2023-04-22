@@ -152,25 +152,39 @@ end
 
     d = DataFrame(dv1=dv1, dv2=dv2, dv3=dv3, dv4=dv4, cv1=cv1)
 
+    # Complex Orderings: ord(lt, by, rev, order)
+    orderings = Dict(
+            :cmplex => Base.ord(isless, x -> -x, false, Base.Forward), # Complex ∴ disallowed
+            :simple => Base.ord(isless, identity, true, Base.Forward) # Simple ∴ allowed
+        )
+
     ## logic:
     ### Test each every selector in the following order:
     ### Symbol, String, Vect{ColumnIndex}, Order, Vect{ColIndex, Order}
 
     # issorted
+    # Possible selectors as cols
     @test_throws ArgumentError issorted(d, :dv1, checkunique=true)
     @test issorted(d, :dv3, checkunique=true)
     @test issorted(d, "dv3", checkunique=true)
     @test issorted(d, ["dv3", "dv4"], checkunique=true)
     @test issorted(d, :dv4, rev = true, checkunique=true)
     @test issorted(d, order(:dv4, rev=true), checkunique=true)
+    # Non-standard lt or by functions
     @test_throws ArgumentError issorted(d, order(:dv4, by=x -> -x), checkunique=true)
     @test_throws ArgumentError issorted(d, order(:dv4, lt= >), checkunique=true)
-    @test issorted(d, [:dv3, order(:dv4, rev=true)], checkunique=true)
-    @test issorted(d, [:dv3, :dv4], rev = [false, true], checkunique=true)
     @test_throws ArgumentError issorted(d, :dv3, by=x-> -x, checkunique=true)
     @test_throws ArgumentError issorted(d, :dv3, lt = >, checkunique=true)
+    # Mixed-in order clauses
+    @test issorted(d, [:dv3, order(:dv4, rev=true)], checkunique=true)
+    @test issorted(d, [:dv3, :dv4], rev = [false, true], checkunique=true)
     @test issorted(d, [order(:dv3, rev=false), order(:dv4, rev=true)], checkunique=true)
     @test issorted(d, [order(:dv3, by=identity), order(:dv4, rev=true)], checkunique=true)
+    @test_throws ArgumentError issorted(d, [order(:dv1, by = round), order(:dv2, rev=true)], checkunique=true)
+    # Orderings defined via Base.ord
+    @test issorted(d, :dv4, order=Base.Reverse, checkunique=true)
+    @test issorted(d, :dv4, order=orderings[:simple], checkunique=true)
+    @test_throws ArgumentError issorted(d, :dv4, order=orderings[:cmplex], checkunique=true)
 
     # sort
     @test_throws ArgumentError sort(d, :dv1, checkunique=true)
@@ -188,17 +202,7 @@ end
     
     # sort!
     @test_throws ArgumentError sort!(d, :dv1, checkunique=true)
-    @test_throws ArgumentError sort!(d, "dv1", checkunique=true)
-    @test_throws ArgumentError sort!(d, 1, checkunique=true)
-    @test_throws ArgumentError sort!(d, [:dv1, :dv2], checkunique=true)
-    @test_throws ArgumentError sort!(d, ["dv1", "dv2"], checkunique=true)
-    @test_throws ArgumentError sort!(d, order(:dv1, rev=true), checkunique=true)
-    @test_throws ArgumentError sort!(d, order(:dv1, by=x -> -x), checkunique=true)
-    @test_throws ArgumentError sort!(d, order(:dv1, lt= >), checkunique=true)
-    @test_throws ArgumentError sort!(d, [:dv2, order(:dv1, rev=true)], checkunique=true)
-    @test_throws ArgumentError sort!(d, [:dv1, :dv2], rev = [false, false], checkunique=true)
-    @test_throws ArgumentError sort!(d, :dv1, by = x -> -x, checkunique=true)
-    @test_throws ArgumentError sort!(d, :dv1, lt = >, checkunique=true)
+    @test_throws ArgumentError sort!(d[!, [:dv1, :dv2]], checkunique = true)
 
     # sortperm
     @test_throws ArgumentError sortperm(d, :dv1, checkunique=true)
