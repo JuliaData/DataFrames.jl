@@ -14,7 +14,6 @@ jobs:
         version:
           - '1.6'
           - '1' # automatically expands to the latest stable 1.x release of Julia
-          - 'nightly'
         os:
           - ubuntu-latest
         arch:
@@ -23,6 +22,11 @@ jobs:
           - os: windows-latest
             version: '1'
             arch: x86
+          - os: ubuntu-latest
+            version: 'nightly'
+            arch: x64
+            allow_failure: true
+
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
