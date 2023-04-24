@@ -158,6 +158,13 @@ end
             :simple => Base.ord(isless, identity, true, Base.Forward) # Simple ∴ allowed
         )
 
+    ords = [
+        order(:dv4, lt = isless, by = identity, rev=true),
+        order(:dv4, lt = >),
+        order(:dv4, by = x -> -x),
+        order(:dv4, lt = isless, by = x -> -x)
+    ]
+
     ## logic:
     ### Test each every selector in the following order:
     ### Symbol, String, Vect{ColumnIndex}, Order, Vect{ColIndex, Order}
@@ -185,6 +192,12 @@ end
     @test issorted(d, :dv4, order=Base.Reverse, checkunique=true)
     @test issorted(d, :dv4, order=orderings[:simple], checkunique=true)
     @test_throws ArgumentError issorted(d, :dv4, order=orderings[:cmplex], checkunique=true)
+    # UserColOrderings
+    @test issorted(d, ords[1], checkunique=true)
+    @test_throws ArgumentError issorted(d, ords[2], checkunique=true)
+
+    # Checking correct complex order detection
+    @test DataFrames.is_complex.(ords) == [false, true, true, true]
 
     # sort
     @test_throws ArgumentError sort(d, :dv1, checkunique=true)

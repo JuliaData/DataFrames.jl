@@ -721,12 +721,16 @@ end
 
 is_complex(o::Ordering) = o isa Union{Order.By, Order.Lt} # Order w/ nonstandard lt or by
 function is_complex(o::UserColOrdering)
-    if !haskey(o.kwargs, :lt) && !haskey(o.kwargs, :by)
+    has_lt = haskey(o.kwargs, :lt)
+    has_by = haskey(o.kwargs, :by)
+    if !has_lt && !has_by
         return false
-    elseif haskey(o.kwargs, :lt)
+    elseif has_lt && !has_by
         return o.kwargs[:lt] !== isless
-    elseif haskey(o.kwargs, :by)
+    elseif has_by && !has_lt
         return o.kwargs[:by] !== identity
+    elseif has_lt && has_by
+        return o.kwargs[:by] !== identity || o.kwargs[:lt] !== isless
     end
 end
 
