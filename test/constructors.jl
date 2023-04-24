@@ -311,8 +311,8 @@ end
         @test_throws ArgumentError DataFrame(A=rand(2, 1), copycols=copycolsarg)
         @test_throws ArgumentError DataFrame([1, 2, 3], :auto, copycols=copycolsarg)
         @test_throws DimensionMismatch DataFrame(AbstractVector[1:3, [1, 2]], :auto, copycols=copycolsarg)
-        @test_throws ArgumentError DataFrame([1:3, 1], [:x1, :x2], copycols=copycolsarg)
-        @test_throws ArgumentError DataFrame([1:3, 1], ["x1", "x2"], copycols=copycolsarg)
+        @test_throws ErrorException DataFrame([1:3, 1], [:x1, :x2], copycols=copycolsarg)
+        @test_throws ErrorException DataFrame([1:3, 1], ["x1", "x2"], copycols=copycolsarg)
         @test_throws ErrorException DataFrame([1:3, 1], copycols=copycolsarg)
     end
 end
