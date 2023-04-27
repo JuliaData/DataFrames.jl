@@ -571,7 +571,7 @@ end
 
     # Test that it works with :detailed
     @test describe_output[:, [:variable, :mean, :std, :min, :q25, :median, :q75,
-                              :max, :sum, :nunique, :nmissing, :eltype]] ≅
+                              :max, :nunique, :nmissing, :eltype]] ≅
         describe(df, :detailed)
 
     # Test that it works on a custom function

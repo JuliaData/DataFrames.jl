@@ -581,7 +581,7 @@ where each row represents a variable and each column a summary statistic.
       `:last`, `:nnonmissing`, and `:nmissing`. The default statistics used are
       `:mean`, `:min`, `:median`, `:max`, `:nmissing`, and `:eltype`.
     - `:detailed` as the only `Symbol` argument to return all statistics
-      except `:first`, `:last`, `:nuniqueall`, and `:nnonmissing`.
+      except `:first`, `:last`, `:sum`, `:nuniqueall`, and `:nnonmissing`.
     - `:all` as the only `Symbol` argument to return all statistics.
     - A `function => name` pair where `name` is a `Symbol` or string. This will
       create a column of summary statistics with the provided name.
@@ -674,7 +674,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         splice!(stats, i, allowed_fields) # insert in the stats vector to get a good order
     elseif predefined_funs == [:detailed]
         predefined_funs = [:mean, :std, :min, :q25, :median, :q75,
-                           :max, :sum, :nunique, :nmissing, :eltype]
+                           :max, :nunique, :nmissing, :eltype]
         i = findfirst(s -> s == :detailed, stats)
         splice!(stats, i, predefined_funs) # insert in the stats vector to get a good order
     elseif :all in predefined_funs || :detailed in predefined_funs
