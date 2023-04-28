@@ -595,8 +595,8 @@ end
     @test describe(df, cols=Not(1)) ≅ describe(select(df, Not(1)))
     @test describe(df, cols=Not("a")) ≅ describe(select(df, Not(1)))
 
-    @test describe(DataFrame(a=[1, 2]), cols=:a, :min, minimum => :min2, maximum => "max2", :max) ==
-          DataFrame(variable=:a, min=1, min2=1, max2=2, max=2)
+    @test describe(DataFrame(a=[1, 2]), cols=:a, :min, minimum => :min2, maximum => "max2", :max, :sum) ==
+          DataFrame(variable=:a, min=1, min2=1, max2=2, max=2, sum=3)
 
     @test_throws ArgumentError describe(df, :mean, :all)
     @test_throws MethodError describe(DataFrame(a=[1, 2]), cols=:a, "max2" => maximum)
