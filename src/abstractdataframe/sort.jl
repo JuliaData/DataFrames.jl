@@ -729,7 +729,8 @@ function is_complex(o::UserColOrdering)
         return o.kwargs[:lt] !== isless
     elseif has_by && !has_lt
         return o.kwargs[:by] !== identity
-    elseif has_lt && has_by
+    else
+        @assert has_lt && has_by
         return o.kwargs[:by] !== identity || o.kwargs[:lt] !== isless
     end
 end
@@ -770,7 +771,8 @@ function _perform_uniqueness_checks(df::AbstractDataFrame, cols,
         by_or_lt_set = is_complex(cols)
         col_idxs = index(df)[_getcol(cols)]
     # Mix of ColOrdering and other ColumnSelectors
-    elseif cols isa AbstractVector
+    else
+        @assert cols isa AbstractVector
         newcols = Int[]
         by_or_lt_set = false
         for col in cols
