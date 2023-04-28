@@ -45,9 +45,9 @@ each corresponding to a column or variable. The simplest way of constructing a
 ```jldoctest dataframe
 julia> using DataFrames
 
-julia> df = DataFrame(A=1:4, B=["M", "F", "F", "M"])
+julia> df = DataFrame(a=1:4, b=["M", "F", "F", "M"]) # keyword argument constructor
 4×2 DataFrame
- Row │ A      B
+ Row │ a      b
      │ Int64  String
 ─────┼───────────────
    1 │     1  M
@@ -55,7 +55,7 @@ julia> df = DataFrame(A=1:4, B=["M", "F", "F", "M"])
    3 │     3  F
    4 │     4  M
 
-julia> DataFrame((a=[1, 2], b=[3, 4])) # Tables.jl table constructor
+julia> DataFrame((a=[1, 2], b=[3, 4])) # Tables.jl table constructor from a named tuple of vectors
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -63,7 +63,7 @@ julia> DataFrame((a=[1, 2], b=[3, 4])) # Tables.jl table constructor
    1 │     1      3
    2 │     2      4
 
-julia> DataFrame([(a=1, b=0), (a=2, b=0)]) # Tables.jl table constructor
+julia> DataFrame([(a=1, b=0), (a=2, b=0)]) # Tables.jl table constructor from a vector of named tuples
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -88,14 +88,6 @@ julia> DataFrame([:a => 1:2, :b => 0]) # vector of Pairs constructor
    2 │     2      0
 
 julia> DataFrame(Dict(:a => 1:2, :b => 0)) # dictionary constructor
-2×2 DataFrame
- Row │ a      b
-     │ Int64  Int64
-─────┼──────────────
-   1 │     1      0
-   2 │     2      0
-
-julia> DataFrame(a=1:2, b=0) # keyword argument constructor
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64
