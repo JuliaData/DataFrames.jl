@@ -54,7 +54,11 @@ julia> DataFrame(a=1:4, b=["M", "F", "F", "M"]) # keyword argument constructor
    2 │     2  F
    3 │     3  F
    4 │     4  M
+```
 
+Here are examples of other commonly used ways to construct a data frame:
+
+```jldoctest dataframe
 julia> DataFrame((a=[1, 2], b=[3, 4])) # Tables.jl table constructor from a named tuple of vectors
 2×2 DataFrame
  Row │ a      b
