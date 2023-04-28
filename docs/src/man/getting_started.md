@@ -45,7 +45,7 @@ each corresponding to a column or variable. The simplest way of constructing a
 ```jldoctest dataframe
 julia> using DataFrames
 
-julia> df = DataFrame(a=1:4, b=["M", "F", "F", "M"]) # keyword argument constructor
+julia> DataFrame(a=1:4, b=["M", "F", "F", "M"]) # keyword argument constructor
 4×2 DataFrame
  Row │ a      b
      │ Int64  String
@@ -129,6 +129,17 @@ returned by this syntax does not change `df`.
 
 
 ```jldoctest dataframe
+
+julia> df = DataFrame(A=1:4, B=["M", "F", "F", "M"])
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  String
+─────┼───────────────
+   1 │     1  M
+   2 │     2  F
+   3 │     3  F
+   4 │     4  M
+
 julia> df.A
 4-element Vector{Int64}:
  1
