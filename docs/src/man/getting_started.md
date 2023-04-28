@@ -54,6 +54,70 @@ julia> df = DataFrame(A=1:4, B=["M", "F", "F", "M"])
    2 │     2  F
    3 │     3  F
    4 │     4  M
+
+julia> DataFrame((a=[1, 2], b=[3, 4])) # Tables.jl table constructor
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     2      4
+
+julia> DataFrame([(a=1, b=0), (a=2, b=0)]) # Tables.jl table constructor
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
+
+julia> DataFrame("a" => 1:2, "b" => 0) # Pair constructor
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
+
+julia> DataFrame([:a => 1:2, :b => 0]) # vector of Pairs constructor
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
+
+julia> DataFrame(Dict(:a => 1:2, :b => 0)) # dictionary constructor
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
+
+julia> DataFrame(a=1:2, b=0) # keyword argument constructor
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
+
+julia> DataFrame([[1, 2], [0, 0]], [:a, :b]) # vector of vectors constructor
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
+
+julia> DataFrame([1 0; 2 0], :auto) # matrix constructor
+2×2 DataFrame
+ Row │ x1     x2
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      0
+   2 │     2      0
 ```
 
 Columns can be directly (i.e. without copying) extracted using `df.col`,
