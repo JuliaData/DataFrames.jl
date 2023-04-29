@@ -136,7 +136,7 @@ returned by this syntax does not change `df`.
 
 julia> df = DataFrame(A=1:4, B=["M", "F", "F", "M"])
 4×2 DataFrame
- Row │ a      b
+ Row │ A      B
      │ Int64  String
 ─────┼───────────────
    1 │     1  M
