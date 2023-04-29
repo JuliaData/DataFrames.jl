@@ -133,7 +133,6 @@ returned by this syntax does not change `df`.
 
 
 ```jldoctest dataframe
-
 julia> df = DataFrame(A=1:4, B=["M", "F", "F", "M"])
 4×2 DataFrame
  Row │ A      B
