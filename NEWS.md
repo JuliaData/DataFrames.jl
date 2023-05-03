@@ -14,6 +14,12 @@
   when a vector of duplicate indices is passed when doing column selection
   ([#3302](https://github.com/JuliaData/DataFrames.jl/pull/3302))
 
+## Bug fixes
+
+* `deleteat!` correctly handles the situation when vector of rows to be dropped
+  from a data frame is its column or might alias with some of its columns
+  ([#3304](https://github.com/JuliaData/DataFrames.jl/pull/3304))
+
 # DataFrames.jl v1.5 Release Notes
 
 ## New functionalities
