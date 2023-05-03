@@ -210,7 +210,7 @@ function ordering(df::AbstractDataFrame, cols::AbstractVector, lt::Function,
 
     if length(cols) == 0
         if ncol(df) > 0
-            Base.depwarn("When empty column selector is passed ordering is done on all colums. " *
+            Base.depwarn("When empty column selector is passed ordering is done on all columns. " *
                         "This behavior is deprecated and will change in the future.", :ordering)
         end
         return ordering(df, lt, by, rev, order)

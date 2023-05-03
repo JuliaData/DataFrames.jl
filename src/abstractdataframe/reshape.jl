@@ -667,8 +667,8 @@ RepeatedVector(parent::AbstractVector, inner::Int, outer::Int)
 
 # Arguments
 - `parent` : the AbstractVector that's repeated
-- `inner` : the numer of times each element is repeated
-- `outer` : the numer of times the whole vector is repeated after
+- `inner` : the number of times each element is repeated
+- `outer` : the number of times the whole vector is repeated after
   expanded by `inner`
 
 `inner` and `outer` have the same meaning as similarly named arguments
@@ -678,7 +678,7 @@ to `repeat`.
 ```julia
 RepeatedVector([1, 2], 3, 1)   # [1, 1, 1, 2, 2, 2]
 RepeatedVector([1, 2], 1, 3)   # [1, 2, 1, 2, 1, 2]
-RepeatedVector([1, 2], 2, 2)   # [1, 2, 1, 2, 1, 2, 1, 2]
+RepeatedVector([1, 2], 2, 2)   # [1, 1, 2, 2, 1, 1, 2, 2]
 ```
 """
 struct RepeatedVector{T} <: AbstractVector{T}

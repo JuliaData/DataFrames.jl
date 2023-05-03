@@ -2318,6 +2318,20 @@ end
         @test all(v -> v isa SubDataFrame, res)
         @test_throws ArgumentError Iterators.partition(df, false)
         @test_throws ArgumentError Iterators.partition(df, -1)
+
+        dfr = eachrow(df)
+        p = Iterators.partition(dfr, 2)
+        @test p isa Iterators.PartitionIterator
+        @test Tables.partitions(p) === p
+        @test eltype(p) === DataFrames.DataFrameRows
+        @test Base.IteratorEltype(typeof(p)) === Base.EltypeUnknown()
+        @test length(p) == 3
+        @test Base.IteratorSize(typeof(p)) === Base.HasLength()
+        res = collect(p)
+        @test res == eachrow.([DataFrame(x=1:2), DataFrame(x=3:4), DataFrame(x=5)])
+        @test all(v -> v isa DataFrames.DataFrameRows, res)
+        @test_throws ArgumentError Iterators.partition(df, false)
+        @test_throws ArgumentError Iterators.partition(df, -1)
     end
     p = Iterators.partition(DataFrame(), 1)
     @test p isa Iterators.PartitionIterator
@@ -2325,6 +2339,13 @@ end
     @test isempty(p)
     @test length(p) == 0
     @test eltype(collect(p)) <: SubDataFrame
+
+    p = Iterators.partition(eachrow(DataFrame()), 1)
+    @test p isa Iterators.PartitionIterator
+    @test Tables.partitions(p) === p
+    @test isempty(p)
+    @test length(p) == 0
+    @test eltype(collect(p)) <: DataFrames.DataFrameRows
 end
 
 end # module

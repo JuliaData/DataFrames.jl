@@ -38,7 +38,7 @@ const TRANSFORMATION_COMMON_RULES =
 
     Operations can then be applied on each group using one of the following functions:
     * `combine`: does not put restrictions on number of rows returned per group;
-      the returned values are vertically concatenaded following order of groups in
+      the returned values are vertically concatenated following order of groups in
       `GroupedDataFrame`; it is typically used to compute summary statistics by group;
       for `GroupedDataFrame` if grouping columns are kept they are put as first columns
       in the result;

@@ -262,9 +262,9 @@ In order to read the file in we will use the `CSV.read` function.
 ```jldoctest dataframe
 julia> using CSV
 
-julia> german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
-                                      "..", "docs", "src", "assets", "german.csv"),
-                             DataFrame)
+julia> path = joinpath(pkgdir(DataFrames), "docs", "src", "assets", "german.csv");
+
+julia> german_ref = CSV.read(path, DataFrame)
 1000×10 DataFrame
   Row │ id     Age    Sex      Job    Housing  Saving accounts  Checking accou ⋯
       │ Int64  Int64  String7  Int64  String7  String15         String15       ⋯
@@ -306,15 +306,14 @@ using these fixed-width types.
 
 Let us now explain in detail the following code block:
 ```julia
-german_ref = CSV.read(joinpath(dirname(pathof(DataFrames)),
-                               "..", "docs", "src", "assets", "german.csv"),
-                      DataFrame)
+path = joinpath(pkgdir(DataFrames), "docs", "src", "assets", "german.csv");
+
+german_ref = CSV.read(path, DataFrame)
 ```
 - we are storing the `german.csv` file in the DataFrames.jl repository to make
   user's life easier and avoid having to download it each time;
-- `pathof(DataFrames)` gives us the full path of the file that was used to
-  import the DataFrames.jl package;
-- first we split the directory part from it using `dirname`;
+- `pkgdir(DataFrames)` gives us the full path to the root of the DataFrames.jl
+  package.
 - then from this directory we need to move to the directory where the
   `german.csv` file is stored; we use `joinpath` as this is a recommended way to
   compose paths to resources stored on disk in an operating system independent

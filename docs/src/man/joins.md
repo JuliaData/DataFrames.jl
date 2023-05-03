@@ -137,6 +137,17 @@ julia> crossjoin(people, jobs, makeunique = true)
    4 │    40  Jane Doe     60  Astronaut
 ```
 
+## Key value comparisons and floating point values
+
+Key values from the two or more data frames are compared using the `isequal`
+function. This is consistent with the `Set` and `Dict` types in Julia Base.
+
+It is not recommended to use floating point numbers as keys: floating point
+comparisons can be surprising and unpredictable. If you do use floating point
+keys, note that by default an error is raised when keys include `-0.0`
+(negative zero) or `NaN` values. This can be overridden by wrapping the key
+values in a [categorical](@ref man-categorical) vector.
+
 ## Joining on key columns with different names
 
 In order to join data frames on keys which have different names in the left and
@@ -268,8 +279,8 @@ produce errors as the keys defined in both source data frames were unique.
 
 ## Renaming joined columns
 
-Often you want to keep track of the source data frame of a given column.
-This feature is supported with the `ranamecols` keyword argument:
+Often you want to keep track of the source data frame.
+This feature is supported with the `renamecols` keyword argument:
 
 ```jldoctest joins
 julia> innerjoin(a, b, on=:ID, renamecols = "_left" => "_right")
