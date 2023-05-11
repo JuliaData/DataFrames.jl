@@ -13,6 +13,8 @@
   treated as if they were wrapped in `Cols` and does not throw an error
   when a vector of duplicate indices is passed when doing column selection
   ([#3302](https://github.com/JuliaData/DataFrames.jl/pull/3302))
+* `describe` now has `:sum` available as a descriptive statistic.
+  ([#3303](https://github.com/JuliaData/DataFrames.jl/pull/3303))
 
 # DataFrames.jl v1.5 Release Notes
 

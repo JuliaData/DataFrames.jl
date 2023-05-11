@@ -577,11 +577,11 @@ where each row represents a variable and each column a summary statistic.
 - `stats::Union{Symbol, Pair}...` : the summary statistics to report.
   Arguments can be:
     - A symbol from the list `:mean`, `:std`, `:min`, `:q25`,
-      `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:nuniqueall`, `:first`,
+      `:median`, `:q75`, `:max`, `:sum`, `:eltype`, `:nunique`, `:nuniqueall`, `:first`,
       `:last`, `:nnonmissing`, and `:nmissing`. The default statistics used are
       `:mean`, `:min`, `:median`, `:max`, `:nmissing`, and `:eltype`.
     - `:detailed` as the only `Symbol` argument to return all statistics
-      except `:first`, `:last`, `:nuniqueall`, and `:nnonmissing`.
+      except `:first`, `:last`, `:sum`, `:nuniqueall`, and `:nnonmissing`.
     - `:all` as the only `Symbol` argument to return all statistics.
     - A `function => name` pair where `name` is a `Symbol` or string. This will
       create a column of summary statistics with the provided name.
@@ -664,7 +664,7 @@ DataAPI.describe(df::AbstractDataFrame; cols=:) =
 function _describe(df::AbstractDataFrame, stats::AbstractVector)
     predefined_funs = Symbol[s for s in stats if s isa Symbol]
 
-    allowed_fields = [:mean, :std, :min, :q25, :median, :q75, :max,
+    allowed_fields = [:mean, :std, :min, :q25, :median, :q75, :max, :sum,
                       :nunique, :nuniqueall, :nmissing, :nnonmissing,
                       :first, :last, :eltype]
 
@@ -797,6 +797,10 @@ function get_stats(@nospecialize(col::Union{AbstractVector, Base.SkipMissing}),
 
     if :nuniqueall in stats
         d[:nuniqueall] = try length(Set(col)) catch end
+    end
+
+    if :sum in stats
+        d[:sum] = try sum(col) catch end
     end
 
     return d
