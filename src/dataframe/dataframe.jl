@@ -905,7 +905,7 @@ function _deleteat!_helper(df::DataFrame, drop)
     end
 
     selfdrop = findfirst(c -> c === drop || Base.mightalias(c, drop), cols)
-    if !isnothing(selfdrop) && selfdrop < length(cols)
+    if !isnothing(selfdrop)
         drop = copy(drop)
     end
 
