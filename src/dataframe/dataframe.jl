@@ -910,6 +910,10 @@ function _deleteat!_helper(df::DataFrame, drop)
         return df
     end
 
+    if any(c -> c === drop || Base.mightalias(c, drop), cols)
+        drop = copy(drop)
+    end
+
     n = nrow(df)
     col1 = cols[1]
     deleteat!(col1, drop)
