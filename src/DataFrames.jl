@@ -39,6 +39,7 @@ import DataAPI,
        DataAPI.colmetadata!,
        DataAPI.deletecolmetadata!,
        DataAPI.emptycolmetadata!,
+       DataAPI.rownumber,
        Tables,
        Tables.columnindex,
        Future.copy!
