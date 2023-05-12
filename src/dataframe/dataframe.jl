@@ -19,7 +19,7 @@ DataFrame(table, names::AbstractVector;
 DataFrame(columns::AbstractVecOrMat, names::AbstractVector;
           makeunique::Bool=false, copycols::Bool=true)
 
-DataFrame(::DataFrameRow, copycols::Bool=true)
+DataFrame(::DataFrameRow; copycols::Bool=true)
 DataFrame(::GroupedDataFrame; copycols::Bool=true, keepkeys::Bool=true)
 ```
 
@@ -66,10 +66,10 @@ is assumed to be of type that implements the
 [Tables.jl](https://github.com/JuliaData/Tables.jl) interface using which the
 returned `DataFrame` is materialized.
 
-Additionally, if two positional agruments are passed, where the second argument is
-`AbstractVector`, then the first argument is passed to `DataFrame` constructor
-with an appropriate `copycols` argument and later the returned data frame gets new
-column names that are taken from the vector that is a second positional argument.
+If two positional arguments are passed, where the second argument is an
+`AbstractVector`, then the first argument is taken to be a table as described in
+the previous paragraph, and columns names of the resulting data frame
+are taken from the vector passed as the second positional argument.
 
 Finally it is allowed to construct a `DataFrame` from a `DataFrameRow` or a
 `GroupedDataFrame`. In the latter case the `keepkeys` keyword argument specifies
