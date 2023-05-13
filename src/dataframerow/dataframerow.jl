@@ -488,7 +488,11 @@ for (eqfun, cmpfun) in ((:isequal, :isless), (:(==), :(<))),
     end
 end
 
-function DataFrame(dfr::DataFrameRow)
+function DataFrame(dfr::DataFrameRow; copycols::Bool=true)
+    if !copycols
+        throw(ArgumentError("It is not possible to construct a `DataFrame`" *
+                            "from DataFrameRow with `copycols=false`"))
+    end
     row, cols = parentindices(dfr)
     parent(dfr)[row:row, cols]
 end

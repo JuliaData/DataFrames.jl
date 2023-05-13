@@ -311,8 +311,8 @@ end
         @test_throws ArgumentError DataFrame(A=rand(2, 1), copycols=copycolsarg)
         @test_throws ArgumentError DataFrame([1, 2, 3], :auto, copycols=copycolsarg)
         @test_throws DimensionMismatch DataFrame(AbstractVector[1:3, [1, 2]], :auto, copycols=copycolsarg)
-        @test_throws ArgumentError DataFrame([1:3, 1], [:x1, :x2], copycols=copycolsarg)
-        @test_throws ArgumentError DataFrame([1:3, 1], ["x1", "x2"], copycols=copycolsarg)
+        @test_throws ErrorException DataFrame([1:3, 1], [:x1, :x2], copycols=copycolsarg)
+        @test_throws ErrorException DataFrame([1:3, 1], ["x1", "x2"], copycols=copycolsarg)
         @test_throws ErrorException DataFrame([1:3, 1], copycols=copycolsarg)
     end
 end
@@ -408,6 +408,32 @@ end
         @test parent(df.x1) === m
         @test parent(df.x2) === m
     end
+end
+
+@testset "constructor with names passed as a second argument" begin
+    for cols in Any[[:a, :b], ["a", "b"], Any[:a, :b], Any["a", "b"]]
+        for cc in [true, false]
+            @test DataFrame(Tables.table([1 2; 3 4]), cols, copycols=cc) == DataFrame(a=[1, 3], b=[2, 4])
+            @test DataFrame([1 2; 3 4], cols, copycols=cc) == DataFrame(a=[1, 3], b=[2, 4])
+            @test DataFrame([[1, 3], [2, 4]], cols, copycols=cc) == DataFrame(a=[1, 3], b=[2, 4])
+            @test DataFrame([(1, 2), (3, 4)], cols, copycols=cc) == DataFrame(a=[1, 3], b=[2, 4])
+            @test DataFrame(DataFrame(x=[1, 3], y=[2, 4]), cols, copycols=cc) == DataFrame(a=[1, 3], b=[2, 4])
+            @test DataFrame(view(DataFrame(x=[1, 3], y=[2, 4]), :, :), cols, copycols=cc) == DataFrame(a=[1, 3], b=[2, 4])
+            @test DataFrame(Dict(:x=>[1, 3], :y=>[2, 4]), cols, copycols=cc) == DataFrame(a=[1, 3], b=[2, 4])
+            @test DataFrame((x=[1, 3], y=[2, 4]), cols, copycols=cc) == DataFrame(a=[1, 3], b=[2, 4])
+            @test DataFrame([(x=1, y=2), (x=3, y=4)], cols, copycols=cc) == DataFrame(a=[1, 3], b=[2, 4])
+            @test DataFrame(((x=1, y=2), (x=3, y=4)), cols, copycols=cc) == DataFrame(a=[1, 3], b=[2, 4])
+            @test DataFrame([(1, 2), (3, 4)], cols, copycols=cc) == DataFrame(a=[1, 3], b=[2, 4])
+            @test DataFrame(((1, 2), (3, 4)), cols, copycols=cc) == DataFrame(a=[1, 3], b=[2, 4])
+            @test DataFrame((1=>2, 3=>4), cols, copycols=cc) == DataFrame(a=[1, 3], b=[2, 4])
+            @test DataFrame([:x => [1, 3], :y => [2, 4]], cols, copycols=cc) == DataFrame(a=[1, 3], b=[2, 4])
+        end
+        @test DataFrame(groupby(DataFrame(x=[1, 3], y=[2, 4]), :x), cols, copycols=true) == DataFrame(a=[1, 3], b=[2, 4])
+        @test DataFrame(DataFrame(x=[1, 3], y=[2, 4])[1, :], cols, copycols=true) == DataFrame(a=1, b=2)
+        @test_throws ArgumentError DataFrame(groupby(DataFrame(x=[1, 3], y=[2, 4]), :x), cols, copycols=false)
+        @test_throws ArgumentError DataFrame(DataFrame(x=[1, 3], y=[2, 4])[1, :], cols, copycols=false)
+    end
+    @test_throws ArgumentError DataFrame([1=>2, 3=>4], [:a, :b])
 end
 
 end # module
