@@ -2574,7 +2574,7 @@ function Base.reverse!(df::AbstractDataFrame, start::Integer=1, stop::Integer=nr
     return df
 end
 
-function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.invpermute!!)},
+function _permutation_helper!(fun::Union{typeof(permute!), typeof(invpermute!)},
                               df::AbstractDataFrame, p::AbstractVector{<:Integer})
     nrow(df) != length(p) &&
         throw(DimensionMismatch("Permutation does not have a correct length " *
@@ -2587,7 +2587,7 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
         return df
     end
 
-    if fun === Base.invpermute!!
+    if fun === invpermute!
         reverse!(@view cp[1:end-1])
     end
 
@@ -2707,7 +2707,7 @@ julia> permute!(df, [5, 3, 1, 2, 4])
 ```
 """
 Base.permute!(df::AbstractDataFrame, p::AbstractVector{<:Integer}) =
-    _permutation_helper!(Base.permute!!, df, p)
+    _permutation_helper!(permute!, df, p)
 
 """
     invpermute!(df::AbstractDataFrame, p)
@@ -2760,7 +2760,7 @@ julia> invpermute!(df, [5, 3, 1, 2, 4])
 ```
 """
 Base.invpermute!(df::AbstractDataFrame, p::AbstractVector{<:Integer}) =
-    _permutation_helper!(Base.invpermute!!, df, p)
+    _permutation_helper!(invpermute!, df, p)
 
 """
     shuffle([rng=GLOBAL_RNG,] df::AbstractDataFrame)
