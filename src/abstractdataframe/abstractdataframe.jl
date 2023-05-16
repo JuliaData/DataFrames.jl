@@ -2555,23 +2555,20 @@ julia> reverse!(df, 2, 3)
 ```
 """
 function Base.reverse!(df::AbstractDataFrame, start::Integer=1, stop::Integer=nrow(df))
-    toskip = Set{Int}()
-    seen_cols = IdDict{Any, Nothing}()
-    for (i, col) in enumerate(eachcol(df))
-        if haskey(seen_cols, col)
-            push!(toskip, i)
-        else
-            seen_cols[col] = nothing
-        end
-    end
-
-    for (i, col) in enumerate(eachcol(df))
-        if !(i in toskip)
-            reverse!(col, start, stop)
-        end
-    end
+    _foreach_unique_column(col -> reverse!(col, start, stop), df)
     _drop_all_nonnote_metadata!(parent(df))
     return df
+end
+
+function _foreach_unique_column(f::Function, df::AbstractDataFrame)
+    seen_cols = IdDict{Any, Nothing}()
+    for col in eachcol(df)
+        if !haskey(seen_cols, col)
+            seen_cols[col] = nothing
+            f(col)
+        end
+    end
+    nothing
 end
 
 function _permutation_helper!(fun::Union{typeof(permute!), typeof(invpermute!)},
@@ -2591,13 +2588,7 @@ function _permutation_helper!(fun::Union{typeof(permute!), typeof(invpermute!)},
         reverse!(@view cp[1:end-1])
     end
 
-    seen_cols = IdDict{Any, Nothing}()
-    for col in eachcol(df)
-        if !haskey(seen_cols, col)
-            seen_cols[col] = nothing
-            _cycle_permute!(col, cp)
-        end
-    end
+    _foreach_unique_column(col -> _cycle_permute!(col, cp), df)
 
     _drop_all_nonnote_metadata!(parent(df))
     return df
