@@ -19,8 +19,9 @@ other packages you can check-out the following resources
   and [ODSC Europe 2021](https://github.com/bkamins/ODSC-EUROPE-2021) tutorials
 * [DataFrames.jl showcase](https://github.com/bkamins/DataFrames-Showcase)
 
-If you prefer to learn DataFrames.jl from a book you can consider reading [Julia for Data Analysis](https://github.com/bkamins/JuliaForDataAnalysis)
-(the provided link takes you to the GitHub page of the book that contains all source code and additional exercises meant to help you learn analyzing data in Julia).
+If you prefer to learn DataFrames.jl from a book you can consider reading:
+* [Julia for Data Analysis](https://github.com/bkamins/JuliaForDataAnalysis);
+* [Julia Data Science](https://juliadatascience.io/).
 
 ## What is DataFrames.jl?
 
