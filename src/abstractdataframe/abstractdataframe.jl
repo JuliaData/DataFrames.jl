@@ -577,11 +577,11 @@ where each row represents a variable and each column a summary statistic.
 - `stats::Union{Symbol, Pair}...` : the summary statistics to report.
   Arguments can be:
     - A symbol from the list `:mean`, `:std`, `:min`, `:q25`,
-      `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:nuniqueall`, `:first`,
+      `:median`, `:q75`, `:max`, `:sum`, `:eltype`, `:nunique`, `:nuniqueall`, `:first`,
       `:last`, `:nnonmissing`, and `:nmissing`. The default statistics used are
       `:mean`, `:min`, `:median`, `:max`, `:nmissing`, and `:eltype`.
     - `:detailed` as the only `Symbol` argument to return all statistics
-      except `:first`, `:last`, `:nuniqueall`, and `:nnonmissing`.
+      except `:first`, `:last`, `:sum`, `:nuniqueall`, and `:nnonmissing`.
     - `:all` as the only `Symbol` argument to return all statistics.
     - A `function => name` pair where `name` is a `Symbol` or string. This will
       create a column of summary statistics with the provided name.
@@ -664,7 +664,7 @@ DataAPI.describe(df::AbstractDataFrame; cols=:) =
 function _describe(df::AbstractDataFrame, stats::AbstractVector)
     predefined_funs = Symbol[s for s in stats if s isa Symbol]
 
-    allowed_fields = [:mean, :std, :min, :q25, :median, :q75, :max,
+    allowed_fields = [:mean, :std, :min, :q25, :median, :q75, :max, :sum,
                       :nunique, :nuniqueall, :nmissing, :nnonmissing,
                       :first, :last, :eltype]
 
@@ -797,6 +797,10 @@ function get_stats(@nospecialize(col::Union{AbstractVector, Base.SkipMissing}),
 
     if :nuniqueall in stats
         d[:nuniqueall] = try length(Set(col)) catch end
+    end
+
+    if :sum in stats
+        d[:sum] = try sum(col) catch end
     end
 
     return d
@@ -2551,26 +2555,23 @@ julia> reverse!(df, 2, 3)
 ```
 """
 function Base.reverse!(df::AbstractDataFrame, start::Integer=1, stop::Integer=nrow(df))
-    toskip = Set{Int}()
-    seen_cols = IdDict{Any, Nothing}()
-    for (i, col) in enumerate(eachcol(df))
-        if haskey(seen_cols, col)
-            push!(toskip, i)
-        else
-            seen_cols[col] = nothing
-        end
-    end
-
-    for (i, col) in enumerate(eachcol(df))
-        if !(i in toskip)
-            reverse!(col, start, stop)
-        end
-    end
+    _foreach_unique_column!(col -> reverse!(col, start, stop), df)
     _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
-function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.invpermute!!)},
+function _foreach_unique_column!(f!::Function, df::AbstractDataFrame)
+    seen_cols = IdDict{Any, Nothing}()
+    for col in eachcol(df)
+        if !haskey(seen_cols, col)
+            seen_cols[col] = nothing
+            f!(col)
+        end
+    end
+    return nothing
+end
+
+function _permutation_helper!(fun::Union{typeof(permute!), typeof(invpermute!)},
                               df::AbstractDataFrame, p::AbstractVector{<:Integer})
     nrow(df) != length(p) &&
         throw(DimensionMismatch("Permutation does not have a correct length " *
@@ -2583,17 +2584,11 @@ function _permutation_helper!(fun::Union{typeof(Base.permute!!), typeof(Base.inv
         return df
     end
 
-    if fun === Base.invpermute!!
+    if fun === invpermute!
         reverse!(@view cp[1:end-1])
     end
 
-    seen_cols = IdDict{Any, Nothing}()
-    for col in eachcol(df)
-        if !haskey(seen_cols, col)
-            seen_cols[col] = nothing
-            _cycle_permute!(col, cp)
-        end
-    end
+    _foreach_unique_column!(col -> _cycle_permute!(col, cp), df)
 
     _drop_all_nonnote_metadata!(parent(df))
     return df
@@ -2703,7 +2698,7 @@ julia> permute!(df, [5, 3, 1, 2, 4])
 ```
 """
 Base.permute!(df::AbstractDataFrame, p::AbstractVector{<:Integer}) =
-    _permutation_helper!(Base.permute!!, df, p)
+    _permutation_helper!(permute!, df, p)
 
 """
     invpermute!(df::AbstractDataFrame, p)
@@ -2756,7 +2751,7 @@ julia> invpermute!(df, [5, 3, 1, 2, 4])
 ```
 """
 Base.invpermute!(df::AbstractDataFrame, p::AbstractVector{<:Integer}) =
-    _permutation_helper!(Base.invpermute!!, df, p)
+    _permutation_helper!(invpermute!, df, p)
 
 """
     shuffle([rng=GLOBAL_RNG,] df::AbstractDataFrame)

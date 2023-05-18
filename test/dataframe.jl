@@ -518,6 +518,13 @@ end
     df = DataFrame(a=1, b=3.0)
     @test isempty(deleteat!(df, true:true))
 
+    df = DataFrame(a=[false, true, true], b=1:3, c=4:6)
+    @test deleteat!(df, df.a) == DataFrame(a=false, b=1, c=4)
+    df = DataFrame(a=1:3, b=[false, true, true], c=4:6)
+    @test deleteat!(df, df.b) == DataFrame(a=1, b=false, c=4)
+    df = DataFrame(a=1:3, b=4:6, c=[false, true, true])
+    @test deleteat!(df, df.c) == DataFrame(a=1, b=4, c=false)
+
     Random.seed!(1234)
     for t in 0:0.005:1.0
         # two columns are needed as the second column is affected
@@ -548,6 +555,7 @@ end
                                 median=[2.5, 2.0, nothing, nothing, VERSION >= v"1.7.0-beta1.2" ? Date(2002) : nothing, nothing],
                                 q75=[3.25, 2.5, nothing, nothing, nothing, nothing],
                                 max=[4.0, 3.0, "d", "c", Date(2004), 2],
+                                sum=[10, 6, nothing, nothing, nothing, nothing],
                                 nunique=[nothing, nothing, 4, 3, 4, 2],
                                 nuniqueall=[4, 3, 4, 3, 4, 2],
                                 nmissing=[0, 1, 0, 1, 0, 0],
@@ -594,8 +602,8 @@ end
     @test describe(df, cols=Not(1)) ≅ describe(select(df, Not(1)))
     @test describe(df, cols=Not("a")) ≅ describe(select(df, Not(1)))
 
-    @test describe(DataFrame(a=[1, 2]), cols=:a, :min, minimum => :min2, maximum => "max2", :max) ==
-          DataFrame(variable=:a, min=1, min2=1, max2=2, max=2)
+    @test describe(DataFrame(a=[1, 2]), cols=:a, :min, minimum => :min2, maximum => "max2", :max, :sum) ==
+          DataFrame(variable=:a, min=1, min2=1, max2=2, max=2, sum=3)
 
     @test_throws ArgumentError describe(df, :mean, :all)
     @test_throws MethodError describe(DataFrame(a=[1, 2]), cols=:a, "max2" => maximum)
