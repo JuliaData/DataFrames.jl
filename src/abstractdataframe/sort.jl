@@ -727,23 +727,22 @@ function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm,
     permute!(df, _sortperm(df, a, o))
 end
 
-#= Note to the reviewers:
-ForwardOrdering is the only order that we can be certain is simple, since it's 
-a trivial subtype of the abstract type order. It can't be instantiated manually
-by users with a non-trivial by or lt function since no such constructor exists 
-in Base. I realize this is tecnically counting on Base not changing it's behaviour,
-but as it stands, there is no other way to check if the order is complex, since
-it does not even have any fields we could check.
-
-As for the case with ReverseOrdering, the `fwd` field is some ordering, either
-ForwardOrdering, By or Lt. If it's ForwardOrdering, that implies the order does
-not contain any non-standard lt or by functions. In the case where `o` is either
-Lt or By, we check if the function is standard.
+#= Functions to verify if an Ordering has user-defined by or lt functions
+The complexity checks exploit Base.Order's way of constructing Order objects.
+DirectOrdering is by definition an order that uses isless and identity as it's
+lt and by functions, so they are not complex. The By and Lt types have
+attributes storing the defined by and lt functions respectively, simple identity
+checks are enough.  ReverseOrderings wrap another type of ordering, so we
+perform the check on the wraped type.
 =#
-is_complex(o::ForwardOrdering) = false
+is_complex(o::Order.DirectOrdering) = false
 is_complex(o::By) = o.by !== identity
 is_complex(o::Lt) = o.lt !== isless
 is_complex(o::ReverseOrdering) = is_complex(o.fwd)
+function is_complex(o::Ordering)
+    throw(ArgumentError("Ordering type $(typeof(o)) is currently not supported" *
+                        "with `checkunique=true`"))
+end
 
 function is_complex(o::UserColOrdering)
     has_lt = haskey(o.kwargs, :lt)
