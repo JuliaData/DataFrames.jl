@@ -343,7 +343,7 @@ corresponding column index (see example below).
 
 Since having repeated elements makes multiple sorting orders valid, the
 `checkunique` keyword allows for the situation to be caught. If `checkunique` is
-`true` and duplicate elements are found an `ArgumentError` will be thrown. The
+`true` and duplicate elements are found an error will be thrown. The
 use of the `checkunique` keyword is only supported when neither the `by` nor
 `lt` keywords are being used, as their application can create duplicate items
 inadvertently. Similarly, the use of `order(...)` clauses that specify either
