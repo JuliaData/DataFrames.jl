@@ -155,7 +155,14 @@ end
     # Complex Orderings: ord(lt, by, rev, order)
     orderings = Dict(
             :cmplex => Base.ord(isless, x -> -x, false, Base.Forward), # Complex ∴ disallowed
-            :simple => Base.ord(isless, identity, true, Base.Forward) # Simple ∴ allowed
+            :simple => Base.ord(isless, identity, true, Base.Forward), # Simple ∴ allowed
+            # Creating Order objects with their constructors directly
+            :by_simple => Base.Order.By(identity), # Simple ∴ allowed
+            :by_cmplex => Base.Order.By(x -> x), # Disallowed since x -> x !== identity
+            :lt_simple => Base.Order.Lt(isless), # Simple ∴ allowed
+            :lt_cmplex => Base.Order.Lt(<), # Disallowed since isless !== <
+            # A test for robustness wrt complex orderings
+            :sneaky_lt => Base.Order.ord(<, identity, true) # Disallowed
         )
 
     ords = [
@@ -191,7 +198,12 @@ end
     # Orderings defined via Base.ord
     @test issorted(d, :dv4, order=Base.Reverse, checkunique=true)
     @test issorted(d, :dv4, order=orderings[:simple], checkunique=true)
-    @test_throws ArgumentError issorted(d, :dv4, order=orderings[:cmplex], checkunique=true)
+    @test_throws ArgumentError issorted(d, :dv3, order=orderings[:cmplex], checkunique=true)
+    @test issorted(d, :dv3, order=orderings[:by_simple], checkunique=true)
+    @test_throws ArgumentError issorted(d, :dv3, order=orderings[:by_cmplex], checkunique=true)
+    @test issorted(d, :dv3, order=orderings[:lt_simple], checkunique=true)
+    @test_throws ArgumentError issorted(d, :dv3, order=orderings[:lt_cmplex], checkunique=true)
+    @test_throws ArgumentError issorted(d, :dv3, order=orderings[:sneaky_lt], checkunique=true)
     # UserColOrderings
     @test issorted(d, ords[1], checkunique=true)
     @test_throws ArgumentError issorted(d, ords[2], checkunique=true)
@@ -216,6 +228,13 @@ end
     # sort!
     @test_throws ArgumentError sort!(d, :dv1, checkunique=true)
     @test_throws ArgumentError sort!(d[!, [:dv1, :dv2]], checkunique = true)
+    # Orderings defined via Base.ord
+    @test_throws ArgumentError sort!(d, :dv3, order=orderings[:cmplex], checkunique=true)
+    @test_throws ArgumentError sort!(d, :dv3, order=orderings[:by_cmplex], checkunique=true)
+    @test_throws ArgumentError sort!(d, :dv3, order=orderings[:lt_cmplex], checkunique=true)
+    @test_throws ArgumentError sort!(d, :dv3, order=orderings[:sneaky_lt], checkunique=true)
+    # UserColOrderings
+    @test_throws ArgumentError sort!(d, ords[2], checkunique=true)
 
     # sortperm
     @test_throws ArgumentError sortperm(d, :dv1, checkunique=true)

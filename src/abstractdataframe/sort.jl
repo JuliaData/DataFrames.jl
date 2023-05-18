@@ -715,11 +715,36 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
 end
 
 function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm,
-                    o::Base.Sort.Ordering)
+                    o::Base.Sort.Ordering, checkunique::Bool=false)
+    if checkunique
+        is_complex(o) &&
+            throw(ArgumentError("Orderings created with lt or by set to " *
+                                "something other than isless and identity " *
+                                "respectively, along checkunique=true are not supported."))
+        allunique(df, col_idxs) ||
+            throw(ArgumentError("Non-unique elements found. Multiple orders are valid."))
+    end
     permute!(df, _sortperm(df, a, o))
 end
 
-is_complex(o::Ordering) = o isa Union{Order.By, Order.Lt} # Order w/ nonstandard lt or by
+#= Note to the reviewers:
+ForwardOrdering is the only order that we can be certain is simple, since it's 
+a trivial subtype of the abstract type order. It can't be instantiated manually
+by users with a non-trivial by or lt function since no such constructor exists 
+in Base. I realize this is tecnically counting on Base not changing it's behaviour,
+but as it stands, there is no other way to check if the order is complex, since
+it does not even have any fields we could check.
+
+As for the case with ReverseOrdering, the `fwd` field is some ordering, either
+ForwardOrdering, By or Lt. If it's ForwardOrdering, that implies the order does
+not contain any non-standard lt or by functions. In the case where `o` is either
+Lt or By, we check if the function is standard.
+=#
+is_complex(o::ForwardOrdering) = false
+is_complex(o::By) = o.by !== identity
+is_complex(o::Lt) = o.lt !== isless
+is_complex(o::ReverseOrdering) = is_complex(o.fwd)
+
 function is_complex(o::UserColOrdering)
     has_lt = haskey(o.kwargs, :lt)
     has_by = haskey(o.kwargs, :by)
@@ -769,7 +794,7 @@ function _perform_uniqueness_checks(df::AbstractDataFrame, cols,
         col_idxs = index(df)[cols]
     elseif cols isa UserColOrdering
         by_or_lt_set = is_complex(cols)
-        col_idxs = index(df)[_getcol(cols)]
+        col_idxs = [index(df)[_getcol(cols)]]
     # Mix of ColOrdering and other ColumnSelectors
     else
         @assert cols isa AbstractVector
