@@ -14,6 +14,9 @@
 #                  which allows a user to specify column specific orderings
 #                  with "order(column, rev=true, ...)"
 
+import SortingAlgorithms.DataStructures.FasterForward,
+       SortingAlgorithms.DataStructures.FasterReverse
+
 struct UserColOrdering{T<:ColumnIndex}
     col::T
     kwargs
@@ -732,13 +735,22 @@ The complexity checks exploit Base.Order's way of constructing Order objects.
 DirectOrdering is by definition an order that uses isless and identity as it's
 lt and by functions, so they are not complex. The By and Lt types have
 attributes storing the defined by and lt functions respectively, simple identity
-checks are enough.  ReverseOrderings wrap another type of ordering, so we
+checks are enough. ReverseOrderings wrap another type of ordering, so we
 perform the check on the wraped type.
 =#
-is_complex(o::Order.DirectOrdering) = false
+is_complex(o::Union{DirectOrdering, FasterForward, FasterReverse}) = false
 is_complex(o::By) = o.by !== identity
 is_complex(o::Lt) = o.lt !== isless
 is_complex(o::ReverseOrdering) = is_complex(o.fwd)
+
+function is_complex(o::DFPerm)
+    if o.ord isa Ordering
+        return is_complex(o.ord)
+    elseif o.ord isa Tuple
+        return any(is_complex(ordering) for ordering = o.ord)
+    end
+end
+
 function is_complex(o::Ordering)
     throw(ArgumentError("Ordering type $(typeof(o)) is currently not supported" *
                         "with `checkunique=true`"))

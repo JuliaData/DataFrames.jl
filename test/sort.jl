@@ -1,6 +1,6 @@
 module TestSort
 
-using DataFrames, Random, Test, CategoricalArrays
+using DataFrames, Random, Test, CategoricalArrays, SortingAlgorithms
 
 @testset "standard tests" begin
     dv1 = [9, 1, 8, missing, 3, 3, 7, missing]
@@ -154,22 +154,26 @@ end
 
     # Complex Orderings: ord(lt, by, rev, order)
     orderings = Dict(
-            :cmplex => Base.ord(isless, x -> -x, false, Base.Forward), # Complex ∴ disallowed
-            :simple => Base.ord(isless, identity, true, Base.Forward), # Simple ∴ allowed
+            :cmplex => Base.Order.ord(isless, x -> -x, false), # Complex ∴ disallowed
+            :simple => Base.Order.ord(isless, identity, true), # Simple ∴ allowed
             # Creating Order objects with their constructors directly
             :by_simple => Base.Order.By(identity), # Simple ∴ allowed
             :by_cmplex => Base.Order.By(x -> x), # Disallowed since x -> x !== identity
             :lt_simple => Base.Order.Lt(isless), # Simple ∴ allowed
             :lt_cmplex => Base.Order.Lt(<), # Disallowed since isless !== <
             # A test for robustness wrt complex orderings
-            :sneaky_lt => Base.Order.ord(<, identity, true) # Disallowed
+            :sneaky_lt => Base.Order.ord(<, identity, true), # Disallowed
+            # Tests with other subtypes of Ordering
+            :perm => Base.Order.Perm(Base.Order.ForwardOrdering(), dv3), # Perm not supported
+            :fforward => SortingAlgorithms.DataStructures.FasterForward(), # Simple ∴ allowed
+            :freverse => SortingAlgorithms.DataStructures.FasterReverse() # Simple ∴ allowed
         )
 
     ords = [
         order(:dv4, lt = isless, by = identity, rev=true),
         order(:dv4, lt = >),
         order(:dv4, by = x -> -x),
-        order(:dv4, lt = isless, by = x -> -x)
+        order(:dv4, lt = isless, by = x -> -x),
     ]
 
     ## logic:
@@ -195,7 +199,7 @@ end
     @test issorted(d, [order(:dv3, rev=false), order(:dv4, rev=true)], checkunique=true)
     @test issorted(d, [order(:dv3, by=identity), order(:dv4, rev=true)], checkunique=true)
     @test_throws ArgumentError issorted(d, [order(:dv1, by = round), order(:dv2, rev=true)], checkunique=true)
-    # Orderings defined via Base.ord
+    # Orderings defined via Base.ord & Base.Order subtypes
     @test issorted(d, :dv4, order=Base.Reverse, checkunique=true)
     @test issorted(d, :dv4, order=orderings[:simple], checkunique=true)
     @test_throws ArgumentError issorted(d, :dv3, order=orderings[:cmplex], checkunique=true)
@@ -204,12 +208,16 @@ end
     @test issorted(d, :dv3, order=orderings[:lt_simple], checkunique=true)
     @test_throws ArgumentError issorted(d, :dv3, order=orderings[:lt_cmplex], checkunique=true)
     @test_throws ArgumentError issorted(d, :dv3, order=orderings[:sneaky_lt], checkunique=true)
+    @test issorted(d, :dv3, order=orderings[:fforward], checkunique=true)
+    @test issorted(d, :dv4, order=orderings[:freverse], checkunique=true)
+    @test_throws ArgumentError issorted(d, :dv3, order=orderings[:perm], checkunique=true)
     # UserColOrderings
     @test issorted(d, ords[1], checkunique=true)
     @test_throws ArgumentError issorted(d, ords[2], checkunique=true)
 
     # Checking correct complex order detection
     @test DataFrames.is_complex.(ords) == [false, true, true, true]
+    @test DataFrames.is_complex(DataFrames.DFPerm([orderings[:cmplex], orderings[:by_cmplex]], d[!, [:dv3, :dv4]])) == true
 
     # sort
     @test_throws ArgumentError sort(d, :dv1, checkunique=true)
