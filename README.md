@@ -3,6 +3,7 @@ DataFrames.jl
 
 [![Coverage Status](http://codecov.io/github/JuliaData/DataFrames.jl/coverage.svg?branch=main)](http://codecov.io/github/JuliaData/DataFrames.jl?branch=main)
 [![CI Testing](https://github.com/JuliaData/DataFrames.jl/workflows/CI/badge.svg)](https://github.com/JuliaData/DataFrames.jl/actions?query=workflow%3ACI+branch%3Amain)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7632427.svg)](https://doi.org/10.5281/zenodo.7632427)
 
 Tools for working with tabular data in Julia.
 
@@ -29,3 +30,5 @@ that is available on GitHub.
 
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stable-url]: http://dataframes.juliadata.org/stable/
+
+**Citing**: For now, the best way of citing this package is using the [Zenodo link](https://doi.org/10.5281/zenodo.7632427).

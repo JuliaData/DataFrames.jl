@@ -59,31 +59,8 @@ feature.
     However, in some scenarios users might want to avoid this extra
     precompilaion effort to reduce the time needed to build the package and
     later to load it. To disable precompilation of DataFrames.jl in your current
-    project you need to install the
-    [SnoopPrecompile.jl](https://timholy.github.io/SnoopCompile.jl/stable/snoop_pc/)
-    and [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl)
-    packages and then run the following code:
-    ```
-    using SnoopPrecompile, Preferences
-    Preferences.set_preferences!(SnoopPrecompile,
-        "skip_precompile" => union(Preferences.load_preference(SnoopPrecompile,
-                                                               "skip_precompile",
-                                                               String[]),
-                                   ["DataFrames"]);
-        force=true)
-    ```
-    If you later would want to re-enable precompilation of DataFrames.jl you
-    can do it using the following commands:
-    ```
-    using SnoopPrecompile, Preferences
-    Preferences.set_preferences!(SnoopPrecompile,
-        "skip_precompile" =>
-        filter(!=("DataFrames"),
-               Preferences.load_preference(SnoopPrecompile,
-                                           "skip_precompile",
-                                           String[]));
-        force=true)
-    ```
+    project follow the instructions given in the
+    [PrecompileTools.jl documentation](https://julialang.github.io/PrecompileTools.jl/stable/#Package-developers:-reducing-the-cost-of-precompilation-during-development)
 
 ## Constructors and Basic Utility Functions
 

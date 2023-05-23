@@ -45,14 +45,14 @@ fromcolumns(x, names; copycols::Union{Nothing, Bool}=nothing) =
 fromcolumns(x::Tables.CopiedColumns, names; copycols::Union{Nothing, Bool}=nothing) =
     fromcolumns(Tables.source(x), names; copycols=something(copycols, false))
 
-function DataFrame(x::T; copycols::Union{Nothing, Bool}=nothing) where {T}
+function DataFrame(x; copycols::Union{Nothing, Bool}=nothing)
     # here we handle eltypes not specific enough to be dispatched
     # to other DataFrames constructors taking vector of `Pair`s
     if !Tables.istable(x) && x isa AbstractVector && !isempty(x) &&
         (all(v -> v isa Pair{Symbol, <:AbstractVector}, x) ||
          all(v -> v isa Pair{<:AbstractString, <:AbstractVector}, x))
         df = DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],
-                        copycols=something(copycols, true))
+                       copycols=something(copycols, true))
     else
         cols = Tables.columns(x)
         names = collect(Symbol, Tables.columnnames(cols))
@@ -61,6 +61,14 @@ function DataFrame(x::T; copycols::Union{Nothing, Bool}=nothing) where {T}
     _copy_all_all_metadata!(df, x)
     return df
 end
+
+# the logic here relies on the fact that Tables.CopiedColumns
+# is the only exception for default copycols value 
+DataFrame(x, cnames::AbstractVector; makeunique::Bool=false,
+          copycols::Union{Nothing, Bool}=nothing) =
+    rename!(DataFrame(x, copycols=something(copycols, !(x isa Tables.CopiedColumns))),
+            _name2symbol(cnames),
+            makeunique=makeunique)
 
 function Base.append!(df::DataFrame, table; cols::Symbol=:setequal,
                       promote::Bool=(cols in [:union, :subset]))
@@ -113,4 +121,14 @@ TableTraits.isiterabletable(x::AbstractDataFrame) = true
     else
         return res
     end
+end
+
+@inline function Tables.subset(itr::DataFrameRows, inds; viewhint::Union{Bool, Nothing}=nothing)
+    res = Tables.subset(parent(itr), inds, viewhint=viewhint)
+    return res isa AbstractDataFrame ? eachrow(res) : res
+end
+
+@inline function Tables.subset(itr::DataFrameColumns, inds; viewhint::Union{Bool, Nothing}=nothing)
+    res = Tables.subset(parent(itr), inds, viewhint=viewhint)
+    return res isa AbstractDataFrame ? eachcol(res) : res
 end

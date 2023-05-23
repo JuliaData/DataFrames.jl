@@ -112,7 +112,7 @@ const TRANSFORMATION_COMMON_RULES =
     As a special rule, with the `cols => function` and `cols => function =>
     target_cols` syntaxes, if `cols` is wrapped in an `AsTable`
     object then a `NamedTuple` containing columns selected by `cols` is passed to
-    `function`. The documentation of [`DataFrames.table_transformation`][@ref] provides
+    `function`. The documentation of [`DataFrames.table_transformation`](@ref) provides
     more information about this functionality, in particular covering performance
     considerations.
 
@@ -218,7 +218,7 @@ const TRANSFORMATION_COMMON_RULES =
     also holds for `DataFrame` inputs.
 
     In order to improve the performance of the operations some transformations
-    invoke optimized implementation, see [`table_transformation`](@ref) for details.
+    invoke optimized implementation, see [`DataFrames.table_transformation`](@ref) for details.
     """
 
 broadcast_pair(df::AbstractDataFrame, @nospecialize(p::Any)) = p

@@ -1,4 +1,4 @@
-# Categorical Data
+# [Categorical Data](@id man-categorical)
 
 Often, we have to deal with columns in a data frame that take on a small number
 of levels:

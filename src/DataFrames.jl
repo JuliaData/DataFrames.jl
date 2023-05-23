@@ -10,7 +10,7 @@ using Markdown
 using PrettyTables
 using Random
 using Tables: ByRow
-import SnoopPrecompile
+import PrecompileTools
 import SentinelArrays
 import InlineStrings
 
@@ -39,6 +39,7 @@ import DataAPI,
        DataAPI.colmetadata!,
        DataAPI.deletecolmetadata!,
        DataAPI.emptycolmetadata!,
+       DataAPI.rownumber,
        Tables,
        Tables.columnindex,
        Future.copy!

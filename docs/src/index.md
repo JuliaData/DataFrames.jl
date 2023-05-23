@@ -19,6 +19,10 @@ other packages you can check-out the following resources
   and [ODSC Europe 2021](https://github.com/bkamins/ODSC-EUROPE-2021) tutorials
 * [DataFrames.jl showcase](https://github.com/bkamins/DataFrames-Showcase)
 
+If you prefer to learn DataFrames.jl from a book you can consider reading:
+* [Julia for Data Analysis](https://github.com/bkamins/JuliaForDataAnalysis);
+* [Julia Data Science](https://juliadatascience.io/).
+
 ## What is DataFrames.jl?
 
 DataFrames.jl provides a set of tools for working with tabular data in Julia.
