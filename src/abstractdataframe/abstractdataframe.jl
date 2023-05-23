@@ -1779,9 +1779,13 @@ Base.vcat(dfs::AbstractDataFrame...;
 Efficiently reduce the given vector or tuple of `AbstractDataFrame`s with
 `vcat`.
 
+See the [`vcat`](@ref) docstring for a description of keyword arguments `cols`
+and `source`.
+
 The keyword argument `init` is the initial value to use in the reductions.
-It must be a data frame that has zero rows. It is not included when specifying
-`source` keyword argument and when determining metadata of the produced data frame.
+It must be a data frame that has zero rows. It is not taken into account when
+computing the value of the `source` column nor when determining metadata
+of the produced data frame.
 
 The column order, names, and types of the resulting `DataFrame`, and the
 behavior of `cols` and `source` keyword arguments follow the rules specified for
