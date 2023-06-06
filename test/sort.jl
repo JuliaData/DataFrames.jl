@@ -164,7 +164,10 @@ end
             # A test for robustness wrt complex orderings
             :sneaky_lt => Base.Order.ord(<, identity, true), # Disallowed
             # Tests with other subtypes of Ordering
-            :perm => Base.Order.Perm(Base.Order.ForwardOrdering(), dv3), # Perm not supported
+            :perm_simple => Base.Order.Perm(Base.Order.ForwardOrdering(), dv3),
+            :perm_cmplex => Base.Order.Perm(
+                Base.Order.ord(isless, x -> -x, false), dv3
+            ),
             :fforward => SortingAlgorithms.DataStructures.FasterForward(), # Simple ∴ allowed
             :freverse => SortingAlgorithms.DataStructures.FasterReverse() # Simple ∴ allowed
         )
@@ -175,6 +178,9 @@ end
         order(:dv4, by = x -> -x),
         order(:dv4, lt = isless, by = x -> -x),
     ]
+
+    # To test uncovered subtypes of Ordering throw error
+    struct ArbitraryOrderSubtype <: Base.Sort.Ordering end
 
     ## logic:
     ### Test each every selector in the following order:
@@ -208,9 +214,11 @@ end
     @test issorted(d, :dv3, order=orderings[:lt_simple], checkunique=true)
     @test_throws ArgumentError issorted(d, :dv3, order=orderings[:lt_cmplex], checkunique=true)
     @test_throws ArgumentError issorted(d, :dv3, order=orderings[:sneaky_lt], checkunique=true)
+    @test_throws ArgumentError issorted(d, :dv3, order=orderings[:sneaky_lt], checkunique=true)
     @test issorted(d, :dv3, order=orderings[:fforward], checkunique=true)
     @test issorted(d, :dv4, order=orderings[:freverse], checkunique=true)
-    @test_throws ArgumentError issorted(d, :dv3, order=orderings[:perm], checkunique=true)
+    @test issorted(d, :dv3, order=orderings[:perm_simple], checkunique=true)
+    @test_throws ArgumentError issorted(d, :dv3, order=orderings[:perm_cmplex], checkunique=true)
     # UserColOrderings
     @test issorted(d, ords[1], checkunique=true)
     @test_throws ArgumentError issorted(d, ords[2], checkunique=true)
@@ -218,6 +226,9 @@ end
     # Checking correct complex order detection
     @test DataFrames.is_complex.(ords) == [false, true, true, true]
     @test DataFrames.is_complex(DataFrames.DFPerm([orderings[:cmplex], orderings[:by_cmplex]], d[!, [:dv3, :dv4]])) == true
+    @test DataFrames.is_complex(DataFrames.DFPerm(orderings[:cmplex], d[!, [:dv3]])) == true
+    # Error on unsupported Ordering subtypes
+    @test_throws ArgumentError DataFrames.is_complex(ArbitraryOrderSubtype())
 
     # sort
     @test_throws ArgumentError sort(d, :dv1, checkunique=true)

@@ -717,16 +717,10 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
     return sort!(df, _alg, ord)
 end
 
+## sort! does not support uniqueness checks since they can't be carried out
+# without knowledge of which columns are to be sorted.
 function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm,
-                    o::Base.Sort.Ordering, checkunique::Bool=false)
-    if checkunique
-        is_complex(o) &&
-            throw(ArgumentError("Orderings created with lt or by set to " *
-                                "something other than isless and identity " *
-                                "respectively, along checkunique=true are not supported."))
-        allunique(df, col_idxs) ||
-            throw(ArgumentError("Non-unique elements found. Multiple orders are valid."))
-    end
+                    o::Base.Sort.Ordering)
     permute!(df, _sortperm(df, a, o))
 end
 
@@ -742,6 +736,7 @@ is_complex(o::Union{DirectOrdering, FasterForward, FasterReverse}) = false
 is_complex(o::By) = o.by !== identity
 is_complex(o::Lt) = o.lt !== isless
 is_complex(o::ReverseOrdering) = is_complex(o.fwd)
+is_complex(o::Perm) = is_complex(o.order)
 
 function is_complex(o::DFPerm)
     if o.ord isa Ordering
@@ -752,8 +747,8 @@ function is_complex(o::DFPerm)
 end
 
 function is_complex(o::Ordering)
-    throw(ArgumentError("Ordering type $(typeof(o)) is currently not supported" *
-                        "with `checkunique=true`"))
+    throw(ArgumentError("Uniqueness checks are currently not supported with " *
+                        "Ordering type $(typeof(o))"))
 end
 
 function is_complex(o::UserColOrdering)
