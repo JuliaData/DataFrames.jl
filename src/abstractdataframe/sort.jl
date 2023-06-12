@@ -717,7 +717,7 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
     return sort!(df, _alg, ord)
 end
 
-## sort! does not support uniqueness checks since they can't be carried out
+# this sort! method does not support uniqueness checks since they can't be carried out
 # without knowledge of which columns are to be sorted.
 function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm,
                     o::Base.Sort.Ordering)
