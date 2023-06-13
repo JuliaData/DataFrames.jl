@@ -724,14 +724,13 @@ function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm,
     permute!(df, _sortperm(df, a, o))
 end
 
-#= Functions to verify if an Ordering has user-defined by or lt functions
-The complexity checks exploit Base.Order's way of constructing Order objects.
-DirectOrdering is by definition an order that uses isless and identity as it's
-lt and by functions, so they are not complex. The By and Lt types have
-attributes storing the defined by and lt functions respectively, simple identity
-checks are enough. ReverseOrderings wrap another type of ordering, so we
-perform the check on the wraped type.
-=#
+# Functions to verify whether an Ordering has user-defined `by` or `lt` functions
+# The complexity checks exploit `Base.Order`'s way of constructing `Order` objects.
+# `DirectOrdering` is by definition an order that uses `isless` and `identity` as its
+# `lt` and `by` functions, so they are not complex. The `By` and `Lt` types have
+# attributes storing the defined `by` and `lt` functions respectively, simple identity
+# checks are enough. `ReverseOrdering`s wrap another type of ordering, so we
+# perform the check on the wrapped type.
 is_complex(o::Union{DirectOrdering, FasterForward, FasterReverse}) = false
 is_complex(o::By) = o.by !== identity
 is_complex(o::Lt) = o.lt !== isless
