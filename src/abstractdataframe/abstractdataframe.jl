@@ -1777,10 +1777,19 @@ Base.vcat(dfs::AbstractDataFrame...;
            cols::Union{Symbol, AbstractVector{Symbol},
                        AbstractVector{<:AbstractString}}=:setequal,
            source::Union{Nothing, Symbol, AbstractString,
-                         Pair{<:Union{Symbol, AbstractString}, <:AbstractVector}}=nothing)
+                         Pair{<:Union{Symbol, AbstractString}, <:AbstractVector}}=nothing,
+           init::AbstractDataFrame=DataFrame())
 
 Efficiently reduce the given vector or tuple of `AbstractDataFrame`s with
 `vcat`.
+
+See the [`vcat`](@ref) docstring for a description of keyword arguments `cols`
+and `source`.
+
+The keyword argument `init` is the initial value to use in the reductions.
+It must be a data frame that has zero rows. It is not taken into account when
+computing the value of the `source` column nor when determining metadata
+of the produced data frame.
 
 The column order, names, and types of the resulting `DataFrame`, and the
 behavior of `cols` and `source` keyword arguments follow the rules specified for
@@ -1854,8 +1863,14 @@ function Base.reduce(::typeof(vcat),
                      cols::Union{Symbol, AbstractVector{Symbol},
                                  AbstractVector{<:AbstractString}}=:setequal,
                      source::Union{Nothing, SymbolOrString,
-                                   Pair{<:SymbolOrString, <:AbstractVector}}=nothing)
-    res = _vcat(AbstractDataFrame[df for df in dfs if ncol(df) != 0]; cols=cols)
+                                   Pair{<:SymbolOrString, <:AbstractVector}}=nothing,
+                     init::AbstractDataFrame=DataFrame())
+    if nrow(init) > 0
+        throw(ArgumentError("init data frame must have zero rows"))
+    end
+    dfs_init = AbstractDataFrame[emptycolmetadata!(copy(init))]
+    append!(dfs_init, dfs)
+    res = _vcat(AbstractDataFrame[df for df in dfs_init if ncol(df) != 0]; cols=cols)
     # only handle table-level metadata, as column-level metadata was done in _vcat
     _merge_matching_table_note_metadata!(res, dfs)
 
@@ -1899,8 +1914,13 @@ end
 # definition needed to avoid dispatch ambiguity
 Base.reduce(::typeof(vcat),
             dfs::SentinelArrays.ChainedVector{T, A} where {T<:AbstractDataFrame,
-                                                           A<:AbstractVector{T}}) =
-    reduce(vcat, collect(AbstractDataFrame, dfs))
+                                                           A<:AbstractVector{T}};
+            cols::Union{Symbol, AbstractVector{Symbol},
+                        AbstractVector{<:AbstractString}}=:setequal,
+            source::Union{Nothing, SymbolOrString,
+                            Pair{<:SymbolOrString, <:AbstractVector}}=nothing,
+            init::AbstractDataFrame=DataFrame()) =
+    reduce(vcat, collect(AbstractDataFrame, dfs), cols=cols, source=source, init=init)
 
 function _vcat(dfs::AbstractVector{AbstractDataFrame};
                cols::Union{Symbol, AbstractVector{Symbol},
