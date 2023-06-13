@@ -746,8 +746,8 @@ function is_complex(o::DFPerm)
 end
 
 function is_complex(o::Ordering)
-    throw(ArgumentError("Uniqueness checks are currently not supported with " *
-                        "Ordering type $(typeof(o))"))
+    throw(ArgumentError("The use of the keyword `checkunique` is currently " *
+                        "not supported with Ordering type $(typeof(o))"))
 end
 
 function is_complex(o::UserColOrdering)

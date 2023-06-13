@@ -154,22 +154,22 @@ end
 
     # Complex Orderings: ord(lt, by, rev, order)
     orderings = Dict(
-            :cmplex => Base.Order.ord(isless, x -> -x, false), # Complex ∴ disallowed
-            :simple => Base.Order.ord(isless, identity, true), # Simple ∴ allowed
-            # Creating Order objects with their constructors directly
-            :by_simple => Base.Order.By(identity), # Simple ∴ allowed
-            :by_cmplex => Base.Order.By(x -> x), # Disallowed since x -> x !== identity
-            :lt_simple => Base.Order.Lt(isless), # Simple ∴ allowed
-            :lt_cmplex => Base.Order.Lt(<), # Disallowed since isless !== <
-            # A test for robustness wrt complex orderings
-            :sneaky_lt => Base.Order.ord(<, identity, true), # Disallowed
-            # Tests with other subtypes of Ordering
-            :perm_simple => Base.Order.Perm(Base.Order.ForwardOrdering(), dv3),
-            :perm_cmplex => Base.Order.Perm(
-                Base.Order.ord(isless, x -> -x, false), dv3
-            ),
-            :fforward => SortingAlgorithms.DataStructures.FasterForward(), # Simple ∴ allowed
-            :freverse => SortingAlgorithms.DataStructures.FasterReverse() # Simple ∴ allowed
+        :cmplex => Base.Order.ord(isless, x -> -x, false), # Complex ∴ disallowed
+        :simple => Base.Order.ord(isless, identity, true), # Simple ∴ allowed
+        # Creating Order objects with their constructors directly
+        :by_simple => Base.Order.By(identity), # Simple ∴ allowed
+        :by_cmplex => Base.Order.By(x -> x), # Disallowed since x -> x !== identity
+        :lt_simple => Base.Order.Lt(isless), # Simple ∴ allowed
+        :lt_cmplex => Base.Order.Lt(<), # Disallowed since isless !== <
+        # A test for robustness wrt complex orderings
+        :sneaky_lt => Base.Order.ord(<, identity, true), # Disallowed
+        # Tests with other subtypes of Ordering
+        :perm_simple => Base.Order.Perm(Base.Order.ForwardOrdering(), dv3),
+        :perm_cmplex => Base.Order.Perm(
+            Base.Order.ord(isless, x -> -x, false), dv3
+        ),
+        :fforward => SortingAlgorithms.DataStructures.FasterForward(), # Simple ∴ allowed
+        :freverse => SortingAlgorithms.DataStructures.FasterReverse() # Simple ∴ allowed
         )
 
     ords = [
