@@ -1,6 +1,6 @@
 module TestSort
 
-using DataFrames, Random, Test, CategoricalArrays
+using DataFrames, Random, Test, CategoricalArrays, InlineStrings
 
 @testset "standard tests" begin
     dv1 = [9, 1, 8, missing, 3, 3, 7, missing]
