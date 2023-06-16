@@ -1,6 +1,6 @@
 module TestSort
 
-using DataFrames, Random, Test, CategoricalArrays, SortingAlgorithms
+using DataFrames, Random, Test, CategoricalArrays, SortingAlgorithms, InlineStrings
 
 @testset "standard tests" begin
     dv1 = [9, 1, 8, missing, 3, 3, 7, missing]
@@ -529,6 +529,24 @@ end
     sort!(dfv, :x4)
     @test issorted(dfv)
     @test issorted(df[1:5, :])
+end
+
+@testset "issue #3340, mostly downstream testing for SortingAlgorithms.jl and Base.Sort" begin
+    Random.seed!(1234)
+    for i in 1:10
+        df = DataFrame(units = round.(Int, 1 ./ rand(2000)),
+                       sku = [rand() < .084 ? missing : String31(randstring(8)) for _ in 1:2000])
+        @test issorted(sort(select(df, [:sku, :units]), :sku).sku)
+        @test issorted(sort(select(df, [:sku, :units]), :units).units)
+        @test issorted(sort(select(df, [:sku, :units]).sku))
+        @test issorted(sort(df, :sku).sku)
+
+        o = Base.Order.Perm(Base.Order.ForwardOrdering(), df.sku)
+        a = DataFrames.SortingAlgorithms.TimSortAlg()
+        x = collect(1:nrow(df))
+        sort!(x, a, o)
+        @test issorted(df[x, :sku])
+    end
 end
 
 end # module
