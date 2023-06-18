@@ -741,8 +741,9 @@ function is_complex(o::DFPerm)
     if o.ord isa Ordering
         return is_complex(o.ord)
     elseif o.ord isa Tuple
-        return any(is_complex(ordering) for ordering = o.ord)
+        return any(is_complex(ordering) for ordering in o.ord)
     end
+    throw(ArgumentError("unsupported ord type"))
 end
 
 function is_complex(o::Ordering)
