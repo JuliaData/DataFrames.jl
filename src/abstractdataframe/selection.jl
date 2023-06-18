@@ -118,16 +118,17 @@ const TRANSFORMATION_COMMON_RULES =
 
     What is allowed for `function` to return is determined by the `target_cols` value:
     1. If both `cols` and `target_cols` are omitted (so only a `function` is passed),
-       then returning a data frame, a matrix, a `NamedTuple`, or a `DataFrameRow` will
+       then returning a data frame, a matrix, a `NamedTuple`, `Tables.AbstractRow`
+       or a `DataFrameRow` will
        produce multiple columns in the result. Returning any other value produces
        a single column.
     2. If `target_cols` is a `Symbol` or a string then the function is assumed to return
        a single column. In this case returning a data frame, a matrix, a `NamedTuple`,
-       or a `DataFrameRow` raises an error.
+       `Tables.AbstractRow`, or a `DataFrameRow` raises an error.
     3. If `target_cols` is a vector of `Symbol`s or strings or `AsTable` it is assumed
        that `function` returns multiple columns.
        If `function` returns one of `AbstractDataFrame`, `NamedTuple`, `DataFrameRow`,
-       `AbstractMatrix` then rules described in point 1 above apply.
+       `Tables.AbstractRow`, `AbstractMatrix` then rules described in point 1 above apply.
        If `function` returns an `AbstractVector` then each element of this vector must
        support the `keys` function, which must return a collection of `Symbol`s, strings
        or integers; the return value of `keys` must be identical for all elements.
@@ -610,6 +611,8 @@ function _gen_colnames(@nospecialize(res), newname::Union{AbstractVector{Symbol}
                                                           Type{AsTable}, Nothing})
     if res isa AbstractMatrix
         colnames = gennames(size(res, 2))
+    elseif res isa Tables.AbstractRow
+        colnames = Tables.columnnames(res)
     else
         colnames = propertynames(res)
     end
@@ -630,7 +633,7 @@ end
 
 function _insert_row_multicolumn(newdf::DataFrame, df::AbstractDataFrame,
                                  allow_resizing_newdf::Ref{Bool}, colnames::AbstractVector{Symbol},
-                                 @nospecialize(res::Union{NamedTuple, DataFrameRow}))
+                                 @nospecialize(res::Union{NamedTuple, DataFrameRow, Tables.AbstractRow}))
     if ncol(newdf) == 0
         # if allow_resizing_newdf[] is false we know this is select or transform
         rows = allow_resizing_newdf[] ? 1 : nrow(df)
@@ -770,6 +773,15 @@ function _add_multicol_res(res::DataFrameRow, newdf::DataFrame, df::AbstractData
     _insert_row_multicolumn(newdf, df, allow_resizing_newdf, colnames, res)
 end
 
+function _add_multicol_res(res::Tables.AbstractRow, newdf::DataFrame, df::AbstractDataFrame,
+    colnames::AbstractVector{Symbol},
+    allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
+    col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
+    copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}},
+    column_to_copy::BitVector)
+    _insert_row_multicolumn(newdf, df, allow_resizing_newdf, colnames, res)
+end
+
 function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFrame,
                            transformed_cols::Set{Symbol}, copycols::Bool,
                            allow_resizing_newdf::Ref{Bool},
@@ -808,12 +820,14 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
                 newres[!, prepend ? Symbol("x", n) : Symbol(n)] = [x[n] for x in res]
             end
             res = newres
-        elseif !(res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix})
+        elseif !(res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix,
+                               Tables.AbstractRow})
             res = Tables.columntable(res)
         end
     end
 
-    if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
+    if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix,
+                     Tables.AbstractRow}
         if newname isa Symbol
             throw(ArgumentError("Table returned but a single output column was expected"))
         end

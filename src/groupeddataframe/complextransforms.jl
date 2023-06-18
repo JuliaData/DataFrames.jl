@@ -3,6 +3,7 @@ _nrow(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}) =
     isempty(x) ? 0 : length(x[1])
 _ncol(df::AbstractDataFrame) = ncol(df)
 _ncol(x::Union{NamedTuple, DataFrameRow}) = length(x)
+_ncol(x::Tables.AbstractRow) = length(Tables.columnnames(x))
 
 function _combine_multicol((firstres,)::Ref{Any}, wfun::Ref{Any}, gd::GroupedDataFrame,
                            wincols::Ref{Any}, threads::Bool)
@@ -25,7 +26,8 @@ function _combine_with_first((first,)::Ref{Any},
                              (incols,)::Ref{Any},
                              firstmulticol::Bool, idx_agg::Vector{Int},
                              threads::Bool)
-    @assert first isa Union{NamedTuple, DataFrameRow, AbstractDataFrame}
+    @assert first isa Union{NamedTuple, DataFrameRow, AbstractDataFrame,
+                            Tables.AbstractRow}
     @assert f isa Base.Callable
     @assert incols isa Union{Nothing, AbstractVector, Tuple, NamedTuple}
     extrude = false
@@ -40,6 +42,9 @@ function _combine_with_first((first,)::Ref{Any},
     elseif first isa DataFrameRow
         n = lgd
         eltys = [eltype(parent(first)[!, i]) for i in parentcols(index(first))]
+    elseif first isa Tables.AbstractRow
+        n = lgd
+        eltys = [typeof Tables.getcolumn(first, name) for name in Tables.columnames(first)]
     elseif !firstmulticol && first[1] isa Union{AbstractArray{<:Any, 0}, Ref}
         extrude = true
         first = wrap_row(first[1], firstcoltype(firstmulticol))
@@ -63,7 +68,9 @@ function _combine_with_first((first,)::Ref{Any},
     let eltys=eltys, n=n # Workaround for julia#15276
         initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
     end
-    targetcolnames = tuple(propertynames(first)...)
+    targetcolnames = first isa Tables.AbstractRow ?
+                     tuple(Tables.columnnames(first)...):
+                     tuple(propertynames(first)...)
     if !extrude && first isa Union{AbstractDataFrame,
                                    NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
         outcols, finalcolnames = _combine_tables_with_first!(first, initialcols, idx, 1, 1,
@@ -100,7 +107,7 @@ function fill_row!(row, outcols::NTuple{N, AbstractVector},
     end
     @inbounds for j in colstart:length(outcols)
         col = outcols[j]
-        val = row[j]
+        val = row isa Tables.AbstractRow ? Tables.getcolumn(row, j) : row[j]
         S = typeof(val)
         T = eltype(col)
         if S <: T || promote_type(S, T) <: T
@@ -241,7 +248,7 @@ function _combine_rows_with_first!((firstrow,)::Ref{Any},
                                    (colnames,)::Ref{Any},
                                    firstmulticol::Bool,
                                    threads::Bool)
-    @assert firstrow isa Union{NamedTuple, DataFrameRow}
+    @assert firstrow isa Union{NamedTuple, DataFrameRow, Tables.AbstractRow}
     @assert outcols isa NTuple{N, AbstractVector} where N
     @assert f isa Base.Callable
     @assert incols isa Union{Nothing, AbstractVector, Tuple, NamedTuple}

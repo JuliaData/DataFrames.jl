@@ -3,6 +3,7 @@
 _getnames(x::NamedTuple) = propertynames(x)
 _getnames(x::AbstractDataFrame) = _names(x)
 _getnames(x::DataFrameRow) = _names(x)
+_getnames(x::Tables.AbstractRow) = Tables.columnnames(x)
 _getnames(x::GroupKey) = parent(x).cols
 
 # this function is needed as == does not allow for comparison between tuples and vectors

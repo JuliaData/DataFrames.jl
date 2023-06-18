@@ -8,7 +8,9 @@ firstcoltype(firstmulticol::Bool) =
 
 # Wrapping automatically adds column names when the value returned
 # by the user-provided function lacks them
-wrap(x::Union{AbstractDataFrame, DataFrameRow}) = x
+wrap(x::AbstractDataFrame) = x
+wrap(x::DataFrameRow) = x
+wrap(x::Tables.AbstractRow) = x
 wrap(x::NamedTuple) = x
 function wrap(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}})
     if !isempty(x)
@@ -45,6 +47,10 @@ wrap_table(x::AbstractVector, ::FirstMultiCol) = throw(ArgumentError(ERROR_COL_C
 
 wrap_row(x::DataFrameRow, ::FirstSingleCol) = throw(ArgumentError(ERROR_COL_COUNT))
 wrap_row(x::DataFrameRow, ::FirstMultiCol) = wrap(x)
+
+wrap_row(x::Tables.AbstractRow, ::FirstSingleCol) = throw(ArgumentError(ERROR_COL_COUNT))
+wrap_row(x::Tables.AbstractRow, ::FirstMultiCol) = wrap(x)
+
 wrap_row(x::Any, ::FirstSingleCol) = wrap(x)
 # NamedTuple is not possible in this branch
 wrap_row(x::Any, ::FirstMultiCol) = throw(ArgumentError(ERROR_COL_COUNT))
