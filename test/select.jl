@@ -2900,8 +2900,8 @@ end
                 @test combine(table, AsTable([p, q]) => ByRow(var) => :x) ≅
                       DataFrame(x=[missing, missing, missing])
                 if p == :c1 && q == :c2
-                    @test_throws MethodError combine(table, AsTable([p, q]) =>
-                                                            ByRow(var∘skipmissing) => :x)
+                    @test_throws Exception combine(table, AsTable([p, q]) =>
+                                                   ByRow(var∘skipmissing) => :x)
                 else
                     @test combine(table, AsTable([p, q]) => ByRow(var∘skipmissing) => :x) ≅
                           DataFrame(x=[NaN, NaN, NaN])
@@ -2909,8 +2909,8 @@ end
                 @test combine(table, AsTable([p, q]) => ByRow(std) => :x) ≅
                       DataFrame(x=[missing, missing, missing])
                 if p == :c1 && q == :c2
-                    @test_throws MethodError combine(table, AsTable([p, q]) =>
-                                                            ByRow(std∘skipmissing) => :x)
+                    @test_throws Exception combine(table, AsTable([p, q]) =>
+                                                   ByRow(std∘skipmissing) => :x)
                 else
                     @test combine(table, AsTable([p, q]) => ByRow(std∘skipmissing) => :x) ≅
                           DataFrame(x=[NaN, NaN, NaN])

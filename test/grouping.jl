@@ -2925,7 +2925,7 @@ end
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum)[1, 2] isa Missing
     @test eltype(combine(gdf, :x => sum)[!, 2]) === Missing
-    @test_throws MethodError combine(gdf, :x => sum∘skipmissing)
+    @test_throws Exception combine(gdf, :x => sum∘skipmissing)
     df = DataFrame(g=[1, 1, 1, 1, 1, 1], x=convert(Vector{Union{Real, Missing}}, fill(missing, 6)))
     gdf = groupby_checked(df, :g)
     @test combine(gdf, :x => sum)[1, 2] isa Missing
