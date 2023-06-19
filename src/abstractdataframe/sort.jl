@@ -14,6 +14,9 @@
 #                  which allows a user to specify column specific orderings
 #                  with "order(column, rev=true, ...)"
 
+import SortingAlgorithms.DataStructures.FasterForward,
+       SortingAlgorithms.DataStructures.FasterReverse
+
 struct UserColOrdering{T<:ColumnIndex}
     col::T
     kwargs
@@ -341,15 +344,24 @@ If `rev` is `true`, reverse sorting is performed. To enable reverse sorting only
 for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
 corresponding column index (see example below).
 
+Since having repeated elements makes multiple sorting orders valid, the
+`checkunique` keyword allows for the situation to be caught. If `checkunique` is
+`true` and duplicate elements are found an error will be thrown. The use of the
+`checkunique` keyword is only supported when neither the `by` nor the `lt`
+keywords are being used. Similarly, the use of `order(...)` clauses that specify
+either `by` or `lt` are not supported, but specifying `rev` by itself is
+allowed.
+
 The `by` keyword allows providing a function that will be applied to each
 cell before comparison; the `lt` keyword allows providing a custom "less
 than" function. If both `by` and `lt` are specified, the `lt` function is
 applied to the result of the `by` function.
 
-All the keyword arguments can be either a single value, which is applied to
-all columns, or a vector of length equal to the number of columns that the
-operation is performed on. In such a case each entry is used for the
-column in the corresponding position in `cols`.
+Keyword arguments specifying sorting order (`rev`, `lt` or `by`) can either be
+a single value, or a vector of length equal to the number of columns the
+operation is performed on. When a single value is passed, it applies to all
+columns. When a vector is passed, each entry applies to the column in the
+corresponding position in `cols`.
 """
 
 """
@@ -357,7 +369,8 @@ column in the corresponding position in `cols`.
              lt::Union{Function, AbstractVector{<:Function}}=isless,
              by::Union{Function, AbstractVector{<:Function}}=identity,
              rev::Union{Bool, AbstractVector{Bool}}=false,
-             order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
+             order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+             checkunique::Bool=false)
 
 Test whether data frame `df` sorted by column(s) `cols`. Checking against
 multiple columns is done lexicographically.
@@ -397,7 +410,8 @@ function Base.issorted(df::AbstractDataFrame, cols=All();
                        lt::Union{Function, AbstractVector{<:Function}}=isless,
                        by::Union{Function, AbstractVector{<:Function}}=identity,
                        rev::Union{Bool, AbstractVector{Bool}}=false,
-                       order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
+                       order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+                       checkunique::Bool=false)
     to_scalar(x::AbstractVector) = only(x)
     to_scalar(x::Any) = x
 
@@ -405,6 +419,7 @@ function Base.issorted(df::AbstractDataFrame, cols=All();
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
     end
+    checkunique && _perform_uniqueness_checks(df, cols, lt, by, order)
     if cols isa ColumnIndex
         return issorted(df[!, cols], lt=to_scalar(lt), by=to_scalar(by),
                         rev=to_scalar(rev), order=to_scalar(order))
@@ -427,7 +442,8 @@ Base.issorted(::AbstractDataFrame, ::Base.Order.Ordering) =
          by::Union{Function, AbstractVector{<:Function}}=identity,
          rev::Union{Bool, AbstractVector{Bool}}=false,
          order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
-         view::Bool=false)
+         view::Bool=false,
+         checkunique::Bool=false)
 
 Return a data frame containing the rows in `df` sorted by column(s) `cols`.
 Sorting on multiple columns is done lexicographically.
@@ -506,8 +522,10 @@ julia> sort(df, [:x, order(:y, rev=true)])
                            by::Union{Function, AbstractVector{<:Function}}=identity,
                            rev::Union{Bool, AbstractVector{Bool}}=false,
                            order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
-                           view::Bool=false)
-    rowidxs = sortperm(df, cols, alg=alg, lt=lt, by=by, rev=rev, order=order)
+                           view::Bool=false,
+                           checkunique::Bool=false)
+    rowidxs = sortperm(df, cols, alg=alg, lt=lt, by=by, rev=rev, order=order,
+                       checkunique=checkunique)
     return view ? Base.view(df, rowidxs, :) : df[rowidxs, :]
 end
 
@@ -517,7 +535,8 @@ end
              lt::Union{Function, AbstractVector{<:Function}}=isless,
              by::Union{Function, AbstractVector{<:Function}}=identity,
              rev::Union{Bool, AbstractVector{Bool}}=false,
-             order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
+             order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+             checkunique::Bool=false)
 
 Return a permutation vector of row indices of data frame `df` that puts them in
 sorted order according to column(s) `cols`.
@@ -579,13 +598,15 @@ function Base.sortperm(df::AbstractDataFrame, cols=All();
                        lt::Union{Function, AbstractVector{<:Function}}=isless,
                        by::Union{Function, AbstractVector{<:Function}}=identity,
                        rev::Union{Bool, AbstractVector{Bool}}=false,
-                       order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
+                       order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+                       checkunique::Bool=false)
     # exclude AbstractVector as in that case cols can contain order(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
         cols = index(df)[cols]
     end
     ord = ordering(df, cols, lt, by, rev, order)
     _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
+    checkunique && _perform_uniqueness_checks(df, cols, lt, by, order)
     return _sortperm(df, _alg, ord)
 end
 
@@ -601,7 +622,8 @@ _sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) =
           lt::Union{Function, AbstractVector{<:Function}}=isless,
           by::Union{Function, AbstractVector{<:Function}}=identity,
           rev::Union{Bool, AbstractVector{Bool}}=false,
-          order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
+          order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+          checkunique::Bool=false)
 
 Sort data frame `df` by column(s) `cols` by permuting its rows in-place.
 Sorting on multiple columns is done lexicographicallly.
@@ -682,7 +704,8 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
                     lt::Union{Function, AbstractVector{<:Function}}=isless,
                     by::Union{Function, AbstractVector{<:Function}}=identity,
                     rev::Union{Bool, AbstractVector{Bool}}=false,
-                    order::Union{Ordering, AbstractVector{<:Ordering}}=Forward)
+                    order::Union{Ordering, AbstractVector{<:Ordering}}=Forward,
+                    checkunique::Bool=false)
 
     # exclude AbstractVector as in that case cols can contain order(...) clauses
     if cols isa MultiColumnIndex && !(cols isa AbstractVector)
@@ -690,8 +713,112 @@ function Base.sort!(df::AbstractDataFrame, cols=All();
     end
     ord = ordering(df, cols, lt, by, rev, order)
     _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
+    checkunique && _perform_uniqueness_checks(df, cols, lt, by, order)
     return sort!(df, _alg, ord)
 end
 
-Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering) =
+# this sort! method does not support uniqueness checks since they can't be carried out
+# without knowledge of which columns are to be sorted.
+function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm,
+                    o::Base.Sort.Ordering)
     permute!(df, _sortperm(df, a, o))
+end
+
+# Functions to verify whether an Ordering has user-defined `by` or `lt` functions
+# The complexity checks exploit `Base.Order`'s way of constructing `Order` objects.
+# `DirectOrdering` is by definition an order that uses `isless` and `identity` as its
+# `lt` and `by` functions, so they are not complex. The `By` and `Lt` types have
+# attributes storing the defined `by` and `lt` functions respectively, simple identity
+# checks are enough. `ReverseOrdering`s wrap another type of ordering, so we
+# perform the check on the wrapped type.
+is_complex(o::Union{DirectOrdering, FasterForward, FasterReverse}) = false
+is_complex(o::By) = o.by !== identity
+is_complex(o::Lt) = o.lt !== isless
+is_complex(o::ReverseOrdering) = is_complex(o.fwd)
+is_complex(o::Perm) = is_complex(o.order)
+
+function is_complex(o::DFPerm)
+    if o.ord isa Ordering
+        return is_complex(o.ord)
+    elseif o.ord isa Tuple
+        return any(is_complex(ordering) for ordering in o.ord)
+    end
+    throw(ArgumentError("unsupported ord type"))
+end
+
+function is_complex(o::Ordering)
+    throw(ArgumentError("The use of the keyword `checkunique` is currently " *
+                        "not supported with Ordering type $(typeof(o))"))
+end
+
+function is_complex(o::UserColOrdering)
+    has_lt = haskey(o.kwargs, :lt)
+    has_by = haskey(o.kwargs, :by)
+    if !has_lt && !has_by
+        return false
+    elseif has_lt && !has_by
+        return o.kwargs[:lt] !== isless
+    elseif has_by && !has_lt
+        return o.kwargs[:by] !== identity
+    else
+        @assert has_lt && has_by
+        return o.kwargs[:by] !== identity || o.kwargs[:lt] !== isless
+    end
+end
+
+# Internal function that aids in uniqueness checks
+# Converts column selectors to indices and checks necessary conditions for uniqueness
+function _perform_uniqueness_checks(df::AbstractDataFrame, cols,
+                                    lt::Union{Function, AbstractVector{<:Function}},
+                                    by::Union{Function, AbstractVector{<:Function}},
+                                    order::Union{Ordering, AbstractVector{<:Ordering}})
+
+    if !(lt === isless && by === identity)
+        throw(ArgumentError("Passing either lt or by along with checkunique=" *
+                            "true is not supported."))
+    end
+
+    # Validating the order argument
+    if order isa Ordering
+        order = [order]
+    end
+    for o in order
+        if is_complex(o)
+            throw(ArgumentError("Using either lt or by functions through the " *
+                                "order keyword argument simultaneously with " *
+                                "checkunique=true is not supported."))
+        end
+    end
+
+    # Easiest case, cols contains column indexes already
+    if cols isa AbstractVector{<:ColumnIndex}
+        by_or_lt_set = false
+        col_idxs = cols
+    # Second easiest, multicol index (no vector with orders clauses mixed in)
+    elseif (cols isa MultiColumnIndex && !(cols isa AbstractVector)) || cols isa ColumnIndex
+        by_or_lt_set = false
+        col_idxs = index(df)[cols]
+    elseif cols isa UserColOrdering
+        by_or_lt_set = is_complex(cols)
+        col_idxs = [index(df)[_getcol(cols)]]
+    # Mix of ColOrdering and other ColumnSelectors
+    else
+        @assert cols isa AbstractVector
+        newcols = Int[]
+        by_or_lt_set = false
+        for col in cols
+            if col isa UserColOrdering
+                by_or_lt_set = is_complex(col) || by_or_lt_set
+            end
+
+            push!(newcols, index(df)[_getcol(col)])
+        end
+        col_idxs = newcols
+    end
+    if by_or_lt_set
+        throw(ArgumentError("Order clauses with either by or lt set in combination " *
+                            "with checkunique=true are not supported"))
+    end
+    allunique(df, col_idxs) ||
+        throw(ArgumentError("Non-unique elements found. Multiple orders are valid."))
+end
