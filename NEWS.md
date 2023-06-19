@@ -13,6 +13,10 @@
   treated as if they were wrapped in `Cols` and does not throw an error
   when a vector of duplicate indices is passed when doing column selection
   ([#3302](https://github.com/JuliaData/DataFrames.jl/pull/3302))
+* Added the kwarg `checkunique` to sorting related functions (`issorted`,
+  `sort`, `sort!` and `sortperm`) that throws an error when duplicate elements
+  make multiple sort orders valid
+  ([#3312](https://github.com/JuliaData/DataFrames.jl/pull/3312))
 * `reduce` performing `vcat` on a collection of data frames
   now accepts `init` keyword argument
   ([#3310](https://github.com/JuliaData/DataFrames.jl/pull/3310))
@@ -27,6 +31,7 @@
 * `deleteat!` correctly handles the situation when vector of rows to be dropped
   from a data frame is its column or might alias with some of its columns
   ([#3304](https://github.com/JuliaData/DataFrames.jl/pull/3304))
+
 
 # DataFrames.jl v1.5 Release Notes
 
