@@ -545,7 +545,8 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
     colref_map = df[col_group_row_idxs, colkey]
     if any(ismissing, colref_map) && !allowmissing
         throw(ArgumentError("Missing value in variable :$(_names(df)[colkey]). " *
-                            "Pass `allowmissing=true` to skip missings."))
+                            "Pass `allowmissing=true` to create a column referring. " *
+                            "to `missing` value"))
     end
     @assert length(rowref) == length(colref) == length(valuecol)
 
@@ -579,13 +580,25 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
     # and names between df1 and df2 must be unique
     # here df1 gets proper column-level metadata with :note style
     df1 = df[row_group_row_idxs, g_rowkey.cols]
-    df2 = DataFrame(unstacked_val, Symbol[Symbol(renamecols(x)) for x in colref_map],
+    new_col_names = Symbol[Symbol(renamecols(x)) for x in colref_map]
+    if !allunique(new_col_names)
+        throw(ArgumentError("Non-unique column names produced. " *
+                            "Non equal values in `colkey` were mapped " *
+                            "to the same column name."))
+    end
+    df2 = DataFrame(unstacked_val, new_col_names,
                     copycols=false)
 
     @assert length(col_group_row_idxs) == ncol(df2)
     # avoid reordering when col_group_row_idxs was already ordered
     if !issorted(col_group_row_idxs)
         df2 = df2[!, sortperm(col_group_row_idxs)]
+    end
+
+    if !isempty(intersect(_names(df1), _names(df2)))
+        throw(ArgumentError("Non-unique column names produced. " *
+                            "Column names created using the `colkey`" *
+                            "conflict with `rowkeys` column names."))
     end
 
     res_df = hcat(df1, df2, copycols=false)
