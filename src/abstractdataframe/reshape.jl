@@ -545,8 +545,8 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
     colref_map = df[col_group_row_idxs, colkey]
     if any(ismissing, colref_map) && !allowmissing
         throw(ArgumentError("Missing value in variable :$(_names(df)[colkey]). " *
-                            "Pass `allowmissing=true` to create a column referring. " *
-                            "to `missing` value"))
+                            "Pass `allowmissing=true` to create a :missing column " *
+                            "referring to `missing` values."))
     end
     @assert length(rowref) == length(colref) == length(valuecol)
 
