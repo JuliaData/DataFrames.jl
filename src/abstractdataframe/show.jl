@@ -195,6 +195,11 @@ function _show(io::IO,
     # string or an `e` precedes it.
     alignment_regex_complex = [r"(?<!^)(?<!e)[+-]"]
 
+    # Make sure that `truncate` does not hide the type and the column name.
+    maximum_columns_width = Int[truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
+                                for (l, t) in zip(names_len, types_str)]
+
+    # Apply configurations according to the column's type.
     for i = 1:num_cols
         type_i = nonmissingtype(types[i])
 
@@ -206,12 +211,10 @@ function _show(io::IO,
             alignment[i] = :r
         elseif type_i <: Number
             alignment[i] = :r
+        elseif type_i <: Base.UUID
+            maximum_columns_width[i] = 36
         end
     end
-
-    # Make sure that `truncate` does not hide the type and the column name.
-    maximum_columns_width = Int[truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
-                                for (l, t) in zip(names_len, types_str)]
 
     # Check if the user wants to display a summary about the DataFrame that is
     # being printed. This will be shown using the `title` option of
