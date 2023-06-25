@@ -2939,4 +2939,62 @@ end
     end
 end
 
+@testset "Tables.AbstractRow interface" begin
+    cr = first(Tables.rows((a=1:2, b=3:4)))
+    dr = first(Tables.dictrowtable((a=1:2, b=3:4)))
+    ir1 = first(Tables.IteratorWrapper(Tables.rows((a=1:2, b=3:4))))
+    ir2 = first(Tables.IteratorWrapper([(a=1, b=3), (a=2, b=4)]))
+    mr = first(Tables.rows(Tables.table([1 3; 2 4], header=[:a, :b])))
+    dfr = DataFrame(a=1:2, b=3:4)[1, :]
+    for row in (cr, dr, ir1, ir2, mr, dfr,
+                Tables.Row(cr), Tables.Row(dr), Tables.Row(ir1),
+                Tables.Row(ir2), Tables.Row(mr), Tables.Row(dfr))
+        df = DataFrame(x=[1, 1, 2])
+        @test combine(df, :x => (x -> row) => AsTable) ==
+            DataFrame(a=1, b=3)
+        @test select(df, :x => (x -> row) => AsTable) ==
+            DataFrame(a=[1, 1, 1], b=[3, 3, 3])
+        @test combine(df, :x => ByRow(x -> row) => AsTable) ==
+            DataFrame(a=[1, 1, 1], b=[3, 3, 3])
+        @test select(df, :x => ByRow(x -> row) => AsTable) ==
+            DataFrame(a=[1, 1, 1], b=[3, 3, 3])
+        @test select(df, :x => (x -> row) => AsTable) ==
+            DataFrame(a=[1, 1, 1], b=[3, 3, 3])
+        @test combine(df, :x => (x -> row) => [:p, :q]) ==
+            DataFrame(p=1, q=3)
+        @test select(df, :x => (x -> row) => [:p, :q]) ==
+            DataFrame(p=[1, 1, 1], q=[3, 3, 3])
+        @test combine(groupby(df, :x), :x => (x -> row) => AsTable) ==
+            DataFrame(x=[1, 2], a=[1, 1], b=[3, 3])
+        @test select(groupby(df, :x), :x => (x -> row) => AsTable) ==
+            DataFrame(x=[1, 1, 2], a=[1, 1, 1], b=[3, 3, 3])
+        @test combine(groupby(df, :x), :x => ByRow(x -> row) => AsTable) ==
+            DataFrame(x=[1, 1, 2], a=[1, 1, 1], b=[3, 3, 3])
+        @test select(groupby(df, :x), :x => ByRow(x -> row) => AsTable) ==
+            DataFrame(x=[1, 1, 2], a=[1, 1, 1], b=[3, 3, 3])
+        @test combine(groupby(df, :x), :x => (x -> row) => [:p, :q]) ==
+            DataFrame(x=[1, 2], p=[1, 1], q=[3, 3])
+        @test select(groupby(df, :x), :x => (x -> row) => [:p, :q]) ==
+            DataFrame(x=[1, 1, 2], p=[1, 1, 1], q=[3, 3, 3])
+        @test_throws ArgumentError combine(df, :x => x -> row)
+        @test_throws ArgumentError select(df, :x => x -> row)
+        @test combine(df, :x => ByRow(x -> row) => :v) ==
+              DataFrame(v=[row, row, row])
+        @test_throws ArgumentError combine(groupby(df, :x), :x => x -> row)
+        @test_throws ArgumentError select(groupby(df, :x), :x => x -> row)
+        @test combine(groupby(df, :x), :x => ByRow(x -> row) => :v) ==
+              DataFrame(x=[1, 1, 2], v=[row, row, row])
+    end
+
+    # note the grouping of Tables.AbstractRow types
+    # they have a matching type of return value of keys (tuple vs vector)
+    for df in (DataFrame(id=[1, 1, 2], x = Any[cr, ir1, ir2]),
+               DataFrame(id=[1, 1, 2], x = Any[dr, dfr, mr]))
+        @test combine(df, :x => AsTable) ==
+            DataFrame(a=[1, 1, 1], b=[3, 3, 3])
+        @test combine(groupby(df, :id), :x => AsTable) ==
+            DataFrame(id=[1, 1, 2], a=[1, 1, 1], b=[3, 3, 3])
+    end
+end
+
 end # module

@@ -44,7 +44,7 @@ function _combine_with_first((first,)::Ref{Any},
         eltys = [eltype(parent(first)[!, i]) for i in parentcols(index(first))]
     elseif first isa Tables.AbstractRow
         n = lgd
-        eltys = [typeof Tables.getcolumn(first, name) for name in Tables.columnames(first)]
+        eltys = [typeof(Tables.getcolumn(first, name)) for name in Tables.columnnames(first)]
     elseif !firstmulticol && first[1] isa Union{AbstractArray{<:Any, 0}, Ref}
         extrude = true
         first = wrap_row(first[1], firstcoltype(firstmulticol))
@@ -69,7 +69,7 @@ function _combine_with_first((first,)::Ref{Any},
         initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
     end
     targetcolnames = first isa Tables.AbstractRow ?
-                     tuple(Tables.columnnames(first)...):
+                     tuple(Tables.columnnames(first)...) :
                      tuple(propertynames(first)...)
     if !extrude && first isa Union{AbstractDataFrame,
                                    NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
