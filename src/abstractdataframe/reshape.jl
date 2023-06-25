@@ -597,7 +597,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
 
     if !isempty(intersect(_names(df1), _names(df2)))
         throw(ArgumentError("Non-unique column names produced. " *
-                            "Column names created using the `colkey`" *
+                            "Column names created using the `colkey` " *
                             "conflict with `rowkeys` column names."))
     end
 
