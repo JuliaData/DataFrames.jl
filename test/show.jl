@@ -1004,6 +1004,34 @@ end
             20     40     60"""
 end
 
+@testset "Issue #3346 - Showing Base.UUID" begin
+    rand_uuid = Base.UUID("36cea533-4597-132e-557c-08487c42ef97")
+    df = DataFrame(
+        integer = [10^n for n in 1:10],
+        uuid    = [i % 2 == 0 ? missing : rand_uuid for i in 1:10],
+        float   = [10.0^n for n in 1:10], string = ["A"^100 for _ in 1:10]
+    )
+    io = IOContext(IOBuffer())
+    show(io, df)
+    str = String(take!(io.io))
+
+    @test str == """
+        10×4 DataFrame
+         Row │ integer      uuid                                  float        string
+             │ Int64        Base.UUID?                            Float64      String
+        ─────┼───────────────────────────────────────────────────────────────────────────────────────────────────
+           1 │          10  36cea533-4597-132e-557c-08487c42ef97      10.0     AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA…
+           2 │         100  missing                                  100.0     AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA…
+           3 │        1000  36cea533-4597-132e-557c-08487c42ef97    1000.0     AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA…
+           4 │       10000  missing                                10000.0     AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA…
+           5 │      100000  36cea533-4597-132e-557c-08487c42ef97  100000.0     AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA…
+           6 │     1000000  missing                                    1.0e6   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA…
+           7 │    10000000  36cea533-4597-132e-557c-08487c42ef97       1.0e7   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA…
+           8 │   100000000  missing                                    1.0e8   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA…
+           9 │  1000000000  36cea533-4597-132e-557c-08487c42ef97       1.0e9   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA…
+          10 │ 10000000000  missing                                    1.0e10  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA…"""
+end
+
 @testset "cover all corner cases of compacttype" begin
     df = DataFrame(x2345678901234567=categorical(["1"]))
     @test sprint(show, df) === """
