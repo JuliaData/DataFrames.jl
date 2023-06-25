@@ -177,6 +177,6 @@ include("other/metadata.jl")
 
 include("deprecated.jl")
 
-# include("other/precompile.jl")
+include("other/precompile.jl")
 
 end # module DataFrames
