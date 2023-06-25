@@ -110,16 +110,17 @@ object then a `NamedTuple` containing columns selected by `cols` is passed to
 
 What is allowed for `function` to return is determined by the `target_cols` value:
 1. If both `cols` and `target_cols` are omitted (so only a `function` is passed),
-   then returning a data frame, a matrix, a `NamedTuple`, or a `DataFrameRow` will
+   then returning a data frame, a matrix, a `NamedTuple`, `Tables.AbstractRow`
+   or a `DataFrameRow` will
    produce multiple columns in the result. Returning any other value produces
    a single column.
 2. If `target_cols` is a `Symbol` or a string then the function is assumed to return
    a single column. In this case returning a data frame, a matrix, a `NamedTuple`,
-   or a `DataFrameRow` raises an error.
+   `Tables.AbstractRow`, or a `DataFrameRow` raises an error.
 3. If `target_cols` is a vector of `Symbol`s or strings or `AsTable` it is assumed
    that `function` returns multiple columns.
    If `function` returns one of `AbstractDataFrame`, `NamedTuple`, `DataFrameRow`,
-   `AbstractMatrix` then rules described in point 1 above apply.
+   `Tables.AbstractRow`, `AbstractMatrix` then rules described in point 1 above apply.
    If `function` returns an `AbstractVector` then each element of this vector must
    support the `keys` function, which must return a collection of `Symbol`s, strings
    or integers; the return value of `keys` must be identical for all elements.
