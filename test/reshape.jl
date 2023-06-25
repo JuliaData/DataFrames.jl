@@ -989,4 +989,21 @@ end
                     f=[missing, missing, "c"])
 end
 
+@testset "better unstack errors" begin
+    df = DataFrame(x=1:3, y=["a", "b", "c"], z=11:13)
+    @test unstack(df, :x, :y, :z) ≅
+          DataFrame(x=1:3, a=[11, missing, missing], b=[missing, 12, missing], c=[missing, missing, 13])
+    @test_throws ArgumentError unstack(df, :x, :y, :z, renamecols=x->"v")
+    df = DataFrame(x=1:3, y=["a", "b", :a], z=11:13)
+    @test_throws ArgumentError unstack(df, :x, :y, :z)
+    df = DataFrame(x=1:3, y=["a", "b", "x"], z=11:13)
+    @test_throws ArgumentError unstack(df, :x, :y, :z)
+    df = DataFrame(x=1:3, y=["aa", "bb", "xc"], z=11:13)
+    @test_throws ArgumentError unstack(df, :x, :y, :z, renamecols=first)
+    df = DataFrame(x=1:3, y=["a", "b", missing], z=11:13)
+    @test_throws ArgumentError unstack(df, :x, :y, :z)
+    @test unstack(df, :x, :y, :z, allowmissing=true) ≅
+    DataFrame(x=1:3, a=[11, missing, missing], b=[missing, 12, missing], missing=[missing, missing, 13])
+end
+
 end # module
