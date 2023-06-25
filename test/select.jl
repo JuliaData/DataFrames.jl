@@ -3011,6 +3011,10 @@ end
     @test combine(DataFrame(:group=>[1,1,2,2]),
                   sdf -> Tables.Row((; foo="foo", boo=[1, 2]))) ==
           DataFrame(foo=["foo"], boo=[[1, 2]])
+
+    gdf = groupby(DataFrame(x=1:2), :x)
+    @test_throws ArgumentError combine(gdf, :x => (x -> x[1] == 1 ? "x" : cr))
+    @test_throws ArgumentError combine(gdf, :x => (x -> x[1] == 2 ? "x" : cr) => AsTable)
 end
 
 end # module
