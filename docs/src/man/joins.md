@@ -331,7 +331,7 @@ julia> df2 = DataFrame(id=[1, 2, missing], b=1:3)
    3 │ missing      3
 
 julia> innerjoin(df1, df2, on=:id)
-ERROR: ArgumentError: missing values in key columns are not allowed when matchmissing == :error. `missing` found in column :id in left data frame.
+ERROR: ArgumentError: Missing values in key columns are not allowed when matchmissing == :error. `missing` found in column :id in left data frame.
 ```
 
 If you would prefer `missing` values to be treated as equal pass
