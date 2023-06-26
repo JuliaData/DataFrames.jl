@@ -303,7 +303,7 @@ end
     unique!(df::AbstractDataFrame; keep::Symbol=:first)
     unique!(df::AbstractDataFrame, cols; keep::Symbol=:first)
 
-Update `df` in-place to containi only unique rows.
+Update `df` in-place to contain only unique rows.
 
 Non-unique (duplicate) rows are those for which at least another row contains
 equal values (according to `isequal`) for all columns in `cols` (by default,
