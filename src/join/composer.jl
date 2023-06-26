@@ -79,23 +79,29 @@ struct DataFrameJoiner
         dfl_on = select(dfl, left_on, copycols=false)
         dfr_on = select(dfr, right_on, copycols=false)
         if matchmissing === :error
-            for df in (dfl_on, dfr_on), col in eachcol(df)
+            for (df_i, df) in enumerate((dfl_on, dfr_on)),
+                (col_name, col) in pairs(eachcol(df))
                 if any(ismissing, col)
-                    throw(ArgumentError("missing values in key columns are not allowed " *
-                                        "when matchmissing == :error"))
+                    throw(ArgumentError("Missing values in key columns are not allowed " *
+                                        "when matchmissing == :error. " *
+                                        "`missing` found in column :$col_name in " *
+                                        (df_i == 1 ? "left" : "right") * " data frame."))
                 end
             end
         elseif !(matchmissing in (:equal, :notequal))
             throw(ArgumentError("matchmissing allows only :error, :equal, or :notequal"))
         end
-        for df in (dfl_on, dfr_on), col in eachcol(df)
+        for (df_i, df) in enumerate((dfl_on, dfr_on)),
+            (col_name, col) in pairs(eachcol(df))
             if any(x -> (x isa Union{Complex, Real}) &&
                         (isnan(x) || isequal(real(x), -0.0) || isequal(imag(x), -0.0)), col)
-                throw(ArgumentError("currently for numeric values NaN and `-0.0` " *
+                throw(ArgumentError("Currently for numeric values `NaN` and `-0.0` " *
                                     "in their real or imaginary components are not " *
                                     "allowed. Use CategoricalArrays.jl to wrap " *
                                     "these values in a CategoricalVector to perform " *
-                                    "the requested join."))
+                                    "the requested join. " *
+                                    "Such value was found in column :$col_name in " *
+                                    (df_i == 1 ? "left" : "right") * " data frame."))
             end
         end
 
