@@ -331,7 +331,7 @@ julia> df2 = DataFrame(id=[1, 2, missing], b=1:3)
    3 │ missing      3
 
 julia> innerjoin(df1, df2, on=:id)
-ERROR: ArgumentError: missing values in key columns are not allowed when matchmissing == :error.  `missing` found in column :id in left data frame.
+ERROR: ArgumentError: missing values in key columns are not allowed when matchmissing == :error. `missing` found in column :id in left data frame.
 ```
 
 If you would prefer `missing` values to be treated as equal pass
@@ -367,7 +367,7 @@ errors. Here is an example:
 
 ```jldoctest joins
 julia> innerjoin(DataFrame(id=[-0.0]), DataFrame(id=[0.0]), on=:id)
-ERROR: ArgumentError: currently for numeric values `NaN` and `-0.0` in their real or imaginary components are not allowed. Use CategoricalArrays.jl to wrap these values in a CategoricalVector to perform the requested join. Such value was found in column :id in left data frame.
+ERROR: ArgumentError: Currently for numeric values `NaN` and `-0.0` in their real or imaginary components are not allowed. Use CategoricalArrays.jl to wrap these values in a CategoricalVector to perform the requested join. Such value was found in column :id in left data frame.
 ```
 
 ## Specifying row order in the join result
