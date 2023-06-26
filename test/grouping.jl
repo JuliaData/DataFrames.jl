@@ -180,9 +180,9 @@ end
         df_comb = combine(identity, gd)
         @test sort(df_comb, colssym) == shcatdf
         @test sort(combine(df -> df[1, :], gd), colssym) ==
-            shcatdf[.!nonunique(shcatdf, colssym), :]
+              shcatdf[.!nonunique(shcatdf, colssym), :]
         @test sort(combine(df -> Tables.Row(df[1, :]), gd), colssym) ==
-            shcatdf[.!nonunique(shcatdf, colssym), :]
+              shcatdf[.!nonunique(shcatdf, colssym), :]
         df_ref = DataFrame(gd)
         @test sort(hcat(df_ref[!, cols], df_ref[!, Not(cols)]), colssym) == shcatdf
         @test df_ref.x == df_comb.x
