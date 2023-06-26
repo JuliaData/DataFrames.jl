@@ -751,7 +751,7 @@ end
 @testset "select and select! reserved return values" begin
     df = DataFrame(x=1)
     df2 = copy(df)
-    for retval in [df2, (a=1, b=2), df2[1, :], ones(2, 2)]
+    for retval in [df2, (a=1, b=2), df2[1, :], ones(2, 2), Tables.Row(df2[1, :])]
         @test_throws ArgumentError select(df, :x => x -> retval)
         @test_throws ArgumentError select(df, :x => x -> retval, copycols=false)
         @test_throws ArgumentError select!(df, :x => x -> retval)
@@ -761,7 +761,7 @@ end
         select!(cdf, :x => ByRow(x -> retval))
         @test cdf == DataFrame(x_function=[retval])
 
-        if retval isa Union{NamedTuple, DataFrameRow}
+        if retval isa Union{NamedTuple, DataFrameRow, Tables.AbstractRow}
             @test select(df, :x => ByRow(x -> retval) => AsTable) == DataFrame(;retval...)
         elseif retval isa DataFrame
             @test_throws MethodError select(df, :x => ByRow(x -> retval) => AsTable)
@@ -1183,6 +1183,10 @@ end
           DataFrame(a_b_c_function=fill(df[1, :], 3))
     @test select(df, AsTable(:) => ByRow(x -> df[1, :]) => AsTable) ==
           DataFrame(a=[1, 1, 1], b=4, c=7)
+    @test select(df, AsTable(:) => ByRow(x -> Tables.Row(df[1, :]))) ==
+          DataFrame(a_b_c_function=fill(Tables.Row(df[1, :], 3)))
+    @test select(df, AsTable(:) => ByRow(x -> Tables.Row(df[1, :])) => AsTable) ==
+          DataFrame(a=[1, 1, 1], b=4, c=7)
     @test transform(df, AsTable(Not(:)) =>
           ByRow(identity)) == [df DataFrame(:identity => fill(NamedTuple(), nrow(df)))]
 
@@ -1381,7 +1385,7 @@ end
         @test select(sdf -> Ref([1]), df) == DataFrame(x1=[[1], [1]])
         @test select(sdf -> "x", df) == DataFrame(x1=["x", "x"])
         @test select(sdf -> [[1, 2], [3, 4]], df) == DataFrame(x1=[[1, 2], [3, 4]])
-        for ret in (DataFrame(), NamedTuple(), zeros(0, 0), DataFrame(t=1)[1, 1:0])
+        for ret in (DataFrame(), NamedTuple(), zeros(0, 0), DataFrame(t=1)[1, 1:0], Tables.Row(DataFrame(t=1)[1, 1:0]))
             @test select(sdf -> ret, df) == DataFrame()
         end
         @test_throws ArgumentError select(sdf -> DataFrame(a=10), df)
