@@ -2439,7 +2439,7 @@ end
     @test combine(gdf, AsTable([:x, :y]) => ByRow(x -> df[1, :])) ==
           DataFrame(g=[1, 1, 1, 2, 2], x_y_function=fill(df[1, :], 5))
     @test combine(gdf, AsTable([:x, :y]) => ByRow(x -> Tables.Row(df[1, :]))) ==
-          DataFrame(g=[1, 1, 1, 2, 2], x_y_function=fill(Tables.Row(df[1, :], 5)))
+          DataFrame(g=[1, 1, 1, 2, 2], x_y_function=fill(Tables.Row(df[1, :]), 5))
 end
 
 @testset "test correctness of ungrouping" begin
