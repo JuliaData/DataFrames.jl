@@ -118,13 +118,13 @@ const TRANSFORMATION_COMMON_RULES =
 
     What is allowed for `function` to return is determined by the `target_cols` value:
     1. If both `cols` and `target_cols` are omitted (so only a `function` is passed),
-       then returning a data frame, a matrix, a `NamedTuple`, `Tables.AbstractRow`
+       then returning a data frame, a matrix, a `NamedTuple`, a `Tables.AbstractRow`
        or a `DataFrameRow` will
        produce multiple columns in the result. Returning any other value produces
        a single column.
     2. If `target_cols` is a `Symbol` or a string then the function is assumed to return
        a single column. In this case returning a data frame, a matrix, a `NamedTuple`,
-       `Tables.AbstractRow`, or a `DataFrameRow` raises an error.
+       a `Tables.AbstractRow`, or a `DataFrameRow` raises an error.
     3. If `target_cols` is a vector of `Symbol`s or strings or `AsTable` it is assumed
        that `function` returns multiple columns.
        If `function` returns one of `AbstractDataFrame`, `NamedTuple`, `DataFrameRow`,
@@ -774,11 +774,11 @@ function _add_multicol_res(res::DataFrameRow, newdf::DataFrame, df::AbstractData
 end
 
 function _add_multicol_res(res::Tables.AbstractRow, newdf::DataFrame, df::AbstractDataFrame,
-    colnames::AbstractVector{Symbol},
-    allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
-    col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
-    copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}},
-    column_to_copy::BitVector)
+                           colnames::AbstractVector{Symbol},
+                           allow_resizing_newdf::Ref{Bool}, wfun::Ref{Any},
+                           col_idx::Union{Nothing, Int, AbstractVector{Int}, AsTable},
+                           copycols::Bool, newname::Union{Nothing, Type{AsTable}, AbstractVector{Symbol}},
+                           column_to_copy::BitVector)
     _insert_row_multicolumn(newdf, df, allow_resizing_newdf, colnames, res)
 end
 

@@ -2996,8 +2996,8 @@ end
 
     # note the grouping of Tables.AbstractRow types
     # they have a matching type of return value of keys (tuple vs vector)
-    for df in (DataFrame(id=[1, 1, 2], x = Any[cr, ir1, ir2]),
-               DataFrame(id=[1, 1, 2], x = Any[dr, dfr, mr]))
+    for df in (DataFrame(id=[1, 1, 2], x=Any[cr, ir1, ir2]),
+               DataFrame(id=[1, 1, 2], x=Any[dr, dfr, mr]))
         @test combine(df, :x => AsTable) ==
             DataFrame(a=[1, 1, 1], b=[3, 3, 3])
         @test combine(groupby(df, :id), :x => AsTable) ==
@@ -3005,10 +3005,10 @@ end
     end
 
     # example from issue https://github.com/JuliaData/DataFrames.jl/issues/3335
-    @test combine(groupby(DataFrame(:group=>[1,1,2,2]), :group),
+    @test combine(groupby(DataFrame(:group=>[1, 1, 2, 2]), :group),
                   sdf -> Tables.Row((; foo="foo", boo=[1, 2]))) ==
           DataFrame(group=1:2, foo=["foo", "foo"], boo=[[1, 2], [1, 2]])
-    @test combine(DataFrame(:group=>[1,1,2,2]),
+    @test combine(DataFrame(:group=>[1, 1, 2, 2]),
                   sdf -> Tables.Row((; foo="foo", boo=[1, 2]))) ==
           DataFrame(foo=["foo"], boo=[[1, 2]])
 
