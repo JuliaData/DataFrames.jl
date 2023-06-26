@@ -751,7 +751,7 @@ end
 @testset "select and select! reserved return values" begin
     df = DataFrame(x=1)
     df2 = copy(df)
-    for retval in [df2, (a=1, b=2), df2[1, :], ones(2, 2), Tables.Row(df2[1, :])]
+    for retval in [df2, (a=1, b=2), df2[1, :], ones(2, 2), Tables.Row(df2[1, :]), Tables.Row((a=1, b=2))]
         @test_throws ArgumentError select(df, :x => x -> retval)
         @test_throws ArgumentError select(df, :x => x -> retval, copycols=false)
         @test_throws ArgumentError select!(df, :x => x -> retval)
@@ -761,8 +761,11 @@ end
         select!(cdf, :x => ByRow(x -> retval))
         @test cdf == DataFrame(x_function=[retval])
 
-        if retval isa Union{NamedTuple, DataFrameRow, Tables.AbstractRow}
-            @test select(df, :x => ByRow(x -> retval) => AsTable) == DataFrame(;retval...)
+        if retval isa Union{NamedTuple, DataFrameRow}
+            @test select(df, :x => ByRow(x -> retval) => AsTable) == DataFrame(; retval...)
+        elseif retval isa Tables.AbstractRow
+            @test select(df, :x => ByRow(x -> retval) => AsTable) ==
+                  DataFrame([col => retval[col] for col in Tables.columnnames(retval)]...)
         elseif retval isa DataFrame
             @test_throws MethodError select(df, :x => ByRow(x -> retval) => AsTable)
         else # Matrix: wrong type of keys
