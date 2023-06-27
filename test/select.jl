@@ -1187,7 +1187,7 @@ end
     @test select(df, AsTable(:) => ByRow(x -> df[1, :]) => AsTable) ==
           DataFrame(a=[1, 1, 1], b=4, c=7)
     @test select(df, AsTable(:) => ByRow(x -> Tables.Row(df[1, :]))) ==
-          DataFrame(a_b_c_function=fill(Tables.Row(df[1, :], 3)))
+          DataFrame(a_b_c_function=fill(Tables.Row(df[1, :]), 3))
     @test select(df, AsTable(:) => ByRow(x -> Tables.Row(df[1, :])) => AsTable) ==
           DataFrame(a=[1, 1, 1], b=4, c=7)
     @test transform(df, AsTable(Not(:)) =>
