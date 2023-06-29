@@ -145,7 +145,15 @@ function. This is consistent with the `Set` and `Dict` types in Julia Base.
 It is not recommended to use floating point numbers as keys: floating point
 comparisons can be surprising and unpredictable. If you do use floating point
 keys, note that by default an error is raised when keys include `-0.0`
-(negative zero) or `NaN` values. This can be overridden by wrapping the key
+(negative zero) or `NaN` values.
+Here is an example:
+
+```jldoctest joins
+julia> innerjoin(DataFrame(id=[-0.0]), DataFrame(id=[0.0]), on=:id)
+ERROR: ArgumentError: Currently for numeric values `NaN` and `-0.0` in their real or imaginary components are not allowed. Such value was found in column :id in left data frame. Use CategoricalArrays.jl to wrap these values in a CategoricalVector to perform the requested join.
+```
+
+This can be overridden by wrapping the key
 values in a [categorical](@ref man-categorical) vector.
 
 ## Joining on key columns with different names
@@ -357,17 +365,6 @@ julia> innerjoin(df1, df2, on=:id, matchmissing=:notequal)
      │ Int64?  Int64  Int64
 ─────┼──────────────────────
    1 │      1      1      1
-```
-
-## Support for `-0.0` and `NaN` in joins
-
-Currently if `-0.0` or `NaN` values are found in key column an error is thrown.
-The reason is that the equality tests for such vales could lead to unwanted
-errors. Here is an example:
-
-```jldoctest joins
-julia> innerjoin(DataFrame(id=[-0.0]), DataFrame(id=[0.0]), on=:id)
-ERROR: ArgumentError: Currently for numeric values `NaN` and `-0.0` in their real or imaginary components are not allowed. Use CategoricalArrays.jl to wrap these values in a CategoricalVector to perform the requested join. Such value was found in column :id in left data frame.
 ```
 
 ## Specifying row order in the join result

@@ -97,11 +97,12 @@ struct DataFrameJoiner
                         (isnan(x) || isequal(real(x), -0.0) || isequal(imag(x), -0.0)), col)
                 throw(ArgumentError("Currently for numeric values `NaN` and `-0.0` " *
                                     "in their real or imaginary components are not " *
-                                    "allowed. Use CategoricalArrays.jl to wrap " *
-                                    "these values in a CategoricalVector to perform " *
-                                    "the requested join. " *
+                                    "allowed. " *
                                     "Such value was found in column :$col_name in " *
-                                    (df_i == 1 ? "left" : "right") * " data frame."))
+                                    (df_i == 1 ? "left" : "right") * " data frame. " *
+                                    "Use CategoricalArrays.jl to wrap " *
+                                    "these values in a CategoricalVector to perform " *
+                                    "the requested join."))
             end
         end
 
