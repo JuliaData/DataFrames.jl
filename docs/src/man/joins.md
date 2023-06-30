@@ -145,7 +145,15 @@ function. This is consistent with the `Set` and `Dict` types in Julia Base.
 It is not recommended to use floating point numbers as keys: floating point
 comparisons can be surprising and unpredictable. If you do use floating point
 keys, note that by default an error is raised when keys include `-0.0`
-(negative zero) or `NaN` values. This can be overridden by wrapping the key
+(negative zero) or `NaN` values.
+Here is an example:
+
+```jldoctest joins
+julia> innerjoin(DataFrame(id=[-0.0]), DataFrame(id=[0.0]), on=:id)
+ERROR: ArgumentError: Currently for numeric values `NaN` and `-0.0` in their real or imaginary components are not allowed. Such value was found in column :id in left data frame. Use CategoricalArrays.jl to wrap these values in a CategoricalVector to perform the requested join.
+```
+
+This can be overridden by wrapping the key
 values in a [categorical](@ref man-categorical) vector.
 
 ## Joining on key columns with different names
@@ -285,7 +293,7 @@ This feature is supported with the `renamecols` keyword argument:
 ```jldoctest joins
 julia> innerjoin(a, b, on=:ID, renamecols = "_left" => "_right")
 1×3 DataFrame
- Row │ ID     Name_left  Job_right 
+ Row │ ID     Name_left  Job_right
      │ Int64  String     String
 ─────┼─────────────────────────────
    1 │    20  John       Lawyer
@@ -299,7 +307,7 @@ Alternatively it is allowed to pass a function transforming column names:
 ```jldoctest joins
 julia> innerjoin(a, b, on=:ID, renamecols = lowercase => uppercase)
 1×3 DataFrame
- Row │ ID     name    JOB    
+ Row │ ID     name    JOB
      │ Int64  String  String
 ─────┼───────────────────────
    1 │    20  John    Lawyer
@@ -314,8 +322,8 @@ you get an error:
 ```jldoctest joins
 julia> df1 = DataFrame(id=[1, missing, 3], a=1:3)
 3×2 DataFrame
- Row │ id       a     
-     │ Int64?   Int64 
+ Row │ id       a
+     │ Int64?   Int64
 ─────┼────────────────
    1 │       1      1
    2 │ missing      2
@@ -323,15 +331,15 @@ julia> df1 = DataFrame(id=[1, missing, 3], a=1:3)
 
 julia> df2 = DataFrame(id=[1, 2, missing], b=1:3)
 3×2 DataFrame
- Row │ id       b     
-     │ Int64?   Int64 
+ Row │ id       b
+     │ Int64?   Int64
 ─────┼────────────────
    1 │       1      1
    2 │       2      2
    3 │ missing      3
 
 julia> innerjoin(df1, df2, on=:id)
-ERROR: ArgumentError: missing values in key columns are not allowed when matchmissing == :error
+ERROR: ArgumentError: Missing values in key columns are not allowed when matchmissing == :error. `missing` found in column :id in left data frame.
 ```
 
 If you would prefer `missing` values to be treated as equal pass
@@ -340,8 +348,8 @@ the `matchmissing=:equal` keyword argument:
 ```jldoctest joins
 julia> innerjoin(df1, df2, on=:id, matchmissing=:equal)
 2×3 DataFrame
- Row │ id       a      b     
-     │ Int64?   Int64  Int64 
+ Row │ id       a      b
+     │ Int64?   Int64  Int64
 ─────┼───────────────────────
    1 │       1      1      1
    2 │ missing      2      3
@@ -353,7 +361,7 @@ case pass `matchmissing=:notequal`:
 ```jldoctest joins
 julia> innerjoin(df1, df2, on=:id, matchmissing=:notequal)
 1×3 DataFrame
- Row │ id      a      b     
+ Row │ id      a      b
      │ Int64?  Int64  Int64
 ─────┼──────────────────────
    1 │      1      1      1
@@ -366,8 +374,8 @@ By default the order of rows produced by the join operation is undefined:
 ```jldoctest joins
 julia> df_left = DataFrame(id=[1, 2, 4, 5], left=1:4)
 4×2 DataFrame
- Row │ id     left  
-     │ Int64  Int64 
+ Row │ id     left
+     │ Int64  Int64
 ─────┼──────────────
    1 │     1      1
    2 │     2      2
@@ -376,8 +384,8 @@ julia> df_left = DataFrame(id=[1, 2, 4, 5], left=1:4)
 
 julia> df_right = DataFrame(id=[2, 1, 3, 6, 7], right=1:5)
 5×2 DataFrame
- Row │ id     right 
-     │ Int64  Int64 
+ Row │ id     right
+     │ Int64  Int64
 ─────┼──────────────
    1 │     2      1
    2 │     1      2
@@ -387,7 +395,7 @@ julia> df_right = DataFrame(id=[2, 1, 3, 6, 7], right=1:5)
 
 julia> outerjoin(df_left, df_right, on=:id)
 7×3 DataFrame
- Row │ id     left     right   
+ Row │ id     left     right
      │ Int64  Int64?   Int64?
 ─────┼─────────────────────────
    1 │     2        2        1
@@ -405,7 +413,7 @@ the `order=:left` keyword argument:
 ```jldoctest joins
 julia> outerjoin(df_left, df_right, on=:id, order=:left)
 7×3 DataFrame
- Row │ id     left     right   
+ Row │ id     left     right
      │ Int64  Int64?   Int64?
 ─────┼─────────────────────────
    1 │     1        1        2
@@ -426,7 +434,7 @@ not present in it at the end):
 ```jldoctest joins
 julia> outerjoin(df_left, df_right, on=:id, order=:right)
 7×3 DataFrame
- Row │ id     left     right   
+ Row │ id     left     right
      │ Int64  Int64?   Int64?
 ─────┼─────────────────────────
    1 │     2        2        1
@@ -448,8 +456,8 @@ the right table.
 ```jldoctest joins
 julia> main = DataFrame(id=1:4, main=1:4)
 4×2 DataFrame
- Row │ id     main  
-     │ Int64  Int64 
+ Row │ id     main
+     │ Int64  Int64
 ─────┼──────────────
    1 │     1      1
    2 │     2      2
@@ -460,12 +468,12 @@ julia> leftjoin!(main, DataFrame(id=[2, 4], info=["a", "b"]), on=:id);
 
 julia> main
 4×3 DataFrame
- Row │ id     main   info    
-     │ Int64  Int64  String? 
+ Row │ id     main   info
+     │ Int64  Int64  String?
 ─────┼───────────────────────
-   1 │     1      1  missing 
+   1 │     1      1  missing
    2 │     2      2  a
-   3 │     3      3  missing 
+   3 │     3      3  missing
    4 │     4      4  b
 ```
 
@@ -477,4 +485,3 @@ in the right table:
 julia> leftjoin!(main, DataFrame(id=[2, 2], info_bad=["a", "b"]), on=:id)
 ERROR: ArgumentError: duplicate rows found in right table
 ```
-
