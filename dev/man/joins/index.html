@@ -81,7 +81,8 @@ julia&gt; antijoin(people, jobs, on = :ID)
    1 │    20  John Doe     20  Lawyer
    2 │    20  John Doe     60  Astronaut
    3 │    40  Jane Doe     20  Lawyer
-   4 │    40  Jane Doe     60  Astronaut</code></pre><h2 id="Key-value-comparisons-and-floating-point-values"><a class="docs-heading-anchor" href="#Key-value-comparisons-and-floating-point-values">Key value comparisons and floating point values</a><a id="Key-value-comparisons-and-floating-point-values-1"></a><a class="docs-heading-anchor-permalink" href="#Key-value-comparisons-and-floating-point-values" title="Permalink"></a></h2><p>Key values from the two or more data frames are compared using the <code>isequal</code> function. This is consistent with the <code>Set</code> and <code>Dict</code> types in Julia Base.</p><p>It is not recommended to use floating point numbers as keys: floating point comparisons can be surprising and unpredictable. If you do use floating point keys, note that by default an error is raised when keys include <code>-0.0</code> (negative zero) or <code>NaN</code> values. This can be overridden by wrapping the key values in a <a href="../categorical/#man-categorical">categorical</a> vector.</p><h2 id="Joining-on-key-columns-with-different-names"><a class="docs-heading-anchor" href="#Joining-on-key-columns-with-different-names">Joining on key columns with different names</a><a id="Joining-on-key-columns-with-different-names-1"></a><a class="docs-heading-anchor-permalink" href="#Joining-on-key-columns-with-different-names" title="Permalink"></a></h2><p>In order to join data frames on keys which have different names in the left and right tables, you may pass <code>left =&gt; right</code> pairs as <code>on</code> argument:</p><pre><code class="language-julia-repl hljs">julia&gt; a = DataFrame(ID=[20, 40], Name=[&quot;John Doe&quot;, &quot;Jane Doe&quot;])
+   4 │    40  Jane Doe     60  Astronaut</code></pre><h2 id="Key-value-comparisons-and-floating-point-values"><a class="docs-heading-anchor" href="#Key-value-comparisons-and-floating-point-values">Key value comparisons and floating point values</a><a id="Key-value-comparisons-and-floating-point-values-1"></a><a class="docs-heading-anchor-permalink" href="#Key-value-comparisons-and-floating-point-values" title="Permalink"></a></h2><p>Key values from the two or more data frames are compared using the <code>isequal</code> function. This is consistent with the <code>Set</code> and <code>Dict</code> types in Julia Base.</p><p>It is not recommended to use floating point numbers as keys: floating point comparisons can be surprising and unpredictable. If you do use floating point keys, note that by default an error is raised when keys include <code>-0.0</code> (negative zero) or <code>NaN</code> values. Here is an example:</p><pre><code class="language-julia-repl hljs">julia&gt; innerjoin(DataFrame(id=[-0.0]), DataFrame(id=[0.0]), on=:id)
+ERROR: ArgumentError: Currently for numeric values `NaN` and `-0.0` in their real or imaginary components are not allowed. Such value was found in column :id in left data frame. Use CategoricalArrays.jl to wrap these values in a CategoricalVector to perform the requested join.</code></pre><p>This can be overridden by wrapping the key values in a <a href="../categorical/#man-categorical">categorical</a> vector.</p><h2 id="Joining-on-key-columns-with-different-names"><a class="docs-heading-anchor" href="#Joining-on-key-columns-with-different-names">Joining on key columns with different names</a><a id="Joining-on-key-columns-with-different-names-1"></a><a class="docs-heading-anchor-permalink" href="#Joining-on-key-columns-with-different-names" title="Permalink"></a></h2><p>In order to join data frames on keys which have different names in the left and right tables, you may pass <code>left =&gt; right</code> pairs as <code>on</code> argument:</p><pre><code class="language-julia-repl hljs">julia&gt; a = DataFrame(ID=[20, 40], Name=[&quot;John Doe&quot;, &quot;Jane Doe&quot;])
 2×2 DataFrame
  Row │ ID     Name
      │ Int64  String
@@ -168,19 +169,19 @@ julia&gt; outerjoin(a, b, on=:ID, validate=(true, true), source=:source)
    2 │    40  Jane     missing  left_only
    3 │    60  missing  Doctor   right_only</code></pre><p>Note that this time we also used the <code>validate</code> keyword argument and it did not produce errors as the keys defined in both source data frames were unique.</p><h2 id="Renaming-joined-columns"><a class="docs-heading-anchor" href="#Renaming-joined-columns">Renaming joined columns</a><a id="Renaming-joined-columns-1"></a><a class="docs-heading-anchor-permalink" href="#Renaming-joined-columns" title="Permalink"></a></h2><p>Often you want to keep track of the source data frame. This feature is supported with the <code>renamecols</code> keyword argument:</p><pre><code class="language-julia-repl hljs">julia&gt; innerjoin(a, b, on=:ID, renamecols = &quot;_left&quot; =&gt; &quot;_right&quot;)
 1×3 DataFrame
- Row │ ID     Name_left  Job_right 
+ Row │ ID     Name_left  Job_right
      │ Int64  String     String
 ─────┼─────────────────────────────
    1 │    20  John       Lawyer</code></pre><p>In the above example we added the <code>&quot;_left&quot;</code> suffix to the non-key columns from the left table and the <code>&quot;_right&quot;</code> suffix to the non-key columns from the right table.</p><p>Alternatively it is allowed to pass a function transforming column names:</p><pre><code class="language-julia-repl hljs">julia&gt; innerjoin(a, b, on=:ID, renamecols = lowercase =&gt; uppercase)
 1×3 DataFrame
- Row │ ID     name    JOB    
+ Row │ ID     name    JOB
      │ Int64  String  String
 ─────┼───────────────────────
    1 │    20  John    Lawyer
 </code></pre><h2 id="Matching-missing-values-in-joins"><a class="docs-heading-anchor" href="#Matching-missing-values-in-joins">Matching missing values in joins</a><a id="Matching-missing-values-in-joins-1"></a><a class="docs-heading-anchor-permalink" href="#Matching-missing-values-in-joins" title="Permalink"></a></h2><p>By default when you try to to perform a join on a key that has <code>missing</code> values you get an error:</p><pre><code class="language-julia-repl hljs">julia&gt; df1 = DataFrame(id=[1, missing, 3], a=1:3)
 3×2 DataFrame
- Row │ id       a     
-     │ Int64?   Int64 
+ Row │ id       a
+     │ Int64?   Int64
 ─────┼────────────────
    1 │       1      1
    2 │ missing      2
@@ -188,29 +189,29 @@ julia&gt; outerjoin(a, b, on=:ID, validate=(true, true), source=:source)
 
 julia&gt; df2 = DataFrame(id=[1, 2, missing], b=1:3)
 3×2 DataFrame
- Row │ id       b     
-     │ Int64?   Int64 
+ Row │ id       b
+     │ Int64?   Int64
 ─────┼────────────────
    1 │       1      1
    2 │       2      2
    3 │ missing      3
 
 julia&gt; innerjoin(df1, df2, on=:id)
-ERROR: ArgumentError: missing values in key columns are not allowed when matchmissing == :error</code></pre><p>If you would prefer <code>missing</code> values to be treated as equal pass the <code>matchmissing=:equal</code> keyword argument:</p><pre><code class="language-julia-repl hljs">julia&gt; innerjoin(df1, df2, on=:id, matchmissing=:equal)
+ERROR: ArgumentError: Missing values in key columns are not allowed when matchmissing == :error. `missing` found in column :id in left data frame.</code></pre><p>If you would prefer <code>missing</code> values to be treated as equal pass the <code>matchmissing=:equal</code> keyword argument:</p><pre><code class="language-julia-repl hljs">julia&gt; innerjoin(df1, df2, on=:id, matchmissing=:equal)
 2×3 DataFrame
- Row │ id       a      b     
-     │ Int64?   Int64  Int64 
+ Row │ id       a      b
+     │ Int64?   Int64  Int64
 ─────┼───────────────────────
    1 │       1      1      1
    2 │ missing      2      3</code></pre><p>Alternatively you might want to drop all rows with <code>missing</code> values. In this case pass <code>matchmissing=:notequal</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; innerjoin(df1, df2, on=:id, matchmissing=:notequal)
 1×3 DataFrame
- Row │ id      a      b     
+ Row │ id      a      b
      │ Int64?  Int64  Int64
 ─────┼──────────────────────
    1 │      1      1      1</code></pre><h2 id="Specifying-row-order-in-the-join-result"><a class="docs-heading-anchor" href="#Specifying-row-order-in-the-join-result">Specifying row order in the join result</a><a id="Specifying-row-order-in-the-join-result-1"></a><a class="docs-heading-anchor-permalink" href="#Specifying-row-order-in-the-join-result" title="Permalink"></a></h2><p>By default the order of rows produced by the join operation is undefined:</p><pre><code class="language-julia-repl hljs">julia&gt; df_left = DataFrame(id=[1, 2, 4, 5], left=1:4)
 4×2 DataFrame
- Row │ id     left  
-     │ Int64  Int64 
+ Row │ id     left
+     │ Int64  Int64
 ─────┼──────────────
    1 │     1      1
    2 │     2      2
@@ -219,8 +220,8 @@ ERROR: ArgumentError: missing values in key columns are not allowed when matchmi
 
 julia&gt; df_right = DataFrame(id=[2, 1, 3, 6, 7], right=1:5)
 5×2 DataFrame
- Row │ id     right 
-     │ Int64  Int64 
+ Row │ id     right
+     │ Int64  Int64
 ─────┼──────────────
    1 │     2      1
    2 │     1      2
@@ -230,7 +231,7 @@ julia&gt; df_right = DataFrame(id=[2, 1, 3, 6, 7], right=1:5)
 
 julia&gt; outerjoin(df_left, df_right, on=:id)
 7×3 DataFrame
- Row │ id     left     right   
+ Row │ id     left     right
      │ Int64  Int64?   Int64?
 ─────┼─────────────────────────
    1 │     2        2        1
@@ -241,7 +242,7 @@ julia&gt; outerjoin(df_left, df_right, on=:id)
    6 │     6  missing        4
    7 │     7  missing        5</code></pre><p>If you would like the result to keep the row order of the left table pass the <code>order=:left</code> keyword argument:</p><pre><code class="language-julia-repl hljs">julia&gt; outerjoin(df_left, df_right, on=:id, order=:left)
 7×3 DataFrame
- Row │ id     left     right   
+ Row │ id     left     right
      │ Int64  Int64?   Int64?
 ─────┼─────────────────────────
    1 │     1        1        2
@@ -252,7 +253,7 @@ julia&gt; outerjoin(df_left, df_right, on=:id)
    6 │     6  missing        4
    7 │     7  missing        5</code></pre><p>Note that in this case keys missing from the left table are put after the keys present in it.</p><p>Similarly <code>order=:right</code> keeps the order of the right table (and puts keys not present in it at the end):</p><pre><code class="language-julia-repl hljs">julia&gt; outerjoin(df_left, df_right, on=:id, order=:right)
 7×3 DataFrame
- Row │ id     left     right   
+ Row │ id     left     right
      │ Int64  Int64?   Int64?
 ─────┼─────────────────────────
    1 │     2        2        1
@@ -263,8 +264,8 @@ julia&gt; outerjoin(df_left, df_right, on=:id)
    6 │     4        3  missing
    7 │     5        4  missing</code></pre><h2 id="In-place-left-join"><a class="docs-heading-anchor" href="#In-place-left-join">In-place left join</a><a id="In-place-left-join-1"></a><a class="docs-heading-anchor-permalink" href="#In-place-left-join" title="Permalink"></a></h2><p>A common operation is adding data from a reference table to some main table. It is possible to perform such an in-place update using the <code>leftjoin!</code> function. In this case the left table is updated in place with matching rows from the right table.</p><pre><code class="language-julia-repl hljs">julia&gt; main = DataFrame(id=1:4, main=1:4)
 4×2 DataFrame
- Row │ id     main  
-     │ Int64  Int64 
+ Row │ id     main
+     │ Int64  Int64
 ─────┼──────────────
    1 │     1      1
    2 │     2      2
@@ -275,11 +276,11 @@ julia&gt; leftjoin!(main, DataFrame(id=[2, 4], info=[&quot;a&quot;, &quot;b&quot
 
 julia&gt; main
 4×3 DataFrame
- Row │ id     main   info    
-     │ Int64  Int64  String? 
+ Row │ id     main   info
+     │ Int64  Int64  String?
 ─────┼───────────────────────
-   1 │     1      1  missing 
+   1 │     1      1  missing
    2 │     2      2  a
-   3 │     3      3  missing 
+   3 │     3      3  missing
    4 │     4      4  b</code></pre><p>Note that in this case the order and number of rows in the left table is not changed. Therefore, in particular, it is not allowed to have duplicate keys in the right table:</p><pre><code class="nohighlight hljs">julia&gt; leftjoin!(main, DataFrame(id=[2, 2], info_bad=[&quot;a&quot;, &quot;b&quot;]), on=:id)
-ERROR: ArgumentError: duplicate rows found in right table</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../importing_and_exporting/">« Importing and Exporting Data (I/O)</a><a class="docs-footer-nextpage" href="../split_apply_combine/">Split-apply-combine »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Monday 26 June 2023 16:47">Monday 26 June 2023</span>. Using Julia version 1.9.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ERROR: ArgumentError: duplicate rows found in right table</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../importing_and_exporting/">« Importing and Exporting Data (I/O)</a><a class="docs-footer-nextpage" href="../split_apply_combine/">Split-apply-combine »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Friday 30 June 2023 05:34">Friday 30 June 2023</span>. Using Julia version 1.9.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
