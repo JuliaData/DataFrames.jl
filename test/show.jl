@@ -1007,7 +1007,7 @@ end
 @testset "Issue #3346 - Showing Base.UUID" begin
     rand_uuid = Base.UUID("36cea533-4597-132e-557c-08487c42ef97")
     df = DataFrame(
-        integer = [10^n for n in 1:10],
+        integer = [Int64(10)^n for n in 1:10],
         uuid    = [i % 2 == 0 ? missing : rand_uuid for i in 1:10],
         float   = [10.0^n for n in 1:10], string = ["A"^100 for _ in 1:10]
     )
