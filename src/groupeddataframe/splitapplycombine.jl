@@ -2,7 +2,8 @@
 
 # this constant defines which types of values returned by aggregation function
 # in combine are considered to produce multiple columns in the resulting data frame
-const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
+const MULTI_COLS_TYPE = Union{AbstractDataFrame, NamedTuple, DataFrameRow,
+                              Tables.AbstractRow, AbstractMatrix}
 
 # use a constant Vector{Int} as a sentinel to signal that idx_agg has not been computed yet
 # we do not use nothing to avoid excessive specialization

@@ -180,7 +180,9 @@ end
         df_comb = combine(identity, gd)
         @test sort(df_comb, colssym) == shcatdf
         @test sort(combine(df -> df[1, :], gd), colssym) ==
-            shcatdf[.!nonunique(shcatdf, colssym), :]
+              shcatdf[.!nonunique(shcatdf, colssym), :]
+        @test sort(combine(df -> Tables.Row(df[1, :]), gd), colssym) ==
+              shcatdf[.!nonunique(shcatdf, colssym), :]
         df_ref = DataFrame(gd)
         @test sort(hcat(df_ref[!, cols], df_ref[!, Not(cols)]), colssym) == shcatdf
         @test df_ref.x == df_comb.x
@@ -206,7 +208,9 @@ end
         end
         @test combine(identity, gd) == shcatdf
         @test combine(df -> df[1, :], gd) ==
-            shcatdf[.!nonunique(shcatdf, colssym), :]
+              shcatdf[.!nonunique(shcatdf, colssym), :]
+        @test combine(df -> Tables.Row(df[1, :]), gd) ==
+              shcatdf[.!nonunique(shcatdf, colssym), :]
         df_ref = DataFrame(gd)
         @test hcat(df_ref[!, cols], df_ref[!, Not(cols)]) == shcatdf
         @test combine(f1, gd) == sres
@@ -388,8 +392,13 @@ end
 
     df = DataFrame(x=[1, 2, 3], y=[2, 3, 1])
     gdf = groupby_checked(df, :x)
+
     # Test function returning DataFrameRow
     res = combine(d -> DataFrameRow(d, 1, :), gdf)
+    @test res == DataFrame(x=df.x, y=df.y)
+
+    # Test function returning Tables.AbstractRow
+    res = combine(d -> Tables.Row(DataFrameRow(d, 1, :)), gdf)
     @test res == DataFrame(x=df.x, y=df.y)
 
     # Test function returning Tuple
@@ -456,6 +465,10 @@ end
     @test_throws ArgumentError combine(d -> d.x == [1] ? NamedTuple(d[1, :]) : d[1:1, :], gdf)
     @test_throws ArgumentError combine(d -> d.x == [1] ? Tables.columntable(d[1:1, :]) : NamedTuple(d[1, :]), gdf)
     @test_throws ArgumentError combine(d -> d.x == [1] ? NamedTuple(d[1, :]) : Tables.columntable(d[1:1, :]), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? d[1:1, :] : Tables.Row(d[1, :]), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? Tables.Row(d[1, :]) : d[1:1, :], gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? [1 2] : Tables.Row(d[1, :]), gdf)
+    @test_throws ArgumentError combine(d -> d.x == [1] ? Tables.Row(d[1, :]) : [1 2], gdf)
 
     # Test with NamedTuple with columns of incompatible lengths
     @test_throws DimensionMismatch combine(d -> (x1=[1], x2=[3, 4]), gdf)
@@ -930,6 +943,7 @@ end
         combine(gd, d -> DataFrame(c_sum=sum(d.c))) ==
         combine(gd, :c => (x -> [sum(x)]) => [:c_sum]) ==
         combine(gd, :c => (x -> [(c_sum=sum(x),)]) => AsTable) ==
+        combine(gd, :c => (x -> [Tables.Row((c_sum=sum(x),))]) => AsTable) ==
         combine(gd, :c => (x -> fill(sum(x), 1, 1)) => [:c_sum]) ==
         combine(gd, :c => (x -> [Dict(:c_sum => sum(x))]) => AsTable)
     @test_throws ArgumentError combine(:c => sum, gd)
@@ -993,6 +1007,7 @@ end
         @test combine(gd, col => sum) == combine(d -> (c_sum=sum(d.c),), gd)
         @test combine(gd, col => x -> sum(x)) == combine(d -> (c_function=sum(d.c),), gd)
         @test combine(gd, col => (x -> (z=sum(x),)) => AsTable) == combine(d -> (z=sum(d.c),), gd)
+        @test combine(gd, col => (x -> Tables.Row((z=sum(x),))) => AsTable) == combine(d -> (z=sum(d.c),), gd)
         @test combine(gd, col => (x -> DataFrame(z=sum(x),)) => AsTable) == combine(d -> (z=sum(d.c),), gd)
         @test combine(gd, col => identity) == combine(d -> (c_identity=d.c,), gd)
         @test combine(gd, col => (x -> (z=x,)) => AsTable) == combine(d -> (z=d.c,), gd)
@@ -2135,15 +2150,17 @@ end
     @test_throws ArgumentError haskey(gdf, (a=1, b=2, c=3))
 end
 
-@testset "Check aggregation of DataFrameRow" begin
+@testset "Check aggregation of DataFrameRow and Tables.AbstractRow" begin
     df = DataFrame(a=1)
     dfr = DataFrame(x=1, y="1")[1, 2:2]
     gdf = groupby_checked(df, :a)
     @test combine(sdf -> dfr, gdf) == DataFrame(a=1, y="1")
+    @test combine(sdf -> Tables.Row(dfr), gdf) == DataFrame(a=1, y="1")
 
     df = DataFrame(a=[1, 1, 2, 2, 3, 3], b='a':'f', c=string.(1:6))
     gdf = groupby_checked(df, :a)
     @test isequal_typed(combine(sdf -> sdf[1, [3, 2, 1]], gdf), df[1:2:5, [1, 3, 2]])
+    @test isequal_typed(combine(sdf -> Tables.Row(sdf[1, [3, 2, 1]]), gdf), df[1:2:5, [1, 3, 2]])
 end
 
 @testset "Allow returning DataFrame() or NamedTuple() to drop group" begin
@@ -2254,6 +2271,7 @@ end
     @test_throws ArgumentError combine(gdf, :x1 => x -> (x=[1], y=2))
     @test_throws ArgumentError combine(gdf, :x1 => x -> ones(2, 2))
     @test_throws ArgumentError combine(gdf, :x1 => x -> df[1, Not(:g)])
+    @test_throws ArgumentError combine(gdf, :x1 => x -> Tables.Row(df[1, Not(:g)]))
 end
 
 @testset "keepkeys" begin
@@ -2420,6 +2438,8 @@ end
           DataFrame(g=[1, 1, 1, 2, 2], x_y_identity=ByRow(identity)((x=1:5, y=6:10)))
     @test combine(gdf, AsTable([:x, :y]) => ByRow(x -> df[1, :])) ==
           DataFrame(g=[1, 1, 1, 2, 2], x_y_function=fill(df[1, :], 5))
+    @test combine(gdf, AsTable([:x, :y]) => ByRow(x -> Tables.Row(df[1, :]))) ==
+          DataFrame(g=[1, 1, 1, 2, 2], x_y_function=fill(Tables.Row(df[1, :]), 5))
 end
 
 @testset "test correctness of ungrouping" begin
@@ -3395,6 +3415,8 @@ end
           DataFrame(id=[1, 1, 2, 2, 3, 3], a=[1, 2, 1, 2, 1, 2], b=[3, 4, 3, 4, 3, 4])
     @test combine(gdf, x -> DataFrame(a=1:2, b=3:4)[1, :]) ==
           DataFrame(id=[1, 2, 3], a=[1, 1, 1], b=[3, 3, 3])
+    @test combine(gdf, x -> Tables.Row(DataFrame(a=1:2, b=3:4)[1, :])) ==
+          DataFrame(id=[1, 2, 3], a=[1, 1, 1], b=[3, 3, 3])
     @test combine(gdf, x -> (a=1, b=3)) ==
           DataFrame(id=[1, 2, 3], a=[1, 1, 1], b=[3, 3, 3])
     @test combine(gdf, x -> (a=1:2, b=3:4)) ==
@@ -3421,6 +3443,8 @@ end
     @test select(gdf, x -> DataFrame(a=1:2, b=3:4)) ==
           DataFrame(id=[1, 2, 3, 1, 3, 2], a=[1, 1, 1, 2, 2, 2], b=[3, 3, 3, 4, 4, 4])
     @test select(gdf, x -> DataFrame(a=1:2, b=3:4)[1, :]) ==
+          DataFrame(id=[1, 2, 3, 1, 3, 2], a=[1, 1, 1, 1, 1, 1], b=[3, 3, 3, 3, 3, 3])
+    @test select(gdf, x -> Tables.Row(DataFrame(a=1:2, b=3:4)[1, :])) ==
           DataFrame(id=[1, 2, 3, 1, 3, 2], a=[1, 1, 1, 1, 1, 1], b=[3, 3, 3, 3, 3, 3])
     @test select(gdf, x -> (a=1, b=3)) ==
           DataFrame(id=[1, 2, 3, 1, 3, 2], a=[1, 1, 1, 1, 1, 1], b=[3, 3, 3, 3, 3, 3])
@@ -3764,6 +3788,7 @@ end
     df = DataFrame(a=1:2)
     gdf = groupby_checked(df, :a)
     @test_throws ArgumentError combine(gdf, x -> x.a[1] == 1 ? 1 : x[1, :])
+    @test_throws ArgumentError combine(gdf, x -> x.a[1] == 1 ? 1 : Tables.Row(x[1, :]))
     @test_throws ArgumentError combine(gdf, x -> x.a[1] == 1 ? (a=1, b=2) : Ref(1))
 end
 
