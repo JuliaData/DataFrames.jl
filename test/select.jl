@@ -751,7 +751,7 @@ end
 @testset "select and select! reserved return values" begin
     df = DataFrame(x=1)
     df2 = copy(df)
-    for retval in [df2, (a=1, b=2), df2[1, :], ones(2, 2)]
+    for retval in [df2, (a=1, b=2), df2[1, :], ones(2, 2), Tables.Row(df2[1, :]), Tables.Row((a=1, b=2))]
         @test_throws ArgumentError select(df, :x => x -> retval)
         @test_throws ArgumentError select(df, :x => x -> retval, copycols=false)
         @test_throws ArgumentError select!(df, :x => x -> retval)
@@ -762,7 +762,10 @@ end
         @test cdf == DataFrame(x_function=[retval])
 
         if retval isa Union{NamedTuple, DataFrameRow}
-            @test select(df, :x => ByRow(x -> retval) => AsTable) == DataFrame(;retval...)
+            @test select(df, :x => ByRow(x -> retval) => AsTable) == DataFrame(; retval...)
+        elseif retval isa Tables.AbstractRow
+            @test select(df, :x => ByRow(x -> retval) => AsTable) ==
+                  DataFrame([col => retval[col] for col in Tables.columnnames(retval)]...)
         elseif retval isa DataFrame
             @test_throws MethodError select(df, :x => ByRow(x -> retval) => AsTable)
         else # Matrix: wrong type of keys
@@ -1183,6 +1186,10 @@ end
           DataFrame(a_b_c_function=fill(df[1, :], 3))
     @test select(df, AsTable(:) => ByRow(x -> df[1, :]) => AsTable) ==
           DataFrame(a=[1, 1, 1], b=4, c=7)
+    @test select(df, AsTable(:) => ByRow(x -> Tables.Row(df[1, :]))) ==
+          DataFrame(a_b_c_function=fill(Tables.Row(df[1, :]), 3))
+    @test select(df, AsTable(:) => ByRow(x -> Tables.Row(df[1, :])) => AsTable) ==
+          DataFrame(a=[1, 1, 1], b=4, c=7)
     @test transform(df, AsTable(Not(:)) =>
           ByRow(identity)) == [df DataFrame(:identity => fill(NamedTuple(), nrow(df)))]
 
@@ -1381,7 +1388,7 @@ end
         @test select(sdf -> Ref([1]), df) == DataFrame(x1=[[1], [1]])
         @test select(sdf -> "x", df) == DataFrame(x1=["x", "x"])
         @test select(sdf -> [[1, 2], [3, 4]], df) == DataFrame(x1=[[1, 2], [3, 4]])
-        for ret in (DataFrame(), NamedTuple(), zeros(0, 0), DataFrame(t=1)[1, 1:0])
+        for ret in (DataFrame(), NamedTuple(), zeros(0, 0), DataFrame(t=1)[1, 1:0], Tables.Row(DataFrame(t=1)[1, 1:0]))
             @test select(sdf -> ret, df) == DataFrame()
         end
         @test_throws ArgumentError select(sdf -> DataFrame(a=10), df)
@@ -2937,6 +2944,84 @@ end
                                                                           ByRow(extrema∘skipmissing) => :x)
         end
     end
+end
+
+@testset "Tables.AbstractRow interface" begin
+    cr = first(Tables.rows((a=1:2, b=3:4)))
+    dr = first(Tables.dictrowtable((a=1:2, b=3:4)))
+    ir1 = first(Tables.IteratorWrapper(Tables.rows((a=1:2, b=3:4))))
+    ir2 = first(Tables.IteratorWrapper([(a=1, b=3), (a=2, b=4)]))
+    mr = first(Tables.rows(Tables.table([1 3; 2 4], header=[:a, :b])))
+    dfr = DataFrame(a=1:2, b=3:4)[1, :]
+    for row in (cr, dr, ir1, ir2, mr, dfr,
+                Tables.Row(cr), Tables.Row(dr), Tables.Row(ir1),
+                Tables.Row(ir2), Tables.Row(mr), Tables.Row(dfr))
+        df = DataFrame(x=[1, 1, 2])
+        @test combine(df, :x => (x -> row) => AsTable) ==
+            DataFrame(a=1, b=3)
+        @test combine(df, x -> row) ==
+            DataFrame(a=1, b=3)
+        @test select(df, :x => (x -> row) => AsTable) ==
+            DataFrame(a=[1, 1, 1], b=[3, 3, 3])
+        @test select(df, x -> row) ==
+            DataFrame(a=[1, 1, 1], b=[3, 3, 3])
+        @test combine(df, :x => ByRow(x -> row) => AsTable) ==
+            DataFrame(a=[1, 1, 1], b=[3, 3, 3])
+        @test select(df, :x => ByRow(x -> row) => AsTable) ==
+            DataFrame(a=[1, 1, 1], b=[3, 3, 3])
+        @test select(df, :x => (x -> row) => AsTable) ==
+            DataFrame(a=[1, 1, 1], b=[3, 3, 3])
+        @test combine(df, :x => (x -> row) => [:p, :q]) ==
+            DataFrame(p=1, q=3)
+        @test select(df, :x => (x -> row) => [:p, :q]) ==
+            DataFrame(p=[1, 1, 1], q=[3, 3, 3])
+        @test combine(groupby(df, :x), :x => (x -> row) => AsTable) ==
+            DataFrame(x=[1, 2], a=[1, 1], b=[3, 3])
+        @test combine(groupby(df, :x), x -> row) ==
+            DataFrame(x=[1, 2], a=[1, 1], b=[3, 3])
+        @test select(groupby(df, :x), :x => (x -> row) => AsTable) ==
+            DataFrame(x=[1, 1, 2], a=[1, 1, 1], b=[3, 3, 3])
+        @test select(groupby(df, :x), x -> row) ==
+            DataFrame(x=[1, 1, 2], a=[1, 1, 1], b=[3, 3, 3])
+        @test combine(groupby(df, :x), :x => ByRow(x -> row) => AsTable) ==
+            DataFrame(x=[1, 1, 2], a=[1, 1, 1], b=[3, 3, 3])
+        @test select(groupby(df, :x), :x => ByRow(x -> row) => AsTable) ==
+            DataFrame(x=[1, 1, 2], a=[1, 1, 1], b=[3, 3, 3])
+        @test combine(groupby(df, :x), :x => (x -> row) => [:p, :q]) ==
+            DataFrame(x=[1, 2], p=[1, 1], q=[3, 3])
+        @test select(groupby(df, :x), :x => (x -> row) => [:p, :q]) ==
+            DataFrame(x=[1, 1, 2], p=[1, 1, 1], q=[3, 3, 3])
+        @test_throws ArgumentError combine(df, :x => x -> row)
+        @test_throws ArgumentError select(df, :x => x -> row)
+        @test combine(df, :x => ByRow(x -> row) => :v) ==
+              DataFrame(v=[row, row, row])
+        @test_throws ArgumentError combine(groupby(df, :x), :x => x -> row)
+        @test_throws ArgumentError select(groupby(df, :x), :x => x -> row)
+        @test combine(groupby(df, :x), :x => ByRow(x -> row) => :v) ==
+              DataFrame(x=[1, 1, 2], v=[row, row, row])
+    end
+
+    # note the grouping of Tables.AbstractRow types
+    # they have a matching type of return value of keys (tuple vs vector)
+    for df in (DataFrame(id=[1, 1, 2], x=Any[cr, ir1, ir2]),
+               DataFrame(id=[1, 1, 2], x=Any[dr, dfr, mr]))
+        @test combine(df, :x => AsTable) ==
+            DataFrame(a=[1, 1, 1], b=[3, 3, 3])
+        @test combine(groupby(df, :id), :x => AsTable) ==
+            DataFrame(id=[1, 1, 2], a=[1, 1, 1], b=[3, 3, 3])
+    end
+
+    # example from issue https://github.com/JuliaData/DataFrames.jl/issues/3335
+    @test combine(groupby(DataFrame(:group=>[1, 1, 2, 2]), :group),
+                  sdf -> Tables.Row((; foo="foo", boo=[1, 2]))) ==
+          DataFrame(group=1:2, foo=["foo", "foo"], boo=[[1, 2], [1, 2]])
+    @test combine(DataFrame(:group=>[1, 1, 2, 2]),
+                  sdf -> Tables.Row((; foo="foo", boo=[1, 2]))) ==
+          DataFrame(foo=["foo"], boo=[[1, 2]])
+
+    gdf = groupby(DataFrame(x=1:2), :x)
+    @test_throws ArgumentError combine(gdf, :x => (x -> x[1] == 1 ? "x" : cr))
+    @test_throws ArgumentError combine(gdf, :x => (x -> x[1] == 2 ? "x" : cr) => AsTable)
 end
 
 end # module
