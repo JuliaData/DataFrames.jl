@@ -1514,13 +1514,13 @@ In DataFrames.jl there are seven functions that can be used to manipulate data f
 
 | Function     | Memory Usage                     | Column Retention                             | Row Retention                                       |
 | ------------ | -------------------------------- | -------------------------------------------- | --------------------------------------------------- |
-| `transform`  | Creates a new data frame.        | Retains both source and transformed columns. | Retains same number of rows as source data frame.   |
-| `transform!` | Modifies an existing data frame. | Retains both source and transformed columns. | Retains same number of rows as source data frame.   |
-| `select`     | Creates a new data frame.        | Retains only transformed columns.            | Retains same number of rows as source data frame.   |
-| `select!`    | Modifies an existing data frame. | Retains only transformed columns.            | Retains same number of rows as source data frame.   |
-| `subset`     | Creates a new data frame.        | Retains both source and transformed columns. | Number of rows is determined by the transformation. |
-| `subset!`    | Modifies an existing data frame. | Retains both source and transformed columns. | Number of rows is determined by the transformation. |
-| `combine`    | Creates a new data frame.        | Retains only transformed columns.            | Number of rows is determined by the transformation. |
+| `transform`  | Creates a new data frame.        | Retains both source and manipulated columns. | Retains same number of rows as source data frame.   |
+| `transform!` | Modifies an existing data frame. | Retains both source and manipulated columns. | Retains same number of rows as source data frame.   |
+| `select`     | Creates a new data frame.        | Retains only manipulated columns.            | Retains same number of rows as source data frame.   |
+| `select!`    | Modifies an existing data frame. | Retains only manipulated columns.            | Retains same number of rows as source data frame.   |
+| `subset`     | Creates a new data frame.        | Retains both source and manipulated columns. | Number of rows is determined by the manipulation.   |
+| `subset!`    | Modifies an existing data frame. | Retains both source and manipulated columns. | Number of rows is determined by the manipulation.   |
+| `combine`    | Creates a new data frame.        | Retains only manipulated columns.            | Number of rows is determined by the manipulation.   |
 
 ### Constructing Operation Pairs
 All of the functions above use the same syntax which is commonly
@@ -1535,15 +1535,14 @@ and it can take any of the forms listed below:
 - `source_column_selector => operation_function => new_column_names`
   - passes source column(s) to function
   - names the resulting column(s) `new_column_names`
-    - *cannot be used with `subset` or `subset!`*
+  - *(cannot be used with `subset` or `subset!`)*
 - `source_column_selector => new_column_names`
-  - renames source column
-    - *may only select one column unless broadcasting*
-    - *may be used to split a column containing collections into multiple columns*
-    - *cannot be used with `subset` or `subset!`*
+  - renames a single source column
+  - * or splits a single column of collection elements into multiple new columns
+  - *(cannot be used with `subset` or `subset!`)*
 - `source_column_selector`
   - selects source column(s) without transforming them
-    - *often used with `select` or `select!` for isolating or moving columns*
+  - *(often used with `select` or `select!` for isolating or moving columns)*
 
 #### `source_column_selector`
 The most basic `source_column_selector` is a column name,
