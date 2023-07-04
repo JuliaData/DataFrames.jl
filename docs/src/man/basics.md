@@ -1510,7 +1510,8 @@ julia> german[Not(5), r"S"]
 
 ## Basic Usage of Manipulation Functions
 
-In DataFrames.jl there are seven functions that can be used to manipulate data frame columns:
+In DataFrames.jl there are seven functions that can be used
+to manipulate data frame columns:
 
 | Function     | Memory Usage                     | Column Retention                             | Row Retention                                       |
 | ------------ | -------------------------------- | -------------------------------------------- | --------------------------------------------------- |
@@ -1527,38 +1528,38 @@ All of the functions above use the same syntax which is commonly
 `manipulation_function(dataframe, operation)`.
 The `operation` argument is a `Pair` which defines the
 operation to be applied to the source `dataframe`,
-and it can take any of the forms listed below:
+and it can take any of the following common forms explained below:
 
-- `source_column_selector => operation_function`
-  - passes source column(s) to function
-  - automatically names the resulting column(s)
-- `source_column_selector => operation_function => new_column_names`
-  - passes source column(s) to function
-  - names the resulting column(s) `new_column_names`
-  - *(cannot be used with `subset` or `subset!`)*
-- `source_column_selector => new_column_names`
-  - renames a single source column
-  - * or splits a single column of collection elements into multiple new columns
-  - *(cannot be used with `subset` or `subset!`)*
-- `source_column_selector`
-  - selects source column(s) without transforming them
-  - *(often used with `select` or `select!` for isolating or moving columns)*
+`source_column_selector`
+: selects source column(s) without manipulating or renaming them
+
+`source_column_selector => operation_function`
+: passes source column(s) as arguments to a function
+and automatically names the resulting column(s)
+
+`source_column_selector => operation_function => new_column_names`
+: passes source column(s) as arguments to a function
+and names the resulting column(s) `new_column_names`
+
+`source_column_selector => new_column_names`
+: renames a source column,
+or splits a column containing collection elements into multiple new columns
 
 #### `source_column_selector`
-The most basic `source_column_selector` is a column name,
-but there are many more ways to select columns as explained
-in the [Indexing](@ref) API.
+`source_column_selector` is usually a column name
+or column index which identifies a data frame column.
+`source_column_selector` may be used as the entire `operation`
+with `select` or `select!` to isolate or reorder columns.
 
-##### Examples
 ```julia
-julia> df = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
-3×2 DataFrame
- Row │ a      b
-     │ Int64  Int64
-─────┼──────────────
-   1 │     1      4
-   2 │     2      5
-   3 │     3      6
+julia> df = DataFrame(a = [1, 2, 3], b = [4, 5, 6], c = [7, 8, 9])
+3×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      7
+   2 │     2      5      8
+   3 │     3      6      9
 
 julia> select(df, :b)
 3×1 DataFrame
@@ -1586,99 +1587,129 @@ julia> select(df, 2)
    1 │     4
    2 │     5
    3 │     6
+```
 
-julia> select(df, Not(:a))
-3×1 DataFrame
- Row │ b
-     │ Int64
-─────┼───────
-   1 │     4
-   2 │     5
-   3 │     6
+`source_column_selector` may also be a collection of columns such as a vector,
+a [regular expression](https://docs.julialang.org/en/v1/manual/strings/#Regular-Expressions),
+a `Not`, `Between`, `All`, or `Cols` expression,
+or a `:`.
+See the [Indexing](@ref) API for the full list of possible values with references.
+
+```julia
+julia> df = DataFrame(
+           id = [1, 2, 3],
+           first_name = ["José", "Emma", "Nathan"],
+           last_name = ["Garcia", "Marino", "Boyer"],
+           age = [61, 24, 33]
+       )
+3×4 DataFrame
+ Row │ id     first_name  last_name  age
+     │ Int64  String      String     Int64
+─────┼─────────────────────────────────────
+   1 │     1  José        Garcia        61
+   2 │     2  Emma        Marino        24
+   3 │     3  Nathan      Boyer         33
+
+julia> select(df, [:last_name, :first_name])
+3×2 DataFrame
+ Row │ last_name  first_name
+     │ String     String
+─────┼───────────────────────
+   1 │ Garcia     José
+   2 │ Marino     Emma
+   3 │ Boyer      Nathan
+
+julia> select(df, r"name")
+3×2 DataFrame
+ Row │ first_name  last_name
+     │ String      String
+─────┼───────────────────────
+   1 │ José        Garcia
+   2 │ Emma        Marino
+   3 │ Nathan      Boyer
+
+julia> select(df, Not(:id))
+3×3 DataFrame
+ Row │ first_name  last_name  age
+     │ String      String     Int64
+─────┼──────────────────────────────
+   1 │ José        Garcia        61
+   2 │ Emma        Marino        24
+   3 │ Nathan      Boyer         33
+
+julia> select(df, Between(2,4))
+3×3 DataFrame
+ Row │ first_name  last_name  age
+     │ String      String     Int64
+─────┼──────────────────────────────
+   1 │ José        Garcia        61
+   2 │ Emma        Marino        24
+   3 │ Nathan      Boyer         33
 ```
 
 #### `operation_function`
-Here `operation_function` is a function which operates on an entire data frame
-column passed as a vector.
-If you instead want to apply a function to each element in the column,
+`operation_function` is a function which operates on data frame
+columns passed as vectors.
+When multiple columns are selected by `source_column_selector`,
+the `operation_function` will receive the columns as multiple positional arguments
+in the order they were selected like `f(column1, column2, column3)`.
+
+```julia
+julia> df = DataFrame(a = [1, 2, 3], b = [4, 5, 4])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      4
+
+julia> combine(df, :a => sum)
+1×1 DataFrame
+ Row │ a_sum
+     │ Int64
+─────┼───────
+   1 │     6
+
+julia> transform(df, :b => maximum) # transform and select copy result to all rows
+3×3 DataFrame
+ Row │ a      b      b_maximum
+     │ Int64  Int64  Int64
+─────┼─────────────────────────
+   1 │     1      4          5
+   2 │     2      5          5
+   3 │     3      4          5
+
+julia> transform(df, [:b, :a] => -) # vector subtraction is okay
+3×3 DataFrame
+ Row │ a      b      b_a_-
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      3
+   2 │     2      5      3
+   3 │     3      4      1
+
+julia> transform(df, [:a, :b] => *) # vector multiplication is not defined
+ERROR: MethodError: no method matching *(::Vector{Int64}, ::Vector{Int64})
+```
+
+Fear not! There is a quick fix for the previous error.
+If you want to apply a function to each element in a column
+instead of the entire column vector,
 then you can wrap your element-wise function in `ByRow` like
 `ByRow(my_elementwise_function)`.
 This will apply `my_elementwise_function` to every element in the column
 and then collect the results back into a vector.
 
-##### Examples
 ```julia
-julia> df = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
-3×2 DataFrame
- Row │ a      b
-     │ Int64  Int64
-─────┼──────────────
-   1 │     1      4
-   2 │     2      5
-   3 │     3      6
-
-julia> combine(df, :b => sum)
-1×1 DataFrame
- Row │ b_sum
-     │ Int64
-─────┼───────
-   1 │    15
-
-julia> select(df, :b => sum)
-3×1 DataFrame
- Row │ b_sum
-     │ Int64
-─────┼───────
-   1 │    15
-   2 │    15
-   3 │    15
-
-julia> select(df, :b => ByRow(x -> x + 2))
-3×1 DataFrame
- Row │ b_function
-     │ Int64
-─────┼────────────
-   1 │          6
-   2 │          7
-   3 │          8
-```
-
-When multiple columns are selected by `source_column_selector`,
-the `operation_function` will receive the columns as multiple positional arguments in the
-order they are selected like `f(column1, column2, column3)`.
-Slurping and splatting with `...` can be used to define a function which can
-accept any number of columns returned by `source_column_selector`.
-For example, the function `f(columns...) = max.(columns...)` will return a new column
-containing the largest element from each row for any number of input columns.
-
-##### Examples
-```julia
-julia> df = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
-3×2 DataFrame
- Row │ a      b
-     │ Int64  Int64
-─────┼──────────────
-   1 │     1      4
-   2 │     2      5
-   3 │     3      6
-
-julia> transform(df, [:a, :b] => +)
+julia> transform(df, [:a, :b] => ByRow(*))
 3×3 DataFrame
- Row │ a      b      a_b_+
+ Row │ a      b      a_b_*
      │ Int64  Int64  Int64
 ─────┼─────────────────────
-   1 │     1      4      5
-   2 │     2      5      7
-   3 │     3      6      9
-
-julia> transform(df, [:a, :b] => ByRow((x, y) -> x * y))
-3×3 DataFrame
- Row │ a      b      a_b_function
-     │ Int64  Int64  Int64
-─────┼────────────────────────────
-   1 │     1      4             4
-   2 │     2      5            10
-   3 │     3      6            18
+   1 │     1      4      4
+   2 │     2      5     10
+   3 │     3      4     12
 
 julia> transform(df, Cols(:) => ByRow(max))
 3×3 DataFrame
@@ -1687,21 +1718,104 @@ julia> transform(df, Cols(:) => ByRow(max))
 ─────┼───────────────────────
    1 │     1      4        4
    2 │     2      5        5
-   3 │     3      6        6
+   3 │     3      4        4
 
+julia> f(x) = x + 1
+f (generic function with 1 method)
+
+julia> transform(df, :a => ByRow(f))
+3×3 DataFrame
+ Row │ a      b      a_f
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      2
+   2 │     2      5      3
+   3 │     3      4      4
+```
+
+Alternatively, you may just want to define your function itself
+to broadcast over vectors.
+
+```julia
+julia> g(x) = x .+ 1
+g (generic function with 1 method)
+
+julia> transform(df, :a => g)
+3×3 DataFrame
+ Row │ a      b      a_g
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      2
+   2 │     2      5      3
+   3 │     3      4      4
+```
+
+[Anonymous functions](https://docs.julialang.org/en/v1/manual/functions/#man-anonymous-functions)
+are a convenient way to define and use an `operation_function`
+all within the manipulation function call.
+
+```julia
+julia> select(df, :a => ByRow(x -> x + 1))
+3×1 DataFrame
+ Row │ a_function
+     │ Int64
+─────┼────────────
+   1 │          2
+   2 │          3
+   3 │          4
+
+julia> transform(df, [:a, :b] => ByRow((x, y) -> 2x + y))
+3×3 DataFrame
+ Row │ a      b      a_b_function
+     │ Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      4             6
+   2 │     2      5             9
+   3 │     3      4            10
+
+julia> subset(df, :b => ByRow(x -> x < 5))
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     3      4
+
+julia> subset(df, :b => ByRow(<(5))) # shorter version
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     3      4
+```
+
+!!! Note
+    `operation_functions` within `subset` or `subset!` functions calls
+    must return a boolean vector.
+
+Slurping and splatting with `...` can be used to define a function which can
+accept any number of columns returned by `source_column_selector`.
+For example, the function `f(columns...) = max.(columns...)` will return a new column
+containing the largest element from each row for any number of input columns.
+
+##### AsTable (add more subheaders)
+
+```julia
 
 ```
 
 #### `new_column_names`
-The results of the transformation will be placed into new columns
+The results of the operation will be placed into new columns
 with names defined by `new_column_names`.
 `new_column_names` may be a string, a symbol, a vector of strings,
 or a vector of symbols.
-In the `source_column_selector => function => new_column_names` transformation form,
+
+In the `source_column_selector => operation_function => new_column_names` operation form,
 `new_column_names` may additionally be a renaming function which operates on a string
 or a vector of strings to create the destination column names programmatically.
 
-In the `source_column_selector => function` transformation form,
+In the `source_column_selector => operation_function` operation form,
 `new_column_names` will be generated automatically as the function name
 appended to the source column name with an underscore.
 However, if keyword argument `renamecols=false` is passed
@@ -1709,22 +1823,25 @@ to the transformation function,
 then the new columns will retain their original source names
 instead of using automatically generated names.
 
+*Cannot be used with `subset` or `subset!`.*
+*Multi-column selection is not allowed in the `source_column_selector => new_column_names` operation.*
+
 #### More Information
-This transformation pair syntax is sometimes referred to as a mini-language.
-More details and examples of the transformation mini-language can be found in
+This operation pair syntax is sometimes referred to as a mini-language.
+More details and examples of the opertation mini-language can be found in
 [this blog post](https://bkamins.github.io/julialang/2020/12/24/minilanguage.html).
 
 !!! Note Notes
-    - Multiple transformations may be applied at once using any of the following:
-      - `transformation_function(source_dataframe, transformation1, transformation2)`
-      - `transformation_function(source_dataframe, [transformation1, transformation2])`
-      - `transformation_function(source_dataframe, [transformation1 transformation2])`
-    - Any of the `transformation` pair syntax forms shown above can also use
+    - Multiple operations may be applied at once using any of the following:
+      - `manipulation_function(dataframe, operation1, operation2)`
+      - `manipulation_function(dataframe, [operation1, operation2])`
+      - `manipulation_function(dataframe, [operation1 operation2])`
+    - Any of the `operation` pair syntax forms shown above can also use
       broadcasting with `.=>` to apply multiple transformations at once.
       See the next section for more information on
       [Broadcasting with Transformation Functions](@ref).
 
-#### Examples
+#### Manipulation Examples with the German Dataset
 Let us move to the examples of application of these rules
 
 ```jldoctest dataframe
