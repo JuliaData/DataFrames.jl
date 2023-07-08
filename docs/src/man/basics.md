@@ -1513,15 +1513,15 @@ julia> german[Not(5), r"S"]
 In DataFrames.jl there are seven functions that can be used
 to manipulate data frame columns:
 
-| Function     | Memory Usage                     | Column Retention                             | Row Retention                                       |
-| ------------ | -------------------------------- | -------------------------------------------- | --------------------------------------------------- |
-| `transform`  | Creates a new data frame.        | Retains both source and manipulated columns. | Retains same number of rows as source data frame.   |
-| `transform!` | Modifies an existing data frame. | Retains both source and manipulated columns. | Retains same number of rows as source data frame.   |
-| `select`     | Creates a new data frame.        | Retains only manipulated columns.            | Retains same number of rows as source data frame.   |
-| `select!`    | Modifies an existing data frame. | Retains only manipulated columns.            | Retains same number of rows as source data frame.   |
-| `subset`     | Creates a new data frame.        | Retains both source and manipulated columns. | Number of rows is determined by the manipulation.   |
-| `subset!`    | Modifies an existing data frame. | Retains both source and manipulated columns. | Number of rows is determined by the manipulation.   |
-| `combine`    | Creates a new data frame.        | Retains only manipulated columns.            | Number of rows is determined by the manipulation.   |
+| Function     | Memory Usage                     | Column Retention                             | Row Retention                                     |
+| ------------ | -------------------------------- | -------------------------------------------- | ------------------------------------------------- |
+| `transform`  | Creates a new data frame.        | Retains both source and manipulated columns. | Retains same number of rows as source data frame. |
+| `transform!` | Modifies an existing data frame. | Retains both source and manipulated columns. | Retains same number of rows as source data frame. |
+| `select`     | Creates a new data frame.        | Retains only manipulated columns.            | Retains same number of rows as source data frame. |
+| `select!`    | Modifies an existing data frame. | Retains only manipulated columns.            | Retains same number of rows as source data frame. |
+| `subset`     | Creates a new data frame.        | Retains only source columns.                 | Number of rows is determined by the manipulation. |
+| `subset!`    | Modifies an existing data frame. | Retains only source columns.                 | Number of rows is determined by the manipulation. |
+| `combine`    | Creates a new data frame.        | Retains only manipulated columns.            | Number of rows is determined by the manipulation. |
 
 ### Constructing Operation Pairs
 All of the functions above use the same syntax which is commonly
@@ -1545,8 +1545,13 @@ and names the resulting column(s) `new_column_names`
 : renames a source column,
 or splits a column containing collection elements into multiple new columns
 
+!!! Note
+      The `source_column_selector`
+      and the `source_column_selector => new_column_names` operation forms
+      are not available for the `subset` and `subset!` manipulation functions.
+
 #### `source_column_selector`
-`source_column_selector` is usually a column name
+Inside an `operation`, `source_column_selector` is usually a column name
 or column index which identifies a data frame column.
 `source_column_selector` may be used as the entire `operation`
 with `select` or `select!` to isolate or reorder columns.
@@ -1647,9 +1652,15 @@ julia> select(df, Between(2,4))
    3 │ Nathan      Boyer         33
 ```
 
+`AsTable(source_column_selector)` is a special `source_column_selector`
+that can be used to select multiple columns into a single `NamedTuple`.
+This is not useful on its own, so the function of this selector
+will be explained in the next section.
+
+
 #### `operation_function`
-`operation_function` is a function which operates on data frame
-columns passed as vectors.
+Inside an `operation` pair, `operation_function` is a function
+which operates on data frame columns passed as vectors.
 When multiple columns are selected by `source_column_selector`,
 the `operation_function` will receive the columns as multiple positional arguments
 in the order they were selected like `f(column1, column2, column3)`.
@@ -1671,7 +1682,7 @@ julia> combine(df, :a => sum)
 ─────┼───────
    1 │     6
 
-julia> transform(df, :b => maximum) # transform and select copy result to all rows
+julia> transform(df, :b => maximum) # `transform` and `select` copy result to all rows
 3×3 DataFrame
  Row │ a      b      b_maximum
      │ Int64  Int64  Int64
@@ -1693,9 +1704,9 @@ julia> transform(df, [:a, :b] => *) # vector multiplication is not defined
 ERROR: MethodError: no method matching *(::Vector{Int64}, ::Vector{Int64})
 ```
 
-Fear not! There is a quick fix for the previous error.
+Don't worry! There is a quick fix for the previous error.
 If you want to apply a function to each element in a column
-instead of the entire column vector,
+instead of to the entire column vector,
 then you can wrap your element-wise function in `ByRow` like
 `ByRow(my_elementwise_function)`.
 This will apply `my_elementwise_function` to every element in the column
@@ -1733,8 +1744,9 @@ julia> transform(df, :a => ByRow(f))
    3 │     3      4      4
 ```
 
-Alternatively, you may just want to define your function itself
-to broadcast over vectors.
+Alternatively, you may just want to define the function itself so it
+[broadcasts](https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting)
+over vectors.
 
 ```julia
 julia> g(x) = x .+ 1
@@ -1781,7 +1793,7 @@ julia> subset(df, :b => ByRow(x -> x < 5))
    1 │     1      4
    2 │     3      4
 
-julia> subset(df, :b => ByRow(<(5))) # shorter version
+julia> subset(df, :b => ByRow(<(5))) # shorter version of the previous
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -1791,55 +1803,400 @@ julia> subset(df, :b => ByRow(<(5))) # shorter version
 ```
 
 !!! Note
-    `operation_functions` within `subset` or `subset!` functions calls
+    `operation_functions` within `subset` or `subset!` function calls
     must return a boolean vector.
+    `true` elements in the boolean vector will determine
+    which rows are retained in the resulting data frame.
 
-Slurping and splatting with `...` can be used to define a function which can
-accept any number of columns returned by `source_column_selector`.
-For example, the function `f(columns...) = max.(columns...)` will return a new column
-containing the largest element from each row for any number of input columns.
+As demonstrated above, `DataFrame` columns are usually passed
+from `source_column_selector` to `operation_function` as one or more
+vector arguments.
+However, when `AsTable(source_column_selector)` is used,
+the selected columns are collected and passed as a single `NamedTuple`
+to `operation_function`.
 
-##### AsTable (add more subheaders)
+This is often useful when your `operation_function` is defined to operate
+on a single collection argument rather than on multiple positional arguments.
+The distinction is somewhat similar to the difference between the built-in
+`min` and `minimum` functions.
+`min` is defined to find the minimum value among multiple positional arguments,
+while `minimum` is defined to find the minimum value
+among the elements of a single collection argument.
 
 ```julia
+julia> df = DataFrame(a = 1:2, b = 3:4, c = 5:6, d = 2:-1:1)
+2×4 DataFrame
+ Row │ a      b      c      d
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      3      5      2
+   2 │     2      4      6      1
 
+julia> select(df, Cols(:) => ByRow(min)) # min works on a multiple arguments
+2×1 DataFrame
+ Row │ a_b_etc_min
+     │ Int64
+─────┼─────────────
+   1 │           1
+   2 │           1
+
+julia> select(df, AsTable(:) => ByRow(minimum)) # minimum works on a collection
+2×1 DataFrame
+ Row │ a_b_etc_minimum
+     │ Int64
+─────┼─────────────────
+   1 │               1
+   2 │               1
+
+julia> select(df, [:a,:b] => ByRow(+)) # `+` works on a multiple arguments
+2×1 DataFrame
+ Row │ a_b_+
+     │ Int64
+─────┼───────
+   1 │     4
+   2 │     6
+
+julia> select(df, AsTable([:a,:b]) => ByRow(sum)) # `sum` works on a collection
+2×1 DataFrame
+ Row │ a_b_sum
+     │ Int64
+─────┼─────────
+   1 │       4
+   2 │       6
+
+julia> using Statistics # contains the `mean` function
+
+julia> select(df, AsTable(Between(:b, :d)) => ByRow(mean))
+2×1 DataFrame
+ Row │ b_c_d_mean
+     │ Float64
+─────┼────────────
+   1 │    3.33333
+   2 │    3.66667
 ```
 
+`AsTable` can also be used to pass columns to a function which operates
+on fields of a `NamedTuple`.
+
+```julia
+julia> df = DataFrame(a = 1:2, b = 3:4, c = 5:6, d = 7:8)
+2×4 DataFrame
+ Row │ a      b      c      d
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      3      5      7
+   2 │     2      4      6      8
+
+julia> f(nt) = nt.a + nt.d
+f (generic function with 1 method)
+
+julia> transform(df, AsTable(:) => ByRow(f))
+2×5 DataFrame
+ Row │ a      b      c      d      a_b_etc_f
+     │ Int64  Int64  Int64  Int64  Int64
+─────┼───────────────────────────────────────
+   1 │     1      3      5      7          8
+   2 │     2      4      6      8         10
+```
+
+As demonstrated above,
+in the `source_column_selector => operation_function` operation pair form,
+the results of an operation will be placed into a new column with an
+automatically-generated name based on the operation;
+the new column name will be the `operation_function` name
+appended to the source column name(s) with an underscore.
+
+This automatic column naming behavior can be avoided in two ways.
+First, the operation result can be placed back into the original column
+with the original column name by switching the keyword argument `renamecols`
+from its default value (`true`) to `renamecols=false`.
+
+```julia
+julia> df = DataFrame(a=1:4, b=5:8)
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
+
+julia> transform(df, :a => ByRow(x->x+10), renamecols=false) # add 10 in-place
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │    11      5
+   2 │    12      6
+   3 │    13      7
+   4 │    14      8
+```
+
+The second method to avoid the default manipulation column naming is to
+specify your own `new_column_names`.
+
 #### `new_column_names`
-The results of the operation will be placed into new columns
-with names defined by `new_column_names`.
-`new_column_names` may be a string, a symbol, a vector of strings,
-or a vector of symbols.
 
-In the `source_column_selector => operation_function => new_column_names` operation form,
-`new_column_names` may additionally be a renaming function which operates on a string
-or a vector of strings to create the destination column names programmatically.
+`new_column_names` can be included at the end of an `operation` pair to specify
+the name of the new column(s).
+`new_column_names` may be a symbol or a string.
 
-In the `source_column_selector => operation_function` operation form,
-`new_column_names` will be generated automatically as the function name
-appended to the source column name with an underscore.
-However, if keyword argument `renamecols=false` is passed
-to the transformation function,
-then the new columns will retain their original source names
-instead of using automatically generated names.
+```julia
+julia> df = DataFrame(a=1:4, b=5:8)
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
 
-*Cannot be used with `subset` or `subset!`.*
-*Multi-column selection is not allowed in the `source_column_selector => new_column_names` operation.*
+julia> transform(df, Cols(:) => ByRow(+) => :c)
+4×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5      6
+   2 │     2      6      8
+   3 │     3      7     10
+   4 │     4      8     12
+
+julia> transform(df, Cols(:) => ByRow(+) => "a+b")
+4×3 DataFrame
+ Row │ a      b      a+b
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5      6
+   2 │     2      6      8
+   3 │     3      7     10
+   4 │     4      8     12
+
+julia> transform(df, :a => ByRow(x->x+10) => "a+10")
+4×3 DataFrame
+ Row │ a      b      a+10
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5     11
+   2 │     2      6     12
+   3 │     3      7     13
+   4 │     4      8     14
+```
+
+The `source_column_selector => new_column_names` operation form
+can be used to rename columns without an intermediate function.
+However, there are `rename` and `rename!` functions,
+which accept the same syntax,
+that tend to be more useful for this operation.
+
+```julia
+julia> df = DataFrame(a=1:4, b=5:8)
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
+
+julia> transform(df, :a => :α) # adds column α
+4×3 DataFrame
+ Row │ a      b      α
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5      1
+   2 │     2      6      2
+   3 │     3      7      3
+   4 │     4      8      4
+
+julia> select(df, :a => :α) # retains only column α
+4×1 DataFrame
+ Row │ α
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+   4 │     4
+
+julia> rename(df, :a => :α) # renames column α in-place
+4×2 DataFrame
+ Row │ α      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
+```
+
+Additionally, in the
+`source_column_selector => operation_function => new_column_names` operation form,
+`new_column_names` may be a renaming function which operates on a string
+to create the destination column names programmatically.
+
+```julia
+julia> df = DataFrame(a=1:4, b=5:8)
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
+
+julia> add_prefix(s) = "new_" * s
+add_prefix (generic function with 1 method)
+
+julia> transform(df, :a => (x -> 10 .* x) => add_prefix) # with named renaming function
+4×3 DataFrame
+ Row │ a      b      new_a
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5     10
+   2 │     2      6     20
+   3 │     3      7     30
+   4 │     4      8     40
+
+julia> transform(df, :a => (x -> 10 .* x) => (s -> "new_" * s)) # with anonymous renaming function
+4×3 DataFrame
+ Row │ a      b      new_a
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5     10
+   2 │     2      6     20
+   3 │     3      7     30
+   4 │     4      8     40
+```
+
+Note that a renaming function will not work in the
+`source_column_selector => new_column_names` operation form
+because a function in the second element of the operation pair is assumed to take
+the `source_column_selector => operation_function` operation form.
+To work around this limitation, use the
+`source_column_selector => operation_function => new_column_names` operation form
+with `identity` as the `operation_function`.
+
+```julia
+julia> transform(df, :a => add_prefix)
+ERROR: MethodError: no method matching *(::String, ::Vector{Int64})
+
+julia> transform(df, :a => identity => add_prefix)
+4×3 DataFrame
+ Row │ a      b      new_a
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5      1
+   2 │     2      6      2
+   3 │     3      7      3
+   4 │     4      8      4
+```
+
+!!! Note
+      Renaming functions are not currently supported within `Pair` arguments
+      to the `rename` and `rename!` functions.
+      However, renaming functions can be applied to an entire data frame
+      with the `rename(renaming_function, dataframe)` method.
+
+In the `source_column_selector => new_column_names` operation form,
+only a single source column may be selected per operation,
+so why is `new_column_names` plural?
+It is possible to split the data contained inside a single column
+into multiple new columns by supplying a vector of strings or symbols
+as `new_column_names`.
+
+```julia
+julia> df = DataFrame(data = [(1,2), (3,4)]) # vector of tuples
+2×1 DataFrame
+ Row │ data
+     │ Tuple…
+─────┼────────
+   1 │ (1, 2)
+   2 │ (3, 4)
+
+julia> transform(df, :data => [:first, :second]) # manual naming
+2×3 DataFrame
+ Row │ data    first  second
+     │ Tuple…  Int64  Int64
+─────┼───────────────────────
+   1 │ (1, 2)      1       2
+   2 │ (3, 4)      3       4
+```
+
+This kind of data splitting can even be done automatically with `AsTable`.
+
+```julia
+julia> transform(df, :data => AsTable) # default automatic naming with tuples
+2×3 DataFrame
+ Row │ data    x1     x2
+     │ Tuple…  Int64  Int64
+─────┼──────────────────────
+   1 │ (1, 2)      1      2
+   2 │ (3, 4)      3      4
+```
+
+If a data frame column contains `NamedTuple`s,
+then `AsTable` will preserve the field names.
+```julia
+julia> df = DataFrame(data = [(a=1,b=2), (a=3,b=4)]) # vector of named tuples
+2×1 DataFrame
+ Row │ data
+     │ NamedTup…
+─────┼────────────────
+   1 │ (a = 1, b = 2)
+   2 │ (a = 3, b = 4)
+
+julia> transform(df, :data => AsTable) # keeps names from named tuples
+2×3 DataFrame
+ Row │ data            a      b
+     │ NamedTup…       Int64  Int64
+─────┼──────────────────────────────
+   1 │ (a = 1, b = 2)      1      2
+   2 │ (a = 3, b = 4)      3      4
+```
+
+Renaming functions also work for multi-column transformations,
+but they must operate on a vector of strings.
+
+```julia
+julia> df = DataFrame(data = [(1,2), (3,4)])
+2×1 DataFrame
+ Row │ data
+     │ Tuple…
+─────┼────────
+   1 │ (1, 2)
+   2 │ (3, 4)
+
+julia> new_names(v) = ["primary ", "secondary "] .* v
+new_names (generic function with 1 method)
+
+julia> transform(df, :data => identity => new_names)
+2×3 DataFrame
+ Row │ data    primary data  secondary data
+     │ Tuple…  Int64         Int64
+─────┼──────────────────────────────────────
+   1 │ (1, 2)             1               2
+   2 │ (3, 4)             3               4
+```
+
+#### Multiple Operations per Manipulation
+All of the manipulation functions can accept multiple `operation` pairs at once
+using any of the following:
+- `manipulation_function(dataframe, operation1, operation2)`   : multiple arguments
+- `manipulation_function(dataframe, [operation1, operation2])` : vector
+- `manipulation_function(dataframe, [operation1 operation2])`  : 1-by-x matrix
+
+#### Broadcasting Operation Pairs
+Broadcasting pairs with `.=>` is often a convenient way to generate multiple
+similar `operation`s to be applied within a single manipulation.
 
 #### More Information
 This operation pair syntax is sometimes referred to as a mini-language.
 More details and examples of the opertation mini-language can be found in
 [this blog post](https://bkamins.github.io/julialang/2020/12/24/minilanguage.html).
-
-!!! Note Notes
-    - Multiple operations may be applied at once using any of the following:
-      - `manipulation_function(dataframe, operation1, operation2)`
-      - `manipulation_function(dataframe, [operation1, operation2])`
-      - `manipulation_function(dataframe, [operation1 operation2])`
-    - Any of the `operation` pair syntax forms shown above can also use
-      broadcasting with `.=>` to apply multiple transformations at once.
-      See the next section for more information on
-      [Broadcasting with Transformation Functions](@ref).
 
 #### Manipulation Examples with the German Dataset
 Let us move to the examples of application of these rules
