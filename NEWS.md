@@ -1,5 +1,13 @@
 # DataFrames.jl v1.6 Release Notes
 
+## Breaking changes
+
+* Objects inheriting from `Tables.AbstractRow` are now treated in the same way as
+  `DataFrameRow` by `select`/`transform`/`combine` functions.
+  In previous versions they were treated as a scalar, but this was
+  inconsistent with the intention of `Tables.AbstractRow` definition
+  ([#3348](https://github.com/JuliaData/DataFrames.jl/pull/3348))
+
 ## New functionalities
 
 * Add `Iterators.partition` support for `DataFrameRows`
