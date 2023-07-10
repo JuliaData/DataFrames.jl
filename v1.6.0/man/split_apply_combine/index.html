@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Split-apply-combine · DataFrames.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link rel="canonical" href="https://juliadata.github.io/DataFrames.jl/stable/man/split_apply_combine/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="DataFrames.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">DataFrames.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><a class="tocitem" href="../basics/">First Steps with DataFrames.jl</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../getting_started/">Getting Started</a></li><li><a class="tocitem" href="../working_with_dataframes/">Working with DataFrames</a></li><li><a class="tocitem" href="../importing_and_exporting/">Importing and Exporting Data (I/O)</a></li><li><a class="tocitem" href="../joins/">Joins</a></li><li class="is-active"><a class="tocitem" href>Split-apply-combine</a><ul class="internal"><li><a class="tocitem" href="#Design-of-the-split-apply-combine-support"><span>Design of the split-apply-combine support</span></a></li><li><a class="tocitem" href="#Examples-of-the-split-apply-combine-operations"><span>Examples of the split-apply-combine operations</span></a></li><li><a class="tocitem" href="#Using-GroupedDataFrame-as-an-iterable-and-indexable-object"><span>Using <code>GroupedDataFrame</code> as an iterable and indexable object</span></a></li><li><a class="tocitem" href="#Simulating-the-SQL-where-clause"><span>Simulating the SQL <code>where</code> clause</span></a></li><li><a class="tocitem" href="#Column-independent-operations"><span>Column-independent operations</span></a></li><li><a class="tocitem" href="#Column-independent-operations-versus-functions"><span>Column-independent operations versus functions</span></a></li><li><a class="tocitem" href="#Specifying-group-order-in-groupby"><span>Specifying group order in <code>groupby</code></span></a></li></ul></li><li><a class="tocitem" href="../reshaping_and_pivoting/">Reshaping</a></li><li><a class="tocitem" href="../sorting/">Sorting</a></li><li><a class="tocitem" href="../categorical/">Categorical Data</a></li><li><a class="tocitem" href="../missing/">Missing Data</a></li><li><a class="tocitem" href="../querying_frameworks/">Data manipulation frameworks</a></li><li><a class="tocitem" href="../comparisons/">Comparison with Python/R/Stata</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../lib/types/">Types</a></li><li><a class="tocitem" href="../../lib/functions/">Functions</a></li><li><a class="tocitem" href="../../lib/indexing/">Indexing</a></li><li><a class="tocitem" href="../../lib/metadata/">Metadata</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href>Split-apply-combine</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Split-apply-combine</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaData/DataFrames.jl/blob/main/docs/src/man/split_apply_combine.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="The-Split-Apply-Combine-Strategy"><a class="docs-heading-anchor" href="#The-Split-Apply-Combine-Strategy">The Split-Apply-Combine Strategy</a><a id="The-Split-Apply-Combine-Strategy-1"></a><a class="docs-heading-anchor-permalink" href="#The-Split-Apply-Combine-Strategy" title="Permalink"></a></h1><h2 id="Design-of-the-split-apply-combine-support"><a class="docs-heading-anchor" href="#Design-of-the-split-apply-combine-support">Design of the split-apply-combine support</a><a id="Design-of-the-split-apply-combine-support-1"></a><a class="docs-heading-anchor-permalink" href="#Design-of-the-split-apply-combine-support" title="Permalink"></a></h2><p>Many data analysis tasks involve three steps:</p><ol><li>splitting a data set into groups,</li><li>applying some functions to each of the groups,</li><li>combining the results.</li></ol><p>Note that any of the steps 1 and 3 of this general procedure can be dropped, in which case we just transform a data frame without grouping it and later combining the result.</p><p>A standardized framework for handling this sort of computation is described in the paper &quot;<a href="http://www.jstatsoft.org/v40/i01">The Split-Apply-Combine Strategy for Data Analysis</a>&quot;, written by Hadley Wickham.</p><p>The DataFrames package supports the split-apply-combine strategy through the <code>groupby</code> function that creates a <code>GroupedDataFrame</code>, followed by <code>combine</code>, <code>select</code>/<code>select!</code> or <code>transform</code>/<code>transform!</code>.</p><p>All operations described in this section of the manual are supported both for <code>AbstractDataFrame</code> (when split and combine steps are skipped) and <code>GroupedDataFrame</code>. Technically, <code>AbstractDataFrame</code> is just considered as being grouped on no columns (meaning it has a single group, or zero groups if it is empty). The only difference is that in this case the <code>keepkeys</code> and <code>ungroup</code> keyword arguments (described below) are not supported and a data frame is always returned, as there are no split and combine steps in this case.</p><p>In order to perform operations by groups you first need to create a <code>GroupedDataFrame</code> object from your data frame using the <code>groupby</code> function that takes two arguments: (1) a data frame to be grouped, and (2) a set of columns to group by.</p><p>Operations can then be applied on each group using one of the following functions:</p><ul><li><code>combine</code>: does not put restrictions on number of rows returned per group; the returned values are vertically concatenated following order of groups in <code>GroupedDataFrame</code>; it is typically used to compute summary statistics by group; for <code>GroupedDataFrame</code> if grouping columns are kept they are put as first columns in the result;</li><li><code>select</code>: return a data frame with the number and order of rows exactly the same as the source data frame, including only new calculated columns; <code>select!</code> is an in-place version of <code>select</code>;</li><li><code>transform</code>: return a data frame with the number and order of rows exactly the same as the source data frame, including all columns from the source and new calculated columns; <code>transform!</code> is an in-place version of <code>transform</code>; existing columns in the source data frame are put as first columns in the result;</li></ul><p>As a special case, if a <code>GroupedDataFrame</code> that has zero groups is passed then the result of the operation is determined by performing a single call to the transformation function with a 0-row argument passed to it. The output of this operation is only used to identify the number and type of produced columns, but the result has zero rows.</p><p>All these functions take a specification of one or more functions to apply to each subset of the <code>DataFrame</code>. This specification can be of the following forms:</p><ol><li>standard column selectors (integers, <code>Symbol</code>s, strings, vectors of integers, vectors of <code>Symbol</code>s, vectors of strings, <code>All</code>, <code>Cols</code>, <code>:</code>, <code>Between</code>, <code>Not</code> and regular expressions)</li><li>a <code>cols =&gt; function</code> pair indicating that <code>function</code> should be called with positional arguments holding columns <code>cols</code>, which can be any valid column selector; in this case target column name is automatically generated and it is assumed that <code>function</code> returns a single value or a vector; the generated name is created by concatenating source column name and <code>function</code> name by default (see examples below).</li><li>a <code>cols =&gt; function =&gt; target_cols</code> form additionally explicitly specifying the target column or columns, which must be a single name (as a <code>Symbol</code> or a string), a vector of names or <code>AsTable</code>. Additionally it can be a <code>Function</code> which takes a string or a vector of strings as an argument containing names of columns selected by <code>cols</code>, and returns the target columns names (all accepted types except <code>AsTable</code> are allowed).</li><li>a <code>col =&gt; target_cols</code> pair, which renames the column <code>col</code> to <code>target_cols</code>, which must be single name (as a <code>Symbol</code> or a string), a vector of names or <code>AsTable</code>.</li><li>column-independent operations <code>function =&gt; target_cols</code> or just <code>function</code> for specific <code>function</code>s where the input columns are omitted; without <code>target_cols</code> the new column has the same name as <code>function</code>, otherwise it must be single name (as a <code>Symbol</code> or a string). Supported <code>function</code>s are:<ul><li><code>nrow</code> to efficiently compute the number of rows in each group.</li><li><code>proprow</code> to efficiently compute the proportion of rows in each group.</li><li><code>eachindex</code> to return a vector holding the number of each row within each group.</li><li><code>groupindices</code> to return the group number.</li></ul></li><li>vectors or matrices containing transformations specified by the <code>Pair</code> syntax described in points 2 to 5</li><li>a function which will be called with a <code>SubDataFrame</code> corresponding to each group if a <code>GroupedDataFrame</code> is processed, or with the data frame itself if an <code>AbstractDataFrame</code> is processed; this form should be avoided due to its poor performance unless the number of groups is small or a very large number of columns are processed (in which case <code>SubDataFrame</code> avoids excessive compilation)</li></ol><p>Note! If the expression of the form <code>x =&gt; y</code> is passed then except for the special convenience form <code>nrow =&gt; target_cols</code> it is always interpreted as <code>cols =&gt; function</code>. In particular the following expression <code>function =&gt; target_cols</code> is not a valid transformation specification.</p><p>Note! If <code>cols</code> or <code>target_cols</code> are one of <code>All</code>, <code>Cols</code>, <code>Between</code>, or <code>Not</code>, broadcasting using <code>.=&gt;</code> is supported and is equivalent to broadcasting the result of <code>names(df, cols)</code> or <code>names(df, target_cols)</code>. This behaves as if broadcasting happened after replacing the selector with selected column names within the data frame scope.</p><p>All functions have two types of signatures. One of them takes a <code>GroupedDataFrame</code> as the first argument and an arbitrary number of transformations described above as following arguments. The second type of signature is when a <code>Function</code> or a <code>Type</code> is passed as the first argument and a <code>GroupedDataFrame</code> as the second argument (similar to <code>map</code>).</p><p>As a special rule, with the <code>cols =&gt; function</code> and <code>cols =&gt; function =&gt; target_cols</code> syntaxes, if <code>cols</code> is wrapped in an <code>AsTable</code> object then a <code>NamedTuple</code> containing columns selected by <code>cols</code> is passed to <code>function</code>.</p><p>What is allowed for <code>function</code> to return is determined by the <code>target_cols</code> value:</p><ol><li>If both <code>cols</code> and <code>target_cols</code> are omitted (so only a <code>function</code> is passed), then returning a data frame, a matrix, a <code>NamedTuple</code>, a <code>Tables.AbstractRow</code> or a <code>DataFrameRow</code> will produce multiple columns in the result. Returning any other value produces a single column.</li><li>If <code>target_cols</code> is a <code>Symbol</code> or a string then the function is assumed to return a single column. In this case returning a data frame, a matrix, a <code>NamedTuple</code>, a <code>Tables.AbstractRow</code>, or a <code>DataFrameRow</code> raises an error.</li><li>If <code>target_cols</code> is a vector of <code>Symbol</code>s or strings or <code>AsTable</code> it is assumed that <code>function</code> returns multiple columns. If <code>function</code> returns one of <code>AbstractDataFrame</code>, <code>NamedTuple</code>, <code>DataFrameRow</code>, <code>Tables.AbstractRow</code>, <code>AbstractMatrix</code> then rules described in point 1 above apply. If <code>function</code> returns an <code>AbstractVector</code> then each element of this vector must support the <code>keys</code> function, which must return a collection of <code>Symbol</code>s, strings or integers; the return value of <code>keys</code> must be identical for all elements. Then as many columns are created as there are elements in the return value of the <code>keys</code> function. If <code>target_cols</code> is <code>AsTable</code> then their names are set to be equal to the key names except if <code>keys</code> returns integers, in which case they are prefixed by <code>x</code> (so the column names are e.g. <code>x1</code>, <code>x2</code>, ...). If <code>target_cols</code> is a vector of <code>Symbol</code>s or strings then column names produced using the rules above are ignored and replaced by <code>target_cols</code> (the number of columns must be the same as the length of <code>target_cols</code> in this case). If <code>fun</code> returns a value of any other type then it is assumed that it is a table conforming to the Tables.jl API and the <code>Tables.columntable</code> function is called on it to get the resulting columns and their names. The names are retained when <code>target_cols</code> is <code>AsTable</code> and are replaced if <code>target_cols</code> is a vector of <code>Symbol</code>s or strings.</li></ol><p>In all of these cases, <code>function</code> can return either a single row or multiple rows. As a particular rule, values wrapped in a <code>Ref</code> or a <code>0</code>-dimensional <code>AbstractArray</code> are unwrapped and then treated as a single row.</p><p><code>select</code>/<code>select!</code> and <code>transform</code>/<code>transform!</code> always return a data frame with the same number and order of rows as the source (even if <code>GroupedDataFrame</code> had its groups reordered), except when selection results in zero columns in the resulting data frame (in which case the result has zero rows).</p><p>For <code>combine</code>, rows in the returned object appear in the order of groups in the <code>GroupedDataFrame</code>. The functions can return an arbitrary number of rows for each group, but the kind of returned object and the number and names of columns must be the same for all groups, except when a <code>DataFrame()</code> or <code>NamedTuple()</code> is returned, in which case a given group is skipped.</p><p>It is allowed to mix single values and vectors if multiple transformations are requested. In this case single value will be repeated to match the length of columns specified by returned vectors.</p><p>By default (<code>threads=true</code>) a separate task is spawned for each specified transformation; each transformation then spawns as many tasks as Julia threads, and splits processing of groups across them (however, currently transformations with optimized implementations like <code>sum</code> and transformations that return multiple rows use a single task for all groups). This allows for parallel operation when Julia was started with more than one thread. Passed transformation functions must therefore not modify global variables (i.e. they must be pure), use locks to control parallel accesses, or <code>threads=false</code> must be passed to disable multithreading.</p><p>To apply <code>function</code> to each row instead of whole columns, it can be wrapped in a <code>ByRow</code> struct. <code>cols</code> can be any column indexing syntax, in which case <code>function</code> will be passed one argument for each of the columns specified by <code>cols</code> or a <code>NamedTuple</code> of them if specified columns are wrapped in <code>AsTable</code>. If <code>ByRow</code> is used it is allowed for <code>cols</code> to select an empty set of columns, in which case <code>function</code> is called for each row without any arguments and an empty <code>NamedTuple</code> is passed if empty set of columns is wrapped in <code>AsTable</code>.</p><p>The following keyword arguments are supported by the transformation functions (not all keyword arguments are supported in all cases; in general they are allowed in situations when they are meaningful, see the documentation of the specific functions for details):</p><ul><li><code>keepkeys</code> : whether grouping columns should be kept in the returned data frame.</li><li><code>ungroup</code> : whether the return value of the operation should be a data frame or a <code>GroupedDataFrame</code>.</li><li><code>copycols</code> : whether columns of the source data frame should be copied if no transformation is applied to them.</li><li><code>renamecols</code> : whether in the <code>cols =&gt; function</code> form automatically generated column names should include the name of transformation functions or not.</li><li><code>threads</code> : whether transformations may be run in separate tasks which can execute in parallel</li></ul><h2 id="Examples-of-the-split-apply-combine-operations"><a class="docs-heading-anchor" href="#Examples-of-the-split-apply-combine-operations">Examples of the split-apply-combine operations</a><a id="Examples-of-the-split-apply-combine-operations-1"></a><a class="docs-heading-anchor-permalink" href="#Examples-of-the-split-apply-combine-operations" title="Permalink"></a></h2><p>We show several examples of these functions applied to the <code>iris</code> dataset below:</p><pre><code class="language-julia-repl hljs">julia&gt; using DataFrames, CSV, Statistics
+
+julia&gt; path = joinpath(pkgdir(DataFrames), &quot;docs&quot;, &quot;src&quot;, &quot;assets&quot;, &quot;iris.csv&quot;);
+
+julia&gt; iris = CSV.read(path, DataFrame)
+150×5 DataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         5.1         3.5          1.4         0.2  Iris-setosa
+   2 │         4.9         3.0          1.4         0.2  Iris-setosa
+   3 │         4.7         3.2          1.3         0.2  Iris-setosa
+   4 │         4.6         3.1          1.5         0.2  Iris-setosa
+   5 │         5.0         3.6          1.4         0.2  Iris-setosa
+   6 │         5.4         3.9          1.7         0.4  Iris-setosa
+   7 │         4.6         3.4          1.4         0.3  Iris-setosa
+   8 │         5.0         3.4          1.5         0.2  Iris-setosa
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+ 144 │         6.8         3.2          5.9         2.3  Iris-virginica
+ 145 │         6.7         3.3          5.7         2.5  Iris-virginica
+ 146 │         6.7         3.0          5.2         2.3  Iris-virginica
+ 147 │         6.3         2.5          5.0         1.9  Iris-virginica
+ 148 │         6.5         3.0          5.2         2.0  Iris-virginica
+ 149 │         6.2         3.4          5.4         2.3  Iris-virginica
+ 150 │         5.9         3.0          5.1         1.8  Iris-virginica
+                                                        135 rows omitted
+
+julia&gt; iris_gdf = groupby(iris, :Species)
+GroupedDataFrame with 3 groups based on key: Species
+First Group (50 rows): Species = &quot;Iris-setosa&quot;
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼───────────────────────────────────────────────────────────────
+   1 │         5.1         3.5          1.4         0.2  Iris-setosa
+   2 │         4.9         3.0          1.4         0.2  Iris-setosa
+  ⋮  │      ⋮           ⋮            ⋮           ⋮            ⋮
+  49 │         5.3         3.7          1.5         0.2  Iris-setosa
+  50 │         5.0         3.3          1.4         0.2  Iris-setosa
+                                                      46 rows omitted
+⋮
+Last Group (50 rows): Species = &quot;Iris-virginica&quot;
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         6.3         3.3          6.0         2.5  Iris-virginica
+   2 │         5.8         2.7          5.1         1.9  Iris-virginica
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+  50 │         5.9         3.0          5.1         1.8  Iris-virginica
+                                                         47 rows omitted
+
+julia&gt; combine(iris_gdf, :PetalLength =&gt; mean)
+3×2 DataFrame
+ Row │ Species          PetalLength_mean
+     │ String15         Float64
+─────┼───────────────────────────────────
+   1 │ Iris-setosa                 1.464
+   2 │ Iris-versicolor             4.26
+   3 │ Iris-virginica              5.552
+
+julia&gt; combine(iris_gdf, nrow, proprow, groupindices)
+3×4 DataFrame
+ Row │ Species          nrow   proprow   groupindices
+     │ String15         Int64  Float64   Int64
+─────┼────────────────────────────────────────────────
+   1 │ Iris-setosa         50  0.333333             1
+   2 │ Iris-versicolor     50  0.333333             2
+   3 │ Iris-virginica      50  0.333333             3
+
+julia&gt; combine(iris_gdf, nrow, :PetalLength =&gt; mean =&gt; :mean)
+3×3 DataFrame
+ Row │ Species          nrow   mean
+     │ String15         Int64  Float64
+─────┼─────────────────────────────────
+   1 │ Iris-setosa         50    1.464
+   2 │ Iris-versicolor     50    4.26
+   3 │ Iris-virginica      50    5.552
+
+julia&gt; combine(iris_gdf,
+               [:PetalLength, :SepalLength] =&gt;
+               ((p, s) -&gt; (a=mean(p)/mean(s), b=sum(p))) =&gt;
+               AsTable) # multiple columns are passed as arguments
+3×3 DataFrame
+ Row │ Species          a         b
+     │ String15         Float64   Float64
+─────┼────────────────────────────────────
+   1 │ Iris-setosa      0.292449     73.2
+   2 │ Iris-versicolor  0.717655    213.0
+   3 │ Iris-virginica   0.842744    277.6
+
+julia&gt; combine(iris_gdf,
+               AsTable([:PetalLength, :SepalLength]) =&gt;
+               x -&gt; std(x.PetalLength) / std(x.SepalLength)) # passing a NamedTuple
+3×2 DataFrame
+ Row │ Species          PetalLength_SepalLength_function
+     │ String15         Float64
+─────┼───────────────────────────────────────────────────
+   1 │ Iris-setosa                              0.492245
+   2 │ Iris-versicolor                          0.910378
+   3 │ Iris-virginica                           0.867923
+
+julia&gt; combine(x -&gt; std(x.PetalLength) / std(x.SepalLength), iris_gdf) # passing a SubDataFrame
+3×2 DataFrame
+ Row │ Species          x1
+     │ String15         Float64
+─────┼───────────────────────────
+   1 │ Iris-setosa      0.492245
+   2 │ Iris-versicolor  0.910378
+   3 │ Iris-virginica   0.867923
+
+julia&gt; combine(iris_gdf, 1:2 =&gt; cor, nrow)
+3×3 DataFrame
+ Row │ Species          SepalLength_SepalWidth_cor  nrow
+     │ String15         Float64                     Int64
+─────┼────────────────────────────────────────────────────
+   1 │ Iris-setosa                        0.74678      50
+   2 │ Iris-versicolor                    0.525911     50
+   3 │ Iris-virginica                     0.457228     50
+
+julia&gt; combine(iris_gdf, :PetalLength =&gt; (x -&gt; [extrema(x)]) =&gt; [:min, :max])
+3×3 DataFrame
+ Row │ Species          min      max
+     │ String15         Float64  Float64
+─────┼───────────────────────────────────
+   1 │ Iris-setosa          1.0      1.9
+   2 │ Iris-versicolor      3.0      5.1
+   3 │ Iris-virginica       4.5      6.9</code></pre><p>To get row number for each observation within each group use the <code>eachindex</code> function:</p><pre><code class="nohighlight hljs">julia&gt; combine(iris_gdf, eachindex)
+150×2 DataFrame
+ Row │ Species         eachindex
+     │ String15        Int64
+─────┼───────────────────────────
+   1 │ Iris-setosa             1
+   2 │ Iris-setosa             2
+   3 │ Iris-setosa             3
+  ⋮  │       ⋮             ⋮
+ 148 │ Iris-virginica         48
+ 149 │ Iris-virginica         49
+ 150 │ Iris-virginica         50
+                 144 rows omitted</code></pre><p>Contrary to <code>combine</code>, the <code>select</code> and <code>transform</code> functions always return a data frame with the same number and order of rows as the source. In the example below the return values in columns <code>:SepalLength_SepalWidth_cor</code> and <code>:nrow</code> are broadcasted to match the number of elements in each group:</p><pre><code class="nohighlight hljs">julia&gt; select(iris_gdf, 1:2 =&gt; cor)
+150×2 DataFrame
+ Row │ Species         SepalLength_SepalWidth_cor
+     │ String          Float64
+─────┼────────────────────────────────────────────
+   1 │ Iris-setosa                       0.74678
+   2 │ Iris-setosa                       0.74678
+   3 │ Iris-setosa                       0.74678
+   4 │ Iris-setosa                       0.74678
+  ⋮  │       ⋮                     ⋮
+ 148 │ Iris-virginica                    0.457228
+ 149 │ Iris-virginica                    0.457228
+ 150 │ Iris-virginica                    0.457228
+                                  143 rows omitted
+
+julia&gt; transform(iris_gdf, :Species =&gt; x -&gt; chop.(x, head=5, tail=0))
+150×6 DataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species         Species_function
+     │ Float64      Float64     Float64      Float64     String          SubString…
+─────┼────────────────────────────────────────────────────────────────────────────────────
+   1 │         5.1         3.5          1.4         0.2  Iris-setosa     setosa
+   2 │         4.9         3.0          1.4         0.2  Iris-setosa     setosa
+   3 │         4.7         3.2          1.3         0.2  Iris-setosa     setosa
+   4 │         4.6         3.1          1.5         0.2  Iris-setosa     setosa
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮                ⋮
+ 148 │         6.5         3.0          5.2         2.0  Iris-virginica  virginica
+ 149 │         6.2         3.4          5.4         2.3  Iris-virginica  virginica
+ 150 │         5.9         3.0          5.1         1.8  Iris-virginica  virginica
+                                                                          143 rows omitted</code></pre><p>All functions also support the <code>do</code> block form. However, as noted above, this form is slow and should therefore be avoided when performance matters.</p><pre><code class="language-julia-repl hljs">julia&gt; combine(iris_gdf) do df
+           (m = mean(df.PetalLength), s² = var(df.PetalLength))
+       end
+3×3 DataFrame
+ Row │ Species          m        s²
+     │ String15         Float64  Float64
+─────┼─────────────────────────────────────
+   1 │ Iris-setosa        1.464  0.0301061
+   2 │ Iris-versicolor    4.26   0.220816
+   3 │ Iris-virginica     5.552  0.304588</code></pre><p>To apply a function to each non-grouping column of a <code>GroupedDataFrame</code> you can write:</p><pre><code class="language-julia-repl hljs">julia&gt; combine(iris_gdf, valuecols(iris_gdf) .=&gt; mean)
+3×5 DataFrame
+ Row │ Species          SepalLength_mean  SepalWidth_mean  PetalLength_mean  P ⋯
+     │ String15         Float64           Float64          Float64           F ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │ Iris-setosa                 5.006            3.418             1.464    ⋯
+   2 │ Iris-versicolor             5.936            2.77              4.26
+   3 │ Iris-virginica              6.588            2.974             5.552
+                                                                1 column omitted</code></pre><p>Note that <code>GroupedDataFrame</code> is a view: therefore grouping columns of its parent data frame must not be mutated, and rows must not be added nor removed from it. If the number or rows of the parent changes then an error is thrown when a child <code>GroupedDataFrame</code> is used:</p><pre><code class="language-julia-repl hljs">julia&gt; df = DataFrame(id=1:2)
+2×1 DataFrame
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+
+julia&gt; gd = groupby(df, :id)
+GroupedDataFrame with 2 groups based on key: id
+First Group (1 row): id = 1
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+⋮
+Last Group (1 row): id = 2
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     2
+
+julia&gt; push!(df, [3])
+3×1 DataFrame
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+
+julia&gt; gd[1]
+ERROR: AssertionError: The current number of rows in the parent data frame is 3 and it does not match the number of rows it contained when GroupedDataFrame was created which was 2. The number of rows in the parent data frame has likely been changed unintentionally (e.g. using subset!, filter!, deleteat!, push!, or append! functions).</code></pre><p>Sometimes it is useful to append rows to the source data frame of a <code>GroupedDataFrame</code>, without affecting the rows used for grouping. In such a scenario you can create the grouped data frame using a <code>view</code> of the parent data frame to avoid the error:</p><pre><code class="language-julia-repl hljs">julia&gt; df = DataFrame(id=1:2)
+2×1 DataFrame
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+
+julia&gt; gd = groupby(view(df, :, :), :id)
+GroupedDataFrame with 2 groups based on key: id
+First Group (1 row): id = 1
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+⋮
+Last Group (1 row): id = 2
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     2
+
+julia&gt; push!(df, [3])
+3×1 DataFrame
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+
+julia&gt; gd[1]
+1×1 SubDataFrame
+ Row │ id
+     │ Int64
+─────┼───────
+   1 │     1</code></pre><h2 id="Using-GroupedDataFrame-as-an-iterable-and-indexable-object"><a class="docs-heading-anchor" href="#Using-GroupedDataFrame-as-an-iterable-and-indexable-object">Using <code>GroupedDataFrame</code> as an iterable and indexable object</a><a id="Using-GroupedDataFrame-as-an-iterable-and-indexable-object-1"></a><a class="docs-heading-anchor-permalink" href="#Using-GroupedDataFrame-as-an-iterable-and-indexable-object" title="Permalink"></a></h2><p>If you only want to split the data set into subsets, use the <a href="../../lib/functions/#DataFrames.groupby"><code>groupby</code></a> function. You can then iterate <code>SubDataFrame</code>s that constitute the identified groups:</p><pre><code class="language-julia-repl hljs">julia&gt; for subdf in iris_gdf
+           println(size(subdf, 1))
+       end
+50
+50
+50</code></pre><p>To also get the values of the grouping columns along with each group, use the <code>pairs</code> function:</p><pre><code class="language-julia-repl hljs">julia&gt; for (key, subdf) in pairs(iris_gdf)
+           println(&quot;Number of data points for $(key.Species): $(nrow(subdf))&quot;)
+       end
+Number of data points for Iris-setosa: 50
+Number of data points for Iris-versicolor: 50
+Number of data points for Iris-virginica: 50</code></pre><p>The value of <code>key</code> in the example above where we iterated <code>pairs(iris_gdf)</code> is a <a href="../../lib/types/#DataFrames.GroupKey"><code>DataFrames.GroupKey</code></a> object, which can be used in a similar fashion to a <code>NamedTuple</code>.</p><p>Grouping a data frame using the <code>groupby</code> function can be seen as adding a lookup key to it. Such lookups can be performed efficiently by indexing the resulting <code>GroupedDataFrame</code> with <a href="../../lib/types/#DataFrames.GroupKey"><code>DataFrames.GroupKey</code></a> (as it was presented above) a <code>Tuple</code>, a <code>NamedTuple</code>, or a dictionary. Here are some more examples of such indexing.</p><pre><code class="language-julia-repl hljs">julia&gt; iris_gdf[(Species=&quot;Iris-virginica&quot;,)]  # a NamedTuple
+50×5 SubDataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         6.3         3.3          6.0         2.5  Iris-virginica
+   2 │         5.8         2.7          5.1         1.9  Iris-virginica
+   3 │         7.1         3.0          5.9         2.1  Iris-virginica
+   4 │         6.3         2.9          5.6         1.8  Iris-virginica
+   5 │         6.5         3.0          5.8         2.2  Iris-virginica
+   6 │         7.6         3.0          6.6         2.1  Iris-virginica
+   7 │         4.9         2.5          4.5         1.7  Iris-virginica
+   8 │         7.3         2.9          6.3         1.8  Iris-virginica
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+  44 │         6.8         3.2          5.9         2.3  Iris-virginica
+  45 │         6.7         3.3          5.7         2.5  Iris-virginica
+  46 │         6.7         3.0          5.2         2.3  Iris-virginica
+  47 │         6.3         2.5          5.0         1.9  Iris-virginica
+  48 │         6.5         3.0          5.2         2.0  Iris-virginica
+  49 │         6.2         3.4          5.4         2.3  Iris-virginica
+  50 │         5.9         3.0          5.1         1.8  Iris-virginica
+                                                         35 rows omitted
+
+julia&gt; iris_gdf[[(&quot;Iris-virginica&quot;,), (&quot;Iris-setosa&quot;,)]] # a vector of Tuples
+GroupedDataFrame with 2 groups based on key: Species
+First Group (50 rows): Species = &quot;Iris-virginica&quot;
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         6.3         3.3          6.0         2.5  Iris-virginica
+   2 │         5.8         2.7          5.1         1.9  Iris-virginica
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+  49 │         6.2         3.4          5.4         2.3  Iris-virginica
+  50 │         5.9         3.0          5.1         1.8  Iris-virginica
+                                                         46 rows omitted
+⋮
+Last Group (50 rows): Species = &quot;Iris-setosa&quot;
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼───────────────────────────────────────────────────────────────
+   1 │         5.1         3.5          1.4         0.2  Iris-setosa
+   2 │         4.9         3.0          1.4         0.2  Iris-setosa
+  ⋮  │      ⋮           ⋮            ⋮           ⋮            ⋮
+  50 │         5.0         3.3          1.4         0.2  Iris-setosa
+                                                      47 rows omitted
+
+julia&gt; key = keys(iris_gdf) |&gt; last # last key in iris_gdf
+GroupKey: (Species = String15(&quot;Iris-virginica&quot;),)
+
+julia&gt; iris_gdf[key]
+50×5 SubDataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         6.3         3.3          6.0         2.5  Iris-virginica
+   2 │         5.8         2.7          5.1         1.9  Iris-virginica
+   3 │         7.1         3.0          5.9         2.1  Iris-virginica
+   4 │         6.3         2.9          5.6         1.8  Iris-virginica
+   5 │         6.5         3.0          5.8         2.2  Iris-virginica
+   6 │         7.6         3.0          6.6         2.1  Iris-virginica
+   7 │         4.9         2.5          4.5         1.7  Iris-virginica
+   8 │         7.3         2.9          6.3         1.8  Iris-virginica
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+  44 │         6.8         3.2          5.9         2.3  Iris-virginica
+  45 │         6.7         3.3          5.7         2.5  Iris-virginica
+  46 │         6.7         3.0          5.2         2.3  Iris-virginica
+  47 │         6.3         2.5          5.0         1.9  Iris-virginica
+  48 │         6.5         3.0          5.2         2.0  Iris-virginica
+  49 │         6.2         3.4          5.4         2.3  Iris-virginica
+  50 │         5.9         3.0          5.1         1.8  Iris-virginica
+                                                         35 rows omitted
+
+julia&gt; iris_gdf[Dict(&quot;Species&quot; =&gt; &quot;Iris-setosa&quot;)] # a dictionary
+50×5 SubDataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼───────────────────────────────────────────────────────────────
+   1 │         5.1         3.5          1.4         0.2  Iris-setosa
+   2 │         4.9         3.0          1.4         0.2  Iris-setosa
+   3 │         4.7         3.2          1.3         0.2  Iris-setosa
+   4 │         4.6         3.1          1.5         0.2  Iris-setosa
+   5 │         5.0         3.6          1.4         0.2  Iris-setosa
+   6 │         5.4         3.9          1.7         0.4  Iris-setosa
+   7 │         4.6         3.4          1.4         0.3  Iris-setosa
+   8 │         5.0         3.4          1.5         0.2  Iris-setosa
+  ⋮  │      ⋮           ⋮            ⋮           ⋮            ⋮
+  44 │         5.0         3.5          1.6         0.6  Iris-setosa
+  45 │         5.1         3.8          1.9         0.4  Iris-setosa
+  46 │         4.8         3.0          1.4         0.3  Iris-setosa
+  47 │         5.1         3.8          1.6         0.2  Iris-setosa
+  48 │         4.6         3.2          1.4         0.2  Iris-setosa
+  49 │         5.3         3.7          1.5         0.2  Iris-setosa
+  50 │         5.0         3.3          1.4         0.2  Iris-setosa
+                                                      35 rows omitted</code></pre><p>Note that although <code>GroupedDataFrame</code> is iterable and indexable it is not an <code>AbstractVector</code>. For this reason currently it was decided that it does not support <code>map</code> nor broadcasting (to allow for making a decision in the future what result type they should produce). To apply a function to all groups of a data frame and get a vector of results either use a comprehension or <code>collect</code> <code>GroupedDataFrame</code> into a vector first. Here are examples of both approaches:</p><pre><code class="language-julia-repl hljs">julia&gt; sdf_vec = collect(iris_gdf)
+3-element Vector{Any}:
+ 50×5 SubDataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼───────────────────────────────────────────────────────────────
+   1 │         5.1         3.5          1.4         0.2  Iris-setosa
+   2 │         4.9         3.0          1.4         0.2  Iris-setosa
+   3 │         4.7         3.2          1.3         0.2  Iris-setosa
+   4 │         4.6         3.1          1.5         0.2  Iris-setosa
+   5 │         5.0         3.6          1.4         0.2  Iris-setosa
+   6 │         5.4         3.9          1.7         0.4  Iris-setosa
+   7 │         4.6         3.4          1.4         0.3  Iris-setosa
+   8 │         5.0         3.4          1.5         0.2  Iris-setosa
+  ⋮  │      ⋮           ⋮            ⋮           ⋮            ⋮
+  44 │         5.0         3.5          1.6         0.6  Iris-setosa
+  45 │         5.1         3.8          1.9         0.4  Iris-setosa
+  46 │         4.8         3.0          1.4         0.3  Iris-setosa
+  47 │         5.1         3.8          1.6         0.2  Iris-setosa
+  48 │         4.6         3.2          1.4         0.2  Iris-setosa
+  49 │         5.3         3.7          1.5         0.2  Iris-setosa
+  50 │         5.0         3.3          1.4         0.2  Iris-setosa
+                                                      35 rows omitted
+ 50×5 SubDataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼───────────────────────────────────────────────────────────────────
+   1 │         7.0         3.2          4.7         1.4  Iris-versicolor
+   2 │         6.4         3.2          4.5         1.5  Iris-versicolor
+   3 │         6.9         3.1          4.9         1.5  Iris-versicolor
+   4 │         5.5         2.3          4.0         1.3  Iris-versicolor
+   5 │         6.5         2.8          4.6         1.5  Iris-versicolor
+   6 │         5.7         2.8          4.5         1.3  Iris-versicolor
+   7 │         6.3         3.3          4.7         1.6  Iris-versicolor
+   8 │         4.9         2.4          3.3         1.0  Iris-versicolor
+  ⋮  │      ⋮           ⋮            ⋮           ⋮              ⋮
+  44 │         5.0         2.3          3.3         1.0  Iris-versicolor
+  45 │         5.6         2.7          4.2         1.3  Iris-versicolor
+  46 │         5.7         3.0          4.2         1.2  Iris-versicolor
+  47 │         5.7         2.9          4.2         1.3  Iris-versicolor
+  48 │         6.2         2.9          4.3         1.3  Iris-versicolor
+  49 │         5.1         2.5          3.0         1.1  Iris-versicolor
+  50 │         5.7         2.8          4.1         1.3  Iris-versicolor
+                                                          35 rows omitted
+ 50×5 SubDataFrame
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
+     │ Float64      Float64     Float64      Float64     String15
+─────┼──────────────────────────────────────────────────────────────────
+   1 │         6.3         3.3          6.0         2.5  Iris-virginica
+   2 │         5.8         2.7          5.1         1.9  Iris-virginica
+   3 │         7.1         3.0          5.9         2.1  Iris-virginica
+   4 │         6.3         2.9          5.6         1.8  Iris-virginica
+   5 │         6.5         3.0          5.8         2.2  Iris-virginica
+   6 │         7.6         3.0          6.6         2.1  Iris-virginica
+   7 │         4.9         2.5          4.5         1.7  Iris-virginica
+   8 │         7.3         2.9          6.3         1.8  Iris-virginica
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
+  44 │         6.8         3.2          5.9         2.3  Iris-virginica
+  45 │         6.7         3.3          5.7         2.5  Iris-virginica
+  46 │         6.7         3.0          5.2         2.3  Iris-virginica
+  47 │         6.3         2.5          5.0         1.9  Iris-virginica
+  48 │         6.5         3.0          5.2         2.0  Iris-virginica
+  49 │         6.2         3.4          5.4         2.3  Iris-virginica
+  50 │         5.9         3.0          5.1         1.8  Iris-virginica
+                                                         35 rows omitted
+
+julia&gt; map(nrow, sdf_vec)
+3-element Vector{Int64}:
+ 50
+ 50
+ 50
+
+julia&gt; nrow.(sdf_vec)
+3-element Vector{Int64}:
+ 50
+ 50
+ 50</code></pre><p>Since <code>GroupedDataFrame</code> is iterable, you can achieve the same result with a comprehension:</p><pre><code class="language-julia-repl hljs">julia&gt; [nrow(sdf) for sdf in iris_gdf]
+3-element Vector{Int64}:
+ 50
+ 50
+ 50</code></pre><p>Note that using the split-apply-combine strategy with the operation specification syntax in <code>combine</code>, <code>select</code> or <code>transform</code> will usually be faster for large <code>GroupedDataFrame</code> objects than iterating them, with the difference that they produce a data frame. An operation corresponding to the example above is:</p><pre><code class="nohighlight hljs">julia&gt; combine(iris_gdf, nrow)
+3×2 DataFrame
+ Row │ Species          nrow
+     │ String15         Int64
+─────┼────────────────────────
+   1 │ Iris-setosa         50
+   2 │ Iris-versicolor     50
+   3 │ Iris-virginica      50</code></pre><h2 id="Simulating-the-SQL-where-clause"><a class="docs-heading-anchor" href="#Simulating-the-SQL-where-clause">Simulating the SQL <code>where</code> clause</a><a id="Simulating-the-SQL-where-clause-1"></a><a class="docs-heading-anchor-permalink" href="#Simulating-the-SQL-where-clause" title="Permalink"></a></h2><p>You can conveniently work on subsets of a data frame by using <code>SubDataFrame</code>s. Operations performed on such objects can either create a new data frame or be performed in-place. Here are some examples:</p><pre><code class="language-julia-repl hljs">julia&gt; df = DataFrame(a=1:5)
+5×1 DataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+   4 │     4
+   5 │     5
+
+julia&gt; sdf = @view df[2:3, :]
+2×1 SubDataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     2
+   2 │     3
+
+julia&gt; transform(sdf, :a =&gt; ByRow(string)) # create a new data frame
+2×2 DataFrame
+ Row │ a      a_string
+     │ Int64  String
+─────┼─────────────────
+   1 │     2  2
+   2 │     3  3
+
+julia&gt; transform!(sdf, :a =&gt; ByRow(string)) # update the source df in-place
+2×2 SubDataFrame
+ Row │ a      a_string
+     │ Int64  String?
+─────┼─────────────────
+   1 │     2  2
+   2 │     3  3
+
+julia&gt; df # new column was created filled with missing in filtered-out rows
+5×2 DataFrame
+ Row │ a      a_string
+     │ Int64  String?
+─────┼─────────────────
+   1 │     1  missing
+   2 │     2  2
+   3 │     3  3
+   4 │     4  missing
+   5 │     5  missing
+
+julia&gt; select!(sdf, :a =&gt; -, renamecols=false) # update the source df in-place
+2×1 SubDataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │    -2
+   2 │    -3
+
+julia&gt; df # the column replaced an existing column; previously stored values are re-used in filtered-out rows
+5×1 DataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │    -2
+   3 │    -3
+   4 │     4
+   5 │     5</code></pre><p>Similar operations can be performed on <code>GroupedDataFrame</code> as well:</p><pre><code class="language-julia-repl hljs">julia&gt; df = DataFrame(a=[1, 1, 1, 2, 2, 3], b=1:6)
+6×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     1      2
+   3 │     1      3
+   4 │     2      4
+   5 │     2      5
+   6 │     3      6
+
+julia&gt; sdf = @view df[2:4, :]
+3×2 SubDataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      2
+   2 │     1      3
+   3 │     2      4
+
+julia&gt; gsdf = groupby(sdf, :a)
+GroupedDataFrame with 2 groups based on key: a
+First Group (2 rows): a = 1
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      2
+   2 │     1      3
+⋮
+Last Group (1 row): a = 2
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      4
+
+julia&gt; transform(gsdf, nrow) # create a new data frame
+3×3 DataFrame
+ Row │ a      b      nrow
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      2
+   2 │     1      3      2
+   3 │     2      4      1
+
+julia&gt; transform!(gsdf, nrow, :b =&gt; :b_copy)
+3×4 SubDataFrame
+ Row │ a      b      nrow    b_copy
+     │ Int64  Int64  Int64?  Int64?
+─────┼──────────────────────────────
+   1 │     1      2       2       2
+   2 │     1      3       2       3
+   3 │     2      4       1       4
+
+julia&gt; df
+6×4 DataFrame
+ Row │ a      b      nrow     b_copy
+     │ Int64  Int64  Int64?   Int64?
+─────┼────────────────────────────────
+   1 │     1      1  missing  missing
+   2 │     1      2        2        2
+   3 │     1      3        2        3
+   4 │     2      4        1        4
+   5 │     2      5  missing  missing
+   6 │     3      6  missing  missing
+
+julia&gt; select!(gsdf, :b_copy, :b =&gt; sum, renamecols=false)
+3×3 SubDataFrame
+ Row │ a      b_copy  b
+     │ Int64  Int64?  Int64
+─────┼──────────────────────
+   1 │     1       2      5
+   2 │     1       3      5
+   3 │     2       4      4
+
+julia&gt; df
+6×3 DataFrame
+ Row │ a      b_copy   b
+     │ Int64  Int64?   Int64
+─────┼───────────────────────
+   1 │     1  missing      1
+   2 │     1        2      5
+   3 │     1        3      5
+   4 │     2        4      4
+   5 │     2  missing      5
+   6 │     3  missing      6</code></pre><h2 id="Column-independent-operations"><a class="docs-heading-anchor" href="#Column-independent-operations">Column-independent operations</a><a id="Column-independent-operations-1"></a><a class="docs-heading-anchor-permalink" href="#Column-independent-operations" title="Permalink"></a></h2><p>The operation specification language used with <code>combine</code>, <code>select</code> and <code>transform</code> supports the following column-independent operations:</p><ul><li>getting the number of rows in a group (<code>nrow</code>);</li><li>getting the proportion of rows in a group (<code>proprow</code>);</li><li>getting the group number (<code>groupindices</code>);</li><li>getting a vector of indices within groups (<code>eachindex</code>).</li></ul><p>These operations are column-independent, because they do not require specifying the input column name in the operation specification syntax.</p><p>These four exceptions to the standard operation specification syntax were introduced for user convenience as these operations are often needed in practice.</p><p>Below each of them is explained by example.</p><p>First create a data frame we will work with:</p><pre><code class="language-julia-repl hljs">julia&gt; df = DataFrame(customer_id=[&quot;a&quot;, &quot;b&quot;, &quot;b&quot;, &quot;b&quot;, &quot;c&quot;, &quot;c&quot;],
+                      transaction_id=[12, 15, 19, 17, 13, 11],
+                      volume=[2, 3, 1, 4, 5, 9])
+6×3 DataFrame
+ Row │ customer_id  transaction_id  volume
+     │ String       Int64           Int64
+─────┼─────────────────────────────────────
+   1 │ a                        12       2
+   2 │ b                        15       3
+   3 │ b                        19       1
+   4 │ b                        17       4
+   5 │ c                        13       5
+   6 │ c                        11       9
+
+julia&gt; gdf = groupby(df, :customer_id, sort=true);
+
+julia&gt; show(gdf, allgroups=true)
+GroupedDataFrame with 3 groups based on key: customer_id
+Group 1 (1 row): customer_id = &quot;a&quot;
+ Row │ customer_id  transaction_id  volume
+     │ String       Int64           Int64
+─────┼─────────────────────────────────────
+   1 │ a                        12       2
+Group 2 (3 rows): customer_id = &quot;b&quot;
+ Row │ customer_id  transaction_id  volume
+     │ String       Int64           Int64
+─────┼─────────────────────────────────────
+   1 │ b                        15       3
+   2 │ b                        19       1
+   3 │ b                        17       4
+Group 3 (2 rows): customer_id = &quot;c&quot;
+ Row │ customer_id  transaction_id  volume
+     │ String       Int64           Int64
+─────┼─────────────────────────────────────
+   1 │ c                        13       5
+   2 │ c                        11       9</code></pre><h3 id="Getting-the-number-of-rows"><a class="docs-heading-anchor" href="#Getting-the-number-of-rows">Getting the number of rows</a><a id="Getting-the-number-of-rows-1"></a><a class="docs-heading-anchor-permalink" href="#Getting-the-number-of-rows" title="Permalink"></a></h3><p>You can get the number of rows per group in a <code>GroupedDataFrame</code> by just writing <code>nrow</code>, in which case the generated column name with the number of rows is <code>:nrow</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; combine(gdf, nrow)
+3×2 DataFrame
+ Row │ customer_id  nrow
+     │ String       Int64
+─────┼────────────────────
+   1 │ a                1
+   2 │ b                3
+   3 │ c                2</code></pre><p>Additionally you are allowed to pass target column name:</p><pre><code class="language-julia-repl hljs">julia&gt; combine(gdf, nrow =&gt; &quot;transaction_count&quot;)
+3×2 DataFrame
+ Row │ customer_id  transaction_count
+     │ String       Int64
+─────┼────────────────────────────────
+   1 │ a                            1
+   2 │ b                            3
+   3 │ c                            2</code></pre><p>Note that in both cases we did not pass source column name as it is not needed to determine the number of rows per group. This is the reason why column-independent operations are exceptions to standard operation specification syntax.</p><p>The <code>nrow</code> expression also works in the operation specification syntax applied to a data frame. Here is an example:</p><pre><code class="language-julia-repl hljs">julia&gt; combine(df, nrow =&gt; &quot;transaction_count&quot;)
+1×1 DataFrame
+ Row │ transaction_count
+     │ Int64
+─────┼───────────────────
+   1 │                 6</code></pre><p>Finally, recall that <a href="../../lib/functions/#DataAPI.nrow"><code>nrow</code></a> is also a regular function that returns a number of rows in a data frame:</p><pre><code class="language-julia-repl hljs">julia&gt; nrow(df)
+6</code></pre><p>This dual use of <code>nrow</code> does not lead to ambiguities, and is meant to make it easier to remember this exception.</p><h3 id="Getting-the-proportion-of-rows"><a class="docs-heading-anchor" href="#Getting-the-proportion-of-rows">Getting the proportion of rows</a><a id="Getting-the-proportion-of-rows-1"></a><a class="docs-heading-anchor-permalink" href="#Getting-the-proportion-of-rows" title="Permalink"></a></h3><p>If you want to get a proportion of rows per group in a <code>GroupedDataFrame</code> you can use the <code>proprow</code> and <code>proprow =&gt; [target column name]</code> column-independent operations. Here are some examples:</p><pre><code class="language-julia-repl hljs">julia&gt; combine(gdf, proprow)
+3×2 DataFrame
+ Row │ customer_id  proprow
+     │ String       Float64
+─────┼───────────────────────
+   1 │ a            0.166667
+   2 │ b            0.5
+   3 │ c            0.333333
+
+julia&gt; combine(gdf, proprow =&gt; &quot;transaction_fraction&quot;)
+3×2 DataFrame
+ Row │ customer_id  transaction_fraction
+     │ String       Float64
+─────┼───────────────────────────────────
+   1 │ a                        0.166667
+   2 │ b                        0.5
+   3 │ c                        0.333333</code></pre><p>As opposed to <code>nrow</code>, <code>proprow</code> cannot be used outside of the operation specification syntax and is only allowed when processing a <code>GroupedDataFrame</code>.</p><h3 id="Getting-the-group-number"><a class="docs-heading-anchor" href="#Getting-the-group-number">Getting the group number</a><a id="Getting-the-group-number-1"></a><a class="docs-heading-anchor-permalink" href="#Getting-the-group-number" title="Permalink"></a></h3><p>Another common operation is getting group number. Use the <code>groupindices</code> and <code>groupindices =&gt; [target column name]</code> column-independent operations to get it:</p><pre><code class="language-julia-repl hljs">julia&gt; combine(gdf, groupindices)
+3×2 DataFrame
+ Row │ customer_id  groupindices
+     │ String       Int64
+─────┼───────────────────────────
+   1 │ a                       1
+   2 │ b                       2
+   3 │ c                       3
+
+julia&gt; transform(gdf, groupindices)
+6×4 DataFrame
+ Row │ customer_id  transaction_id  volume  groupindices
+     │ String       Int64           Int64   Int64
+─────┼───────────────────────────────────────────────────
+   1 │ a                        12       2             1
+   2 │ b                        15       3             2
+   3 │ b                        19       1             2
+   4 │ b                        17       4             2
+   5 │ c                        13       5             3
+   6 │ c                        11       9             3
+
+julia&gt; combine(gdf, groupindices =&gt; &quot;group_number&quot;)
+3×2 DataFrame
+ Row │ customer_id  group_number
+     │ String       Int64
+─────┼───────────────────────────
+   1 │ a                       1
+   2 │ b                       2
+   3 │ c                       3</code></pre><p>Outside of the operation specification syntax, <a href="../../lib/functions/#DataFrames.groupindices"><code>groupindices</code></a> is also a regular function which returns group indices for each row in the parent data frame of the passed <code>GroupedDataFrame</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; groupindices(gdf)
+6-element Vector{Union{Missing, Int64}}:
+ 1
+ 2
+ 2
+ 2
+ 3
+ 3</code></pre><h3 id="Getting-a-vector-of-indices-within-groups"><a class="docs-heading-anchor" href="#Getting-a-vector-of-indices-within-groups">Getting a vector of indices within groups</a><a id="Getting-a-vector-of-indices-within-groups-1"></a><a class="docs-heading-anchor-permalink" href="#Getting-a-vector-of-indices-within-groups" title="Permalink"></a></h3><p>The last column-independent operation supported by the operation specification syntax is getting the index of each row within each group:</p><pre><code class="language-julia-repl hljs">julia&gt; combine(gdf, eachindex)
+6×2 DataFrame
+ Row │ customer_id  eachindex
+     │ String       Int64
+─────┼────────────────────────
+   1 │ a                    1
+   2 │ b                    1
+   3 │ b                    2
+   4 │ b                    3
+   5 │ c                    1
+   6 │ c                    2
+
+julia&gt; select(gdf, eachindex, groupindices)
+6×3 DataFrame
+ Row │ customer_id  eachindex  groupindices
+     │ String       Int64      Int64
+─────┼──────────────────────────────────────
+   1 │ a                    1             1
+   2 │ b                    1             2
+   3 │ b                    2             2
+   4 │ b                    3             2
+   5 │ c                    1             3
+   6 │ c                    2             3
+
+julia&gt; combine(gdf, eachindex =&gt; &quot;transaction_number&quot;)
+6×2 DataFrame
+ Row │ customer_id  transaction_number
+     │ String       Int64
+─────┼─────────────────────────────────
+   1 │ a                             1
+   2 │ b                             1
+   3 │ b                             2
+   4 │ b                             3
+   5 │ c                             1
+   6 │ c                             2</code></pre><p>Note that this operation also makes sense in a data frame context, where all rows are considered to be in the same group:</p><pre><code class="language-julia-repl hljs">julia&gt; transform(df, eachindex)
+6×4 DataFrame
+ Row │ customer_id  transaction_id  volume  eachindex
+     │ String       Int64           Int64   Int64
+─────┼────────────────────────────────────────────────
+   1 │ a                        12       2          1
+   2 │ b                        15       3          2
+   3 │ b                        19       1          3
+   4 │ b                        17       4          4
+   5 │ c                        13       5          5
+   6 │ c                        11       9          6</code></pre><p>Finally recall that <code>eachindex</code> is a standard function for getting all indices in an array. This similarity of functionality was the reason why this name was picked:</p><pre><code class="language-julia-repl hljs">julia&gt; collect(eachindex(df.customer_id))
+6-element Vector{Int64}:
+ 1
+ 2
+ 3
+ 4
+ 5
+ 6</code></pre><p>This, for example, means that in the following example the two created columns have the same contents:</p><pre><code class="language-julia-repl hljs">julia&gt; combine(gdf, eachindex, :customer_id =&gt; eachindex)
+6×3 DataFrame
+ Row │ customer_id  eachindex  customer_id_eachindex
+     │ String       Int64      Int64
+─────┼───────────────────────────────────────────────
+   1 │ a                    1                      1
+   2 │ b                    1                      1
+   3 │ b                    2                      2
+   4 │ b                    3                      3
+   5 │ c                    1                      1
+   6 │ c                    2                      2</code></pre><h2 id="Column-independent-operations-versus-functions"><a class="docs-heading-anchor" href="#Column-independent-operations-versus-functions">Column-independent operations versus functions</a><a id="Column-independent-operations-versus-functions-1"></a><a class="docs-heading-anchor-permalink" href="#Column-independent-operations-versus-functions" title="Permalink"></a></h2><p>When discussing column-independent operations it is important to remember that operation specification syntax allows you to pass a function (without source and target column names), in which case such a function gets passed a <code>SubDataFrame</code> that represents a group in a <code>GroupedDataFrame</code>. Here is an example comparing a column-independent operation and a function:</p><pre><code class="language-julia-repl hljs">julia&gt; combine(gdf, eachindex, sdf -&gt; axes(sdf, 1))
+6×3 DataFrame
+ Row │ customer_id  eachindex  x1
+     │ String       Int64      Int64
+─────┼───────────────────────────────
+   1 │ a                    1      1
+   2 │ b                    1      1
+   3 │ b                    2      2
+   4 │ b                    3      3
+   5 │ c                    1      1
+   6 │ c                    2      2</code></pre><p>Notice that the column-independent operation <code>eachindex</code> produces the same result as using the anonymous function <code>sdf -&gt; axes(sdf, 1)</code> that takes a <code>SubDataFrame</code> as its first argument and returns indices along its first axes. Importantly if it wasn&#39;t defined as a column-independent operation the <code>eachindex</code> function would fail when being passed as you can see here:</p><pre><code class="language-julia-repl hljs">julia&gt; combine(gdf, sdf -&gt; eachindex(sdf))
+ERROR: MethodError: no method matching keys(::SubDataFrame{DataFrame, DataFrames.Index, Vector{Int64}})</code></pre><p>The reason for this error is that the <code>eachindex</code> function does not allow passing a <code>SubDataFrame</code> as its argument.</p><p>The same applies to <code>proprow</code> and <code>groupindices</code>: they would not work with a <code>SubDataFrame</code> as stand-alone functions.</p><p>The <code>nrow</code> column-independent operation is a different case, as the <code>nrow</code> function accepts <code>SubDataFrame</code> as an argument:</p><pre><code class="language-julia-repl hljs">julia&gt; combine(gdf, nrow, sdf -&gt; nrow(sdf))
+3×3 DataFrame
+ Row │ customer_id  nrow   x1
+     │ String       Int64  Int64
+─────┼───────────────────────────
+   1 │ a                1      1
+   2 │ b                3      3
+   3 │ c                2      2</code></pre><p>Notice that columns <code>:nrow</code> and <code>:x1</code> have identical contents, but the difference is that they do not have the same names. <code>nrow</code> is a column-independent operation generating the <code>:nrow</code> column name by default with number of rows per group. On the other hand, the <code>sdf -&gt; nrow(sdf)</code> anonymous function does gets a <code>SubDataFrame</code> as its argument and returns its number of rows. The <code>:x1</code> column name is the default auto-generated column name when processing anonymous functions.</p><p>Passing a function taking a <code>SubDataFrame</code> is a flexible functionality allowing you to perform complex operations on your data. However, you should bear in mind two aspects:</p><ul><li>Using the full operation specification syntax (where source and target column names are passed) or column-independent operations will lead to faster execution of your code (as the Julia compiler is able to better optimize execution of such operations) in comparison to passing a function taking a <code>SubDataFrame</code>.</li><li>Although writing <code>nrow</code>, <code>proprow</code>, <code>groupindices</code>, and <code>eachindex</code> looks like just passing a function they internally <strong>do not</strong> take a <code>SubDataFrame</code> as their argument. As we explained in this section, <code>proprow</code>, <code>groupindices</code>, and <code>eachindex</code> would not work with <code>SubDataFrame</code> as their argument, and <code>nrow</code> would work, but would produce a different column name. Instead, these four operations are special column-independent operations that are exceptions to the standard operation specification syntax rules. They were added for user convenience.</li></ul><h2 id="Specifying-group-order-in-groupby"><a class="docs-heading-anchor" href="#Specifying-group-order-in-groupby">Specifying group order in <code>groupby</code></a><a id="Specifying-group-order-in-groupby-1"></a><a class="docs-heading-anchor-permalink" href="#Specifying-group-order-in-groupby" title="Permalink"></a></h2><p>By default order of groups produced by <code>groupby</code> is undefined. If you want the order of groups to follow the order of first appearance in the source data frame of a grouping key then pass the <code>sort=false</code> keyword argument to <code>groupby</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; push!(df, [&quot;a&quot;, 100, 100]) # push row with large integer values to disable default sorting
+7×3 DataFrame
+ Row │ customer_id  transaction_id  volume
+     │ String       Int64           Int64
+─────┼─────────────────────────────────────
+   1 │ a                        12       2
+   2 │ b                        15       3
+   3 │ b                        19       1
+   4 │ b                        17       4
+   5 │ c                        13       5
+   6 │ c                        11       9
+   7 │ a                       100     100
+
+julia&gt; keys(groupby(df, :volume))
+7-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
+ GroupKey: (volume = 2,)
+ GroupKey: (volume = 3,)
+ GroupKey: (volume = 1,)
+ GroupKey: (volume = 4,)
+ GroupKey: (volume = 5,)
+ GroupKey: (volume = 9,)
+ GroupKey: (volume = 100,)</code></pre><p>If you want to have them sorted in ascending order pass <code>sort=true</code>:</p><pre><code class="nohighlight hljs">julia&gt; keys(groupby(df, :volume, sort=true))
+7-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
+ GroupKey: (volume = 1,)
+ GroupKey: (volume = 2,)
+ GroupKey: (volume = 3,)
+ GroupKey: (volume = 4,)
+ GroupKey: (volume = 5,)
+ GroupKey: (volume = 9,)
+ GroupKey: (volume = 100,)</code></pre><p>You can also use the <a href="../../lib/functions/#DataFrames.order"><code>order</code></a> wrapper when passing a column name to group by or pass a named tuple as <code>sort</code> keyword argument containing one or more of <code>alg</code>, <code>lt</code>, <code>by</code>, <code>rev</code>, and <code>order</code> fields that will be treated just like in <a href="../../lib/functions/#Base.sortperm"><code>sortperm</code></a>:</p><pre><code class="nohighlight hljs">julia&gt; keys(groupby(df, [:customer_id, order(:volume, rev=true)]))
+6-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
+ GroupKey: (customer_id = &quot;a&quot;, volume = 2)
+ GroupKey: (customer_id = &quot;b&quot;, volume = 4)
+ GroupKey: (customer_id = &quot;b&quot;, volume = 3)
+ GroupKey: (customer_id = &quot;b&quot;, volume = 1)
+ GroupKey: (customer_id = &quot;c&quot;, volume = 9)
+ GroupKey: (customer_id = &quot;c&quot;, volume = 5)
+
+julia&gt; keys(groupby(df, :customer_id, sort=(rev=true,)))
+3-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
+ GroupKey: (customer_id = &quot;c&quot;,)
+ GroupKey: (customer_id = &quot;b&quot;,)
+ GroupKey: (customer_id = &quot;a&quot;,)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../joins/">« Joins</a><a class="docs-footer-nextpage" href="../reshaping_and_pivoting/">Reshaping »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Monday 10 July 2023 06:49">Monday 10 July 2023</span>. Using Julia version 1.9.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
