@@ -297,10 +297,14 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
                 deleteat!(col, 1:length(col) - nrow1)
             end
         end
-        @error "Error adding value to column :$(_names(df1)[current_col]). " *
-               "Maybe it was forgotten to require column " *
-               "element type promotion, which can be done " *
-               "by passing the promote=true keyword argument."
+        if promote
+            @error "Error adding value to column :$(_names(df1)[current_col])."
+        else
+            @error "Error adding value to column :$(_names(df1)[current_col]). " *
+                "Maybe it was forgotten to require column " *
+                "element type promotion, which can be done " *
+                "by passing the promote=true keyword argument."
+        end
         rethrow(err)
     end
 
@@ -689,9 +693,13 @@ function _row_inserter!(df::DataFrame, loc::Integer, row::Any,
             end
             @assert length(col2) == nrows
         end
-        @error "Error adding value to column :$(_names(df)[current_col]). " *
-               "Maybe it was forgotten to ask for column element type promotion, " *
-               "which can be done by passing the promote=true keyword argument."
+        if promote
+            @error "Error adding value to column :$(_names(df)[current_col])."
+        else
+            @error "Error adding value to column :$(_names(df)[current_col]). " *
+                   "Maybe it was forgotten to ask for column element type promotion, " *
+                   "which can be done by passing the promote=true keyword argument."
+        end
         rethrow(err)
     end
     _drop_all_nonnote_metadata!(df)
@@ -972,13 +980,16 @@ function _row_inserter!(df::DataFrame, loc::Integer,
             end
             @assert length(col2) == nrows
         end
-        @error "Error adding value to column :$(_names(df)[current_col]). " *
-               "Maybe it was forgotten to ask for column " *
-               "element type promotion, which can be done " *
-               "by passing the promote=true keyword argument."
+        if promote
+            @error "Error adding value to column :$(_names(df)[current_col])."
+        else
+            @error "Error adding value to column :$(_names(df)[current_col]). " *
+                   "Maybe it was forgotten to ask for column " *
+                   "element type promotion, which can be done " *
+                   "by passing the promote=true keyword argument."
+        end
         rethrow(err)
     end
     _drop_all_nonnote_metadata!(df)
     return df
 end
-
