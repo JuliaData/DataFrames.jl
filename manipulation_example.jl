@@ -77,3 +77,32 @@ transform(df, :data => AsTable) # keeps names from named tuples
 df = DataFrame(data = [(1,2), (3,4)])
 new_names(v) = ["primary ", "secondary "] .* v
 transform(df, :data => identity => new_names)
+
+df = DataFrame(a = 1:4, b = [50,50,60,60], c = ["hat","bat","cat","dog"])
+select(df, :c, :b, :a) # re-order columns
+select(df, :b, :) # `:` here means all other columns
+select(
+    df,
+    :c => (x -> "a " .* x) => :one_c,
+    :a => (x -> 100x),
+    :b,
+    renamecols=false
+) # can mix operation forms
+combine(df, :a=>maximum, :b=>sum, :c=>join)
+select(
+    df,
+    :c => ByRow(reverse),
+    :c => ByRow(uppercase)
+) # multiple operations on same column
+subset(
+    df,
+    :b => ByRow(==(60)),
+    :c => ByRow(contains("at"))
+) # rows with 60 and "at"
+transform(
+    df,
+    [:a, :b] => ByRow(+) => :d,
+    :d => (x -> x ./ 2),
+) # requires two separate transformations
+new_df = transform(df, [:a, :b] => ByRow(+) => :d)
+transform!(new_df, :d => (x -> x ./ 2) => :d_2)

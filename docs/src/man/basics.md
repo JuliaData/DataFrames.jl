@@ -2183,20 +2183,360 @@ julia> transform(df, :data => identity => new_names)
 ```
 
 #### Multiple Operations per Manipulation
-All of the manipulation functions can accept multiple `operation` pairs at once
-using any of the following:
+All data frame manipulation functions can accept multiple `operation` pairs
+at once using any of the following methods:
 - `manipulation_function(dataframe, operation1, operation2)`   : multiple arguments
-- `manipulation_function(dataframe, [operation1, operation2])` : vector
-- `manipulation_function(dataframe, [operation1 operation2])`  : 1-by-x matrix
+- `manipulation_function(dataframe, [operation1, operation2])` : vector argument
+- `manipulation_function(dataframe, [operation1 operation2])`  : 1-by-x matrix argument
+
+Passing multiple operations is especially useful for the `select`, `select!`,
+and `combine` manipulation functions,
+since they only retain columns which are a result of the passed operations.
+
+```julia
+julia> df = DataFrame(a = 1:4, b = [50,50,60,60], c = ["hat","bat","cat","dog"])
+4×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  String
+─────┼──────────────────────
+   1 │     1     50  hat
+   2 │     2     50  bat
+   3 │     3     60  cat
+   4 │     4     60  dog
+
+julia> combine(df, :a => maximum, :b => sum, :c => join) # 3 combine operations
+1×3 DataFrame
+ Row │ a_maximum  b_sum  c_join
+     │ Int64      Int64  String
+─────┼────────────────────────────────
+   1 │         4    220  hatbatcatdog
+
+julia> select(df, :c, :b, :a) # re-order columns
+4×3 DataFrame
+ Row │ c       b      a
+     │ String  Int64  Int64
+─────┼──────────────────────
+   1 │ hat        50      1
+   2 │ bat        50      2
+   3 │ cat        60      3
+   4 │ dog        60      4
+
+ulia> select(df, :b, :) # `:` here means all other columns
+4×3 DataFrame
+ Row │ b      a      c
+     │ Int64  Int64  String
+─────┼──────────────────────
+   1 │    50      1  hat
+   2 │    50      2  bat
+   3 │    60      3  cat
+   4 │    60      4  dog
+
+julia> select(
+           df,
+           :c => (x -> "a " .* x) => :one_c,
+           :a => (x -> 100x),
+           :b,
+           renamecols=false
+       ) # can mix operation forms
+4×3 DataFrame
+ Row │ one_c   a      b
+     │ String  Int64  Int64
+─────┼──────────────────────
+   1 │ a hat     100     50
+   2 │ a bat     200     50
+   3 │ a cat     300     60
+   4 │ a dog     400     60
+
+julia> select(
+           df,
+           :c => ByRow(reverse),
+           :c => ByRow(uppercase)
+       ) # multiple operations on same column
+4×2 DataFrame
+ Row │ c_reverse  c_uppercase
+     │ String     String
+─────┼────────────────────────
+   1 │ tah        HAT
+   2 │ tab        BAT
+   3 │ tac        CAT
+   4 │ god        DOG
+```
+
+In the last two examples,
+the manipulation function arguments were split across multiple lines.
+This is a good way to make manipulations with many operations more readable.
+
+Passing multiple operations to `subset` or `subset!` is an easy way to narrow in
+on a particular row of data.
+
+```julia
+julia> subset(
+           df,
+           :b => ByRow(==(60)),
+           :c => ByRow(contains("at"))
+       ) # rows with 60 and "at"
+1×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  String
+─────┼──────────────────────
+   1 │     3     60  cat
+```
+
+Note that all operations within a single manipulation must use the data
+as it existed before the function call
+i.e. you cannot use newly created columns for subsequent operations
+within the same manipulation.
+
+```julia
+julia> transform(
+           df,
+           [:a, :b] => ByRow(+) => :d,
+           :d => (x -> x ./ 2),
+       ) # requires two separate transformations
+ERROR: ArgumentError: column name :d not found in the data frame; existing most similar names are: :a, :b and :c
+
+julia> new_df = transform(df, [:a, :b] => ByRow(+) => :d)
+4×4 DataFrame
+ Row │ a      b      c       d
+     │ Int64  Int64  String  Int64
+─────┼─────────────────────────────
+   1 │     1     50  hat        51
+   2 │     2     50  bat        52
+   3 │     3     60  cat        63
+   4 │     4     60  dog        64
+
+julia> transform!(new_df, :d => (x -> x ./ 2) => :d_2)
+4×5 DataFrame
+ Row │ a      b      c       d      d_2
+     │ Int64  Int64  String  Int64  Float64
+─────┼──────────────────────────────────────
+   1 │     1     50  hat        51     25.5
+   2 │     2     50  bat        52     26.0
+   3 │     3     60  cat        63     31.5
+   4 │     4     60  dog        64     32.0
+```
+
 
 #### Broadcasting Operation Pairs
-Broadcasting pairs with `.=>` is often a convenient way to generate multiple
+Broadcasting
+
+[Broadcasting](https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting)
+pairs with `.=>` is often a convenient way to generate multiple
 similar `operation`s to be applied within a single manipulation.
+Broadcasting within the `Pair` of an `operation` is no different than
+broadcasting in base Julia.
+The broadcasting `.=>` will be expanded into a vector of pairs,
+and this expansion will occur before the manipulation function is invoked.
+
+To illustrate these concepts, let us first examine the `Type` of a basic `Pair`.
+In DataFrames, a `Symbol`, `String`, or `Integer`
+may be used to select a single column.
+Some examples of `Pair`s of these types are below.
+
+```julia
+julia> typeof(:x => :a)
+Pair{Symbol, Symbol}
+
+julia> typeof("x" => "a")
+Pair{String, String}
+
+julia> typeof(1 => "a")
+Pair{Int64, String}
+```
+
+Any of the `Pair`s above could be used to rename the first column
+of the data frame below to `a`.
+
+```julia
+julia> df = DataFrame(x = 1:3, y = 4:6)
+3×2 DataFrame
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> select(df, :x => :a)
+3×1 DataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+
+```
+
+What should we do if we want to keep and rename both the `x` and `y` column?
+One option is to supply a `Vector` of transformation `Pair`s to `select`.
+`select` will process all of these transformations in order.
+
+```julia
+julia> ["x" => "a", "y" => "b"]
+2-element Vector{Pair{String, String}}:
+ "x" => "a"
+ "y" => "b"
+
+julia> select(df, ["x" => "a", "y" => "b"])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+```
+
+We can use broadcasting to simplify the syntax above.
+
+```julia
+julia> ["x", "y"] .=> ["a", "b"]
+2-element Vector{Pair{String, String}}:
+ "x" => "a"
+ "y" => "b"
+
+julia> select(df, ["x", "y"] .=> ["a", "b"])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+```
+
+Note that `select` sees the same `Vector{Pair{String, String}}` argument
+whether the individual pairs are written out explicitly or
+constructed with broadcasting.
+The broadcasting is applied before the call to `select`.
+
+If a function is used as part of a transformation `Pair`,
+like in the `source_column_selector => function => new_column_names` form,
+then the function is repeated in each pair of the resultant vector.
+This is an easy way to apply a function to multiple columns at the same time.
+
+```julia
+julia> f(x) = 2 * x
+f (generic function with 1 method)
+
+julia> ["x", "y"] .=> f .=> ["a", "b"]
+2-element Vector{Pair{String, Pair{typeof(f), String}}}:
+ "x" => (f => "a")
+ "y" => (f => "b")
+
+julia> select(df, ["x", "y"] .=> f .=> ["a", "b"])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      8
+   2 │     4     10
+   3 │     6     12
+ ```
+
+A renaming function can be applied to multiple columns in the same way.
+
+```julia
+julia> newname(s::String) = s * "_new"
+newname (generic function with 1 method)
+
+julia> ["x", "y"] .=> f .=> newname
+2-element Vector{Pair{String, Pair{typeof(f), typeof(newname)}}}:
+ "x" => (f => newname)
+ "y" => (f => newname)
+
+julia> select(df, ["x", "y"] .=> f .=> newname)
+3×2 DataFrame
+ Row │ x_new  y_new
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      8
+   2 │     4     10
+   3 │     6     12
+```
+
+This broadcasting approach is even more useful if we use column selectors which
+generate a vector of column names for us rather than writing them all out manually.
+Consider a data frame with temperature data at three different locations taken over time.
+
+```julia
+julia> df = DataFrame(Time = 1:4,
+                      Temperature1 = [20, 23, 25, 28],
+                      Temperature2 = [33, 37, 41, 44],
+                      Temperature3 = [15, 10, 4, 0])
+4×4 DataFrame
+ Row │ Time   Temperature1  Temperature2  Temperature3
+     │ Int64  Int64         Int64         Int64
+─────┼─────────────────────────────────────────────────
+   1 │     1            20            33            15
+   2 │     2            23            37            10
+   3 │     3            25            41             4
+   4 │     4            28            44             0
+```
+
+To convert all of the temperature data in one transformation,
+we just need to define a conversion function and broadcast
+all of the rows except for `Time` to it.
+
+```julia
+julia> celsius_to_kelvin(x) = x + 273
+celsius_to_kelvin (generic function with 1 method)
+
+julia> transform(df, Not("Time") .=> ByRow(celsius_to_kelvin), renamecols = false)
+4×4 DataFrame
+ Row │ Time   Temperature1  Temperature2  Temperature3
+     │ Int64  Int64         Int64         Int64
+─────┼─────────────────────────────────────────────────
+   1 │     1           293           306           288
+   2 │     2           296           310           283
+   3 │     3           298           314           277
+   4 │     4           301           317           273
+```
+
+The function `celsius_to_kelvin` above was defined to operate on scalar values.
+Recall that functions inside DataFrame transformations
+must be defined to operate on vectors.
+The `ByRow` function can be wrapped around a scalar function as a convient way
+to allow a function to operate on data frame columns.
+Without the `ByRow` wrapper, we would get an error
+because addition of a vector (`x`) and a scalar (`273`) is not defined.
+
+```julia
+julia> transform(df, Not("Time") .=> celsius_to_kelvin, renamecols = false)
+ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)
+```
+
+Alternatively, we could use a broadcasting dot `.` in the definition of our function
+so that it can accept vector or scalar inputs.
+`.+` indicates that the addition should be performed element-by-element.
+Then the `ByRow` wrapper would not be needed.
+
+```julia
+julia> celsius_to_kelvin2(x) = x .+ 273
+celsius_to_kelvin2 (generic function with 1 method)
+
+julia> transform(df, Not("Time") .=> celsius_to_kelvin2, renamecols = false)
+4×4 DataFrame
+ Row │ Time   Temperature1  Temperature2  Temperature3
+     │ Int64  Int64         Int64         Int64
+─────┼─────────────────────────────────────────────────
+   1 │     1           293           306           288
+   2 │     2           296           310           283
+   3 │     3           298           314           277
+   4 │     4           301           317           273
+```
+
+Broadcasting is a simple but powerful tool
+that can be used in any of the transformation functions.
 
 #### More Information
 This operation pair syntax is sometimes referred to as a mini-language.
 More details and examples of the opertation mini-language can be found in
 [this blog post](https://bkamins.github.io/julialang/2020/12/24/minilanguage.html).
+
+Many users find the Chain and DataFramesMeta packages useful
+to help simplify manipulations that may be tedious with operation pairs alone.
 
 #### Manipulation Examples with the German Dataset
 Let us move to the examples of application of these rules
@@ -2727,219 +3067,5 @@ julia> select(german, :Age, :Job, [:Age, :Job] => (+) => :res)
 ```
 
 In the examples given in this introductory tutorial we did not cover all
-options of the transformation mini-language. More advanced examples, in particular
-showing how to pass or produce multiple columns using the `AsTable` operation
-(which you might have seen in some DataFrames.jl demos) are given in the later
-sections of the manual.
-
-## Broadcasting with Transformation Functions
-
-[Broadcasting](https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting)
-is a convenient way to apply multiple transformations
-within one call to a transformation function.
-Broadcasting within the `Pair` of a `transformation` is no different than
-broadcasting in base Julia.
-The broadcasting `.=>` will be expanded into a vector of pairs,
-and this expansion will occur before the tranformation function is invoked.
-
-To illustrate these concepts, let us first examine the `Type` of a basic `Pair`.
-In DataFrames, a `Symbol`, `String`, or `Integer`
-may be used to select a single column.
-Some examples of `Pair`s of these types are below.
-
-```julia
-julia> typeof(:x => :a)
-Pair{Symbol, Symbol}
-
-julia> typeof("x" => "a")
-Pair{String, String}
-
-julia> typeof(1 => "a")
-Pair{Int64, String}
-```
-
-Any of the `Pair`s above could be used to rename the first column
-of the data frame below to `a`.
-
-```julia
-julia> df = DataFrame(x = 1:3, y = 4:6)
-3×2 DataFrame
- Row │ x      y
-     │ Int64  Int64
-─────┼──────────────
-   1 │     1      4
-   2 │     2      5
-   3 │     3      6
-
-julia> select(df, :x => :a)
-3×1 DataFrame
- Row │ a
-     │ Int64
-─────┼───────
-   1 │     1
-   2 │     2
-   3 │     3
-
-```
-
-What should we do if we want to keep and rename both the `x` and `y` column?
-One option is to supply a `Vector` of transformation `Pair`s to `select`.
-`select` will process all of these transformations in order.
-
-```julia
-julia> ["x" => "a", "y" => "b"]
-2-element Vector{Pair{String, String}}:
- "x" => "a"
- "y" => "b"
-
-julia> select(df, ["x" => "a", "y" => "b"])
-3×2 DataFrame
- Row │ a      b
-     │ Int64  Int64
-─────┼──────────────
-   1 │     1      4
-   2 │     2      5
-   3 │     3      6
-```
-
-We can use broadcasting to simplify the syntax above.
-
-```julia
-julia> ["x", "y"] .=> ["a", "b"]
-2-element Vector{Pair{String, String}}:
- "x" => "a"
- "y" => "b"
-
-julia> select(df, ["x", "y"] .=> ["a", "b"])
-3×2 DataFrame
- Row │ a      b
-     │ Int64  Int64
-─────┼──────────────
-   1 │     1      4
-   2 │     2      5
-   3 │     3      6
-```
-
-Note that `select` sees the same `Vector{Pair{String, String}}` argument
-whether the individual pairs are written out explicitly or
-constructed with broadcasting.
-The broadcasting is applied before the call to `select`.
-
-If a function is used as part of a transformation `Pair`,
-like in the `source_column_selector => function => new_column_names` form,
-then the function is repeated in each pair of the resultant vector.
-This is an easy way to apply a function to multiple columns at the same time.
-
-```julia
-julia> f(x) = 2 * x
-f (generic function with 1 method)
-
-julia> ["x", "y"] .=> f .=> ["a", "b"]
-2-element Vector{Pair{String, Pair{typeof(f), String}}}:
- "x" => (f => "a")
- "y" => (f => "b")
-
-julia> select(df, ["x", "y"] .=> f .=> ["a", "b"])
-3×2 DataFrame
- Row │ a      b
-     │ Int64  Int64
-─────┼──────────────
-   1 │     2      8
-   2 │     4     10
-   3 │     6     12
- ```
-
-A renaming function can be applied to multiple columns in the same way.
-
-```julia
-julia> newname(s::String) = s * "_new"
-newname (generic function with 1 method)
-
-julia> ["x", "y"] .=> f .=> newname
-2-element Vector{Pair{String, Pair{typeof(f), typeof(newname)}}}:
- "x" => (f => newname)
- "y" => (f => newname)
-
-julia> select(df, ["x", "y"] .=> f .=> newname)
-3×2 DataFrame
- Row │ x_new  y_new
-     │ Int64  Int64
-─────┼──────────────
-   1 │     2      8
-   2 │     4     10
-   3 │     6     12
-```
-
-This broadcasting approach is even more useful if we use column selectors which
-generate a vector of column names for us rather than writing them all out manually.
-Consider a data frame with temperature data at three different locations taken over time.
-
-```julia
-julia> df = DataFrame(Time = 1:4,
-                      Temperature1 = [20, 23, 25, 28],
-                      Temperature2 = [33, 37, 41, 44],
-                      Temperature3 = [15, 10, 4, 0])
-4×4 DataFrame
- Row │ Time   Temperature1  Temperature2  Temperature3
-     │ Int64  Int64         Int64         Int64
-─────┼─────────────────────────────────────────────────
-   1 │     1            20            33            15
-   2 │     2            23            37            10
-   3 │     3            25            41             4
-   4 │     4            28            44             0
-```
-
-To convert all of the temperature data in one transformation,
-we just need to define a conversion function and broadcast
-all of the rows except for `Time` to it.
-
-```julia
-julia> celsius_to_kelvin(x) = x + 273
-celsius_to_kelvin (generic function with 1 method)
-
-julia> transform(df, Not("Time") .=> ByRow(celsius_to_kelvin), renamecols = false)
-4×4 DataFrame
- Row │ Time   Temperature1  Temperature2  Temperature3
-     │ Int64  Int64         Int64         Int64
-─────┼─────────────────────────────────────────────────
-   1 │     1           293           306           288
-   2 │     2           296           310           283
-   3 │     3           298           314           277
-   4 │     4           301           317           273
-```
-
-The function `celsius_to_kelvin` above was defined to operate on scalar values.
-Recall that functions inside DataFrame transformations
-must be defined to operate on vectors.
-The `ByRow` function can be wrapped around a scalar function as a convient way
-to allow a function to operate on data frame columns.
-Without the `ByRow` wrapper, we would get an error
-because addition of a vector (`x`) and a scalar (`273`) is not defined.
-
-```julia
-julia> transform(df, Not("Time") .=> celsius_to_kelvin, renamecols = false)
-ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)
-```
-
-Alternatively, we could use a broadcasting dot `.` in the definition of our function
-so that it can accept vector or scalar inputs.
-`.+` indicates that the addition should be performed element-by-element.
-Then the `ByRow` wrapper would not be needed.
-
-```julia
-julia> celsius_to_kelvin2(x) = x .+ 273
-celsius_to_kelvin2 (generic function with 1 method)
-
-julia> transform(df, Not("Time") .=> celsius_to_kelvin2, renamecols = false)
-4×4 DataFrame
- Row │ Time   Temperature1  Temperature2  Temperature3
-     │ Int64  Int64         Int64         Int64
-─────┼─────────────────────────────────────────────────
-   1 │     1           293           306           288
-   2 │     2           296           310           283
-   3 │     3           298           314           277
-   4 │     4           301           317           273
-```
-
-Broadcasting is a simple but powerful tool
-that can be used in any of the transformation functions.
+options of the transformation mini-language.
+More advanced examples, in are given in the later sections of the manual.
