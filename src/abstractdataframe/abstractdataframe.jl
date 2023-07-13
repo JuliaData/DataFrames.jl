@@ -517,7 +517,8 @@ If `df` has a single row return it as a `DataFrameRow`; otherwise throw `Argumen
 $METADATA_FIXED
 """
 function Base.only(df::AbstractDataFrame)
-    nrow(df) != 1 && throw(ArgumentError("data frame must contain exactly 1 row"))
+    n = nrow(df)
+    n != 1 && throw(ArgumentError("data frame must contain exactly 1 row, got $n"))
     return df[1, :]
 end
 
