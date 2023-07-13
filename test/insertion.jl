@@ -1,6 +1,6 @@
 module TestInsertion
 
-using DataFrames, Test, Logging, DataStructures
+using DataFrames, Test, Logging, DataStructures, PooledArrays
 const ≅ = isequal
 
 @testset "push!(df, row)" begin
