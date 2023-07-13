@@ -1343,4 +1343,31 @@ end
     end
 end
 
+@testset "PooledArray error #3356" begin
+    buf = IOBuffer()
+    sl = SimpleLogger(buf)
+
+    with_logger(sl) do
+        @test_throws ErrorException append!(DataFrame(x=PooledArray(1:255, UInt8)),
+                                            DataFrame(x=PooledArray(256:500, UInt8)))
+        @test_throws ErrorException append!(DataFrame(x=PooledArray(1:255, UInt8)),
+                                            DataFrame(x=PooledArray(256:500, UInt8)),
+                                            promote=true)
+        @test_throws ErrorException push!(DataFrame(x=PooledArray(1:255, UInt8)), [1000])
+        @test_throws ErrorException push!(DataFrame(x=PooledArray(1:255, UInt8)), [1000],
+                                        promote=true)
+        @test_throws ErrorException push!(DataFrame(x=PooledArray(1:255, UInt8)), (x=1000,))
+        @test_throws ErrorException push!(DataFrame(x=PooledArray(1:255, UInt8)), (x=1000,),
+                                        promote=true)
+        @test_throws ErrorException push!(DataFrame(x=PooledArray(1:255, UInt8)), (x=1000,),
+                                        cols=:union, promote=true)
+        @test_throws ErrorException push!(DataFrame(x=PooledArray(1:255, UInt8)), (x=1000,),
+                                        cols=:union, promote=false)
+        @test_throws ErrorException push!(DataFrame(x=PooledArray(1:255, UInt8)), (x="x",),
+                                        cols=:union, promote=true)
+        @test_throws MethodError push!(DataFrame(x=PooledArray(1:255, UInt8)), (x="x",),
+                                    cols=:union, promote=false)
+    end
+end
+
 end # module
