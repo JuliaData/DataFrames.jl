@@ -1355,18 +1355,18 @@ end
                                             promote=true)
         @test_throws ErrorException push!(DataFrame(x=PooledArray(1:255, UInt8)), [1000])
         @test_throws ErrorException push!(DataFrame(x=PooledArray(1:255, UInt8)), [1000],
-                                        promote=true)
+                                          promote=true)
         @test_throws ErrorException push!(DataFrame(x=PooledArray(1:255, UInt8)), (x=1000,))
         @test_throws ErrorException push!(DataFrame(x=PooledArray(1:255, UInt8)), (x=1000,),
-                                        promote=true)
+                                          promote=true)
         @test_throws ErrorException push!(DataFrame(x=PooledArray(1:255, UInt8)), (x=1000,),
-                                        cols=:union, promote=true)
+                                          cols=:union, promote=true)
         @test_throws ErrorException push!(DataFrame(x=PooledArray(1:255, UInt8)), (x=1000,),
-                                        cols=:union, promote=false)
+                                          cols=:union, promote=false)
         @test_throws ErrorException push!(DataFrame(x=PooledArray(1:255, UInt8)), (x="x",),
-                                        cols=:union, promote=true)
+                                          cols=:union, promote=true)
         @test_throws MethodError push!(DataFrame(x=PooledArray(1:255, UInt8)), (x="x",),
-                                    cols=:union, promote=false)
+                                       cols=:union, promote=false)
     end
 end
 
