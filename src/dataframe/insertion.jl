@@ -301,9 +301,7 @@ function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbo
             @error "Error adding value to column :$(_names(df1)[current_col])."
         else
             @error "Error adding value to column :$(_names(df1)[current_col]). " *
-                "Maybe it was forgotten to require column " *
-                "element type promotion, which can be done " *
-                "by passing the promote=true keyword argument."
+                   "Maybe you forgot passing `promote=true`?"
         end
         rethrow(err)
     end
@@ -697,8 +695,7 @@ function _row_inserter!(df::DataFrame, loc::Integer, row::Any,
             @error "Error adding value to column :$(_names(df)[current_col])."
         else
             @error "Error adding value to column :$(_names(df)[current_col]). " *
-                   "Maybe it was forgotten to ask for column element type promotion, " *
-                   "which can be done by passing the promote=true keyword argument."
+                   "Maybe you forgot passing `promote=true`?"
         end
         rethrow(err)
     end
@@ -874,9 +871,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
                         @assert length(col2) == nrows
                     end
                     @error "Error adding value to column :$colname. " *
-                           "Maybe it was forgotten to ask for column " *
-                           "element type promotion, which can be done " *
-                           "by passing the promote=true keyword argument."
+                           "Maybe you forgot passing `promote=true`?"
                     rethrow(err)
                 end
             else
@@ -984,9 +979,7 @@ function _row_inserter!(df::DataFrame, loc::Integer,
             @error "Error adding value to column :$(_names(df)[current_col])."
         else
             @error "Error adding value to column :$(_names(df)[current_col]). " *
-                   "Maybe it was forgotten to ask for column " *
-                   "element type promotion, which can be done " *
-                   "by passing the promote=true keyword argument."
+                   "Maybe you forgot passing `promote=true`?"
         end
         rethrow(err)
     end
