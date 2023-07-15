@@ -731,11 +731,11 @@ end
 is_complex(o::DirectOrdering) = false
 
 if isdefined(SortingAlgorithms.DataStructures, :FasterForward)
-    is_complex(o::FasterForward) = false
+    is_complex(o::SortingAlgorithms.DataStructures.FasterForward) = false
 end
 
 if isdefined(SortingAlgorithms.DataStructures, :FasterReverse)
-    is_complex(o::FasterReverse) = false
+    is_complex(o::SortingAlgorithms.DataStructures.FasterReverse) = false
 end
 
 is_complex(o::By) = o.by !== identity
