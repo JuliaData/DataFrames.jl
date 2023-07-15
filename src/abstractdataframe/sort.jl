@@ -14,9 +14,6 @@
 #                  which allows a user to specify column specific orderings
 #                  with "order(column, rev=true, ...)"
 
-import SortingAlgorithms.DataStructures.FasterForward,
-       SortingAlgorithms.DataStructures.FasterReverse
-
 struct UserColOrdering{T<:ColumnIndex}
     col::T
     kwargs
@@ -731,7 +728,16 @@ end
 # attributes storing the defined `by` and `lt` functions respectively, simple identity
 # checks are enough. `ReverseOrdering`s wrap another type of ordering, so we
 # perform the check on the wrapped type.
-is_complex(o::Union{DirectOrdering, FasterForward, FasterReverse}) = false
+is_complex(o::DirectOrdering) = false
+
+if isdefined(SortingAlgorithms.DataStructures, :FasterForward)
+    is_complex(o::FasterForward) = false
+end
+
+if isdefined(SortingAlgorithms.DataStructures, :FasterReverse)
+    is_complex(o::FasterReverse) = false
+end
+
 is_complex(o::By) = o.by !== identity
 is_complex(o::Lt) = o.lt !== isless
 is_complex(o::ReverseOrdering) = is_complex(o.fwd)

@@ -165,12 +165,15 @@ end
         :sneaky_lt => Base.Order.ord(<, identity, true), # Disallowed
         # Tests with other subtypes of Ordering
         :perm_simple => Base.Order.Perm(Base.Order.ForwardOrdering(), dv3),
-        :perm_cmplex => Base.Order.Perm(
-            Base.Order.ord(isless, x -> -x, false), dv3
-        ),
-        :fforward => SortingAlgorithms.DataStructures.FasterForward(), # Simple ∴ allowed
-        :freverse => SortingAlgorithms.DataStructures.FasterReverse() # Simple ∴ allowed
-        )
+        :perm_cmplex => Base.Order.Perm(Base.Order.ord(isless, x -> -x, false), dv3))
+
+    if isdefined(SortingAlgorithms.DataStructures, :FasterForward)
+        orderings[:fforward] = SortingAlgorithms.DataStructures.FasterForward() # Simple ∴ allowed
+    end
+
+    if isdefined(SortingAlgorithms.DataStructures, :FasterReverse)
+        orderings[:freverse] = SortingAlgorithms.DataStructures.FasterReverse() # Simple ∴ allowed
+    end
 
     ords = [
         order(:dv4, lt = isless, by = identity, rev=true),
@@ -243,7 +246,7 @@ end
     @test_throws ArgumentError sort(d, [:dv1, :dv2], rev = [false, false], checkunique=true)
     @test_throws ArgumentError sort(d, :dv1, by = x -> -x, checkunique=true)
     @test_throws ArgumentError sort(d, :dv1, lt = >, checkunique=true)
-    
+
     # sort!
     @test_throws ArgumentError sort!(d, :dv1, checkunique=true)
     @test_throws ArgumentError sort!(d[!, [:dv1, :dv2]], checkunique = true)
