@@ -1663,7 +1663,7 @@ Inside an `operation` pair, `operation_function` is a function
 which operates on data frame columns passed as vectors.
 When multiple columns are selected by `source_column_selector`,
 the `operation_function` will receive the columns as multiple positional arguments
-in the order they were selected like `f(column1, column2, column3)`.
+in the order they were selected, e.g. `f(column1, column2, column3)`.
 
 ```julia
 julia> df = DataFrame(a = [1, 2, 3], b = [4, 5, 4])
@@ -2187,7 +2187,7 @@ All data frame manipulation functions can accept multiple `operation` pairs
 at once using any of the following methods:
 - `manipulation_function(dataframe, operation1, operation2)`   : multiple arguments
 - `manipulation_function(dataframe, [operation1, operation2])` : vector argument
-- `manipulation_function(dataframe, [operation1 operation2])`  : 1-by-x matrix argument
+- `manipulation_function(dataframe, [operation1 operation2])`  : matrix argument
 
 Passing multiple operations is especially useful for the `select`, `select!`,
 and `combine` manipulation functions,
@@ -2318,20 +2318,23 @@ julia> transform!(new_df, :d => (x -> x ./ 2) => :d_2)
 
 
 #### Broadcasting Operation Pairs
-Broadcasting
 
 [Broadcasting](https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting)
 pairs with `.=>` is often a convenient way to generate multiple
 similar `operation`s to be applied within a single manipulation.
 Broadcasting within the `Pair` of an `operation` is no different than
 broadcasting in base Julia.
-The broadcasting `.=>` will be expanded into a vector of pairs,
+The broadcasting `.=>` will be expanded into a vector of pairs
+(`[operation1, operation2, ...]`),
 and this expansion will occur before the manipulation function is invoked.
+Then the manipulation function will use the
+`manipulation_function(dataframe, [operation1, operation2, ...])` method.
+This process will be explained in more detail below.
 
 To illustrate these concepts, let us first examine the `Type` of a basic `Pair`.
-In DataFrames, a `Symbol`, `String`, or `Integer`
+In DataFrames.jl, a symbol, string, or integer
 may be used to select a single column.
-Some examples of `Pair`s of these types are below.
+Some `Pair`s with these types are below.
 
 ```julia
 julia> typeof(:x => :a)
@@ -2366,11 +2369,19 @@ julia> select(df, :x => :a)
    2 │     2
    3 │     3
 
+julia> select(df, 1 => "a")
+3×1 DataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
 ```
 
 What should we do if we want to keep and rename both the `x` and `y` column?
-One option is to supply a `Vector` of transformation `Pair`s to `select`.
-`select` will process all of these transformations in order.
+One option is to supply a `Vector` of operation `Pair`s to `select`.
+`select` will process all of these operations in order.
 
 ```julia
 julia> ["x" => "a", "y" => "b"]
@@ -2406,10 +2417,28 @@ julia> select(df, ["x", "y"] .=> ["a", "b"])
    3 │     3      6
 ```
 
-Note that `select` sees the same `Vector{Pair{String, String}}` argument
-whether the individual pairs are written out explicitly or
+Notice that `select` sees the same `Vector{Pair{String, String}}` operation
+argument whether the individual pairs are written out explicitly or
 constructed with broadcasting.
 The broadcasting is applied before the call to `select`.
+
+```julia
+julia> ["x" => "a", "y" => "b"] == (["x", "y"] .=> ["a", "b"])
+true
+```
+
+!!! Note
+      These operation pairs (or vector of pairs) can be given variable names.
+      This is uncommon in practice but could be helpful for intermediate
+      inspection and testing.
+      ```julia
+      df = DataFrame(x = 1:3, y = 4:6)       # create data frame
+      operation = ["x", "y"] .=> ["a", "b"]  # save operation to variable
+      typeof(operation)                      # check type of operation
+      first(operation)                       # check first pair in operation
+      last(operation)                        # check last pair in operation
+      select(df, operation)                  # manipulate `df` with `operation`
+      ```
 
 If a function is used as part of a transformation `Pair`,
 like in the `source_column_selector => function => new_column_names` form,
@@ -2436,6 +2465,7 @@ julia> select(df, ["x", "y"] .=> f .=> ["a", "b"])
  ```
 
 A renaming function can be applied to multiple columns in the same way.
+It will also be repeated in each operation `Pair`.
 
 ```julia
 julia> newname(s::String) = s * "_new"
@@ -2456,10 +2486,35 @@ julia> select(df, ["x", "y"] .=> f .=> newname)
    3 │     6     12
 ```
 
-This broadcasting approach is even more useful if we use column selectors which
-generate a vector of column names for us rather than writing them all out manually.
-Consider a data frame with temperature data at three different locations taken over time.
+You can see from the type output above
+that a three element pair does not actually exist.
+A `Pair` (as the name implies) can only contain two elements.
+Thus, `:x => :y => :z` becomes a nested `Pair`,
+where `:x` is the first element and points to the `Pair` `:y => :z`,
+which is the second element.
 
+```julia
+julia> p = :x => :y => :z
+:x => (:y => :z)
+
+julia> p[1]
+:x
+
+julia> p[2]
+:y => :z
+
+julia> p[2][1]
+:y
+
+julia> p[2][2]
+```
+
+In the previous examples, the source columns have been individually selected.
+When broadcasting multiple columns to the same function,
+often similarities in the column names or position can be exploited to avoid
+tedious selection.
+Consider a data frame with temperature data at three different locations
+taken over time.
 ```julia
 julia> df = DataFrame(Time = 1:4,
                       Temperature1 = [20, 23, 25, 28],
@@ -2477,13 +2532,17 @@ julia> df = DataFrame(Time = 1:4,
 
 To convert all of the temperature data in one transformation,
 we just need to define a conversion function and broadcast
-all of the rows except for `Time` to it.
+it to all of the "Temperature" columns.
 
 ```julia
 julia> celsius_to_kelvin(x) = x + 273
 celsius_to_kelvin (generic function with 1 method)
 
-julia> transform(df, Not("Time") .=> ByRow(celsius_to_kelvin), renamecols = false)
+julia> transform(
+           df,
+           Cols(r"Temp") .=> ByRow(celsius_to_kelvin),
+           renamecols = false
+       )
 4×4 DataFrame
  Row │ Time   Temperature1  Temperature2  Temperature3
      │ Int64  Int64         Int64         Int64
@@ -2493,52 +2552,126 @@ julia> transform(df, Not("Time") .=> ByRow(celsius_to_kelvin), renamecols = fals
    3 │     3           298           314           277
    4 │     4           301           317           273
 ```
-
-The function `celsius_to_kelvin` above was defined to operate on scalar values.
-Recall that functions inside DataFrame transformations
-must be defined to operate on vectors.
-The `ByRow` function can be wrapped around a scalar function as a convient way
-to allow a function to operate on data frame columns.
-Without the `ByRow` wrapper, we would get an error
-because addition of a vector (`x`) and a scalar (`273`) is not defined.
+Or, simultaneously changing the column names:
 
 ```julia
-julia> transform(df, Not("Time") .=> celsius_to_kelvin, renamecols = false)
-ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)
-```
+julia> rename_function(s) = "Temperature $(last(s)) (°K)"
+rename_function (generic function with 1 method)
 
-Alternatively, we could use a broadcasting dot `.` in the definition of our function
-so that it can accept vector or scalar inputs.
-`.+` indicates that the addition should be performed element-by-element.
-Then the `ByRow` wrapper would not be needed.
-
-```julia
-julia> celsius_to_kelvin2(x) = x .+ 273
-celsius_to_kelvin2 (generic function with 1 method)
-
-julia> transform(df, Not("Time") .=> celsius_to_kelvin2, renamecols = false)
+julia> select(
+           df,
+           "Time",
+           Cols(r"Temp") .=> ByRow(celsius_to_kelvin) .=> rename_function
+       )
 4×4 DataFrame
- Row │ Time   Temperature1  Temperature2  Temperature3
-     │ Int64  Int64         Int64         Int64
-─────┼─────────────────────────────────────────────────
-   1 │     1           293           306           288
-   2 │     2           296           310           283
-   3 │     3           298           314           277
-   4 │     4           301           317           273
+ Row │ Time   Temperature 1 (°K)  Temperature 2 (°K)  Temperature 3 (°K)
+     │ Int64  Int64               Int64               Int64
+─────┼───────────────────────────────────────────────────────────────────
+   1 │     1                 293                 306                 288
+   2 │     2                 296                 310                 283
+   3 │     3                 298                 314                 277
+   4 │     4                 301                 317                 273
 ```
 
-Broadcasting is a simple but powerful tool
-that can be used in any of the transformation functions.
+!!! Note Notes
+      * `Not("Time")` or `2:4` would have been equally good choices for `source_column_selector` in the above operations.
+      * Don't forget `ByRow` if your function is to be applied to elements rather than entire column vectors.
+      Without `ByRow`, the manipulations above would have thrown
+      `ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)`.
 
-#### More Information
-This operation pair syntax is sometimes referred to as a mini-language.
+You could also broadcast different columns to different functions
+by supplying a vector of functions.
+
+```julia
+julia> df = DataFrame(a=1:4, b=5:8)
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
+
+julia> f1(x) = x .+ 1
+f1 (generic function with 1 method)
+
+julia> f2(x) = x ./ 10
+f2 (generic function with 1 method)
+
+julia> transform(df, [:a, :b] .=> [f1, f2])
+4×4 DataFrame
+ Row │ a      b      a_f1   b_f2
+     │ Int64  Int64  Int64  Float64
+─────┼──────────────────────────────
+   1 │     1      5      2      0.5
+   2 │     2      6      3      0.6
+   3 │     3      7      4      0.7
+   4 │     4      8      5      0.8
+```
+
+However, this form is not much more convenient than supplying
+multiple individual operations.
+
+```julia
+julia> transform(df, [:a => f1, :b => f2]) # same manipulation as previous
+4×4 DataFrame
+ Row │ a      b      a_f1   b_f2
+     │ Int64  Int64  Int64  Float64
+─────┼──────────────────────────────
+   1 │     1      5      2      0.5
+   2 │     2      6      3      0.6
+   3 │     3      7      4      0.7
+   4 │     4      8      5      0.8
+```
+
+Perhaps more useful for broadcasting syntax
+is to apply multiple functions to multiple columns
+by changing the vector of functions to a 1-by-x matrix of functions.
+(Recall that a list, a vector, or a matrix of operation pairs are all valid
+for passing to the manipulation functions.)
+
+```julia
+julia> [:a, :b] .=> [f1 f2] # No comma `,` between f1 and f2
+2×2 Matrix{Pair{Symbol}}:
+ :a=>f1  :a=>f2
+ :b=>f1  :b=>f2
+
+julia> transform(df, [:a, :b] .=> [f1 f2]) # No comma `,` between f1 and f2
+4×6 DataFrame
+ Row │ a      b      a_f1   b_f1   a_f2     b_f2
+     │ Int64  Int64  Int64  Int64  Float64  Float64
+─────┼──────────────────────────────────────────────
+   1 │     1      5      2      6      0.1      0.5
+   2 │     2      6      3      7      0.2      0.6
+   3 │     3      7      4      8      0.3      0.7
+   4 │     4      8      5      9      0.4      0.8
+```
+
+In this way, every combination of selected columns and functions will be applied.
+
+Pair broadcasting is a simple but powerful tool
+that can be used in any of the manipulation functions listed under
+[Basic Usage of Manipulation Functions](@ref).
+Experiment for yourself to discover other useful operations.
+
+#### Additional Resources
+The operation pair syntax is sometimes referred to as the DataFrames mini-language
+or domain-specific language (DSL).
 More details and examples of the opertation mini-language can be found in
 [this blog post](https://bkamins.github.io/julialang/2020/12/24/minilanguage.html).
 
-Many users find the Chain and DataFramesMeta packages useful
+For additional syntax niceties,
+many users find the [Chain.jl](https://github.com/jkrumbiegel/Chain.jl)
+and [DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl)
+packages useful
 to help simplify manipulations that may be tedious with operation pairs alone.
 
-#### Manipulation Examples with the German Dataset
+For additional practice,
+an interactive tutorial is provided by the DataFrames package author
+[here](https://github.com/bkamins/Julia-DataFrames-Tutorial).
+
+#### More Manipulation Examples with the German Dataset
 Let us move to the examples of application of these rules
 
 ```jldoctest dataframe

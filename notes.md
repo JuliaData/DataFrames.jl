@@ -12,6 +12,9 @@ I don't like `:` being listed as a `source_column_selector` when it often errors
 
 Similarly, regular expressions also sometimes must be wrapped in `Cols`.
 This seems inconsistent.
+I don't understand the rules for when `Cols` is and isn't needed.
+It should be explained in the documentation.
+
 ```julia
 julia> df = DataFrame(Time=[3, 4, 5], TopTemp=[70, 73, 100], BottomTemp=[50, 55, 80])
 3×3 DataFrame
@@ -174,7 +177,7 @@ julia> transform(df, :data => AsTable) # breaks if tuples not all in the same or
 ERROR: ArgumentError: keys of the returned elements must be identical
 ```
 
-when both of these do work:
+when these do work:
 ```julia
 julia> df2 = DataFrame(data = [(a=1,b=2), (a=3,b=4)]) # vector of `NamedTuple`s
 2×1 DataFrame

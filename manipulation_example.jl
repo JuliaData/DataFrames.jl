@@ -106,3 +106,66 @@ transform(
 ) # requires two separate transformations
 new_df = transform(df, [:a, :b] => ByRow(+) => :d)
 transform!(new_df, :d => (x -> x ./ 2) => :d_2)
+
+typeof(:x => :a)
+typeof("x" => "a")
+typeof(1 => "a")
+
+df = DataFrame(x = 1:3, y = 4:6)
+select(df, :x => :a)
+select(df, 1 => "a")
+
+["x" => "a", "y" => "b"] == (["x", "y"] .=> ["a", "b"])
+operation1 = ["x" => "a", "y" => "b"]
+operation2 = ["x", "y"] .=> ["a", "b"]
+operation1 == operation2
+select(df, operation1)
+
+df = DataFrame(x = 1:3, y = 4:6)
+operation = ["x", "y"] .=> ["a", "b"]
+typeof(operation)
+first(operation)
+last(operation)
+select(df, operation)
+
+f(x) = 2 * x
+["x", "y"] .=> f .=> ["a", "b"]
+select(df, ["x", "y"] .=> f .=> ["a", "b"])
+newname(s::String) = s * "_new"
+["x", "y"] .=> f .=> newname
+select(df, ["x", "y"] .=> f .=> newname)
+
+p = :x => :y => :z
+p[1]
+p[2]
+p[2][1]
+p[2][2]
+
+df = DataFrame(
+    Time = 1:4,
+    Temperature1 = [20, 23, 25, 28],
+    Temperature2 = [33, 37, 41, 44],
+    Temperature3 = [15, 10, 4, 0],
+)
+celsius_to_kelvin(x) = x + 273
+transform(df, Not("Time") .=> ByRow(celsius_to_kelvin), renamecols = false)
+transform(df, 2:4 .=> ByRow(celsius_to_kelvin), renamecols = false)
+transform(
+    df,
+    Cols(r"Temp") .=> ByRow(celsius_to_kelvin),
+    renamecols = false
+)
+rename_function(s) = "Temperature $(last(s)) (°K)"
+select(
+    df,
+    "Time",
+    Cols(r"Temp") .=> ByRow(celsius_to_kelvin) .=> rename_function
+)
+
+df = DataFrame(a=1:4, b=5:8)
+f1(x) = x .+ 1
+f2(x) = x ./ 10
+transform(df, [:a, :b] .=> [f1, f2])
+transform(df, [:a => f1, :b => f2])
+[:a, :b] .=> [f1 f2] # No comma `,` between f1 and f2
+transform(df, [:a, :b] .=> [f1 f2]) # No comma `,` between f1 and f2
