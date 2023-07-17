@@ -165,15 +165,12 @@ end
         :sneaky_lt => Base.Order.ord(<, identity, true), # Disallowed
         # Tests with other subtypes of Ordering
         :perm_simple => Base.Order.Perm(Base.Order.ForwardOrdering(), dv3),
-        :perm_cmplex => Base.Order.Perm(Base.Order.ord(isless, x -> -x, false), dv3))
-
-    if isdefined(SortingAlgorithms.DataStructures, :FasterForward)
-        orderings[:fforward] = SortingAlgorithms.DataStructures.FasterForward() # Simple ∴ allowed
-    end
-
-    if isdefined(SortingAlgorithms.DataStructures, :FasterReverse)
-        orderings[:freverse] = SortingAlgorithms.DataStructures.FasterReverse() # Simple ∴ allowed
-    end
+        :perm_cmplex => Base.Order.Perm(
+            Base.Order.ord(isless, x -> -x, false), dv3
+        ),
+        :fforward => SortingAlgorithms.DataStructures.FasterForward(), # Simple ∴ allowed
+        :freverse => SortingAlgorithms.DataStructures.FasterReverse() # Simple ∴ allowed
+        )
 
     ords = [
         order(:dv4, lt = isless, by = identity, rev=true),
