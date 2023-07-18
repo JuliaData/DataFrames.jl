@@ -1600,6 +1600,12 @@ a `Not`, `Between`, `All`, or `Cols` expression,
 or a `:`.
 See the [Indexing](@ref) API for the full list of possible values with references.
 
+!!! Note
+      The Julia parser sometimes prevents `:` from being used by itself.
+      `ERROR: syntax: whitespace not allowed after ":" used for quoting`
+      means your `:` must be wrapped in either `(:)` or `Cols(:)`
+      to be properly interpreted.
+
 ```julia
 julia> df = DataFrame(
            id = [1, 2, 3],
@@ -1832,7 +1838,7 @@ julia> df = DataFrame(a = 1:2, b = 3:4, c = 5:6, d = 2:-1:1)
    1 │     1      3      5      2
    2 │     2      4      6      1
 
-julia> select(df, Cols(:) => ByRow(min)) # min works on a multiple arguments
+julia> select(df, Cols(:) => ByRow(min)) # min works on multiple arguments
 2×1 DataFrame
  Row │ a_b_etc_min
      │ Int64
@@ -2157,6 +2163,12 @@ julia> transform(df, :data => AsTable) # keeps names from named tuples
    1 │ (a = 1, b = 2)      1      2
    2 │ (a = 3, b = 4)      3      4
 ```
+
+!!! Note
+      To pack multiple columns into a single column of `NamedTuple`s
+      (reverse of the above operation)
+      apply the `identity` function `ByRow`, e.g.
+      `transform(df, AsTable([:a, :b]) => ByRow(identity) => :data)`.
 
 Renaming functions also work for multi-column transformations,
 but they must operate on a vector of strings.
@@ -2578,6 +2590,9 @@ julia> select(
       * Don't forget `ByRow` if your function is to be applied to elements rather than entire column vectors.
       Without `ByRow`, the manipulations above would have thrown
       `ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)`.
+      * Regular expression (`r""`) and `:` `source_column_selectors`
+      must be wrapped in `Cols` to be properly broadcasted
+      because otherwise the broadcasting occurs before the expression is expanded into a vector of matches.
 
 You could also broadcast different columns to different functions
 by supplying a vector of functions.
