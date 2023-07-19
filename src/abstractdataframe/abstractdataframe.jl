@@ -309,7 +309,14 @@ julia> df = DataFrame(i=1, x=2, y=3)
 ─────┼─────────────────────
    1 │     1      2      3
 
-julia> rename(df, :i => :A, :x => :X)
+julia> rename(df, [:a, :b, :c])
+1×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
+
+julia> rename(df, :i => "A", :x => "X")
 1×3 DataFrame
  Row │ A      X      y
      │ Int64  Int64  Int64
