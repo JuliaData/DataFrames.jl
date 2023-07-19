@@ -2595,6 +2595,7 @@ julia> p[2][1]
 :y
 
 julia> p[2][2]
+:z
 ```
 
 In the previous examples, the source columns have been individually selected.
