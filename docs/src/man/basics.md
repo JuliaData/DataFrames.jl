@@ -2159,10 +2159,29 @@ julia> transform(df, :a => identity => add_prefix)
 ```
 
 !!! Note
-      Renaming functions are not currently supported within `Pair` arguments
-      to the `rename` and `rename!` functions.
-      However, renaming functions can be applied to an entire data frame
-      with the `rename(renaming_function, dataframe)` method.
+      The `rename` and `rename!` functions are a simpler way
+      to apply a renaming function without an intermediate `operation_function`.
+      ```julia
+      julia> rename(df, :a => add_prefix) # rename some columns
+      4×2 DataFrame
+      Row │ new_a  b
+         │ Int64  Int64
+      ─────┼──────────────
+         1 │     1      5
+         2 │     2      6
+         3 │     3      7
+         4 │     4      8
+
+      julia> rename(add_prefix, df) # rename all columns
+      4×2 DataFrame
+      Row │ new_a  new_b
+         │ Int64  Int64
+      ─────┼──────────────
+         1 │     1      5
+         2 │     2      6
+         3 │     3      7
+         4 │     4      8
+      ```
 
 In the `source_column_selector => new_column_names` operation form,
 only a single source column may be selected per operation,
