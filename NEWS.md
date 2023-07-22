@@ -1,3 +1,16 @@
+# DataFrames.jl v1.6.1 Release Notes
+
+## Bug fixes
+
+* Fix error in specification of dependency on DataStructures.jl
+  ([#3359](https://github.com/JuliaData/DataFrames.jl/pull/3359))
+
+## Minor improvements
+
+* Improved error messages in `only`, and `push!`, `append!` and related functions
+  ([#3356](https://github.com/JuliaData/DataFrames.jl/pull/3356),
+   [#3357](https://github.com/JuliaData/DataFrames.jl/pull/3357))
+
 # DataFrames.jl v1.6 Release Notes
 
 ## Breaking changes
@@ -39,7 +52,6 @@
 * `deleteat!` correctly handles the situation when vector of rows to be dropped
   from a data frame is its column or might alias with some of its columns
   ([#3304](https://github.com/JuliaData/DataFrames.jl/pull/3304))
-
 
 # DataFrames.jl v1.5 Release Notes
 
