@@ -1601,15 +1601,12 @@ and names the resulting column(s) `new_column_names`
 `source_column_selector => new_column_names`
 : renames a source column,
 or splits a column containing collection elements into multiple new columns
-
-!!! Note
-      The `source_column_selector`
-      and the `source_column_selector => new_column_names` operation forms
-      are not available for the `subset` and `subset!` manipulation functions.
+(not available for `subset` or `subset!`)
 
 #### `source_column_selector`
 Inside an `operation`, `source_column_selector` is usually a column name
 or column index which identifies a data frame column.
+
 `source_column_selector` may be used as the entire `operation`
 with `select` or `select!` to isolate or reorder columns.
 
@@ -1651,7 +1648,33 @@ julia> select(df, 2)
    3 │     6
 ```
 
-`source_column_selector` may also be a collection of columns such as a vector,
+`source_column_selector` may also be used as the entire `operation`
+with `subset` or `subset!` if the source column contains `Bool` values.
+
+```julia
+julia> df = DataFrame(
+           name = ["Scott", "Jill", "Erica", "Jimmy"],
+           minor = [false, true, false, true],
+       )
+4×2 DataFrame
+ Row │ name    minor
+     │ String  Bool
+─────┼───────────────
+   1 │ Scott   false
+   2 │ Jill     true
+   3 │ Erica   false
+   4 │ Jimmy    true
+
+julia> subset(df, :minor)
+2×2 DataFrame
+ Row │ name    minor
+     │ String  Bool
+─────┼───────────────
+   1 │ Jill     true
+   2 │ Jimmy    true
+```
+
+`source_column_selector` may instead be a collection of columns such as a vector,
 a [regular expression](https://docs.julialang.org/en/v1/manual/strings/#Regular-Expressions),
 a `Not`, `Between`, `All`, or `Cols` expression,
 or a `:`.
@@ -1713,6 +1736,27 @@ julia> select(df, Between(2,4))
    1 │ José        Garcia        61
    2 │ Emma        Marino        24
    3 │ Nathan      Boyer         33
+
+julia> df2 = DataFrame(
+           name = ["Scott", "Jill", "Erica", "Jimmy"],
+           minor = [false, true, false, true],
+           male = [true, false, false, true],
+       )
+4×3 DataFrame
+ Row │ name    minor  male
+     │ String  Bool   Bool
+─────┼──────────────────────
+   1 │ Scott   false   true
+   2 │ Jill     true  false
+   3 │ Erica   false  false
+   4 │ Jimmy    true   true
+
+julia> subset(df2, [:minor, :male])
+1×3 DataFrame
+ Row │ name    minor  male
+     │ String  Bool   Bool
+─────┼─────────────────────
+   1 │ Jimmy    true  true
 ```
 
 `AsTable(source_column_selector)` is a special `source_column_selector`
