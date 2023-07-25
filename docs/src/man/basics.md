@@ -1601,7 +1601,7 @@ and names the resulting column(s) `new_column_names`
 `source_column_selector => new_column_names`
 : renames a source column,
 or splits a column containing collection elements into multiple new columns
-(not available for `subset` or `subset!`)
+(*not available for `subset` or `subset!`*)
 
 #### `source_column_selector`
 Inside an `operation`, `source_column_selector` is usually a column name
