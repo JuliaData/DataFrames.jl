@@ -1,5 +1,24 @@
 # Importing and Exporting Data (I/O)
 
+## JLD2 Files
+
+A convenient format for reading and writing DataFrames in JLD2 which saves and loads
+Julia data structures in a format comprising a subset of HDF5. Unlike several other 
+formats, JLD2 preserves custom Types. The save and load functions, provided by FileIO, 
+provide a mechanism to read/write `DataFrame` from/to a JLD2 file.  
+
+A `DataFrame` can be saved as a JLD2 file at path `output.jld2` using
+```julia
+using FileIO
+df = DataFrame(x=1, y=2)
+save("output.jld2", Dict("df" => df))
+```
+
+and can be read using
+```julia
+load("output.jld2") # -> ict{String, Any} with 1 entry: "df" => 1×2 DataFrame
+```
+
 ## CSV Files
 
 For reading and writing tabular data from CSV and other delimited text files,
