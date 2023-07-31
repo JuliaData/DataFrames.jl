@@ -18,7 +18,7 @@ save("output.jld2", Dict("df" => df))
 
 and can be read using
 ```julia
-load("output.jld2") # -> ict{String, Any} with 1 entry: "df" => 1×2 DataFrame
+load("output.jld2") # -> Dict{String, Any} with 1 entry: "df" => 1×2 DataFrame
 ```
 
 ## CSV Files
