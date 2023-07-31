@@ -10,6 +10,8 @@ provide a mechanism to read/write `DataFrame` from/to a JLD2 file.
 A `DataFrame` can be saved as a JLD2 file at path `output.jld2` using
 ```julia
 using FileIO
+using Pkg; Pkg.add("JLD2")
+
 df = DataFrame(x=1, y=2)
 save("output.jld2", Dict("df" => df))
 ```
