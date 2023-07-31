@@ -64,11 +64,11 @@ end
 
 # the logic here relies on the fact that Tables.CopiedColumns
 # is the only exception for default copycols value 
-DataFrame(x, cnames::AbstractVector; makeunique::Bool=false,
+DataFrame(x, cnames::AbstractVector; makeunique::Bool=false, dupcol::Symbol=:error,
           copycols::Union{Nothing, Bool}=nothing) =
     rename!(DataFrame(x, copycols=something(copycols, !(x isa Tables.CopiedColumns))),
             _name2symbol(cnames),
-            makeunique=makeunique)
+            makeunique=makeunique, dupcol=dupcol)
 
 function Base.append!(df::DataFrame, table; cols::Symbol=:setequal,
                       promote::Bool=(cols in [:union, :subset]))

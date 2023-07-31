@@ -13,29 +13,47 @@ const ≅ = isequal
     df5 = DataFrame([Union{Int, Missing}[1, 2, 3, 4], nvstr], :auto)
 
     ref_df = copy(df3)
-    dfh = hcat(df3, df4, makeunique=true)
+    dfh = hcat(df3, df4, dupcol=:makeunique)
     @test ref_df ≅ df3 # make sure that df3 is not mutated by hcat
     @test size(dfh, 2) == 3
     @test names(dfh) ≅ ["x1", "x1_1", "x2"]
     @test dfh[!, :x1] ≅ df3[!, :x1]
-    @test dfh ≅ DataFrames.hcat!(DataFrame(), df3, df4, makeunique=true)
+    @test dfh ≅ DataFrames.hcat!(DataFrame(), df3, df4, dupcol=:makeunique)
+
+    dfhu = hcat(df3, df4, dupcol=:update)
+    @test ref_df ≅ df3 # make sure that df3 is not mutated by hcat
+    @test size(dfhu, 2) == 2
+    @test names(dfhu) ≅ ["x1", "x2"]
+    @test ! (dfhu[!, :x1] ≅ df3[!, :x1])
 
     dfa = DataFrame(a=[1, 2])
     dfb = DataFrame(b=[3, missing])
     @test hcat(dfa, dfb) ≅ [dfa dfb]
 
-    dfh3 = hcat(df3, df4, df5, makeunique=true)
+    dfh3 = hcat(df3, df4, df5, dupcol=:makeunique)
     @test names(dfh3) == ["x1", "x1_1", "x2", "x1_2", "x2_1"]
-    @test dfh3 ≅ hcat(dfh, df5, makeunique=true)
-    @test dfh3 ≅ DataFrames.hcat!(DataFrame(), df3, df4, df5, makeunique=true)
+    @test dfh3 ≅ hcat(dfh, df5, dupcol=:makeunique)
+    @test dfh3 ≅ DataFrames.hcat!(DataFrame(), df3, df4, df5, dupcol=:makeunique)
 
-    @test df2 ≅ DataFrames.hcat!(df2, makeunique=true)
+    @test df2 ≅ DataFrames.hcat!(df2, dupcol=:makeunique)
+
+    dfh3 = hcat(df3, df4, df5, dupcol=:update)
+    @test names(dfh3) == ["x1", "x2"]
+    @test dfh3 ≅ hcat(dfhu, df5, dupcol=:update)
+    @test dfh3 ≅ DataFrames.hcat!(DataFrame(), df3, df4, df5, dupcol=:update)
 end
 
 @testset "hcat: copying" begin
     df = DataFrame(x=1:3)
     @test hcat(df)[!, 1] == df[!, 1]
     @test hcat(df)[!, 1] !== df[!, 1]
+    hdf = hcat(df, df, dupcol=:makeunique)
+    @test hdf[!, 1] == df[!, 1]
+    @test hdf[!, 1] !== df[!, 1]
+    @test hdf[!, 2] == df[!, 1]
+    @test hdf[!, 2] !== df[!, 1]
+    @test hdf[!, 1] == hdf[!, 2]
+    @test hdf[!, 1] !== hdf[!, 2]
     hdf = hcat(df, df, makeunique=true)
     @test hdf[!, 1] == df[!, 1]
     @test hdf[!, 1] !== df[!, 1]
@@ -43,7 +61,7 @@ end
     @test hdf[!, 2] !== df[!, 1]
     @test hdf[!, 1] == hdf[!, 2]
     @test hdf[!, 1] !== hdf[!, 2]
-    hdf = hcat(df, df, df, makeunique=true)
+    hdf = hcat(df, df, df, dupcol=:makeunique)
     @test hdf[!, 1] == df[!, 1]
     @test hdf[!, 1] !== df[!, 1]
     @test hdf[!, 2] == df[!, 1]
@@ -56,18 +74,22 @@ end
     @test hdf[!, 1] !== hdf[!, 3]
     @test hdf[!, 2] == hdf[!, 3]
     @test hdf[!, 2] !== hdf[!, 3]
+    hdf = hcat(df, df, dupcol=:update)
+    @test hdf ≅ df
 end
 
 @testset "hcat ::AbstractDataFrame" begin
     df = DataFrame(A=repeat('A':'C', inner=4), B=1:12)
     gd = groupby(df, :A)
     answer = DataFrame(A=fill('A', 4), B=1:4, A_1='B', B_1=5:8, A_2='C', B_2=9:12)
-    @test hcat(gd..., makeunique=true) == answer
+    @test hcat(gd..., dupcol=:makeunique) == answer
     answer = answer[:, 1:4]
-    @test hcat(gd[1], gd[2], makeunique=true) == answer
+    @test hcat(gd[1], gd[2], dupcol=:makeunique) == answer
 
     @test_throws MethodError hcat("a", df, makeunique=true)
     @test_throws MethodError hcat(df, "a", makeunique=true)
+    @test_throws MethodError hcat("a", df, dupcol=:makeunique)
+    @test_throws MethodError hcat(df, "a", dupcol=:makeunique)
 end
 
 @testset "hcat: copycols" begin
