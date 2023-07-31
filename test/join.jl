@@ -182,12 +182,12 @@ end
     @test typeof.(eachcol(crossjoin(df1, df2, makeunique=true))) ==
         [Vector{Int}, Vector{Float64}, Vector{Int}, Vector{Float64}]
 
-    i(on) = innerjoin(df1, df2, on=on, makeunique=true)
-    l(on) = leftjoin(df1, df2, on=on, makeunique=true)
-    r(on) = rightjoin(df1, df2, on=on, makeunique=true)
-    o(on) = outerjoin(df1, df2, on=on, makeunique=true)
-    s(on) = semijoin(df1, df2, on=on, makeunique=true)
-    a(on) = antijoin(df1, df2, on=on, makeunique=true)
+    i(on,makeunique=true) = innerjoin(df1, df2, on=on, makeunique=makeunique)
+    l(on,makeunique=true) = leftjoin(df1, df2, on=on, makeunique=makeunique)
+    r(on,makeunique=true) = rightjoin(df1, df2, on=on, makeunique=makeunique)
+    o(on,makeunique=true) = outerjoin(df1, df2, on=on, makeunique=makeunique)
+    s(on,makeunique=true) = semijoin(df1, df2, on=on, makeunique=makeunique)
+    a(on,makeunique=true) = antijoin(df1, df2, on=on, makeunique=makeunique)
 
     @test s(:id) ==
           s(:fid) ==
@@ -241,6 +241,77 @@ end
                                      Vector{Union{Int, Missing}}]
 
     on = [:id, :fid]
+    @test i(on) == DataFrame([[1, 3], [1, 3]], [:id, :fid])
+    @test typeof.(eachcol(i(on))) == [Vector{Int}, Vector{Float64}]
+    @test l(on) == DataFrame(id=[1, 3, 5], fid=[1, 3, 5])
+    @test typeof.(eachcol(l(on))) == [Vector{Int}, Vector{Float64}]
+    @test r(on) == DataFrame(id=[1, 3, 0, 2, 4], fid=[1, 3, 0, 2, 4])
+    @test typeof.(eachcol(r(on))) == [Vector{Int}, Vector{Float64}]
+    @test o(on) == DataFrame(id=[1, 3, 5, 0, 2, 4], fid=[1, 3, 5, 0, 2, 4])
+    @test typeof.(eachcol(o(on))) == [Vector{Int}, Vector{Float64}]
+end
+
+@testset "update joins" begin
+    df1 = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
+    df2 = DataFrame(Any[[0, 1, 2, 3, 4], [0.0, 1.0, 2.0, 3.0, 4.0]], [:id, :fid])
+
+    update = DataFrames.makeunique_update
+
+    @test crossjoin(df1, df2, makeunique=update) ==
+        DataFrame(Any[repeat([0, 1, 2, 3, 4], outer=3),
+                      repeat([0.0, 1.0, 2.0, 3.0, 4.0], outer=3)],
+                  [:id, :fid])
+    @test crossjoin(df1, df2, makeunique=:update) ==
+        DataFrame(Any[repeat([0, 1, 2, 3, 4], outer=3),
+                      repeat([0.0, 1.0, 2.0, 3.0, 4.0], outer=3)],
+                  [:id, :fid])
+
+    i(on,makeunique=:update) = innerjoin(df1, df2, on=on, makeunique=makeunique)
+    l(on,makeunique=:update) = leftjoin(df1, df2, on=on, makeunique=makeunique)
+    r(on,makeunique=:update) = rightjoin(df1, df2, on=on, makeunique=makeunique)
+    o(on,makeunique=:update) = outerjoin(df1, df2, on=on, makeunique=makeunique)
+    s(on,makeunique=:update) = semijoin(df1, df2, on=on, makeunique=makeunique)
+    a(on,makeunique=:update) = antijoin(df1, df2, on=on, makeunique=makeunique)
+
+    @test s(:id) ==
+          s(:fid) ==
+          s([:id, :fid]) == DataFrame([[1, 3], [1, 3]], [:id, :fid])
+    @test typeof.(eachcol(s(:id))) ==
+          typeof.(eachcol(s(:fid))) ==
+          typeof.(eachcol(s([:id, :fid]))) == [Vector{Int}, Vector{Float64}]
+    @test a(:id) ==
+          a(:fid) ==
+          a([:id, :fid]) == DataFrame([[5], [5]], [:id, :fid])
+    @test typeof.(eachcol(a(:id))) ==
+          typeof.(eachcol(a(:fid))) ==
+          typeof.(eachcol(a([:id, :fid]))) == [Vector{Int}, Vector{Float64}]
+
+    on = :id
+    @test i(on) == DataFrame([[1, 3], [1, 3]], [:id, :fid])
+    @test typeof.(eachcol(i(on))) == [Vector{Int}, Vector{Float64}]
+    @test l(on) ≅ DataFrame(id=[1, 3, 5], fid=[1, 3, 5])
+    @test typeof.(eachcol(l(on))) == [Vector{Int}, Vector{Float64}]
+    @test r(on) ≅ DataFrame(id=[1, 3, 0, 2, 4], fid=[1, 3, 0, 2, 4])
+    @test typeof.(eachcol(r(on))) == [Vector{Int}, Vector{Float64}]
+    @test o(on) ≅ DataFrame(id=[1, 3, 5, 0, 2, 4],
+                            fid=[1, 3, 5, 0, 2, 4])
+    @test typeof.(eachcol(o(on))) == [Vector{Int}, Vector{Float64}]
+
+    on = :fid
+    df1.id = [1, missing, 5]
+    @test i(on) == DataFrame([[1, 3], [1.0, 3.0]], [:id, :fid])
+    @test typeof.(eachcol(i(on))) == [Vector{Int}, Vector{Float64}]
+    @test l(on) ≅ DataFrame(id=[1, 3, 5], fid=[1, 3, 5])
+    @test typeof.(eachcol(l(on))) == [Vector{Int}, Vector{Float64}]
+    @test r(on) ≅ DataFrame(id=[1, 3, 0, 2, 4],
+                            fid=[1, 3, 0, 2, 4])
+    @test typeof.(eachcol(r(on))) == [Vector{Int}, Vector{Float64}]
+    @test o(on) ≅ DataFrame(id=[1, 3, 5, 0, 2, 4],
+                            fid=[1, 3, 5, 0, 2, 4])
+    @test typeof.(eachcol(o(on))) == [Vector{Int}, Vector{Float64}]
+
+    on = [:id, :fid]
+    df1.id = [1, 3, 5]
     @test i(on) == DataFrame([[1, 3], [1, 3]], [:id, :fid])
     @test typeof.(eachcol(i(on))) == [Vector{Int}, Vector{Float64}]
     @test l(on) == DataFrame(id=[1, 3, 5], fid=[1, 3, 5])

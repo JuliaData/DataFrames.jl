@@ -705,6 +705,24 @@ function _copy_col_note_metadata!(dst::DataFrame, dst_col, src, src_col)
     return nothing
 end
 
+# copy column-level :note-style metadata from Tables.jl table src to dst
+# from column src_col to dst_col
+# discarding previous metadata contents of dst
+function _merge_col_note_metadata!(dst::DataFrame, dst_col, src, src_col)
+    #emptycolmetadata!(dst, dst_col)
+    metadata = colmetadata(dst, dst_col)
+    if DataAPI.colmetadatasupport(typeof(src)).read
+        for key in colmetadatakeys(src, src_col)
+            val, style = colmetadata(src, src_col, key, style=true)
+            # TODO write only if does not overwrite
+            if style === :note && !haskey(metadata, key)
+                colmetadata!(dst, dst_col, key, val, style=:note)
+            end
+        end
+    end
+    return nothing
+end
+
 # this is a function used to copy table-level and column-level :note-style metadata
 # from Tables.jl table src to dst, discarding previous metadata contents of dst
 function _copy_all_note_metadata!(dst::DataFrame, src)

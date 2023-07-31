@@ -152,6 +152,7 @@ end
 
     @test names(rename(df, [:f, :g])) == ["f", "g"]
     @test names(rename(df, [:f, :f], makeunique=true)) == ["f", "f_1"]
+    @test names(rename(df, [:f, :f], makeunique=:update)) == ["f", "f"]
     @test names(df) == ["a", "b"]
 
     rename!(df, [:f, :g])
@@ -253,11 +254,18 @@ end
 
     df = DataFrame(a=[1, 2], a_1=[3, 4])
     @test_throws ArgumentError insertcols!(df, 1, :a => [11, 12])
-    @test df == DataFrame(a=[1, 2], a_1=[3, 4])
+
+    df = DataFrame(a=[1, 2], a_1=[3, 4])
     insertcols!(df, 1, :a => [11, 12], makeunique=true)
     @test propertynames(df) == [:a_2, :a, :a_1]
     insertcols!(df, 4, :a => [11, 12], makeunique=true)
     @test propertynames(df) == [:a_2, :a, :a_1, :a_3]
+
+    df = DataFrame(a=[1, 2], a_1=[3, 4])
+    insertcols!(df, 1, :a => [11, 12], makeunique=:update)
+    @test propertynames(df) == [:a, :a_1]
+    @test df == DataFrame(a=[11, 12], a_1=[3, 4])
+
     @test_throws ArgumentError insertcols!(df, 10, :a => [11, 12], makeunique=true)
 
     dfc = copy(df)
@@ -303,6 +311,11 @@ end
     @test df.a_1 === v2
     @test df.a_2 === v3
 
+    df = DataFrame()
+    @test insertcols!(df, 1, :a=>v1, :a=>v2, :a=>v3, makeunique=:update, copycols=false) ==
+          DataFrame(a=v3)
+    @test df.a isa Vector{Int}
+
     df = DataFrame(p='a':'b', q='r':'s')
     @test insertcols!(df, 2, :a=>v1, :b=>v2, :c=>v3) ==
           DataFrame(p='a':'b', a=v1, b=v2, c=v3, q='r':'s')
@@ -318,6 +331,11 @@ end
     @test df.p_1 isa Vector{Int}
     @test df.q_1 !== v2
     @test df.p_2 !== v3
+
+    df = DataFrame(p='a':'b', q='r':'s')
+    @test_throws ArgumentError insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3)
+    @test insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3, makeunique=:update, copycols=true) ==
+          DataFrame(p=v3, q=v2)
 
     df = DataFrame(a=1:3, b=4:6)
     @test insertcols!(copy(df), :c=>7:9) == insertcols!(copy(df), 3, :c=>7:9)

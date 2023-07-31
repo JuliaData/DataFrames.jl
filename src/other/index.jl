@@ -21,17 +21,29 @@ const MULTICOLUMNINDEX_STR = "`:`, `Cols`, `All`, `Between`, `Not`, a regular ex
 struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
     names::Vector{Symbol}
+    updates::Vector{Symbol}
+    updatefun::Function
 end
 
-function Index(names::AbstractVector{Symbol}; makeunique::Bool=false)
-    u = make_unique(names, makeunique=makeunique)
-    lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
-    return Index(lookup, u)
+Index(l,u) = Index(l,u,[],() -> nothing)
+
+function Index(names::AbstractVector{Symbol}; makeunique=false)
+    makeunique = _makeunique_normalize(makeunique)
+    if makeunique isa Bool
+        u = make_unique(names, makeunique=makeunique)
+        lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
+        return Index(lookup, u)
+    else
+        lookup = Dict{Symbol, Int}(zip(reverse(names), length(names):-1:1))
+        return Index(lookup, unique(names), names, makeunique)
+    end
 end
 
 Index() = Index(Dict{Symbol, Int}(), Symbol[])
 Base.length(x::Index) = length(x.names)
 Base.names(x::Index) = string.(x.names)
+
+column_length(x::Index) = isempty(x.updates) ? length(x.names) : length(x.updates)
 
 # _names returns Vector{Symbol}
 _names(x::Index) = x.names
@@ -41,8 +53,9 @@ Base.isequal(x::AbstractIndex, y::AbstractIndex) = _names(x) == _names(y) # it i
 Base.:(==)(x::AbstractIndex, y::AbstractIndex) = isequal(x, y)
 
 
-function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false)
-    if !makeunique
+function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique=false)
+    makeunique = _makeunique_normalize(makeunique)
+    if makeunique == false
         if length(unique(nms)) != length(nms)
             dup = unique(nms[nonunique(DataFrame(nms=nms))])
             dupstr = join(string.(':', dup), ", ", " and ")
@@ -128,7 +141,7 @@ function Base.push!(x::Index, nm::Symbol)
     return x
 end
 
-function Base.merge!(x::Index, y::AbstractIndex; makeunique::Bool=false)
+function Base.merge!(x::Index, y::AbstractIndex; makeunique=false)
     adds = add_names(x, y, makeunique=makeunique)
     i = length(x)
     for add in adds
@@ -139,7 +152,7 @@ function Base.merge!(x::Index, y::AbstractIndex; makeunique::Bool=false)
     return x
 end
 
-Base.merge(x::AbstractIndex, y::AbstractIndex; makeunique::Bool=false) =
+Base.merge(x::AbstractIndex, y::AbstractIndex; makeunique=false) =
     merge!(copy(x), y, makeunique=makeunique)
 
 function Base.delete!(x::Index, idx::Integer)
@@ -432,8 +445,9 @@ end
 
 # return Vector{Symbol} of names from add_ind that do not clash with `ind`.
 # if `makeunique=false` error on collision
-# if `makeunique=false` generate new names that are deduplicated
-function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
+# if `makeunique=true` generate new names that are deduplicated
+# if `makeunique` is a Function just return the names including duplicates
+function add_names(ind::Index, add_ind::AbstractIndex; makeunique=false)
     u = copy(_names(add_ind))
 
     seen = Set(_names(ind))
@@ -443,6 +457,12 @@ function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
         name = u[i]
         in(name, seen) ? push!(dups, i) : push!(seen, name)
     end
+
+    makeunique = _makeunique_normalize(makeunique)
+    return nondup_names(u, dups, seen, makeunique)
+end
+
+function nondup_names(u, dups, seen, makeunique::Bool)
     if length(dups) > 0
         if !makeunique
             dupstr = join(string.(':', unique(u[dups])), ", ", " and ")
@@ -451,6 +471,7 @@ function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
             throw(ArgumentError(msg))
         end
     end
+
     for i in dups
         nm = u[i]
         k = 1
@@ -465,6 +486,10 @@ function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
         end
     end
 
+    return u
+end
+
+function nondup_names(u, dups, seen, makeunique::Function)
     return u
 end
 
@@ -578,7 +603,7 @@ function Base.getindex(x::SubIndex, idx::Union{AbstractVector{Symbol},
     return [x[i] for i in idx]
 end
 
-rename!(x::SubIndex, nms::AbstractVector{Symbol}; makeunique::Bool=false) =
+rename!(x::SubIndex, nms::AbstractVector{Symbol}; makeunique=false) =
     throw(ArgumentError("rename! is not supported for views other than created " *
                         "with Colon as a column selector"))
 

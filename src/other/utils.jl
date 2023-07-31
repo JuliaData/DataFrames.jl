@@ -72,10 +72,20 @@ struct AsTable
     end
 end
 
+makeunique_update(v1, v2) = ismissing(v2) ? v1 : v2
+makeunique_ignore(v1, v2) = v1
+
+_makeunique_keys = Dict(:update => makeunique_update, 
+    :ignore => makeunique_ignore, 
+    :error => false, 
+    :makeunique => true)
+
+_makeunique_normalize(makeunique) = get(_makeunique_keys, makeunique, makeunique)
+
 Base.broadcastable(x::AsTable) = Ref(x)
 
 function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol};
-                      makeunique::Bool=false)
+                      makeunique=false)
     if length(names) != length(src)
         throw(DimensionMismatch("Length of src doesn't match length of names."))
     end
@@ -92,7 +102,7 @@ function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol};
     end
 
     if length(dups) > 0
-        if !makeunique
+        if makeunique == false
             dupstr = join(string.(':', unique(src[dups])), ", ", " and ")
             msg = "Duplicate variable names: $dupstr. Pass makeunique=true " *
                   "to make them unique using a suffix automatically."
@@ -102,22 +112,26 @@ function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol};
 
     for i in dups
         nm = src[i]
-        k = 1
-        while true
-            newnm = Symbol("$(nm)_$k")
-            if !in(newnm, seen)
-                names[i] = newnm
-                push!(seen, newnm)
-                break
+        if makeunique == true
+            k = 1
+            while true
+                newnm = Symbol("$(nm)_$k")
+                if !in(newnm, seen)
+                    names[i] = newnm
+                    push!(seen, newnm)
+                    break
+                end
+                k += 1
             end
-            k += 1
+        else
+            names[i] = nm
         end
     end
 
     return names
 end
 
-function make_unique(names::AbstractVector{Symbol}; makeunique::Bool=false)
+function make_unique(names::AbstractVector{Symbol}; makeunique=false)
     make_unique!(similar(names), names, makeunique=makeunique)
 end
 

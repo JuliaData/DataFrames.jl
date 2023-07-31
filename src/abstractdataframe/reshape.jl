@@ -723,7 +723,7 @@ Base.transpose(::AbstractDataFrame, args...; kwargs...) =
     permutedims(df::AbstractDataFrame,
                 [src_namescol::Union{Int, Symbol, AbstractString}],
                 [dest_namescol::Union{Symbol, AbstractString}];
-                makeunique::Bool=false, strict::Bool=true)
+                makeunique=false, strict::Bool=true)
 
 Turn `df` on its side such that rows become columns
 and values in the column indexed by `src_namescol` become the names of new columns.
@@ -823,7 +823,7 @@ julia> permutedims(df2, 1, "different_name")
 """
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
                           dest_namescol::Union{Symbol, AbstractString};
-                          makeunique::Bool=false, strict::Bool=true)
+                          makeunique=false, strict::Bool=true)
 
     if src_namescol isa Integer
         1 <= src_namescol <= ncol(df) || throw(BoundsError(index(df), src_namescol))
@@ -865,7 +865,7 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
 end
 
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
-                          makeunique::Bool=false, strict::Bool=true)
+                          makeunique=false, strict::Bool=true)
     if src_namescol isa Integer
         1 <= src_namescol <= ncol(df) || throw(BoundsError(index(df), src_namescol))
         dest_namescol = _names(df)[src_namescol]
@@ -883,7 +883,7 @@ function Base.permutedims(df::AbstractDataFrame)
 end
 
 function Base.permutedims(df::AbstractDataFrame, cnames::AbstractVector;
-                          makeunique::Bool=false)
+                          makeunique=false)
     out_df = DataFrame(permutedims(Matrix(df)), cnames, makeunique=makeunique)
     _copy_table_note_metadata!(out_df, df)
     return out_df

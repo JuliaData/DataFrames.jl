@@ -20,6 +20,12 @@ const ≅ = isequal
     @test dfh[!, :x1] ≅ df3[!, :x1]
     @test dfh ≅ DataFrames.hcat!(DataFrame(), df3, df4, makeunique=true)
 
+    dfhu = hcat(df3, df4, makeunique=:update)
+    @test ref_df ≅ df3 # make sure that df3 is not mutated by hcat
+    @test size(dfhu, 2) == 2
+    @test names(dfhu) ≅ ["x1", "x2"]
+    @test ! (dfhu[!, :x1] ≅ df3[!, :x1])
+
     dfa = DataFrame(a=[1, 2])
     dfb = DataFrame(b=[3, missing])
     @test hcat(dfa, dfb) ≅ [dfa dfb]
@@ -30,6 +36,11 @@ const ≅ = isequal
     @test dfh3 ≅ DataFrames.hcat!(DataFrame(), df3, df4, df5, makeunique=true)
 
     @test df2 ≅ DataFrames.hcat!(df2, makeunique=true)
+
+    dfh3 = hcat(df3, df4, df5, makeunique=:update)
+    @test names(dfh3) == ["x1", "x2"]
+    @test dfh3 ≅ hcat(dfhu, df5, makeunique=:update)
+    @test dfh3 ≅ DataFrames.hcat!(DataFrame(), df3, df4, df5, makeunique=:update)
 end
 
 @testset "hcat: copying" begin
@@ -56,6 +67,8 @@ end
     @test hdf[!, 1] !== hdf[!, 3]
     @test hdf[!, 2] == hdf[!, 3]
     @test hdf[!, 2] !== hdf[!, 3]
+    hdf = hcat(df, df, makeunique=:update)
+    @test hdf ≅ df
 end
 
 @testset "hcat ::AbstractDataFrame" begin
