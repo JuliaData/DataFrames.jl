@@ -2,12 +2,13 @@
 
 ## JLD2 Files
 
-A convenient format for reading and writing DataFrames in JLD2 which saves and loads
+A convenient format for reading and writing data frames in JLD2, which saves and loads
 Julia data structures in a format comprising a subset of HDF5. Unlike several other 
-formats, JLD2 preserves custom Types. The save and load functions, provided by FileIO, 
-provide a mechanism to read/write `DataFrame` from/to a JLD2 file.  
+formats, JLD2 preserves custom Types. The `save` and `load` functions, provided by FileIO.jl, 
+allow to read/write a data frame from/to a JLD2 file.  
 
-A `DataFrame` can be saved as a JLD2 file at path `output.jld2` using
+A data frame can be saved as a JLD2 file output.jld2 using
+
 ```julia
 using FileIO
 using Pkg; Pkg.add("JLD2")
