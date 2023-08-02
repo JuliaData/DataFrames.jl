@@ -2202,30 +2202,31 @@ julia> transform(df, :a => identity => add_prefix)
    4 │     4      8      4
 ```
 
-!!! Note
-      The `rename` and `rename!` functions are a simpler way
-      to apply a renaming function without an intermediate `operation_function`.
-      ```julia
-      julia> rename(df, :a => add_prefix) # rename some columns
-      4×2 DataFrame
-      Row │ new_a  b
-         │ Int64  Int64
-      ─────┼──────────────
-         1 │     1      5
-         2 │     2      6
-         3 │     3      7
-         4 │     4      8
+In this case though,
+it is probably again more useful to use the `rename` or `rename!` function
+rather than one of the manipulation functions
+in order to rename in-place and avoid the intermediate `operation_function`.
+```julia
+julia> rename(df, :a => add_prefix) # rename some columns
+4×2 DataFrame
+Row │ new_a  b
+   │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
 
-      julia> rename(add_prefix, df) # rename all columns
-      4×2 DataFrame
-      Row │ new_a  new_b
-         │ Int64  Int64
-      ─────┼──────────────
-         1 │     1      5
-         2 │     2      6
-         3 │     3      7
-         4 │     4      8
-      ```
+julia> rename(add_prefix, df) # rename all columns
+4×2 DataFrame
+Row │ new_a  new_b
+   │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
+```
 
 In the `source_column_selector => new_column_names` operation form,
 only a single source column may be selected per operation,
