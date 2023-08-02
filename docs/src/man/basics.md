@@ -2641,6 +2641,9 @@ julia> p[2][1]
 
 julia> p[2][2]
 :z
+
+julia> p[3] # there is no index 3 for a pair
+ERROR: BoundsError: attempt to access Pair{Symbol, Pair{Symbol, Symbol}} at index [3]
 ```
 
 In the previous examples, the source columns have been individually selected.
@@ -2689,7 +2692,7 @@ julia> transform(
 Or, simultaneously changing the column names:
 
 ```julia
-julia> rename_function(s) = "Temperature $(last(s)) (°K)"
+julia> rename_function(s) = "Temperature $(last(s)) (K)"
 rename_function (generic function with 1 method)
 
 julia> select(
@@ -2698,13 +2701,13 @@ julia> select(
            Cols(r"Temp") .=> ByRow(celsius_to_kelvin) .=> rename_function
        )
 4×4 DataFrame
- Row │ Time   Temperature 1 (°K)  Temperature 2 (°K)  Temperature 3 (°K)
-     │ Int64  Int64               Int64               Int64
-─────┼───────────────────────────────────────────────────────────────────
-   1 │     1                 293                 306                 288
-   2 │     2                 296                 310                 283
-   3 │     3                 298                 314                 277
-   4 │     4                 301                 317                 273
+ Row │ Time   Temperature 1 (K)  Temperature 2 (K)  Temperature 3 (K)
+     │ Int64  Int64              Int64              Int64
+─────┼────────────────────────────────────────────────────────────────
+   1 │     1                293                306                288
+   2 │     2                296                310                283
+   3 │     3                298                314                277
+   4 │     4                301                317                273
 ```
 
 !!! Note Notes
