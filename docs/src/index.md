@@ -1,13 +1,24 @@
-# DataFrames.jl
+<img src="assets/logo.png" align="left" style="padding-right:10px"; width=20%"></img>
 
-Welcome to the DataFrames.jl documentation!
+## DataFrames.jl
+
+Welcome to the `DataFrames.jl `documentation!
 
 This resource aims to teach you everything you need to know to get up and
-running with tabular data manipulation using the DataFrames.jl package.
+running with tabular data manipulation using the `DataFrames.jl` package.
 
-For more illustrations of DataFrames.jl usage, in particular in conjunction with
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/JuliaData/DataFrames.jl/blob/main/LICENSE)
+[![docs-latest-img](https://img.shields.io/badge/docs-latest-blue.svg)](http://dataframes.juliadata.org/latest/)
+[![docs-stable-img](https://img.shields.io/badge/docs-stable-blue.svg)](http://dataframes.juliadata.org/stable/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7632427.svg)](https://doi.org/10.5281/zenodo.7632427)
+[![Downloads](https://shields.io/endpoint?url=https://pkgs.genieframework.com/api/v1/badge/DataFrames&label=Downloads)](https://pkgs.genieframework.com?packages=DataFrames)
+[![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
+[![Coverage Status](http://codecov.io/github/JuliaData/DataFrames.jl/coverage.svg?branch=main)](http://codecov.io/github/JuliaData/DataFrames.jl?branch=main)
+[![CI Testing](https://github.com/JuliaData/DataFrames.jl/workflows/CI/badge.svg)](https://github.com/JuliaData/DataFrames.jl/actions?query=workflow%3ACI+branch%3Amain)
+
+For more illustrations of `DataFrames.jl` usage, in particular in conjunction with
 other packages you can check-out the following resources
-(they are kept up to date with the released version of DataFrames.jl):
+(they are kept up to date with the released version of `DataFrames.jl`):
 * [Data Wrangling with DataFrames.jl Cheat Sheet](https://www.ahsmart.com/pub/data-wrangling-with-data-frames-jl-cheat-sheet/)
 * [DataFrames Tutorial using Jupyter Notebooks](https://github.com/bkamins/Julia-DataFrames-Tutorial/)
 * [Julia Academy DataFrames.jl tutorial](https://github.com/JuliaAcademy/DataFrames)
@@ -64,8 +75,8 @@ a list of well-supported libraries that provide different data science tools,
 along with a few notes about what makes each library special, and how well
 integrated they are with DataFrames.jl.
 
-
-- **Statistics**
+```@raw html
+??? tip "**Statistics**"
     - [StatsKit.jl](https://github.com/JuliaStats/StatsKit.jl): A convenience
       meta-package which loads a set of essential packages for statistics,
       including those mentioned below in this section and DataFrames.jl itself.
@@ -92,7 +103,10 @@ integrated they are with DataFrames.jl.
       linear regression, ridge regression, PCA, component analyses tools.
       Not well integrated with DataFrames.jl,
       but easily used in combination with `StatsModels`.
-- **Machine Learning**
+```
+
+```@raw html
+??? tip "**Machine Learning**"
     - [MLJ.jl](https://github.com/alan-turing-institute/MLJ.jl):
       if you're more of an applied user, there is a single package the pulls
       from all these different libraries and provides a single, scikit-learn
@@ -111,7 +125,10 @@ integrated they are with DataFrames.jl.
     - Deep learning:
       [KNet.jl](https://denizyuret.github.io/Knet.jl/stable/tutorial/#Introduction-to-Knet-1)
       and [Flux.jl](https://github.com/FluxML/Flux.jl).
-- **Plotting**
+```
+
+```@raw html
+??? tip "**Plotting**"
     - [Plots.jl](http://docs.juliaplots.org/latest/): Powerful, modern plotting
       library with a syntax akin to that of [matplotlib](https://matplotlib.org/)
       (in Python) or `plot` (in R).
@@ -125,7 +142,10 @@ integrated they are with DataFrames.jl.
     - [VegaLite.jl](https://www.queryverse.org/VegaLite.jl/stable/): High-level
       plotting library that uses a different "grammar of graphics" syntax and has
       an emphasis on interactive graphics.
-- **Data Wrangling**:
+```
+
+```@raw html
+??? tip "**Data Wrangling**"
     - [Impute.jl](https://github.com/invenia/Impute.jl):
       various methods for handling missing data in vectors, matrices and tables.
     - [DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl):
@@ -142,13 +162,19 @@ integrated they are with DataFrames.jl.
       dplyr in R or [LINQ](https://en.wikipedia.org/wiki/Language_Integrated_Query).
     - You can find more information on these packages in the
       [Data manipulation frameworks](@ref) section of this manual.
-- **And More!**
+```
+
+```@raw html
+??? tip "**And More!**"
     - [Graphs.jl](https://github.com/JuliaGraphs/Graphs.jl): A pure-Julia,
       high performance network analysis library. Edgelists in `DataFrame`s can be
       easily converted into graphs using the
       [GraphDataFrameBridge.jl](https://github.com/JuliaGraphs/GraphDataFrameBridge.jl)
       package.
-- **IO**:
+```
+
+```@raw html
+??? tip "**IO**"
     - DataFrames.jl work well with a range of formats, including:
         - CSV files (using [CSV.jl](https://github.com/JuliaData/CSV.jl)),
         - Apache Arrow (using [Arrow.jl](https://github.com/JuliaData/Arrow.jl))
@@ -158,6 +184,7 @@ integrated they are with DataFrames.jl.
         - Parquet files
           (using [Parquet2.jl](https://gitlab.com/ExpandingMan/Parquet2.jl)),
         - reading R data files (.rda, .RData) (using [RData.jl](https://github.com/JuliaData/RData.jl)).
+```
 
 While not all of these libraries are tightly integrated with DataFrames.jl,
 because `DataFrame`s are essentially collections of aligned Julia vectors, so it
@@ -237,7 +264,8 @@ all such objects are documented in this manual (in case some documentation is
 missing please kindly report an issue
 [here](https://github.com/JuliaData/DataFrames.jl/issues/new)).
 
-!!! note
+```@raw html
+??? warning "Breaking changes"
 
     Breaking changes to public and documented API are avoided in
     DataFrames.jl where possible.
@@ -287,6 +315,7 @@ missing please kindly report an issue
       wanted);
     * the change is needed to adjust DataFrames.jl functionality to changes in
       Base Julia.
+```
 
 Please be warned that while Julia allows you to access internal functions or
 types of DataFrames.jl these can change without warning between versions of

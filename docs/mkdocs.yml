@@ -1,0 +1,143 @@
+theme:
+  name: material
+  logo: assets/logo.png
+  features:
+    - content.code.copy
+    # - announce.dismiss
+    - content.code.annotate
+    # - content.tabs.link
+    #- content.tooltips
+    # - header.autohide
+    - navigation.expand
+    #- navigation.indexes
+    # - navigation.instant
+    - navigation.prune
+    #- navigation.sections
+    #- navigation.tabs
+    # - navigation.tabs.sticky
+    - navigation.top
+    - navigation.footer
+    #- navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+    #- toc.integrate # Table of contents is integrated on the left; does not appear separately on the right.
+    - header.autohide # header disappears as you scroll
+  palette:
+
+    # Light mode 
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: red
+      accent: green
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue grey
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  font:
+    text: Lato
+  icon:
+    repo: fontawesome/brands/github # GitHub logo in top right
+    #logo: "material/gridoff" # Equinox logo in top left
+  #  favicon: "_static/icon_transparent.svg"
+#  custom_dir: "_overrides" # Overriding part of the HTML
+
+  # These additions are my own custom ones, having overridden a partial.
+  #twitter_name: ""
+  #twitter_url: ""
+site_name: DataFrames.jl
+site_description: DataFrames.jl
+site_author: Lazaro Alonso & Bogumił Kamiński
+site_url: ""
+
+repo_url: https://github.com/JuliaData/DataFrames.jl
+repo_name: DataFrames.jl
+edit_uri: "" # No edit button, as some of our pages are in /docs and some in /examples via symlink, so it's impossible for them all to be accurate
+
+strict: true # Don't allow warnings during the build process
+extra_javascript:
+  # The below three make MathJax work, see https://squidfunk.github.io/mkdocs-material/reference/mathjax/
+  - _static/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/JuliaData/DataFrames.jl
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/BogumilKaminski
+
+extra_css:
+  - stylesheets/custom.css
+  - assets/Documenter.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+# TODO
+# https://squidfunk.github.io/mkdocs-material/setup/setting-up-versioning/
+#extra:
+#  version:
+#    provider: mike
+
+markdown_extensions:
+  - tables
+  - admonition
+  - toc:
+      permalink: "¤" # Adds a clickable permalink to each section heading
+      toc_depth: 4
+  - pymdownx.arithmatex: # Render LaTeX via MathJax
+      generic: true
+  - pymdownx.details # Allowing hidden expandable regions denoted by ???
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences # Seems to enable syntax highlighting when used with the Material theme.
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - def_list
+  - pymdownx.tabbed:
+      alternate_style: true 
+  - attr_list
+  - md_in_html
+plugins:
+  - search # default search plugin; needs manually re-enabling when using any other plugins
+  - autorefs # Cross-links to headings
+  - include_exclude_files:
+      exclude:
+#        - "_overrides"
+#  - mknotebooks # Jupyter notebooks
+#  - mkdocs-video
+nav:
+  - "Home": "index.md"
+  - "First Steps with DataFrames": "./man/basics.md"
+  - "User Guide" :
+    - "Getting Started": "./man/getting_started.md"
+    - "Working with DataFrames": "./man/working_with_dataframes.md"
+    - "Importing and Exporting Data (I/O)": "./man/importing_and_exporting.md"
+    - "Joins": "./man/joins.md"
+    - "Split-apply-combine": "./man/split_apply_combine.md"
+    - "Reshaping": "./man/reshaping_and_pivoting.md"
+    - "Sorting": "./man/sorting.md"
+    - "Categorical Data": "./man/categorical.md"
+    - "Missing Data": "./man/missing.md"
+    - "Data manipulation frameworks": "./man/querying_frameworks.md"
+    - "Comparison with Python/R/Stata": "./man/comparisons.md"
+  - "API" :
+    - "Types": "./lib/types.md"
+    - "Functions": "./lib/functions.md"
+    - "Indexing": "./lib/indexing.md"
+    - "Metadata": "./lib/metadata.md"
+#    hide("Internals" => "lib/internals.md")
