@@ -1,7 +1,6 @@
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
-Manifest.toml
 .DS_Store
 .vscode
 
@@ -9,11 +8,9 @@ Manifest.toml
 /.vscode/
 tmp
 generated
-build
 
 docs/docs
 docs/site
 docs/build
 docs/var
-deps/build.jl
 Manifest.toml

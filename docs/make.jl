@@ -3,12 +3,18 @@ using DocumenterMarkdown
 using DataFrames
 using CategoricalArrays
 
+using DataFramesMeta
+using DataFrameMacros
+using Chain
+using Statistics
+
+DocMeta.setdocmeta!(DataFrames, :DocTestSetup, :(using DataFrames); recursive=true)
 # Build documentation.
 # ====================
 makedocs(
     modules = [DataFrames],
     clean=true,
-    doctest=false,
+    doctest=true,
     sitename="DataFrames.jl",
     authors="Bogumił Kamiński et al.",
     strict=[
@@ -17,7 +23,7 @@ makedocs(
         :parse_error,
         :example_block,
         # Other available options are
-        # :autodocs_block, :cross_references, :docs_block, :eval_block, :example_block,
+        # :autodocs_block, :cross_references, :docs_block, :eval_block,
         # :footnote, :meta_block, :missing_docs, :setup_block
     ], checkdocs=:all, format=Markdown(), draft=false,
     build=joinpath(@__DIR__, "docs")

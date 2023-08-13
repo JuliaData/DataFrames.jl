@@ -2,7 +2,7 @@
 
 ## DataFrames.jl
 
-Welcome to the `DataFrames.jl `documentation!
+Welcome to the DataFrames.jl documentation!
 
 This resource aims to teach you everything you need to know to get up and
 running with tabular data manipulation using the `DataFrames.jl` package.
@@ -17,9 +17,9 @@ running with tabular data manipulation using the `DataFrames.jl` package.
 [![Coverage Status](http://codecov.io/github/JuliaData/DataFrames.jl/coverage.svg?branch=main)](http://codecov.io/github/JuliaData/DataFrames.jl?branch=main)
 [![CI Testing](https://github.com/JuliaData/DataFrames.jl/workflows/CI/badge.svg)](https://github.com/JuliaData/DataFrames.jl/actions?query=workflow%3ACI+branch%3Amain)
 
-For more illustrations of `DataFrames.jl` usage, in particular in conjunction with
+For more illustrations of DataFrames.jl usage, in particular in conjunction with
 other packages you can check-out the following resources
-(they are kept up to date with the released version of `DataFrames.jl`):
+(they are kept up to date with the released version of DataFrames.jl):
 * [Data Wrangling with DataFrames.jl Cheat Sheet](https://www.ahsmart.com/pub/data-wrangling-with-data-frames-jl-cheat-sheet/)
 * [DataFrames Tutorial using Jupyter Notebooks](https://github.com/bkamins/Julia-DataFrames-Tutorial/)
 * [Julia Academy DataFrames.jl tutorial](https://github.com/JuliaAcademy/DataFrames)
