@@ -8,8 +8,9 @@ This resource aims to teach you everything you need to know to get up and
 running with tabular data manipulation using the `DataFrames.jl` package.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/JuliaData/DataFrames.jl/blob/main/LICENSE)
-[![docs-latest-img](https://img.shields.io/badge/docs-latest-blue.svg)](http://dataframes.juliadata.org/latest/)
+[![docs-latest-img](https://img.shields.io/badge/docs-latest-blue.svg)](http://dataframes.juliadata.org/dev/)
 [![docs-stable-img](https://img.shields.io/badge/docs-stable-blue.svg)](http://dataframes.juliadata.org/stable/)
+[![docs-old-img](https://img.shields.io/badge/docs_old-v1.6-blue.svg)](http://dataframes.juliadata.org/v1.6/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7632427.svg)](https://doi.org/10.5281/zenodo.7632427)
 [![Downloads](https://shields.io/endpoint?url=https://pkgs.genieframework.com/api/v1/badge/DataFrames&label=Downloads)](https://pkgs.genieframework.com?packages=DataFrames)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
