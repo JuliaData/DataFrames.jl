@@ -1,4 +1,5 @@
-using Documenter, DocumenterMarkdown
+using Documenter
+using DocumenterMarkdown
 using DataFrames
 using CategoricalArrays
 
