@@ -2795,22 +2795,6 @@ that can be used in any of the manipulation functions listed under
 [Basic Usage of Manipulation Functions](@ref).
 Experiment for yourself to discover other useful operations.
 
-#### Additional Resources
-The operation pair syntax is sometimes referred to as the DataFrames mini-language
-or domain-specific language (DSL).
-More details and examples of the opertation mini-language can be found in
-[this blog post](https://bkamins.github.io/julialang/2020/12/24/minilanguage.html).
-
-For additional syntax niceties,
-many users find the [Chain.jl](https://github.com/jkrumbiegel/Chain.jl)
-and [DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl)
-packages useful
-to help simplify manipulations that may be tedious with operation pairs alone.
-
-For additional practice,
-an interactive tutorial is provided by the DataFrames package author
-[here](https://github.com/bkamins/Julia-DataFrames-Tutorial).
-
 #### More Manipulation Examples with the German Dataset
 
 Let us move to the examples of application of these rules using the German dataset.
@@ -3376,6 +3360,26 @@ julia> select(german, :Age, :Job, [:Age, :Job] => (+) => :res)
             985 rows omitted
 ```
 
-In the examples given in this introductory tutorial we did not cover all
-options of the DataFrames.jl operation mini-language.
-More advanced examples, are given in the later sections of the manual.
+This concludes the introductory explaination of data frame manipulations.
+For more advanced examples,
+see later sections of the manual or the additional resources below.
+
+#### Additional Resources
+More details and examples of operation pair syntax can be found in
+[this blog post](https://bkamins.github.io/julialang/2020/12/24/minilanguage.html).
+(The official wording describing the syntax has changed since the blog post was written,
+but the examples are still illustrative.
+The operation pair syntax is sometimes referred to as the DataFrames.jl mini-language
+or Domain-Specific Language.)
+
+For additional practice,
+an interactive tutorial is provided on a variety of introductory topics
+by the DataFrames.jl package author
+[here](https://github.com/bkamins/Julia-DataFrames-Tutorial).
+
+
+For additional syntax niceties,
+many users find the [Chain.jl](https://github.com/jkrumbiegel/Chain.jl)
+and [DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl)
+packages useful
+to help simplify manipulations that may be tedious with operation pairs alone.
