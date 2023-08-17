@@ -1911,8 +1911,8 @@ julia> subset(df, :b => ByRow(<(5))) # shorter version of the previous
 
 !!! Note
     `operation_functions` within `subset` or `subset!` function calls
-    must return a boolean vector.
-    `true` elements in the boolean vector will determine
+    must return a Boolean vector.
+    `true` elements in the Boolean vector will determine
     which rows are retained in the resulting data frame.
 
 As demonstrated above, `DataFrame` columns are usually passed
