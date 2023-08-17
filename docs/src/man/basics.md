@@ -2595,7 +2595,7 @@ julia> select(df, ["x", "y"] .=> f .=> ["a", "b"])
    1 │     2      8
    2 │     4     10
    3 │     6     12
- ```
+```
 
 A renaming function can be applied to multiple columns in the same way.
 It will also be repeated in each operation `Pair`.
