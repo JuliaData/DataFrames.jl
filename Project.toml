@@ -1,10 +1,11 @@
 name = "DataFrames"
 uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "1.6.0"
+version = "1.6.1"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 DataAPI = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Future = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 InlineStrings = "842dd82b-1e85-43dc-bf29-5d0ee9dffc48"
 InvertedIndices = "41ab1584-1d38-5bbf-9106-f11c6c58b48f"
@@ -28,19 +29,23 @@ Unicode = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [compat]
 CategoricalArrays = "0.10.0"
+Combinatorics = "1.0.2"
 Compat = "4.2"
 DataAPI = "1.15.0"
+DataStructures = "0.18"
+DataValues = "0.4.13"
 InlineStrings = "1.3.0"
 InvertedIndices = "1.3"
 IteratorInterfaceExtensions = "0.1.1, 1"
 Missings = "0.4.2, 1"
+OffsetArrays = "1.12.10"
 PooledArrays = "1.4.2"
 PrecompileTools = "1"
 PrettyTables = "2.1"
-Reexport = "0.1, 0.2, 1"
+Reexport = "1"
 SentinelArrays = "1.2"
 ShiftedArrays = "1, 2"
-SortingAlgorithms = "0.1, 0.2, 0.3, 1"
+SortingAlgorithms = "0.3, 1"
 TableTraits = "0.4, 1"
 Tables = "1.9.0"
 Unitful = "1"
@@ -49,10 +54,8 @@ julia = "1.6"
 [extras]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
-DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DataValues = "e7dc6d0d-1eca-5fa6-8ad6-5aecde8b7ea5"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
-InlineStrings = "842dd82b-1e85-43dc-bf29-5d0ee9dffc48"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
@@ -61,6 +64,6 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 ShiftedArrays = "1277b4bf-5013-50f5-be3d-901d8477a67a"
 
 [targets]
-test = ["CategoricalArrays", "Combinatorics", "DataStructures", "DataValues",
-        "Dates", "InlineStrings", "Logging", "OffsetArrays", "Test", "Unitful",
-        "ShiftedArrays", "SparseArrays"]
+test = ["CategoricalArrays", "Combinatorics", "DataValues",
+        "Dates", "Logging", "OffsetArrays", "Test",
+        "Unitful", "ShiftedArrays", "SparseArrays"]

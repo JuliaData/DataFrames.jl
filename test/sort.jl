@@ -243,7 +243,7 @@ end
     @test_throws ArgumentError sort(d, [:dv1, :dv2], rev = [false, false], checkunique=true)
     @test_throws ArgumentError sort(d, :dv1, by = x -> -x, checkunique=true)
     @test_throws ArgumentError sort(d, :dv1, lt = >, checkunique=true)
-    
+
     # sort!
     @test_throws ArgumentError sort!(d, :dv1, checkunique=true)
     @test_throws ArgumentError sort!(d[!, [:dv1, :dv2]], checkunique = true)
