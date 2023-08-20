@@ -1370,4 +1370,91 @@ end
     end
 end
 
+@testset "multi element append!/prepend!/push!/pushfirst!" begin
+    df = DataFrame(a=1, b=2)
+    @test append!(df) == DataFrame(a=1, b=2)
+    @test prepend!(df) == DataFrame(a=1, b=2)
+    @test push!(df) == DataFrame(a=1, b=2)
+    @test pushfirst!(df) == DataFrame(a=1, b=2)
+    @test_throws ArgumentError append!(df, cols=:x) == DataFrame(a=1, b=2)
+    @test_throws ArgumentError prepend!(df, cols=:x) == DataFrame(a=1, b=2)
+    @test_throws ArgumentError push!(df, cols=:x) == DataFrame(a=1, b=2)
+    @test_throws ArgumentError pushfirst!(df, cols=:x) == DataFrame(a=1, b=2)
+
+    for x in (DataFrame(a=3, b=4), (a=[3], b=[4]), [(a=3, b=4)]),
+        y in (DataFrame(a=5, b=6), (a=[5], b=[6]), [(a=5, b=6)]),
+        z in (DataFrame(a=7, b=8), (a=[7], b=[8]), [(a=7, b=8)])
+        @test append!(copy(df), x, y) ==
+              DataFrame(a=1:2:5, b=2:2:6)
+        @test append!(copy(df), x, y, z) ==
+              DataFrame(a=1:2:7, b=2:2:8)
+        @test prepend!(copy(df), x, y) ==
+              DataFrame(a=[3, 5, 1], b=[4, 6, 2])
+        @test prepend!(copy(df), x, y, z) ==
+              DataFrame(a=[3, 5, 7, 1], b=[4, 6, 8, 2])
+    end
+
+    for x in (DataFrame(a=3, b=4)[1, :], (a=3, b=4), (3, 4)),
+        y in (DataFrame(a=5, b=6)[1, :], (a=5, b=6), (5, 6)),
+        z in (DataFrame(a=7, b=8)[1, :], (a=7, b=8), (7, 8))
+        @test push!(copy(df), x, y) ==
+              DataFrame(a=1:2:5, b=2:2:6)
+        @test push!(copy(df), x, y, z) ==
+              DataFrame(a=1:2:7, b=2:2:8)
+        @test pushfirst!(copy(df), x, y) ==
+              DataFrame(a=[3, 5, 1], b=[4, 6, 2])
+        @test pushfirst!(copy(df), x, y, z) ==
+              DataFrame(a=[3, 5, 7, 1], b=[4, 6, 8, 2])
+        for cols in (:orderequal, :setequal)
+            @test push!(copy(df), x, y, cols=cols) ==
+                DataFrame(a=1:2:5, b=2:2:6)
+            @test push!(copy(df), x, y, z, cols=cols) ==
+                DataFrame(a=1:2:7, b=2:2:8)
+            @test pushfirst!(copy(df), x, y, cols=cols) ==
+                DataFrame(a=[3, 5, 1], b=[4, 6, 2])
+            @test pushfirst!(copy(df), x, y, z, cols=cols) ==
+                DataFrame(a=[3, 5, 7, 1], b=[4, 6, 8, 2])
+        end
+    end
+
+    for x in (DataFrame(a=3, b=4), (a=[3], b=[4]), [(a=3, b=4)]),
+        y in (DataFrame(a=5, c=6), (a=[5], c=[6]), [(a=5, c=6)]),
+        z in (DataFrame(a="7", d=8), (a=["7"], d=[8]), [(a="7", d=8)])
+        @test append!(copy(df), x, y, cols=:union) ≅
+              DataFrame(a=1:2:5, b=[2, 4, missing], c=[missing, missing, 6])
+        @test append!(copy(df), x, y, z, cols=:union) ≅
+              DataFrame(a=[1, 3, 5, "7"], b=[2, 4, missing, missing],
+                        c=[missing, missing, 6, missing],
+                        d=[missing, missing, missing, 8])
+        @test prepend!(copy(df), x, y, cols=:union) ≅
+              DataFrame(a=[3, 5, 1], b=[4, missing, 2], c=[missing, 6, missing])
+        @test prepend!(copy(df), x, y, z, cols=:union) ≅
+              DataFrame(a=[3, 5, "7", 1], b=[4, missing, missing, 2],
+                        d=[missing, missing, 8, missing],
+                        c=[missing, 6, missing, missing],)
+    end
+
+    for x in (DataFrame(a=3, b=4)[1, :], (a=3, b=4)),
+        y in (DataFrame(a=5, c=6)[1, :], (a=5, c=6)),
+        z in (DataFrame(a="7", d=8)[1, :], (a="7", d=8))
+        @test push!(copy(df), x, y, cols=:union) ≅
+              DataFrame(a=1:2:5, b=[2, 4, missing], c=[missing, missing, 6])
+        @test push!(copy(df), x, y, z, cols=:union) ≅
+              DataFrame(a=[1, 3, 5, "7"], b=[2, 4, missing, missing],
+                        c=[missing, missing, 6, missing],
+                        d=[missing, missing, missing, 8])
+        @test pushfirst!(copy(df), x, y, cols=:union) ≅
+              DataFrame(a=[3, 5, 1], b=[4, missing, 2], c=[missing, 6, missing])
+        @test pushfirst!(copy(df), x, y, z, cols=:union) ≅
+              DataFrame(a=[3, 5, "7", 1], b=[4, missing, missing, 2],
+                        d=[missing, missing, 8, missing],
+                        c=[missing, 6, missing, missing],)
+    end
+
+    @test_throws ArgumentError push!(df, (1, 2), cols=:union)
+    @test_throws ArgumentError pushfirst!(df, (1, 2), cols=:union)
+    @test_throws ArgumentError push!(df, (1, 2), (1, 2), cols=:union)
+    @test_throws ArgumentError pushfirst!(df, (1, 2), (1, 2), cols=:union)
+end
+
 end # module
