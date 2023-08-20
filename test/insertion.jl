@@ -1453,6 +1453,7 @@ end
 
     @test_throws ArgumentError push!(df, (1, 2), cols=:union)
     @test_throws ArgumentError pushfirst!(df, (1, 2), cols=:union)
+    @test_throws ArgumentError insert!(df, (1, 2), cols=:union)
     @test_throws ArgumentError push!(df, (1, 2), (1, 2), cols=:union)
     @test_throws ArgumentError pushfirst!(df, (1, 2), (1, 2), cols=:union)
 end
