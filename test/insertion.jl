@@ -1453,9 +1453,13 @@ end
 
     @test_throws ArgumentError push!(df, (1, 2), cols=:union)
     @test_throws ArgumentError pushfirst!(df, (1, 2), cols=:union)
-    @test_throws ArgumentError insert!(df, (1, 2), cols=:union)
+
     @test_throws ArgumentError push!(df, (1, 2), (1, 2), cols=:union)
     @test_throws ArgumentError pushfirst!(df, (1, 2), (1, 2), cols=:union)
+
+    @test insert!(DataFrame(a=1:3, b=11:13), 2, (0, 10), cols=:orderequal) ==
+          DataFrame(a=[1, 0, 2, 3], b=[11, 10, 12, 13])
+    @test_throws ArgumentError insert!(df, 1, (1, 2), cols=:union)
 end
 
 end # module
