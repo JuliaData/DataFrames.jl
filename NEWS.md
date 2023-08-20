@@ -1,3 +1,11 @@
+# DataFrames.jl v1.7.0 Release Notes
+
+## New functionalities
+
+* Allow passing multiple values to add in `push!`, `pushfirst!`,
+  `append!`, and `prepend!`
+  ([#3372](https://github.com/JuliaData/DataFrames.jl/pull/3372))
+
 # DataFrames.jl v1.6.1 Release Notes
 
 ## Bug fixes
