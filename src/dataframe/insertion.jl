@@ -450,6 +450,7 @@ $METADATA_FIXED
           cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
 Add one row at the end of `df` in-place, taking the values from `row`.
+Several rows can be added by passing them as separate arguments from `rows`.
 
 $INSERTION_COMMON
 
@@ -547,14 +548,16 @@ function Base.push!(df::DataFrame, row::Any;
 end
 
 """
-    pushfirst!(df::DataFrame, row::Union{Tuple, AbstractArray}...;
+    pushfirst!(df::DataFrame, row::Union{Tuple, AbstractArray};
                cols::Symbol=:setequal, promote::Bool=false)
     pushfirst!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict,
-                                         Tables.AbstractRow}...;
+                                         Tables.AbstractRow};
+               cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
+    pushfirst!(df::DataFrame, rows...;
                cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
 Add one row at the beginning of `df` in-place, taking the values from `row`.
-Several rows can be added by passing them as separate arguments.
+Several rows can be added by passing them as separate arguments from `rows`.
 
 $INSERTION_COMMON
 
