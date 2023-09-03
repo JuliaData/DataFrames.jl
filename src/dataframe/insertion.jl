@@ -422,7 +422,7 @@ following way:
   pushed to columns missing in `row` that are present in `df`.
 
 If `row` is not a `DataFrameRow`, `NamedTuple`, `AbstractDict`, or `Tables.AbstractRow`
-the value of `cols` argument is ignored and it is only allowed to set it to
+the value of the `cols` argument is ignored and it is only allowed to set it to
 `:setequal` or `:orderequal`.
 
 If `promote=true` and element type of a column present in `df` does not allow
@@ -547,15 +547,14 @@ function Base.push!(df::DataFrame, row::Any;
 end
 
 """
-    pushfirst!(df::DataFrame, row::Union{Tuple, AbstractArray};
+    pushfirst!(df::DataFrame, row::Union{Tuple, AbstractArray}...;
                cols::Symbol=:setequal, promote::Bool=false)
     pushfirst!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict,
-                                         Tables.AbstractRow};
-               cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
-    pushfirst!(df::DataFrame, rows...;
+                                         Tables.AbstractRow}...;
                cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
 Add one row at the beginning of `df` in-place, taking the values from `row`.
+Several rows can be added by passing them as separate arguments.
 
 $INSERTION_COMMON
 
