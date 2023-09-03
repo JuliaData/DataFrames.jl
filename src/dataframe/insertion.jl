@@ -422,8 +422,8 @@ following way:
   pushed to columns missing in `row` that are present in `df`.
 
 If `row` is not a `DataFrameRow`, `NamedTuple`, `AbstractDict`, or `Tables.AbstractRow`
-the value of the `cols` argument is ignored and it is only allowed to set it to
-`:setequal` or `:orderequal`.
+it is not allowed to pass `cols` keyword argument other than the default `:setequal`,
+because such rows do not provide column name information.
 
 If `promote=true` and element type of a column present in `df` does not allow
 the type of a pushed argument then a new column with a promoted element type
@@ -441,16 +441,14 @@ $METADATA_FIXED
 """
 
 """
-    push!(df::DataFrame, row::Union{Tuple, AbstractArray};
+    push!(df::DataFrame, row::Union{Tuple, AbstractArray}...;
           cols::Symbol=:setequal, promote::Bool=false)
     push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict,
-                                    Tables.AbstractRow};
-          cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
-    push!(df::DataFrame, rows...;
+                                    Tables.AbstractRow}...;
           cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
 Add one row at the end of `df` in-place, taking the values from `row`.
-Several rows can be added by passing them as separate arguments from `rows`.
+Several rows can be added by passing them as separate arguments.
 
 $INSERTION_COMMON
 
@@ -539,25 +537,23 @@ julia> push!(DataFrame(a=1, b=2), (3, 4), (b=6, a=5))
 """
 function Base.push!(df::DataFrame, row::Any;
                     cols=:setequal, promote::Bool=false)
-    if !(cols in (:setequal, :orderequal))
-        throw(ArgumentError("`cols` keyword argument must be " *
-                            ":orderequal or :setequal"))
+    if cols !== :setequal
+        throw(ArgumentError("Passing `cols` keyword argument is not supported " *
+                            "because `row` does not provide column names"))
     end
 
     return _row_inserter!(df, -1, row, Val{:push}(), promote)
 end
 
 """
-    pushfirst!(df::DataFrame, row::Union{Tuple, AbstractArray};
+    pushfirst!(df::DataFrame, row::Union{Tuple, AbstractArray}...;
                cols::Symbol=:setequal, promote::Bool=false)
     pushfirst!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict,
-                                         Tables.AbstractRow};
-               cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
-    pushfirst!(df::DataFrame, rows...;
+                                         Tables.AbstractRow}...;
                cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
 Add one row at the beginning of `df` in-place, taking the values from `row`.
-Several rows can be added by passing them as separate arguments from `rows`.
+Several rows can be added by passing them as separate arguments.
 
 $INSERTION_COMMON
 
@@ -646,9 +642,9 @@ julia> pushfirst!(DataFrame(a=1, b=2), (3, 4), (b=6, a=5))
 """
 function Base.pushfirst!(df::DataFrame, row::Any;
                          cols=:setequal, promote::Bool=false)
-    if !(cols in (:setequal, :orderequal))
-        throw(ArgumentError("`cols` keyword argument must be " *
-                            ":orderequal or :setequal"))
+    if cols !== :setequal
+        throw(ArgumentError("Passing `cols` keyword argument is not supported " *
+                            "because `row` does not provide column names"))
     end
 
     return _row_inserter!(df, -1, row, Val{:pushfirst}(), promote)
@@ -742,10 +738,11 @@ julia> insert!(df, 3, NamedTuple(), cols=:subset)
 """
 function Base.insert!(df::DataFrame, index::Integer, row::Any;
                       cols=:setequal, promote::Bool=false)
-    if !(cols in (:setequal, :orderequal))
-        throw(ArgumentError("`cols` keyword argument must be " *
-                            ":orderequal or :setequal"))
+    if cols !== :setequal
+        throw(ArgumentError("Passing `cols` keyword argument is not supported " *
+                            "because `row` does not provide column names"))
     end
+
     index isa Bool && throw(ArgumentError("invalid index: $index of type Bool"))
     1 <= index <= nrow(df)+1 ||
         throw(ArgumentError("invalid index: $index for data frame with $(nrow(df)) rows"))
@@ -1103,25 +1100,40 @@ function _row_inserter!(df::DataFrame, loc::Integer,
     return df
 end
 
-function Base.push!(df::DataFrame, @nospecialize rows...;
+function Base.push!(df::DataFrame, rows::ByRow;
                     cols::Symbol=:setequal,
                     promote::Bool=(cols in [:union, :subset]))
-    if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
-        throw(ArgumentError("`cols` keyword argument must be " *
-                            ":orderequal, :setequal, :intersect, :subset or :union)"))
+    with_names_count = count(rows.fun) do row
+        row isa Union{AbstractDict,NamedTuple,Tables.AbstractRow}
     end
-
+    if 0 < with_names_count < length(rows.fun)
+        throw(ArgumentError("Mixing rows with column names and without column names " *
+                            "in a single `push!` call is not allowed"))
+    end
     return foldl((df, row) -> push!(df, row, cols=cols, promote=promote),
-                 collect(Any, rows), init=df)
+        collect(Any, rows.fun), init=df)
 end
 
-function Base.pushfirst!(df::DataFrame, @nospecialize rows...;
+Base.push!(df::DataFrame, @nospecialize rows...;
+           cols::Symbol=:setequal,
+           promote::Bool=(cols in [:union, :subset])) =
+    push!(df, rows, cols=cols, promote=promote)
+
+function Base.pushfirst!(df::DataFrame, rows::ByRow;
                          cols::Symbol=:setequal,
                          promote::Bool=(cols in [:union, :subset]))
-    if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
-        throw(ArgumentError("`cols` keyword argument must be " *
-                            ":orderequal, :setequal, :intersect, :subset or :union)"))
+    with_names_count = count(rows.fun) do row
+        row isa Union{AbstractDict,NamedTuple,Tables.AbstractRow}
+    end
+    if 0 < with_names_count < length(rows.fun)
+        throw(ArgumentError("Mixing rows with column names and without column names " *
+                            "in a single `push!` call is not allowed"))
     end
     return foldr((row, df) -> pushfirst!(df, row, cols=cols, promote=promote),
-                 collect(Any, rows), init=df)
+        collect(Any, rows.fun), init=df)
 end
+
+Base.pushfirst!(df::DataFrame, @nospecialize rows...;
+                cols::Symbol=:setequal,
+                promote::Bool=(cols in [:union, :subset])) =
+    pushfirst!(df, ByRow(rows), cols=cols, promote=promote)
