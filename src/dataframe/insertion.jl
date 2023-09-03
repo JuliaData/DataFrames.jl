@@ -1117,7 +1117,7 @@ end
 Base.push!(df::DataFrame, @nospecialize rows...;
            cols::Symbol=:setequal,
            promote::Bool=(cols in [:union, :subset])) =
-    push!(df, rows, cols=cols, promote=promote)
+    push!(df, ByRow(rows), cols=cols, promote=promote)
 
 function Base.pushfirst!(df::DataFrame, rows::ByRow;
                          cols::Symbol=:setequal,
