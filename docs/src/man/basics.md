@@ -2573,21 +2573,47 @@ true
       select(df, operation)                  # manipulate `df` with `operation`
       ```
 
-If a function is used as part of a transformation `Pair`,
-like in the `source_column_selector => function => new_column_names` form,
-then the function is repeated in each pair of the resultant vector.
-This is an easy way to apply a function to multiple columns at the same time.
+In Julia,
+a non-vector broadcasted with a vector will be repeated in each resultant pair element.
+
+```julia
+julia> ["x", "y"] .=> :a    # :a is repeated
+2-element Vector{Pair{String, Symbol}}:
+ "x" => :a
+ "y" => :a
+
+julia> 1 .=> [:a, :b]       # 1 is repeated
+2-element Vector{Pair{Int64, Symbol}}:
+ 1 => :a
+ 1 => :b
+```
+
+We can use this fact to easily broadcast an `operation_function` to multiple columns.
 
 ```julia
 julia> f(x) = 2 * x
 f (generic function with 1 method)
 
-julia> ["x", "y"] .=> f .=> ["a", "b"]
+julia> ["x", "y"] .=> f  # f is repeated
+2-element Vector{Pair{String, typeof(f)}}:
+ "x" => f
+ "y" => f
+
+julia> select(df, ["x", "y"] .=> f)  # apply f with automatic column renaming
+3×2 DataFrame
+ Row │ x_f    y_f
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      8
+   2 │     4     10
+   3 │     6     12
+
+julia> ["x", "y"] .=> f .=> ["a", "b"]  # f is repeated
 2-element Vector{Pair{String, Pair{typeof(f), String}}}:
  "x" => (f => "a")
  "y" => (f => "b")
 
-julia> select(df, ["x", "y"] .=> f .=> ["a", "b"])
+julia> select(df, ["x", "y"] .=> f .=> ["a", "b"])  # apply f with manual column renaming
 3×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -2604,12 +2630,12 @@ It will also be repeated in each operation `Pair`.
 julia> newname(s::String) = s * "_new"
 newname (generic function with 1 method)
 
-julia> ["x", "y"] .=> f .=> newname
+julia> ["x", "y"] .=> f .=> newname  # both f and newname are repeated
 2-element Vector{Pair{String, Pair{typeof(f), typeof(newname)}}}:
  "x" => (f => newname)
  "y" => (f => newname)
 
-julia> select(df, ["x", "y"] .=> f .=> newname)
+julia> select(df, ["x", "y"] .=> f .=> newname)  # apply f then rename column with newname
 3×2 DataFrame
  Row │ x_new  y_new
      │ Int64  Int64
