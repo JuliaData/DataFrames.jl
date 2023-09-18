@@ -2207,7 +2207,7 @@ it is probably again more useful to use the `rename` or `rename!` function
 rather than one of the manipulation functions
 in order to rename in-place and avoid the intermediate `operation_function`.
 ```julia
-julia> rename(df, :a => add_prefix) # rename some columns
+julia> rename(df, :a => add_prefix) # rename one column
 4×2 DataFrame
 Row │ new_a  b
    │ Int64  Int64
@@ -2226,6 +2226,9 @@ Row │ new_a  new_b
    2 │     2      6
    3 │     3      7
    4 │     4      8
+
+# Broadcasting syntax can be used to rename only some columns.
+# See the Broadcasting Operation Pairs section below.
 ```
 
 In the `source_column_selector => new_column_names` operation form,
