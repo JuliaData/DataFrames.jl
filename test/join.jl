@@ -251,21 +251,23 @@ end
     @test typeof.(eachcol(o(on))) == [Vector{Int}, Vector{Float64}]
 end
 
+update_missing = (x...) -> coalesce(reverse(x)...)
+
 @testset "update joins" begin
     df1 = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
     df2 = DataFrame(Any[[0, 1, 2, 3, 4], [0.0, 1.0, 2.0, 3.0, 4.0]], [:id, :fid])
 
-    @test crossjoin(df1, df2, dupcol=:update) ==
+    @test crossjoin(df1, df2, mergeduplicates=update_missing) ==
         DataFrame(Any[repeat([0, 1, 2, 3, 4], outer=3),
                       repeat([0.0, 1.0, 2.0, 3.0, 4.0], outer=3)],
                   [:id, :fid])
 
-    i(on,dupcol=:update) = innerjoin(df1, df2, on=on, dupcol=dupcol)
-    l(on,dupcol=:update) = leftjoin(df1, df2, on=on, dupcol=dupcol)
-    r(on,dupcol=:update) = rightjoin(df1, df2, on=on, dupcol=dupcol)
-    o(on,dupcol=:update) = outerjoin(df1, df2, on=on, dupcol=dupcol)
-    s(on,dupcol=:update) = semijoin(df1, df2, on=on, dupcol=dupcol)
-    a(on,dupcol=:update) = antijoin(df1, df2, on=on, dupcol=dupcol)
+    i(on,mergeduplicates=update_missing) = innerjoin(df1, df2, on=on, mergeduplicates=mergeduplicates)
+    l(on,mergeduplicates=update_missing) = leftjoin(df1, df2, on=on, mergeduplicates=mergeduplicates)
+    r(on,mergeduplicates=update_missing) = rightjoin(df1, df2, on=on, mergeduplicates=mergeduplicates)
+    o(on,mergeduplicates=update_missing) = outerjoin(df1, df2, on=on, mergeduplicates=mergeduplicates)
+    s(on,mergeduplicates=update_missing) = semijoin(df1, df2, on=on, mergeduplicates=mergeduplicates)
+    a(on,mergeduplicates=update_missing) = antijoin(df1, df2, on=on, mergeduplicates=mergeduplicates)
 
     @test s(:id) ==
           s(:fid) ==

@@ -117,9 +117,9 @@ Compat.hasproperty(df::AbstractDataFrame, s::AbstractString) = haskey(index(df),
 
 """
     rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol};
-            makeunique::Bool=false, dupcol::Symbol=:error)
+            makeunique::Bool=false)
     rename!(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
-            makeunique::Bool=false, dupcol::Symbol=:error)
+            makeunique::Bool=false)
     rename!(df::AbstractDataFrame, (from => to)::Pair...)
     rename!(df::AbstractDataFrame, d::AbstractDict)
     rename!(df::AbstractDataFrame, d::AbstractVector{<:Pair})
@@ -179,9 +179,9 @@ julia> rename!(df, [:a, :b, :c])
    1 │     1      2      3
 
 julia> rename!(df, [:a, :b, :a])
-ERROR: ArgumentError: Duplicate variable names: :a. Pass dupcol=:makeunique to make them unique using a suffix automatically.
+ERROR: ArgumentError: Duplicate variable names: :a. Pass makeunique=true to make them unique using a suffix automatically.
 
-julia> rename!(df, [:a, :b, :a], dupcol=:makeunique)
+julia> rename!(df, [:a, :b, :a], makeunique=true)
 1×3 DataFrame
  Row │ a      b      a_1
      │ Int64  Int64  Int64
@@ -197,16 +197,16 @@ julia> rename!(uppercase, df)
 ```
 """
 function rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol};
-                 makeunique::Bool=false, dupcol::Symbol=:error)
-    rename!(index(df), vals, makeunique=makeunique, dupcol=dupcol)
+                 makeunique::Bool=false)
+    rename!(index(df), vals, makeunique=makeunique)
     # renaming columns of SubDataFrame has to clean non-note metadata in its parent
     _drop_all_nonnote_metadata!(parent(df))
     return df
 end
 
 function rename!(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
-                 makeunique::Bool=false, dupcol::Symbol=:error)
-    rename!(index(df), Symbol.(vals), makeunique=makeunique, dupcol=dupcol)
+                 makeunique::Bool=false)
+    rename!(index(df), Symbol.(vals), makeunique=makeunique)
     # renaming columns of SubDataFrame has to clean non-note metadata in its parent
     _drop_all_nonnote_metadata!(parent(df))
     return df
@@ -353,9 +353,9 @@ julia> rename(uppercase, df)
 ```
 """
 rename(df::AbstractDataFrame, vals::AbstractVector{Symbol};
-       makeunique::Bool=false, dupcol::Symbol=:error) = rename!(copy(df), vals, makeunique=makeunique, dupcol=dupcol)
+       makeunique::Bool=false) = rename!(copy(df), vals, makeunique=makeunique)
 rename(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
-       makeunique::Bool=false, dupcol::Symbol=:error) = rename!(copy(df), vals, makeunique=makeunique, dupcol=dupcol)
+       makeunique::Bool=false) = rename!(copy(df), vals, makeunique=makeunique)
 rename(df::AbstractDataFrame, args...) = rename!(copy(df), args...)
 rename(f::Function, df::AbstractDataFrame) = rename!(f, copy(df))
 
@@ -1536,20 +1536,17 @@ end
 
 """
     hcat(df::AbstractDataFrame...;
-         makeunique::Bool=false, dupcol::Symbol=:error, copycols::Bool=true)
+         makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)
 
 Horizontally concatenate data frames.
 
 If `makeunique=false` (the default) column names of passed objects must be unique.
 If `makeunique=true` then duplicate column names will be suffixed
 with `_i` (`i` starting at 1 for the first duplicate).
-Deprecated in favor of `dupcol`
 
-If `dupcol=:error` (the default) then columns names of passed objects must be unique.
-If `dupcol=:makeunique` then duplicate column names will be suffixed
-with `_i` (`i` starting at 1 for the first duplicate).
-If `dupcol=:update` then duplicate columns names will be combined with the left-hand
-column overwritten by non-missing values from the right hand column(s)
+If `makeunique=false` and `mergeduplicates` is a Function then duplicate column names 
+will be combined by this function with the column named overwritten by the results of 
+the function on all values from the duplicated column(s).
 
 If `copycols=true` (the default) then the `DataFrame` returned by `hcat` will
 contain copied columns from the source data frames.
@@ -1582,7 +1579,7 @@ julia> df2 = DataFrame(A=4:6, B=4:6)
    2 │     5      5
    3 │     6      6
 
-julia> df3 = hcat(df1, df2, dupcol=:makeunique)
+julia> df3 = hcat(df1, df2, makeunique=true)
 3×4 DataFrame
  Row │ A      B      A_1    B_1
      │ Int64  Int64  Int64  Int64
@@ -1594,32 +1591,32 @@ julia> df3 = hcat(df1, df2, dupcol=:makeunique)
 julia> df3.A === df1.A
 false
 
-julia> df3 = hcat(df1, df2, dupcol=:makeunique, copycols=false);
+julia> df3 = hcat(df1, df2, mergeduplicates=:makeunique, copycols=false);
 
 julia> df3.A === df1.A
 true
 ```
 """
-function Base.hcat(df::AbstractDataFrame; makeunique::Bool=false, dupcol::Symbol=:error, copycols::Bool=true)
+function Base.hcat(df::AbstractDataFrame; makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)
     df = DataFrame(df, copycols=copycols)
     _drop_all_nonnote_metadata!(df)
     return df
 end
 
 # TODO: after deprecation remove AbstractVector methods
-Base.hcat(df::AbstractDataFrame, x::AbstractVector; makeunique::Bool=false, dupcol::Symbol=:error, copycols::Bool=true) =
-    hcat!(DataFrame(df, copycols=copycols), x, makeunique=makeunique, dupcol=dupcol, copycols=copycols)
-Base.hcat(x::AbstractVector, df::AbstractDataFrame; makeunique::Bool=false, dupcol::Symbol=:error, copycols::Bool=true) =
-    hcat!(x, df, makeunique=makeunique, dupcol=dupcol, copycols=copycols)
+Base.hcat(df::AbstractDataFrame, x::AbstractVector; makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true) =
+    hcat!(DataFrame(df, copycols=copycols), x, makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=copycols)
+Base.hcat(x::AbstractVector, df::AbstractDataFrame; makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true) =
+    hcat!(x, df, makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=copycols)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame;
-          makeunique::Bool=false, dupcol::Symbol=:error, copycols::Bool=true) =
+          makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true) =
     hcat!(DataFrame(df1, copycols=copycols), df2,
-          makeunique=makeunique, dupcol=dupcol, copycols=copycols)
+          makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=copycols)
 Base.hcat(df::AbstractDataFrame, x::Union{AbstractVector, AbstractDataFrame},
           y::Union{AbstractVector, AbstractDataFrame}...;
-          makeunique::Bool=false, dupcol::Symbol=:error, copycols::Bool=true) =
-    hcat!(hcat(df, x, makeunique=makeunique, dupcol=dupcol, copycols=copycols), y...,
-          makeunique=makeunique, dupcol=dupcol, copycols=copycols)
+          makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true) =
+    hcat!(hcat(df, x, makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=copycols), y...,
+          makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=copycols)
 
 """
     vcat(dfs::AbstractDataFrame...;
@@ -2875,12 +2872,11 @@ const INSERTCOLS_ARGUMENTS =
       are unwrapped and treated in the same way
     - `after` : if `true` columns are inserted after `col`
     - `makeunique` : defines what to do if `name` already exists in `df`;
-      if it is `false` an error will be thrown; if it is `true` a new unique name will
-      be generated by adding a suffix
-    - `dupcol` : defines what to do if `name` already exists in `df`;
-      if it is :error an error will be thrown; if is :makeunique a new unique name will
-      be generated by adding a suffix; if it is :update then the existing column will be 
-      updated with the non-missing values
+      if it is `true` a new unique name will be generated by adding a suffix,
+      if it is `false` an error will be thrown unless a `mergeduplicates` functiom is provided.
+    - `mergeduplicates` : defines what to do if `name` already exists in `df` and `makeunique`
+      is false. It should be given a Function that combines the values of all of the duplicated
+      columns which will be passed as a varargs. The return value is used.
     - `copycols` : whether vectors passed as columns should be copied
 
     If `val` is an `AbstractRange` then the result of `collect(val)` is inserted.
@@ -2902,7 +2898,7 @@ const INSERTCOLS_ARGUMENTS =
 
 """
     insertcols(df::AbstractDataFrame[, col], (name=>val)::Pair...;
-               after::Bool=false, makeunique::Bool=false, dupcol=:error, copycols::Bool=true)
+               after::Bool=false, makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)
 
 Insert a column into a copy of `df` data frame using the [`insertcols!`](@ref)
 function and return the newly created data frame.
@@ -2933,7 +2929,7 @@ julia> insertcols(df, 1, :b => 'a':'c')
    2 │ b         2
    3 │ c         3
 
-julia> insertcols(df, :c => 2:4, :c => 3:5, dupcol=:error)
+julia> insertcols(df, :c => 2:4, :c => 3:5, mergeduplicates=nothing)
 3×3 DataFrame
  Row │ a      c      c_1
      │ Int64  Int64  Int64
@@ -2953,13 +2949,13 @@ julia> insertcols(df, :a, :d => 7:9, after=true)
 ```
 """
 insertcols(df::AbstractDataFrame, args...;
-           after::Bool=false, makeunique::Bool=false, dupcol::Symbol=:error, copycols::Bool=true) =
+           after::Bool=false, makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true) =
     insertcols!(copy(df), args...;
-                after=after, makeunique=makeunique, dupcol=dupcol, copycols=copycols)
+                after=after, makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=copycols)
 
 """
     insertcols!(df::AbstractDataFrame[, col], (name=>val)::Pair...;
-                after::Bool=false, makeunique::Bool=false, dupcol::Symbol=:error, copycols::Bool=true)
+                after::Bool=false, makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)
 
 Insert a column into a data frame in place. Return the updated data frame.
 
@@ -2990,7 +2986,7 @@ julia> insertcols!(df, 1, :b => 'a':'c')
    2 │ b         2
    3 │ c         3
 
-julia> insertcols!(df, 2, :c => 2:4, :c => 3:5, dupcol=:error)
+julia> insertcols!(df, 2, :c => 2:4, :c => 3:5, mergeduplicates=nothing)
 3×4 DataFrame
  Row │ b     c      c_1    a
      │ Char  Int64  Int64  Int64
@@ -3010,9 +3006,9 @@ julia> insertcols!(df, :b, :d => 7:9, after=true)
 ```
 """
 function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Symbol}...;
-                     after::Bool=false, makeunique::Bool=false, dupcol::Symbol=:error, copycols::Bool=true)
+                     after::Bool=false, makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)
     
-    dupcol = _dupcol(dupcol, makeunique)
+    _check_makeunique_args(mergeduplicates, makeunique)
 
     if !is_column_insertion_allowed(df)
         throw(ArgumentError("insertcols! is only supported for DataFrame, or for " *
@@ -3039,15 +3035,15 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Sy
                             "$(ncol(df)) columns at index $col_ind"))
     end
 
-    if dupcol == :error
+    if !makeunique && isnothing(mergeduplicates)
         if !allunique(first.(name_cols))
             throw(ArgumentError("Names of columns to be inserted into a data frame " *
-                                "must be unique when `dupcol=:error`"))
+                                "must be unique when `mergeduplicates=nothing`"))
         end
         for (n, _) in name_cols
             if hasproperty(df, n)
                 throw(ArgumentError("Column $n is already present in the data frame " *
-                                    "which is not allowed when `dupcol=:error`"))
+                                    "which is not allowed when `mergeduplicates=nothing`"))
             end
         end
     end
@@ -3081,6 +3077,7 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Sy
         target_row_count = 1
     end
 
+    mergecolumns = Dict{Symbol, Any}()
     start_col_ind = col_ind
     for (name, item) in name_cols
         if !(item isa AbstractVector)
@@ -3117,7 +3114,7 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Sy
             dfp[!, name] = item_new
         else
             if hasproperty(dfp, name)
-                if dupcol == :makeunique
+                if makeunique
                     k = 1
                     while true
                         nn = Symbol("$(name)_$k")
@@ -3130,9 +3127,10 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Sy
                     insert!(index(dfp), col_ind, name)
                     insert!(_columns(dfp), col_ind, item_new)
                 else
-                    @assert dupcol == :update
                     # Just update without adding to index
-                    dfp[!, name] = _update_missing.(dfp[!, name], item_new)
+                    merge = get(mergecolumns, name, (dfp=dfp, cols=[]))
+                    push!(merge.cols, item_new)
+                    mergecolumns[name] = merge
                     col_ind -= 1
                 end
             else
@@ -3141,6 +3139,11 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Sy
             end
         end
         col_ind += 1
+    end
+
+    # Combine columns using mergeduplicates
+    for (name, merge) in mergecolumns
+        merge.dfp[!, name] = mergeduplicates.(merge.dfp[!, name], merge.cols...)
     end
 
     delta = col_ind - start_col_ind
@@ -3157,22 +3160,22 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{Sy
 end
 
 insertcols!(df::AbstractDataFrame, col::ColumnIndex, name_cols::Pair{<:AbstractString}...;
-            after::Bool=false, makeunique::Bool=false, dupcol::Symbol=:error, copycols::Bool=true) =
+            after::Bool=false, makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true) =
     insertcols!(df, col, (Symbol(n) => v for (n, v) in name_cols)...,
-                after=after, makeunique=makeunique, dupcol=dupcol, copycols=copycols)
+                after=after, makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=copycols)
 
 insertcols!(df::AbstractDataFrame, name_cols::Pair{Symbol}...;
-            after::Bool=false, makeunique::Bool=false, dupcol::Symbol=:error, copycols::Bool=true) =
+            after::Bool=false, makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true) =
     insertcols!(df, ncol(df)+1, name_cols..., after=after,
-                makeunique=makeunique, dupcol=dupcol, copycols=copycols)
+                makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=copycols)
 
 insertcols!(df::AbstractDataFrame, name_cols::Pair{<:AbstractString}...;
-            after::Bool=false, makeunique::Bool=false, dupcol::Symbol=:error, copycols::Bool=true) =
+            after::Bool=false, makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true) =
     insertcols!(df, (Symbol(n) => v for (n, v) in name_cols)...,
-                after=after, makeunique=makeunique, dupcol=dupcol, copycols=copycols)
+                after=after, makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=copycols)
 
 function insertcols!(df::AbstractDataFrame, col::ColumnIndex; after::Bool=false,
-                     makeunique::Bool=false, dupcol::Symbol=:error, copycols::Bool=true)
+                     makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)
     if col isa SymbolOrString
         col_ind = Int(columnindex(df, col))
         if col_ind == 0
@@ -3196,7 +3199,7 @@ function insertcols!(df::AbstractDataFrame, col::ColumnIndex; after::Bool=false,
 end
 
 function insertcols!(df::AbstractDataFrame; after::Bool=false,
-                     makeunique::Bool=false, dupcol::Symbol=:error, copycols::Bool=true)
+                     makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)
     _drop_all_nonnote_metadata!(parent(df))
     return df
 end

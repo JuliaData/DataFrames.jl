@@ -124,6 +124,8 @@ end
     @test DataFrame(a=[1, 2, missing], b=[4, 5, 6]) ≇ DataFrame(a=[1, 2, 3], b=[4, 5, 6])
 end
 
+update_missing = (x...) -> coalesce(reverse(x)...)
+
 @testset "copying" begin
     df = DataFrame(a=Union{Int, Missing}[2, 3],
                    b=Union{DataFrame, Missing}[DataFrame(c=1), DataFrame(d=2)])
@@ -152,8 +154,7 @@ end
 
     @test names(rename(df, [:f, :g])) == ["f", "g"]
     @test names(rename(df, [:f, :f], makeunique=true)) == ["f", "f_1"]
-    @test names(rename(df, [:f, :f], dupcol=:makeunique)) == ["f", "f_1"]
-    @test names(rename(df, [:f, :f], dupcol=:update)) == ["f", "f"]
+    #@test names(rename(df, [:f, :f], mergeduplicates=update_missing)) == ["f", "f"]
     @test names(df) == ["a", "b"]
 
     rename!(df, [:f, :g])
@@ -210,7 +211,7 @@ end
     @test df.newcol == ["a", "b"]
 
     @test_throws ArgumentError insertcols!(df, 1, :newcol => ["a1", "b1"])
-    @test insertcols!(df, 1, :newcol => ["a1", "b1"], dupcol=:makeunique) == df
+    @test insertcols!(df, 1, :newcol => ["a1", "b1"], makeunique=true) == df
     @test propertynames(df) == [:newcol_1, :newcol, :a, :b]
     @test df.a == [1, 2]
     @test df.b == [3.0, 4.0]
@@ -237,7 +238,7 @@ end
     @test df.newcol == ["a", "b"]
 
     @test_throws ArgumentError insertcols!(df, 1, "newcol" => ["a1", "b1"])
-    @test insertcols!(df, 1, "newcol" => ["a1", "b1"], dupcol=:makeunique) == df
+    @test insertcols!(df, 1, "newcol" => ["a1", "b1"], makeunique=true) == df
     @test propertynames(df) == [:newcol_1, :newcol, :a, :b]
     @test df.a == [1, 2]
     @test df.b == [3.0, 4.0]
@@ -256,9 +257,9 @@ end
     df = DataFrame(a=[1, 2], a_1=[3, 4])
     @test_throws ArgumentError insertcols!(df, 1, :a => [11, 12])
     @test df == DataFrame(a=[1, 2], a_1=[3, 4])
-    insertcols!(df, 1, :a => [11, 12], dupcol=:makeunique)
+    insertcols!(df, 1, :a => [11, 12], makeunique=true)
     @test propertynames(df) == [:a_2, :a, :a_1]
-    insertcols!(df, 4, :a => [11, 12], dupcol=:makeunique)
+    insertcols!(df, 4, :a => [11, 12], makeunique=true)
     @test propertynames(df) == [:a_2, :a, :a_1, :a_3]
 
     df = DataFrame(a=[1, 2], a_1=[3, 4])
@@ -267,12 +268,12 @@ end
     insertcols!(df, 4, :a => [11, 12], makeunique=true)
     @test propertynames(df) == [:a_2, :a, :a_1, :a_3]
 
-    df = DataFrame(a=[1, 2], a_1=[3, 4])
-    insertcols!(df, 1, :a => [11, 12], dupcol=:update)
+    df = DataFrame(a=[1, 2, 3], a_1=[3, 4, 5])
+    insertcols!(df, 1, :a => [11, 12, missing], mergeduplicates=update_missing)
     @test propertynames(df) == [:a, :a_1]
-    @test df == DataFrame(a=[11, 12], a_1=[3, 4])
+    @test df == DataFrame(a=[11, 12, 3], a_1=[3, 4, 5])
 
-    @test_throws ArgumentError insertcols!(df, 10, :a => [11, 12], dupcol=:makeunique)
+    @test_throws ArgumentError insertcols!(df, 10, :a => [11, 12], makeunique=true)
     @test_throws ArgumentError insertcols!(df, 10, :a => [11, 12], makeunique=true)
 
     dfc = copy(df)
@@ -319,7 +320,7 @@ end
     @test df.a_2 === v3
 
     df = DataFrame()
-    @test insertcols!(df, 1, :a=>v1, :a=>v2, :a=>v3, dupcol=:update, copycols=false) ==
+    @test insertcols!(df, 1, :a=>v1, :a=>v2, :a=>v3, mergeduplicates=update_missing, copycols=false) ==
           DataFrame(a=v3)
     @test df.a isa Vector{Int}
 
@@ -333,7 +334,7 @@ end
 
     df = DataFrame(p='a':'b', q='r':'s')
     @test_throws ArgumentError insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3)
-    @test insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3, dupcol=:makeunique, copycols=true) ==
+    @test insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3, makeunique=true, copycols=true) ==
           DataFrame(p='a':'b', p_1=v1, q_1=v2, p_2=v3, q='r':'s')
     @test df.p_1 isa Vector{Int}
     @test df.q_1 !== v2
@@ -345,7 +346,7 @@ end
 
     df = DataFrame(p='a':'b', q='r':'s')
     @test_throws ArgumentError insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3)
-    @test insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3, dupcol=:update, copycols=true) ==
+    @test insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3, mergeduplicates=update_missing, copycols=true) ==
           DataFrame(p=v3, q=v2)
 
     df = DataFrame(a=1:3, b=4:6)

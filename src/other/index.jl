@@ -26,12 +26,12 @@ end
 
 Index(l,u) = Index(l,u,[])
 
-function Index(names::AbstractVector{Symbol}; dupcol::Symbol=:error)
-    if dupcol == :update
+function Index(names::AbstractVector{Symbol}; makeunique::Bool=false)
+    if !makeunique
         lookup = Dict{Symbol, Int}(zip(reverse(names), length(names):-1:1))
         return Index(lookup, unique(names), names)
     else
-        u = make_unique(names, dupcol=dupcol)
+        u = make_unique(names, makeunique=makeunique)
         lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
         return Index(lookup, u)
     end
@@ -51,13 +51,12 @@ Base.isequal(x::AbstractIndex, y::AbstractIndex) = _names(x) == _names(y) # it i
 Base.:(==)(x::AbstractIndex, y::AbstractIndex) = isequal(x, y)
 
 
-function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false, dupcol::Symbol=:error)
-    dupcol = _dupcol(dupcol, makeunique)
-    if dupcol == :error
+function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false)
+    if !makeunique
         if length(unique(nms)) != length(nms)
             dup = unique(nms[nonunique(DataFrame(nms=nms))])
             dupstr = join(string.(':', dup), ", ", " and ")
-            msg = "Duplicate variable names: $dupstr. Pass dupcol=:makeunique " *
+            msg = "Duplicate variable names: $dupstr. Pass makeunique=true " *
                   "to make them unique using a suffix automatically."
             throw(ArgumentError(msg))
         end
@@ -65,7 +64,7 @@ function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false, 
     if length(nms) != length(x)
         throw(DimensionMismatch("Length of nms doesn't match length of x."))
     end
-    make_unique!(x.names, nms, dupcol=dupcol)
+    make_unique!(x.names, nms, makeunique=makeunique)
     empty!(x.lookup)
     for (i, n) in enumerate(x.names)
         x.lookup[n] = i
@@ -139,8 +138,8 @@ function Base.push!(x::Index, nm::Symbol)
     return x
 end
 
-function Base.merge!(x::Index, y::AbstractIndex; makeunique::Bool=false, dupcol::Symbol=:error)
-    adds = add_names(x, y, dupcol=_dupcol(dupcol, makeunique))
+function Base.merge!(x::Index, y::AbstractIndex; makeunique::Bool=false, mergeduplicates=nothing)
+    adds = add_names(x, y, makeunique=makeunique, mergeduplicates=mergeduplicates)
     i = length(x)
     for add in adds
         i += 1
@@ -150,8 +149,8 @@ function Base.merge!(x::Index, y::AbstractIndex; makeunique::Bool=false, dupcol:
     return x
 end
 
-Base.merge(x::AbstractIndex, y::AbstractIndex; makeunique::Bool=false, dupcol::Symbol=:error) =
-    merge!(copy(x), y, makeunique=makeunique, dupcol=dupcol)
+Base.merge(x::AbstractIndex, y::AbstractIndex; makeunique::Bool=false, mergeduplicates=nothing) =
+    merge!(copy(x), y, makeunique=makeunique, mergeduplicates=mergeduplicates)
 
 function Base.delete!(x::Index, idx::Integer)
     # reset the lookup's beyond the deleted item
@@ -442,10 +441,10 @@ end
 # Helpers
 
 # return Vector{Symbol} of names from add_ind that do not clash with `ind`.
-# if `dupcol=:error` error on collision
-# if `dupcol=:makeunique` generate new names that are deduplicated
-# if `dupcol=:update` just return the names including duplicates
-function add_names(ind::Index, add_ind::AbstractIndex; dupcol::Symbol=:error)
+# if `makeunique=false` error on collision
+# if `make=:makeunique` generate new names that are deduplicated
+# if `mergeduplicates=Function` just return the names including duplicates
+function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false, mergeduplicates=nothing)
     u = copy(_names(add_ind))
 
     seen = Set(_names(ind))
@@ -456,7 +455,7 @@ function add_names(ind::Index, add_ind::AbstractIndex; dupcol::Symbol=:error)
         in(name, seen) ? push!(dups, i) : push!(seen, name)
     end
     if length(dups) > 0
-        if dupcol == :error
+        if !makeunique && isnothing(mergeduplicates)
             dupstr = join(string.(':', unique(u[dups])), ", ", " and ")
             msg = "Duplicate variable names: $dupstr. Pass makeunique=true " *
                   "to make them unique using a suffix automatically."
@@ -464,7 +463,7 @@ function add_names(ind::Index, add_ind::AbstractIndex; dupcol::Symbol=:error)
         end
     end
     
-    if dupcol == :update
+    if !isnothing(mergeduplicates)
         return u
     end
 
@@ -595,7 +594,7 @@ function Base.getindex(x::SubIndex, idx::Union{AbstractVector{Symbol},
     return [x[i] for i in idx]
 end
 
-rename!(x::SubIndex, nms::AbstractVector{Symbol}; makeunique::Bool=false, dupcol::Symbol=:error) =
+rename!(x::SubIndex, nms::AbstractVector{Symbol}; makeunique::Bool=false) =
     throw(ArgumentError("rename! is not supported for views other than created " *
                         "with Colon as a column selector"))
 

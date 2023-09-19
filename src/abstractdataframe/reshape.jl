@@ -823,7 +823,7 @@ julia> permutedims(df2, 1, "different_name")
 """
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
                           dest_namescol::Union{Symbol, AbstractString};
-                          makeunique::Bool=false, dupcol::Symbol=:error, strict::Bool=true)
+                          makeunique::Bool=false, mergeduplicates=nothing, strict::Bool=true)
 
     if src_namescol isa Integer
         1 <= src_namescol <= ncol(df) || throw(BoundsError(index(df), src_namescol))
@@ -854,18 +854,18 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex,
 
     if ncol(df_notsrc) == 0
         df_tmp = DataFrame(AbstractVector[[] for _ in 1:nrow(df)], new_col_names,
-                           makeunique=makeunique, dupcol=dupcol, copycols=false)
+                           makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=false)
     else
         m = permutedims(Matrix(df_notsrc))
-        df_tmp = rename!(DataFrame(Tables.table(m)), new_col_names, makeunique=makeunique, dupcol=dupcol)
+        df_tmp = rename!(DataFrame(Tables.table(m)), new_col_names, makeunique=makeunique)
     end
-    out_df = hcat!(df_permuted, df_tmp, makeunique=makeunique, dupcol=dupcol, copycols=false)
+    out_df = hcat!(df_permuted, df_tmp, makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=false)
     _copy_table_note_metadata!(out_df, df)
     return out_df
 end
 
 function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
-                          makeunique::Bool=false, dupcol::Symbol=:error, strict::Bool=true)
+                          makeunique::Bool=false, mergeduplicates=nothing, strict::Bool=true)
     if src_namescol isa Integer
         1 <= src_namescol <= ncol(df) || throw(BoundsError(index(df), src_namescol))
         dest_namescol = _names(df)[src_namescol]
@@ -873,7 +873,7 @@ function Base.permutedims(df::AbstractDataFrame, src_namescol::ColumnIndex;
         dest_namescol = src_namescol
     end
     return permutedims(df, src_namescol, dest_namescol;
-                       makeunique=makeunique, dupcol=dupcol, strict=strict)
+                       makeunique=makeunique, mergeduplicates=mergeduplicates, strict=strict)
 end
 
 function Base.permutedims(df::AbstractDataFrame)
@@ -883,8 +883,8 @@ function Base.permutedims(df::AbstractDataFrame)
 end
 
 function Base.permutedims(df::AbstractDataFrame, cnames::AbstractVector;
-                          makeunique::Bool=false, dupcol::Symbol=:error)
-    out_df = DataFrame(permutedims(Matrix(df)), cnames, makeunique=makeunique, dupcol=dupcol)
+                          makeunique::Bool=false, mergeduplicates=nothing)
+    out_df = DataFrame(permutedims(Matrix(df)), cnames, makeunique=makeunique, mergeduplicates=mergeduplicates)
     _copy_table_note_metadata!(out_df, df)
     return out_df
 end

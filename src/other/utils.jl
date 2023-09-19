@@ -72,26 +72,17 @@ struct AsTable
     end
 end
 
-_update_missing(v1, v2) = ismissing(v2) ? v1 : v2
-
-function _dupcol(dupcol::Symbol, makeunique=false)
-    if dupcol ∉ [:error, :makeunique, :update]
-        throw(ArgumentError("dupcol must be one of :error, :makeunique, or :update"))
+function _check_makeunique_args(mergeduplicates, makeunique::Bool=false)
+    if makeunique && !isnothing(mergeduplicates)
+        throw(ArgumentError("mergeduplicates should not  be set if makeunique=true"))
     end
-    if makeunique && dupcol == :update
-        throw(ArgumentError("makeunique=true and dupcol==:update are incompatible"))
-    end
-    if makeunique
-        Base.depwarn("makeunique=true will be replaced by dupcol=:makeunique", :unstack)
-    end
-    makeunique ? :makeunique : dupcol
+    mergeduplicates
 end
 
 Base.broadcastable(x::AsTable) = Ref(x)
 
 function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol};
-                      makeunique::Bool=false, dupcol::Symbol=:error)
-    dupcol = _dupcol(dupcol, makeunique)
+                      makeunique::Bool=false)
     if length(names) != length(src)
         throw(DimensionMismatch("Length of src doesn't match length of names."))
     end
@@ -108,9 +99,9 @@ function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol};
     end
 
     if length(dups) > 0
-        if dupcol == :error
+        if !makeunique
             dupstr = join(string.(':', unique(src[dups])), ", ", " and ")
-            msg = "Duplicate variable names: $dupstr. Pass dupcol=:makeunique " *
+            msg = "Duplicate variable names: $dupstr. Pass makeunique=true " *
                   "to make them unique using a suffix automatically."
             throw(ArgumentError(msg))
         end
@@ -118,7 +109,7 @@ function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol};
 
     for i in dups
         nm = src[i]
-        if dupcol == :makeunique
+        if makeunique
             k = 1
             while true
                 newnm = Symbol("$(nm)_$k")
@@ -137,8 +128,8 @@ function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol};
     return names
 end
 
-function make_unique(names::AbstractVector{Symbol}; makeunique::Bool=false, dupcol::Symbol=:error)
-    make_unique!(similar(names), names, dupcol=_dupcol(dupcol, makeunique))
+function make_unique(names::AbstractVector{Symbol}; makeunique::Bool=false)
+    make_unique!(similar(names), names, makeunique=makeunique)
 end
 
 """
