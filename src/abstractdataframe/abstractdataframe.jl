@@ -359,7 +359,7 @@ julia> rename(uppercase, df)
 ─────┼─────────────────────
    1 │     1      2      3
 
-julia> rename(uppercase, df, cols=contains('X'))
+julia> rename(uppercase, df, cols=contains('x'))
 1×3 DataFrame
  Row │ i      X      y
      │ Int64  Int64  Int64
