@@ -2108,9 +2108,9 @@ julia> df = DataFrame(a=1:4, b=5:8)
    3 │     3      7
    4 │     4      8
 
-julia> transform(df, :a => :α) # adds column α
+julia> transform(df, :a => :apple) # adds column `apple`
 4×3 DataFrame
- Row │ a      b      α
+ Row │ a      b      apple
      │ Int64  Int64  Int64
 ─────┼─────────────────────
    1 │     1      5      1
@@ -2118,9 +2118,9 @@ julia> transform(df, :a => :α) # adds column α
    3 │     3      7      3
    4 │     4      8      4
 
-julia> select(df, :a => :α) # retains only column α
+julia> select(df, :a => :apple) # retains only column `apple`
 4×1 DataFrame
- Row │ α
+ Row │ apple
      │ Int64
 ─────┼───────
    1 │     1
@@ -2128,9 +2128,9 @@ julia> select(df, :a => :α) # retains only column α
    3 │     3
    4 │     4
 
-julia> rename(df, :a => :α) # renames column α in-place
+julia> rename(df, :a => :apple) # renames column `a` to `apple` in-place
 4×2 DataFrame
- Row │ α      b
+ Row │ apple  b
      │ Int64  Int64
 ─────┼──────────────
    1 │     1      5
@@ -2207,28 +2207,25 @@ it is probably again more useful to use the `rename` or `rename!` function
 rather than one of the manipulation functions
 in order to rename in-place and avoid the intermediate `operation_function`.
 ```julia
-julia> rename(df, :a => add_prefix) # rename one column
+julia> rename(add_prefix, df)  # rename all columns with a function
 4×2 DataFrame
-Row │ new_a  b
-   │ Int64  Int64
+ Row │ new_a  new_b
+     │ Int64  Int64
 ─────┼──────────────
    1 │     1      5
    2 │     2      6
    3 │     3      7
    4 │     4      8
 
-julia> rename(add_prefix, df) # rename all columns
+julia> rename(add_prefix, df; cols=:a)  # rename some columns with a function
 4×2 DataFrame
-Row │ new_a  new_b
-   │ Int64  Int64
+ Row │ new_a  b
+     │ Int64  Int64
 ─────┼──────────────
    1 │     1      5
    2 │     2      6
    3 │     3      7
    4 │     4      8
-
-# Broadcasting syntax can be used to rename only some columns.
-# See the Broadcasting Operation Pairs section below.
 ```
 
 In the `source_column_selector => new_column_names` operation form,
