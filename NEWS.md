@@ -5,6 +5,13 @@
 * Fix error in specification of dependency on DataStructures.jl
   ([#3359](https://github.com/JuliaData/DataFrames.jl/pull/3359))
 
+## New functionalities
+
+* `rename` and `rename!` now allow to apply a function transforming
+  column names only to a subset of the columns specified by the `cols`
+  keyword argument
+  ([#3380](https://github.com/JuliaData/DataFrames.jl/pull/3380))
+
 ## Minor improvements
 
 * Improved error messages in `only`, and `push!`, `append!` and related functions
