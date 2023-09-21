@@ -1,9 +1,4 @@
-# DataFrames.jl v1.6.1 Release Notes
-
-## Bug fixes
-
-* Fix error in specification of dependency on DataStructures.jl
-  ([#3359](https://github.com/JuliaData/DataFrames.jl/pull/3359))
+# DataFrames.jl v1.7.0 Release Notes
 
 ## New functionalities
 
@@ -11,6 +6,13 @@
   column names only to a subset of the columns specified by the `cols`
   keyword argument
   ([#3380](https://github.com/JuliaData/DataFrames.jl/pull/3380))
+
+# DataFrames.jl v1.6.1 Release Notes
+
+## Bug fixes
+
+* Fix error in specification of dependency on DataStructures.jl
+  ([#3359](https://github.com/JuliaData/DataFrames.jl/pull/3359))
 
 ## Minor improvements
 
