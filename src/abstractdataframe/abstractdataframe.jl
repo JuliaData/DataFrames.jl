@@ -123,7 +123,7 @@ Compat.hasproperty(df::AbstractDataFrame, s::AbstractString) = haskey(index(df),
     rename!(df::AbstractDataFrame, (from => to)::Pair...)
     rename!(df::AbstractDataFrame, d::AbstractDict)
     rename!(df::AbstractDataFrame, d::AbstractVector{<:Pair})
-    rename!(f::Function, df::AbstractDataFrame)
+    rename!(f::Function, df::AbstractDataFrame; cols=All())
 
 Rename columns of `df` in-place.
 Each name is changed at most once. Permutation of names is allowed.
@@ -132,8 +132,10 @@ Each name is changed at most once. Permutation of names is allowed.
 - `df` : the `AbstractDataFrame`
 - `d` : an `AbstractDict` or an `AbstractVector` of `Pair`s that maps
   the original names or column numbers to new names
-- `f` : a function which for each column takes the old name as a `String`
-  and returns the new name that gets converted to a `Symbol`
+- `f` : a function which for each column selected by `cols` keyword argument
+  takes the old name as a `String`
+  and returns the new name that gets converted to a `Symbol`; the `cols`
+  column selector can be any value accepted as column selector by the `names` function
 - `vals` : new column names as a vector of `Symbol`s or `AbstractString`s
   of the same length as the number of columns in `df`
 - `makeunique` : if `false` (the default), an error will be raised
@@ -194,6 +196,14 @@ julia> rename!(uppercase, df)
      │ Int64  Int64  Int64
 ─────┼─────────────────────
    1 │     1      2      3
+
+julia> rename!(lowercase, df, cols=contains('A'))
+1×3 DataFrame
+ Row │ a      B      a_1
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
+
 ```
 """
 function rename!(df::AbstractDataFrame, vals::AbstractVector{Symbol};
@@ -252,12 +262,8 @@ end
 
 rename!(df::AbstractDataFrame, args::Pair...) = rename!(df, collect(args))
 
-function rename!(f::Function, df::AbstractDataFrame)
-    rename!(f, index(df))
-    # renaming columns of SubDataFrame has to clean non-note metadata in its parent
-    _drop_all_nonnote_metadata!(parent(df))
-    return df
-end
+rename!(f::Function, df::AbstractDataFrame; cols=All()) =
+    rename!(df, [n => Symbol(f(n)) for n in names(df, cols)])
 
 """
     rename(df::AbstractDataFrame, vals::AbstractVector{Symbol};
@@ -267,7 +273,7 @@ end
     rename(df::AbstractDataFrame, (from => to)::Pair...)
     rename(df::AbstractDataFrame, d::AbstractDict)
     rename(df::AbstractDataFrame, d::AbstractVector{<:Pair})
-    rename(f::Function, df::AbstractDataFrame)
+    rename(f::Function, df::AbstractDataFrame; cols=All())
 
 Create a new data frame that is a copy of `df` with changed column names.
 Each name is changed at most once. Permutation of names is allowed.
@@ -277,8 +283,10 @@ Each name is changed at most once. Permutation of names is allowed.
   only allowed if it was created using `:` as a column selector.
 - `d` : an `AbstractDict` or an `AbstractVector` of `Pair`s that maps
   the original names or column numbers to new names
-- `f` : a function which for each column takes the old name as a `String`
-  and returns the new name that gets converted to a `Symbol`
+- `f` : a function which for each column selected by `cols` keyword argument
+  takes the old name as a `String`
+  and returns the new name that gets converted to a `Symbol`; the `cols`
+  column selector can be any value accepted as column selector by the `names` function
 - `vals` : new column names as a vector of `Symbol`s or `AbstractString`s
   of the same length as the number of columns in `df`
 - `makeunique` : if `false` (the default), an error will be raised
@@ -350,6 +358,14 @@ julia> rename(uppercase, df)
      │ Int64  Int64  Int64
 ─────┼─────────────────────
    1 │     1      2      3
+
+julia> rename(uppercase, df, cols=contains('X'))
+1×3 DataFrame
+ Row │ i      X      y
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      2      3
+
 ```
 """
 rename(df::AbstractDataFrame, vals::AbstractVector{Symbol};
@@ -357,7 +373,7 @@ rename(df::AbstractDataFrame, vals::AbstractVector{Symbol};
 rename(df::AbstractDataFrame, vals::AbstractVector{<:AbstractString};
        makeunique::Bool=false) = rename!(copy(df), vals, makeunique=makeunique)
 rename(df::AbstractDataFrame, args...) = rename!(copy(df), args...)
-rename(f::Function, df::AbstractDataFrame) = rename!(f, copy(df))
+rename(f::Function, df::AbstractDataFrame; cols=All()) = rename!(f, copy(df); cols=cols)
 
 """
     size(df::AbstractDataFrame[, dim])
