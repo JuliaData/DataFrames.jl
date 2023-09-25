@@ -132,7 +132,7 @@ Each name is changed at most once. Permutation of names is allowed.
 - `df` : the `AbstractDataFrame`
 - `d` : an `AbstractDict` or an `AbstractVector` of `Pair`s that maps
   the original names or column numbers to new names
-- `f` : a function which for each column selected by `cols` keyword argument
+- `f` : a function which for each column selected by the `cols` keyword argument
   takes the old name as a `String`
   and returns the new name that gets converted to a `Symbol`; the `cols`
   column selector can be any value accepted as column selector by the `names` function
@@ -283,7 +283,7 @@ Each name is changed at most once. Permutation of names is allowed.
   only allowed if it was created using `:` as a column selector.
 - `d` : an `AbstractDict` or an `AbstractVector` of `Pair`s that maps
   the original names or column numbers to new names
-- `f` : a function which for each column selected by `cols` keyword argument
+- `f` : a function which for each column selected by the `cols` keyword argument
   takes the old name as a `String`
   and returns the new name that gets converted to a `Symbol`; the `cols`
   column selector can be any value accepted as column selector by the `names` function
