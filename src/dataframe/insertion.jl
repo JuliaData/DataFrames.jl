@@ -1100,40 +1100,28 @@ function _row_inserter!(df::DataFrame, loc::Integer,
     return df
 end
 
-function Base.push!(df::DataFrame, rows::ByRow;
+function Base.push!(df::DataFrame, @nospecialize rows...;
                     cols::Symbol=:setequal,
                     promote::Bool=(cols in [:union, :subset]))
-    with_names_count = count(rows.fun) do row
+    with_names_count = count(rows) do row
         row isa Union{AbstractDict,NamedTuple,Tables.AbstractRow}
     end
-    if 0 < with_names_count < length(rows.fun)
+    if 0 < with_names_count < length(rows)
         throw(ArgumentError("Mixing rows with column names and without column names " *
                             "in a single `push!` call is not allowed"))
     end
-    return foldl((df, row) -> push!(df, row, cols=cols, promote=promote),
-        collect(Any, rows.fun), init=df)
+    return foldl((df, row) -> push!(df, row, cols=cols, promote=promote), rows, init=df)
 end
 
-Base.push!(df::DataFrame, @nospecialize rows...;
-           cols::Symbol=:setequal,
-           promote::Bool=(cols in [:union, :subset])) =
-    push!(df, ByRow(rows), cols=cols, promote=promote)
-
-function Base.pushfirst!(df::DataFrame, rows::ByRow;
+function Base.pushfirst!(df::DataFrame, @nospecialize rows...;
                          cols::Symbol=:setequal,
                          promote::Bool=(cols in [:union, :subset]))
-    with_names_count = count(rows.fun) do row
+    with_names_count = count(rows) do row
         row isa Union{AbstractDict,NamedTuple,Tables.AbstractRow}
     end
-    if 0 < with_names_count < length(rows.fun)
+    if 0 < with_names_count < length(rows)
         throw(ArgumentError("Mixing rows with column names and without column names " *
                             "in a single `push!` call is not allowed"))
     end
-    return foldr((row, df) -> pushfirst!(df, row, cols=cols, promote=promote),
-        collect(Any, rows.fun), init=df)
+    return foldr((row, df) -> pushfirst!(df, row, cols=cols, promote=promote), rows, init=df)
 end
-
-Base.pushfirst!(df::DataFrame, @nospecialize rows...;
-                cols::Symbol=:setequal,
-                promote::Bool=(cols in [:union, :subset])) =
-    pushfirst!(df, ByRow(rows), cols=cols, promote=promote)
