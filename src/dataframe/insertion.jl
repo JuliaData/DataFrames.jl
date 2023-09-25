@@ -422,7 +422,7 @@ following way:
   pushed to columns missing in `row` that are present in `df`.
 
 If `row` is not a `DataFrameRow`, `NamedTuple`, `AbstractDict`, or `Tables.AbstractRow`
-it is not allowed to pass `cols` keyword argument other than the default `:setequal`,
+the `cols` keyword argument must be `:setequal` (the default),
 because such rows do not provide column name information.
 
 If `promote=true` and element type of a column present in `df` does not allow
@@ -538,8 +538,8 @@ julia> push!(DataFrame(a=1, b=2), (3, 4), (b=6, a=5))
 function Base.push!(df::DataFrame, row::Any;
                     cols=:setequal, promote::Bool=false)
     if cols !== :setequal
-        throw(ArgumentError("Passing `cols` keyword argument is not supported " *
-                            "because `row` does not provide column names"))
+        throw(ArgumentError("`cols` can only be `:setequal` when `row` is a `$(typeof(row))` " *
+                            "as this type does not provide column names"))
     end
 
     return _row_inserter!(df, -1, row, Val{:push}(), promote)
@@ -643,8 +643,8 @@ julia> pushfirst!(DataFrame(a=1, b=2), (3, 4), (b=6, a=5))
 function Base.pushfirst!(df::DataFrame, row::Any;
                          cols=:setequal, promote::Bool=false)
     if cols !== :setequal
-        throw(ArgumentError("Passing `cols` keyword argument is not supported " *
-                            "because `row` does not provide column names"))
+        throw(ArgumentError("`cols` can only be `:setequal` when `row` is a `$(typeof(row))` " *
+                            "as this type does not provide column names"))
     end
 
     return _row_inserter!(df, -1, row, Val{:pushfirst}(), promote)
@@ -739,8 +739,8 @@ julia> insert!(df, 3, NamedTuple(), cols=:subset)
 function Base.insert!(df::DataFrame, index::Integer, row::Any;
                       cols=:setequal, promote::Bool=false)
     if cols !== :setequal
-        throw(ArgumentError("Passing `cols` keyword argument is not supported " *
-                            "because `row` does not provide column names"))
+        throw(ArgumentError("`cols` can only be `:setequal` when `row` is a `$(typeof(row))` " *
+                            "as this type does not provide column names"))
     end
 
     index isa Bool && throw(ArgumentError("invalid index: $index of type Bool"))
