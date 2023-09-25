@@ -1394,9 +1394,9 @@ end
               DataFrame(a=[3, 5, 7, 1], b=[4, 6, 8, 2])
     end
 
-    for x in (DataFrame(a=3, b=4)[1, :], (a=3, b=4), (3, 4)),
-        y in (DataFrame(a=5, b=6)[1, :], (a=5, b=6), (5, 6)),
-        z in (DataFrame(a=7, b=8)[1, :], (a=7, b=8), (7, 8))
+    for x in (DataFrame(a=3, b=4)[1, :], (a=3, b=4)),
+        y in (DataFrame(a=5, b=6)[1, :], (a=5, b=6)),
+        z in (DataFrame(a=7, b=8)[1, :], (a=7, b=8))
         @test push!(copy(df), x, y) ==
               DataFrame(a=1:2:5, b=2:2:6)
         @test push!(copy(df), x, y, z) ==
@@ -1405,7 +1405,7 @@ end
               DataFrame(a=[3, 5, 1], b=[4, 6, 2])
         @test pushfirst!(copy(df), x, y, z) ==
               DataFrame(a=[3, 5, 7, 1], b=[4, 6, 8, 2])
-        for cols in (:orderequal, :setequal)
+        for cols in (:orderequal, :setequal, :union, :subset, :intersect)
             @test push!(copy(df), x, y, cols=cols) ==
                 DataFrame(a=1:2:5, b=2:2:6)
             @test push!(copy(df), x, y, z, cols=cols) ==
@@ -1415,6 +1415,17 @@ end
             @test pushfirst!(copy(df), x, y, z, cols=cols) ==
                 DataFrame(a=[3, 5, 7, 1], b=[4, 6, 8, 2])
         end
+    end
+
+    for x in ((3, 4), [3, 4]), y in ((5, 6), [5, 6]), z in ((7, 8), [7, 8])
+        @test push!(copy(df), x, y) ==
+              DataFrame(a=1:2:5, b=2:2:6)
+        @test push!(copy(df), x, y, z) ==
+              DataFrame(a=1:2:7, b=2:2:8)
+        @test pushfirst!(copy(df), x, y) ==
+              DataFrame(a=[3, 5, 1], b=[4, 6, 2])
+        @test pushfirst!(copy(df), x, y, z) ==
+              DataFrame(a=[3, 5, 7, 1], b=[4, 6, 8, 2])
     end
 
     for x in (DataFrame(a=3, b=4), (a=[3], b=[4]), [(a=3, b=4)]),
@@ -1457,9 +1468,9 @@ end
     @test_throws ArgumentError push!(df, (1, 2), (1, 2), cols=:union)
     @test_throws ArgumentError pushfirst!(df, (1, 2), (1, 2), cols=:union)
 
-    @test insert!(DataFrame(a=1:3, b=11:13), 2, (0, 10), cols=:orderequal) ==
+    @test insert!(DataFrame(a=1:3, b=11:13), 2, (0, 10), cols=:setequal) ==
           DataFrame(a=[1, 0, 2, 3], b=[11, 10, 12, 13])
-    @test_throws ArgumentError insert!(df, 1, (1, 2), cols=:union)
+    @test_throws ArgumentError insert!(df, 1, (1, 2), cols=:orderequal)
 end
 
 end # module

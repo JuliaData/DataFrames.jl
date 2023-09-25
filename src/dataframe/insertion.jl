@@ -1103,8 +1103,14 @@ end
 function Base.push!(df::DataFrame, @nospecialize rows...;
                     cols::Symbol=:setequal,
                     promote::Bool=(cols in [:union, :subset]))
+    if isempty(rows)
+        if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
+            throw(ArgumentError("`cols` keyword argument must be " *
+                                ":orderequal, :setequal, :intersect, :subset or :union)"))
+        end
+    end
     with_names_count = count(rows) do row
-        row isa Union{AbstractDict,NamedTuple,Tables.AbstractRow}
+        row isa Union{DataFrameRow,AbstractDict,NamedTuple,Tables.AbstractRow}
     end
     if 0 < with_names_count < length(rows)
         throw(ArgumentError("Mixing rows with column names and without column names " *
@@ -1116,8 +1122,14 @@ end
 function Base.pushfirst!(df::DataFrame, @nospecialize rows...;
                          cols::Symbol=:setequal,
                          promote::Bool=(cols in [:union, :subset]))
+    if isempty(rows)
+        if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
+            throw(ArgumentError("`cols` keyword argument must be " *
+                                ":orderequal, :setequal, :intersect, :subset or :union)"))
+        end
+    end
     with_names_count = count(rows) do row
-        row isa Union{AbstractDict,NamedTuple,Tables.AbstractRow}
+        row isa Union{DataFrameRow,AbstractDict,NamedTuple,Tables.AbstractRow}
     end
     if 0 < with_names_count < length(rows)
         throw(ArgumentError("Mixing rows with column names and without column names " *
