@@ -525,7 +525,7 @@ julia> push!(df, NamedTuple(), cols=:subset)
    7 │ 1.0      missing        1.0
    8 │ missing  missing  missing
 
-julia> push!(DataFrame(a=1, b=2), (3, 4), (b=6, a=5))
+julia> push!(DataFrame(a=1, b=2), (3, 4), (5, 6))
 3×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -630,7 +630,7 @@ julia> pushfirst!(df, NamedTuple(), cols=:subset)
    7 │ b              2  missing
    8 │ c              3  missing
 
-julia> pushfirst!(DataFrame(a=1, b=2), (3, 4), (b=6, a=5))
+julia> pushfirst!(DataFrame(a=1, b=2), (3, 4), (5, 6))
 3×2 DataFrame
  Row │ a      b
      │ Int64  Int64
