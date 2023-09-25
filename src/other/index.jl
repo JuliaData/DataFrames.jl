@@ -21,17 +21,27 @@ const MULTICOLUMNINDEX_STR = "`:`, `Cols`, `All`, `Between`, `Not`, a regular ex
 struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
     names::Vector{Symbol}
+    updates::Vector{Symbol}
 end
 
+Index(l,u) = Index(l,u,[])
+
 function Index(names::AbstractVector{Symbol}; makeunique::Bool=false)
-    u = make_unique(names, makeunique=makeunique)
-    lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
-    return Index(lookup, u)
+    if !makeunique
+        lookup = Dict{Symbol, Int}(zip(reverse(names), length(names):-1:1))
+        return Index(lookup, unique(names), names)
+    else
+        u = make_unique(names, makeunique=makeunique)
+        lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
+        return Index(lookup, u)
+    end
 end
 
 Index() = Index(Dict{Symbol, Int}(), Symbol[])
 Base.length(x::Index) = length(x.names)
 Base.names(x::Index) = string.(x.names)
+
+column_length(x::Index) = isempty(x.updates) ? length(x.names) : length(x.updates)
 
 # _names returns Vector{Symbol}
 _names(x::Index) = x.names
@@ -126,8 +136,8 @@ function Base.push!(x::Index, nm::Symbol)
     return x
 end
 
-function Base.merge!(x::Index, y::AbstractIndex; makeunique::Bool=false)
-    adds = add_names(x, y, makeunique=makeunique)
+function Base.merge!(x::Index, y::AbstractIndex; makeunique::Bool=false, mergeduplicates=nothing)
+    adds = add_names(x, y, makeunique=makeunique, mergeduplicates=mergeduplicates)
     i = length(x)
     for add in adds
         i += 1
@@ -137,8 +147,8 @@ function Base.merge!(x::Index, y::AbstractIndex; makeunique::Bool=false)
     return x
 end
 
-Base.merge(x::AbstractIndex, y::AbstractIndex; makeunique::Bool=false) =
-    merge!(copy(x), y, makeunique=makeunique)
+Base.merge(x::AbstractIndex, y::AbstractIndex; makeunique::Bool=false, mergeduplicates=nothing) =
+    merge!(copy(x), y, makeunique=makeunique, mergeduplicates=mergeduplicates)
 
 function Base.delete!(x::Index, idx::Integer)
     # reset the lookup's beyond the deleted item
@@ -430,8 +440,9 @@ end
 
 # return Vector{Symbol} of names from add_ind that do not clash with `ind`.
 # if `makeunique=false` error on collision
-# if `makeunique=false` generate new names that are deduplicated
-function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
+# if `make=:makeunique` generate new names that are deduplicated
+# if `mergeduplicates=Function` just return the names including duplicates
+function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false, mergeduplicates=nothing)
     u = copy(_names(add_ind))
 
     seen = Set(_names(ind))
@@ -442,13 +453,18 @@ function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
         in(name, seen) ? push!(dups, i) : push!(seen, name)
     end
     if length(dups) > 0
-        if !makeunique
+        if !makeunique && isnothing(mergeduplicates)
             dupstr = join(string.(':', unique(u[dups])), ", ", " and ")
             msg = "Duplicate variable names: $dupstr. Pass makeunique=true " *
                   "to make them unique using a suffix automatically."
             throw(ArgumentError(msg))
         end
     end
+    
+    if !isnothing(mergeduplicates)
+        return u
+    end
+
     for i in dups
         nm = u[i]
         k = 1

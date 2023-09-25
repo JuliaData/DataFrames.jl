@@ -1,5 +1,5 @@
 """
-    leftjoin!(df1, df2; on, makeunique=false, source=nothing,
+    leftjoin!(df1, df2; on, makeunique=false, mergeduplicates=nothing, source=nothing,
               matchmissing=:error)
 
 
@@ -25,10 +25,13 @@ added to `df1`.
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
+- `mergeduplicates` : defines what to do if `name` already exists in `df` and `makeunique`
+  is false. It should be given a Function that combines the values of all of the duplicated
+  columns which will be passed as a varargs. The return value is used.
 - `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
   column with the given name, for whether a row appeared in only `df1` (`"left_only"`)
   or in both (`"both"`). If the name is already in use,
-  the column name will be modified if `makeunique=true`.
+  the column name will be modified if `makeunique=true` or `makeunique=true`.
 - `matchmissing` : if equal to `:error` throw an error if `missing` is present
   in `on` columns; if equal to `:equal` then `missing` is allowed and missings are
   matched; if equal to `:notequal` then missings are dropped in `df2` `on` columns.
@@ -95,12 +98,14 @@ julia> leftjoin!(name, job2, on = :ID => :identifier, makeunique=true, source=:s
 ```
 """
 function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
-                   on::Union{<:OnType, AbstractVector}=Symbol[], makeunique::Bool=false,
+                   on::Union{<:OnType, AbstractVector}=Symbol[], 
+                   makeunique::Bool=false, mergeduplicates=nothing,
                    source::Union{Nothing, Symbol, AbstractString}=nothing,
                    matchmissing::Symbol=:error)
 
     _check_consistency(df1)
     _check_consistency(df2)
+    _check_makeunique_args(mergeduplicates, makeunique)
 
     if !is_column_insertion_allowed(df1)
         throw(ArgumentError("leftjoin! is only supported if `df1` is a `DataFrame`, " *
@@ -114,11 +119,11 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
     joiner = DataFrameJoiner(df1, df2, on, matchmissing, :left)
 
     right_noon_names = names(joiner.dfr, Not(joiner.right_on))
-    if !(makeunique || isempty(intersect(right_noon_names, names(df1))))
+    if mergeduplicates == :error && !isempty(intersect(right_noon_names, names(df1)))
         throw(ArgumentError("the following columns are present in both " *
                             "left and right data frames but not listed in `on`: " *
                             join(intersect(right_noon_names, names(df1)), ", ") *
-                            ". Pass makeunique=true to add a suffix automatically to " *
+                            ". Pass makeunique=true or makeunique=true to add a suffix automatically to " *
                             "columns names from the right data frame."))
     end
 
@@ -134,7 +139,7 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
         rcol_joined = compose_joined_rcol!(rcol, similar_missing(rcol, nrow(df1)),
                                           right_ixs)
         # if df1 isa SubDataFrame we must copy columns
-        insertcols!(df1, colname => rcol_joined, makeunique=makeunique,
+        insertcols!(df1, colname => rcol_joined, makeunique=makeunique, mergeduplicates=mergeduplicates,
                     copycols=!(df1 isa DataFrame))
         # need to call parent as df1 can be a SubDataFrame
         _copy_col_note_metadata!(parent(df1), ncol(df1), joiner.dfr, colname)
@@ -158,11 +163,18 @@ function leftjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
         end
 
         if hasproperty(df1, unique_indicator)
-            throw(ArgumentError("joined data frame already has column " *
-                                ":$unique_indicator. Pass makeunique=true to " *
-                                "make it unique using a suffix automatically."))
+            if !isnothing(mergeduplicates)
+                df1[!, unique_indicator] = mergeduplicates.(df1[!, unique_indicator], indicatorcol)
+            else
+                throw(ArgumentError("joined data frame already has column " *
+                                    ":$unique_indicator. Pass makeunique=true to " *
+                                    "make it unique using a suffix automatically or set mergeduplicates " *
+                                    "to a function."))
+            end
+        else
+            df1[!, unique_indicator] = indicatorcol
         end
-        df1[!, unique_indicator] = indicatorcol
+        
     end
 
     return df1
@@ -191,4 +203,20 @@ function compose_joined_rcol!(rcol::AbstractVector,
         end
     end
     return rcol_joined
+end
+
+function outerjoin!(df1::AbstractDataFrame, df2::AbstractDataFrame;
+    on::Union{<:OnType, AbstractVector}=Symbol[], makeunique::Bool=false,
+    mergeduplicates=nothing,
+    source::Union{Nothing, Symbol, AbstractString}=nothing,
+    matchmissing::Symbol=:error)
+
+    mergeduplicates = (makeunique ? :makeunique : mergeduplicates)
+
+    leftjoin!(df1, df2, on=on, mergeduplicates=mergeduplicates, source=source, matchmissing=matchmissing)
+
+    aj = antijoin(df2, df1, on=on, mergeduplicates=mergeduplicates, matchmissing=matchmissing)
+    append!(df1, aj)
+
+    return df1
 end

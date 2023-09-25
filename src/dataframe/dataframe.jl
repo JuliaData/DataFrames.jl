@@ -8,16 +8,16 @@ particularly a `Vector`, `PooledVector` or `CategoricalVector`.
 
 # Constructors
 ```julia
-DataFrame(pairs::Pair...; makeunique::Bool=false, copycols::Bool=true)
-DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false, copycols::Bool=true)
+DataFrame(pairs::Pair...; makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)
+DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)
 DataFrame(ds::AbstractDict; copycols::Bool=true)
 DataFrame(; kwargs..., copycols::Bool=true)
 
 DataFrame(table; copycols::Union{Bool, Nothing}=nothing)
 DataFrame(table, names::AbstractVector;
-          makeunique::Bool=false, copycols::Union{Bool, Nothing}=nothing)
+          makeunique::Bool=false, mergeduplicates=nothing, copycols::Union{Bool, Nothing}=nothing)
 DataFrame(columns::AbstractVecOrMat, names::AbstractVector;
-          makeunique::Bool=false, copycols::Bool=true)
+          makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)
 
 DataFrame(::DataFrameRow; copycols::Bool=true)
 DataFrame(::GroupedDataFrame; copycols::Bool=true, keepkeys::Bool=true)
@@ -84,9 +84,13 @@ Pass the `copycols=false` keyword argument (where supported) to reuse vectors wi
 copying them.
 
 By default an error will be raised if duplicates in column names are found. Pass
-`makeunique=true` keyword argument (where supported) to accept duplicate names,
+`makeunique=true` keyword argument to accept duplicate names,
 in which case they will be suffixed with `_i` (`i` starting at 1 for the first
-duplicate).
+duplicate), or provide a `mergeduplicates` function.
+
+If `makeunique=false` and `mergeduplicates` is a Function then duplicate column names 
+will be combined by this function with the column named overwritten by the results of 
+the function on all values from the duplicated column(s).
 
 If an `AbstractRange` is passed to a `DataFrame` constructor as a column it is
 always collected to a `Vector` (even if `copycols=false`). As a general rule
@@ -191,10 +195,11 @@ mutable struct DataFrame <: AbstractDataFrame
 
     # the inner constructor should not be used directly
     function DataFrame(columns::Union{Vector{Any}, Vector{AbstractVector}},
-                       colindex::Index; copycols::Bool=true)
+                       colindex::Index; copycols::Bool=true, 
+                       mergeduplicates=nothing)
         if length(columns) == length(colindex) == 0
             return new(AbstractVector[], Index(), nothing, nothing, true)
-        elseif length(columns) != length(colindex)
+        elseif length(columns) != column_length(colindex)
             throw(DimensionMismatch("Number of columns ($(length(columns))) and number of " *
                                     "column names ($(length(colindex))) are not equal"))
         end
@@ -232,6 +237,36 @@ mutable struct DataFrame <: AbstractDataFrame
             firstindex(col) != 1 && _onebased_check_error(i, col)
         end
 
+        # process updates if they exist
+        if !isempty(colindex.updates)
+            merges = Dict{Symbol,Any}()
+            updated = Vector{Any}(nothing, length(colindex.names))
+            for src in eachindex(colindex.updates)
+                name = colindex.updates[src]
+                dst = colindex.lookup[name]
+                if isnothing(updated[dst])
+                    updated[dst] = columns[src]
+                else
+                    if isnothing(mergeduplicates)
+                        msg = "Duplicate variable names: $name. Pass makeunique=true " *
+                        "to make them unique using a suffix automatically."
+                        throw(ArgumentError(msg))
+                    end
+                    merge = get(merges, name, (dst=dst, columns=[]))
+                    push!(merge.columns, columns[src])
+                    merges[name] = merge
+                end
+            end
+
+            # Handle mergeduplicates updates
+            for (_, merge) in merges
+                updated[merge.dst] = mergeduplicates.(updated[merge.dst], merge.columns...)
+            end
+
+            columns = updated
+            colindex = Index(colindex.lookup, colindex.names)
+        end
+
         return new(convert(Vector{AbstractVector}, columns), colindex, nothing, nothing, true)
     end
 end
@@ -254,24 +289,27 @@ end
 
 DataFrame(df::DataFrame; copycols::Bool=true) = copy(df, copycols=copycols)
 
-function DataFrame(pairs::Pair{Symbol, <:Any}...; makeunique::Bool=false,
+function DataFrame(pairs::Pair{Symbol, <:Any}...; 
+                   makeunique::Bool=false, mergeduplicates=nothing,
                    copycols::Bool=true)::DataFrame
     colnames = [Symbol(k) for (k, v) in pairs]
     columns = Any[v for (k, v) in pairs]
     return DataFrame(columns, Index(colnames, makeunique=makeunique),
-                     copycols=copycols)
+                     copycols=copycols, mergeduplicates=mergeduplicates)
 end
 
-function DataFrame(pairs::Pair{<:AbstractString, <:Any}...; makeunique::Bool=false,
+function DataFrame(pairs::Pair{<:AbstractString, <:Any}...; 
+                   makeunique::Bool=false, mergeduplicates=nothing,
                    copycols::Bool=true)::DataFrame
     colnames = [Symbol(k) for (k, v) in pairs]
     columns = Any[v for (k, v) in pairs]
     return DataFrame(columns, Index(colnames, makeunique=makeunique),
-                     copycols=copycols)
+                     copycols=copycols, mergeduplicates=mergeduplicates)
 end
 
 # this is needed as a workaround for Tables.jl dispatch
-function DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false,
+function DataFrame(pairs::AbstractVector{<:Pair}; 
+                   makeunique::Bool=false, mergeduplicates=nothing,
                    copycols::Bool=true)
     if isempty(pairs)
         return DataFrame()
@@ -282,7 +320,7 @@ function DataFrame(pairs::AbstractVector{<:Pair}; makeunique::Bool=false,
         colnames = [Symbol(k) for (k, v) in pairs]
         columns = Any[v for (k, v) in pairs]
         return DataFrame(columns, Index(colnames, makeunique=makeunique),
-                         copycols=copycols)
+                         copycols=copycols, mergeduplicates=mergeduplicates)
     end
 end
 
@@ -334,13 +372,14 @@ function DataFrame(; kwargs...)
 end
 
 function DataFrame(columns::AbstractVector, cnames::AbstractVector{Symbol};
-                   makeunique::Bool=false, copycols::Bool=true)::DataFrame
+                   makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)::DataFrame
+    _check_makeunique_args(mergeduplicates, makeunique)
     if !(eltype(columns) <: AbstractVector) && !all(col -> isa(col, AbstractVector), columns)
         return rename!(DataFrame(columns, copycols=copycols), cnames, makeunique=makeunique)
     end
     return DataFrame(collect(AbstractVector, columns),
                      Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
-                     copycols=copycols)
+                     copycols=copycols, mergeduplicates=mergeduplicates)
 end
 
 function _name2symbol(str::AbstractVector)
@@ -351,18 +390,18 @@ function _name2symbol(str::AbstractVector)
 end
 
 DataFrame(columns::AbstractVector, cnames::AbstractVector;
-          makeunique::Bool=false, copycols::Bool=true) =
-    DataFrame(columns, _name2symbol(cnames), makeunique=makeunique, copycols=copycols)
+          makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true) =
+    DataFrame(columns, _name2symbol(cnames), mergeduplicates=mergeduplicates, makeunique=makeunique, copycols=copycols)
 
 DataFrame(columns::AbstractVector{<:AbstractVector}, cnames::AbstractVector{Symbol};
-          makeunique::Bool=false, copycols::Bool=true)::DataFrame =
+          makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)::DataFrame =
     DataFrame(collect(AbstractVector, columns),
               Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
-              copycols=copycols)
+              copycols=copycols, mergeduplicates=mergeduplicates)
 
 DataFrame(columns::AbstractVector{<:AbstractVector}, cnames::AbstractVector;
-          makeunique::Bool=false, copycols::Bool=true) =
-    DataFrame(columns, _name2symbol(cnames); makeunique=makeunique, copycols=copycols)
+          makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true) =
+    DataFrame(columns, _name2symbol(cnames); mergeduplicates=mergeduplicates, makeunique=makeunique, copycols=copycols)
 
 function DataFrame(columns::AbstractVector, cnames::Symbol; copycols::Bool=true)
     if cnames !== :auto
@@ -375,15 +414,15 @@ function DataFrame(columns::AbstractVector, cnames::Symbol; copycols::Bool=true)
 end
 
 function DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol};
-                   makeunique::Bool=false, copycols::Bool=true)
+                   makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)
     getter = copycols ? getindex : view
     return DataFrame(AbstractVector[getter(columns, :, i) for i in 1:size(columns, 2)],
-                     cnames, makeunique=makeunique, copycols=false)
+                     cnames, makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=false)
 end
 
 DataFrame(columns::AbstractMatrix, cnames::AbstractVector;
-          makeunique::Bool=false, copycols::Bool=true) =
-    DataFrame(columns, _name2symbol(cnames); makeunique=makeunique, copycols=copycols)
+          makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true) =
+    DataFrame(columns, _name2symbol(cnames); makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=copycols)
 
 function DataFrame(columns::AbstractMatrix, cnames::Symbol; copycols::Bool=true)
     if cnames !== :auto
@@ -392,7 +431,7 @@ function DataFrame(columns::AbstractMatrix, cnames::Symbol; copycols::Bool=true)
                             "positional argument is passed then the second " *
                             "argument must be a vector of column names or :auto"))
     end
-    return DataFrame(columns, gennames(size(columns, 2)), makeunique=false, copycols=copycols)
+    return DataFrame(columns, gennames(size(columns, 2)), mergeduplicates=nothing, copycols=copycols)
 end
 
 # Discontinued constructors
@@ -1202,8 +1241,8 @@ end
 
 # hcat! for 2 arguments, only a vector or a data frame is allowed
 function hcat!(df1::DataFrame, df2::AbstractDataFrame;
-               makeunique::Bool=false, copycols::Bool=true)
-    u = add_names(index(df1), index(df2), makeunique=makeunique)
+               makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)
+    u = add_names(index(df1), index(df2), makeunique=true, mergeduplicates=mergeduplicates)
 
     _drop_all_nonnote_metadata!(df1)
     _keep_matching_table_note_metadata!(df1, df2)
@@ -1217,31 +1256,31 @@ end
 
 # TODO: after deprecation remove AbstractVector methods
 
-function hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false, copycols::Bool=true)
+function hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)
     Base.depwarn("horizontal concatenation of data frame with a vector is deprecated. " *
                  "Pass DataFrame(x1=x) instead.", :hcat!)
     return hcat!(df, DataFrame(AbstractVector[x], [:x1], copycols=false),
-                 makeunique=makeunique, copycols=copycols)
+                 makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=copycols)
 end
 
-function hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false, copycols::Bool=true)
+function hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false, mergeduplicates=nothing,copycols::Bool=true)
     Base.depwarn("horizontal concatenation of data frame with a vector is deprecated. " *
                  "Pass DataFrame(x1=x) instead.", :hcat!)
     return hcat!(DataFrame(AbstractVector[x], [:x1], copycols=copycols), df,
-                 makeunique=makeunique, copycols=copycols)
+                 makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=copycols)
 end
 
 # hcat! for 1-n arguments
-function hcat!(df::DataFrame; makeunique::Bool=false, copycols::Bool=true)
+function hcat!(df::DataFrame; makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true)
     _drop_all_nonnote_metadata!(df)
     return df
 end
 
 hcat!(a::DataFrame, b::Union{AbstractDataFrame, AbstractVector},
       c::Union{AbstractDataFrame, AbstractVector}...;
-      makeunique::Bool=false, copycols::Bool=true) =
-    hcat!(hcat!(a, b, makeunique=makeunique, copycols=copycols),
-          c..., makeunique=makeunique, copycols=copycols)
+      makeunique::Bool=false, mergeduplicates=nothing, copycols::Bool=true) =
+    hcat!(hcat!(a, b, makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=copycols),
+          c..., makeunique=makeunique, mergeduplicates=mergeduplicates, copycols=copycols)
 
 ##############################################################################
 ##

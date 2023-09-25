@@ -72,6 +72,13 @@ struct AsTable
     end
 end
 
+function _check_makeunique_args(mergeduplicates, makeunique::Bool=false)
+    if makeunique && !isnothing(mergeduplicates)
+        throw(ArgumentError("mergeduplicates should not  be set if makeunique=true"))
+    end
+    mergeduplicates
+end
+
 Base.broadcastable(x::AsTable) = Ref(x)
 
 function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol};
@@ -102,15 +109,19 @@ function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol};
 
     for i in dups
         nm = src[i]
-        k = 1
-        while true
-            newnm = Symbol("$(nm)_$k")
-            if !in(newnm, seen)
-                names[i] = newnm
-                push!(seen, newnm)
-                break
+        if makeunique
+            k = 1
+            while true
+                newnm = Symbol("$(nm)_$k")
+                if !in(newnm, seen)
+                    names[i] = newnm
+                    push!(seen, newnm)
+                    break
+                end
+                k += 1
             end
-            k += 1
+        else
+            names[i] = nm
         end
     end
 
