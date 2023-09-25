@@ -5,6 +5,10 @@
 * Allow passing multiple values to add in `push!`, `pushfirst!`,
   `append!`, and `prepend!`
   ([#3372](https://github.com/JuliaData/DataFrames.jl/pull/3372))
+* `rename` and `rename!` now allow to apply a function transforming
+  column names only to a subset of the columns specified by the `cols`
+  keyword argument
+  ([#3380](https://github.com/JuliaData/DataFrames.jl/pull/3380))
 
 # DataFrames.jl v1.6.1 Release Notes
 

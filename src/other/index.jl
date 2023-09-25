@@ -108,8 +108,6 @@ function rename!(x::Index, nms::AbstractVector{Pair{Symbol, Symbol}})
     return x
 end
 
-rename!(f::Function, x::Index) = rename!(x, [(n=>Symbol(f(string(n)))) for n in x.names])
-
 # we do not define keys on purpose;
 # use names to get keys as strings with copying
 # or _names to get keys as Symbols without copying
