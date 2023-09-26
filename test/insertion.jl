@@ -1468,6 +1468,11 @@ end
     @test_throws ArgumentError push!(df, (1, 2), (1, 2), cols=:union)
     @test_throws ArgumentError pushfirst!(df, (1, 2), (1, 2), cols=:union)
 
+    @test_throws ArgumentError push!(df, (a=1, b=2), (1, 2))
+    @test_throws ArgumentError pushfirst!(df, (a=1, b=2), (1, 2))
+    @test_throws ArgumentError push!(df, (1, 2), (a=1, b=2))
+    @test_throws ArgumentError pushfirst!(df, (1, 2), (a=1, b=2))
+
     @test insert!(DataFrame(a=1:3, b=11:13), 2, (0, 10), cols=:setequal) ==
           DataFrame(a=[1, 0, 2, 3], b=[11, 10, 12, 13])
     @test_throws ArgumentError insert!(df, 1, (1, 2), cols=:orderequal)
