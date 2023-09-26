@@ -1,27 +1,5 @@
 # Importing and Exporting Data (I/O)
 
-## JLD2 Files
-
-A convenient format for reading and writing data frames in JLD2, which saves and loads
-Julia data structures in a format comprising a subset of HDF5. Unlike several other 
-formats, JLD2 preserves custom Types. The `save` and `load` functions, provided by FileIO.jl, 
-allow to read/write a data frame from/to a JLD2 file.  
-
-A data frame can be saved as a JLD2 file output.jld2 using
-
-```julia
-using FileIO
-using Pkg; Pkg.add("JLD2")
-
-df = DataFrame(x=1, y=2)
-save("output.jld2", Dict("df" => df))
-```
-
-and can be read using
-```julia
-load("output.jld2") # -> Dict{String, Any} with 1 entry: "df" => 1×2 DataFrame
-```
-
 ## CSV Files
 
 For reading and writing tabular data from CSV and other delimited text files,
@@ -134,6 +112,28 @@ As you can see the code required to transform `iris` into a proper input to the
 `writedlm` function so that you can create the CSV file having the expected
 format is not easy. Therefore CSV.jl is the preferred package to write CSV files
 for data stored in data frames.
+
+## JLD2 Files
+
+A convenient format for reading and writing data frames in JLD2, which saves and loads
+Julia data structures in a format comprising a subset of HDF5. Unlike several other 
+formats, JLD2 preserves custom Types. The `save` and `load` functions, provided by FileIO.jl, 
+allow to read/write a data frame from/to a JLD2 file.  
+
+A data frame can be saved as a JLD2 file output.jld2 using
+
+```julia
+using FileIO
+using Pkg; Pkg.add("JLD2")
+
+df = DataFrame(x=1, y=2)
+save("output.jld2", Dict("df" => df))
+```
+
+and can be read using
+```julia
+load("output.jld2") # -> Dict{String, Any} with 1 entry: "df" => 1×2 DataFrame
+```
 
 ## Other formats
 
