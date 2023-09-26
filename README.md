@@ -31,4 +31,9 @@ that is available on GitHub.
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stable-url]: http://dataframes.juliadata.org/stable/
 
-**Citing**: For now, the best way of citing this package is using the [Zenodo link](https://doi.org/10.5281/zenodo.7632427).
+**Citing**: We encourage you to cite our work if you have used DataFrames.jl package.
+Starring the DataFrames.jl repository on GitHub is also appreciated.
+
+The citation information may be found in the [CITATION.bib](CITATION.bib) file within the repository:
+
+> Bouchet-Valat, M., & Kamiński, B. (2023). DataFrames.jl: Flexible and Fast Tabular Data in Julia. Journal of Statistical Software, 107(4), 1–32. https://doi.org/10.18637/jss.v107.i04

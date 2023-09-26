@@ -1112,6 +1112,19 @@ end
         df = DataFrame(A=1)
         asview && (df=view(df, :, :))
         @test rename(x -> 1, df) == DataFrame(Symbol("1") => 1)
+
+        for cols in (:B, Not("A"), Cols(2), Char, contains('B'))
+            df = DataFrame(A=1:3, B='A':'C')
+            asview && (df = view(df, :, :))
+            @test names(rename(lowercase, df, cols=cols)) == ["A", "b"]
+            @test names(df) == ["A", "B"]
+            rename!(lowercase, df, cols=cols)
+            @test names(df) == ["A", "b"]
+        end
+        df = DataFrame(A=1:3, B='A':'C')
+        asview && (df = view(df, :, :))
+        @test names(rename(lowercase, df, cols=[:A, :B])) == ["a", "b"]
+        @test names(rename(lowercase, df, cols=Not(:))) == ["A", "B"]
     end
 
     sdf = view(DataFrame(ones(2, 3), :auto), 1:2, 1:3)
