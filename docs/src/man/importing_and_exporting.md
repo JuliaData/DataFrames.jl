@@ -115,24 +115,52 @@ for data stored in data frames.
 
 ## JLD2 Files
 
-A convenient format for reading and writing data frames in JLD2, which saves and loads
-Julia data structures in a format comprising a subset of HDF5. Unlike several other 
-formats, JLD2 preserves custom Types. The `save` and `load` functions, provided by FileIO.jl, 
-allow to read/write a data frame from/to a JLD2 file.  
+JLD2 is a HDF5-compatible file format that allows reading and writing data frames.
+A valuable feature of JLD2 format is that it preserves custom column types of the stored data frame.
+
+The `save` and `load` functions, provided by FileIO.jl, allow to read/write a data frame from/to a JLD2 file.  
 
 A data frame can be saved as a JLD2 file output.jld2 using
 
+If you have not used the FileIO and JLD2 packages before then you may need to install it first:
+```julia
+using Pkg; 
+Pkg.add("FileIO")
+Pkg.add("JLD2")
+```
+
+The FileIO and JLD2 functions are not loaded automatically and must be imported into the session.
 ```julia
 using FileIO
-using Pkg; Pkg.add("JLD2")
+using JLD2
+```
 
+We can now create a simple data frame and save it as a jld2 file using `save`. `save` 
+accepts an AbstractDict yielding the key/value pairs, where the key is a string representing 
+the name of the dataset and the value represents its contents:
+
+```julia
 df = DataFrame(x=1, y=2)
 save("output.jld2", Dict("df" => df))
 ```
 
-and can be read using
+A jld2 file can be read in using `load`. If `load` is called with a single dataset name, 
+load returns the contents of that dataset from the file:
 ```julia
-load("output.jld2") # -> Dict{String, Any} with 1 entry: "df" => 1×2 DataFrame
+df = load("output.jld2", "df")
+1×2 DataFrame
+ Row │ x      y     
+     │ Int64  Int64 
+─────┼──────────────
+   1 │     1      2
+```
+
+If `load` is called with a filename argument only, the load function loads all datasets 
+from the given file into a Dict:
+```julia
+df = load("output.jld2")
+Dict{String, Any} with 1 entry:
+  "df" => 1×2 DataFrame…
 ```
 
 ## Other formats
