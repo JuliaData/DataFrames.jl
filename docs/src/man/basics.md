@@ -1570,38 +1570,63 @@ julia> german[Not(5), r"S"]
 In DataFrames.jl there are seven functions that can be used
 to manipulate data frame columns:
 
-| Function     | Memory Usage                     | Column Retention                             | Row Retention                                     |
-| ------------ | -------------------------------- | -------------------------------------------- | ------------------------------------------------- |
-| `transform`  | Creates a new data frame.        | Retains both source and manipulated columns. | Retains same number of rows as source data frame. |
-| `transform!` | Modifies an existing data frame. | Retains both source and manipulated columns. | Retains same number of rows as source data frame. |
-| `select`     | Creates a new data frame.        | Retains only manipulated columns.            | Retains same number of rows as source data frame. |
-| `select!`    | Modifies an existing data frame. | Retains only manipulated columns.            | Retains same number of rows as source data frame. |
-| `subset`     | Creates a new data frame.        | Retains only source columns.                 | Number of rows is determined by the manipulation. |
-| `subset!`    | Modifies an existing data frame. | Retains only source columns.                 | Number of rows is determined by the manipulation. |
-| `combine`    | Creates a new data frame.        | Retains only manipulated columns.            | Number of rows is determined by the manipulation. |
+| Function     | Memory Usage                     | Column Retention                        | Row Retention                                       |
+| ------------ | -------------------------------- | --------------------------------------- | --------------------------------------------------- |
+| `transform`  | Creates a new data frame.        | Retains original and resultant columns. | Retains same number of rows as original data frame. |
+| `transform!` | Modifies an existing data frame. | Retains original and resultant columns. | Retains same number of rows as original data frame. |
+| `select`     | Creates a new data frame.        | Retains only resultant columns.         | Retains same number of rows as original data frame. |
+| `select!`    | Modifies an existing data frame. | Retains only resultant columns.         | Retains same number of rows as original data frame. |
+| `subset`     | Creates a new data frame.        | Retains original columns.               | Retains only rows where condition is true.          |
+| `subset!`    | Modifies an existing data frame. | Retains original columns.               | Retains only rows where condition is true.          |
+| `combine`    | Creates a new data frame.        | Retains only resultant columns.         | Retains only resultant rows.                        |
 
 ### Constructing Operation Pairs
+
 All of the functions above use the same syntax which is commonly
 `manipulation_function(dataframe, operation)`.
-The `operation` argument is a `Pair` which defines the
+The `operation` argument defines the
 operation to be applied to the source `dataframe`,
 and it can take any of the following common forms explained below:
 
 `source_column_selector`
 : selects source column(s) without manipulating or renaming them
 
+   Examples: `:a`, `[:a, :b]`, `All()`, `Not(:a)`
+
 `source_column_selector => operation_function`
 : passes source column(s) as arguments to a function
 and automatically names the resulting column(s)
+
+   Examples: `:a => sum`, `[:a, :b] => +`, `:a => ByRow(==(3))`
 
 `source_column_selector => operation_function => new_column_names`
 : passes source column(s) as arguments to a function
 and names the resulting column(s) `new_column_names`
 
+   Examples: `:a => sum => :sum_of_a`, `[:a, :b] => + => :a_plus_b`
+
+   (*Not available for `subset` or `subset!`*)
+
 `source_column_selector => new_column_names`
 : renames a source column,
 or splits a column containing collection elements into multiple new columns
-(*not available for `subset` or `subset!`*)
+
+   Examples: `:a => :new_a`, `:a_b => [:a, :b]`, `:nt => AsTable`
+
+   (*Not available for `subset` or `subset!`*)
+
+The `=>` operator constructs a
+[Pair](https://docs.julialang.org/en/v1/base/collections/#Core.Pair),
+which is a type to link one object to another.
+(Pairs are commonly used to create elements of a
+[Dictionary](https://docs.julialang.org/en/v1/base/collections/#Dictionaries).)
+In DataFrames.jl manipulation functions,
+`Pair` arguments are used to define column `operations` to be performed.
+The provided examples will be explained in more detail below.
+
+The manipulation functions also have methods for applying multiple operations.
+See the later sections [Multiple Operations per Manipulation](@ref)
+and [Broadcasting Operation Pairs](@ref) for more information.
 
 #### `source_column_selector`
 Inside an `operation`, `source_column_selector` is usually a column name
@@ -1682,9 +1707,9 @@ See the [Indexing](@ref) API for the full list of possible values with reference
 
 !!! Note
       The Julia parser sometimes prevents `:` from being used by itself.
-      `ERROR: syntax: whitespace not allowed after ":" used for quoting`
-      means your `:` must be wrapped in either `(:)` or `Cols(:)`
-      to be properly interpreted.
+      If you get
+      `ERROR: syntax: whitespace not allowed after ":" used for quoting`,
+      try using `All()`, `Cols(:)`, or `(:)` instead to select all columns.
 
 ```julia
 julia> df = DataFrame(
@@ -1759,17 +1784,11 @@ julia> subset(df2, [:minor, :male])
    1 │ Jimmy    true  true
 ```
 
-`AsTable(source_column_selector)` is a special `source_column_selector`
-that can be used to select multiple columns into a single `NamedTuple`.
-This is not useful on its own, so the function of this selector
-will be explained in the next section.
-
-
 #### `operation_function`
 Inside an `operation` pair, `operation_function` is a function
 which operates on data frame columns passed as vectors.
 When multiple columns are selected by `source_column_selector`,
-the `operation_function` will receive the columns as multiple positional arguments
+the `operation_function` will receive the columns as separate positional arguments
 in the order they were selected, e.g. `f(column1, column2, column3)`.
 
 ```julia
@@ -1789,7 +1808,7 @@ julia> combine(df, :a => sum)
 ─────┼───────
    1 │     6
 
-julia> transform(df, :b => maximum) # `transform` and `select` copy result to all rows
+julia> transform(df, :b => maximum) # `transform` and `select` copy scalar result to all rows
 3×3 DataFrame
  Row │ a      b      b_maximum
      │ Int64  Int64  Int64
@@ -1867,6 +1886,18 @@ julia> transform(df, :a => g)
    1 │     1      4      2
    2 │     2      5      3
    3 │     3      4      4
+
+julia> h(x, y) = 2x .+ y
+h (generic function with 1 method)
+
+julia> transform(df, [:a, :b] => h)
+3×3 DataFrame
+ Row │ a      b      a_b_h
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      6
+   2 │     2      5      9
+   3 │     3      4     10
 ```
 
 [Anonymous functions](https://docs.julialang.org/en/v1/manual/functions/#man-anonymous-functions)
@@ -1939,7 +1970,7 @@ julia> df = DataFrame(a = 1:2, b = 3:4, c = 5:6, d = 2:-1:1)
    1 │     1      3      5      2
    2 │     2      4      6      1
 
-julia> select(df, Cols(:) => ByRow(min)) # min works on multiple arguments
+julia> select(df, Cols(:) => ByRow(min)) # min operates on multiple arguments
 2×1 DataFrame
  Row │ a_b_etc_min
      │ Int64
@@ -1947,7 +1978,7 @@ julia> select(df, Cols(:) => ByRow(min)) # min works on multiple arguments
    1 │           1
    2 │           1
 
-julia> select(df, AsTable(:) => ByRow(minimum)) # minimum works on a collection
+julia> select(df, AsTable(:) => ByRow(minimum)) # minimum operates on a collection
 2×1 DataFrame
  Row │ a_b_etc_minimum
      │ Int64
@@ -1955,7 +1986,7 @@ julia> select(df, AsTable(:) => ByRow(minimum)) # minimum works on a collection
    1 │               1
    2 │               1
 
-julia> select(df, [:a,:b] => ByRow(+)) # `+` works on a multiple arguments
+julia> select(df, [:a,:b] => ByRow(+)) # `+` operates on a multiple arguments
 2×1 DataFrame
  Row │ a_b_+
      │ Int64
@@ -1963,7 +1994,7 @@ julia> select(df, [:a,:b] => ByRow(+)) # `+` works on a multiple arguments
    1 │     4
    2 │     6
 
-julia> select(df, AsTable([:a,:b]) => ByRow(sum)) # `sum` works on a collection
+julia> select(df, AsTable([:a,:b]) => ByRow(sum)) # `sum` operates on a collection
 2×1 DataFrame
  Row │ a_b_sum
      │ Int64
@@ -1973,7 +2004,7 @@ julia> select(df, AsTable([:a,:b]) => ByRow(sum)) # `sum` works on a collection
 
 julia> using Statistics # contains the `mean` function
 
-julia> select(df, AsTable(Between(:b, :d)) => ByRow(mean))
+julia> select(df, AsTable(Between(:b, :d)) => ByRow(mean)) # `mean` operates on a collection
 2×1 DataFrame
  Row │ b_c_d_mean
      │ Float64
@@ -2047,7 +2078,7 @@ specify your own `new_column_names`.
 
 `new_column_names` can be included at the end of an `operation` pair to specify
 the name of the new column(s).
-`new_column_names` may be a symbol or a string.
+`new_column_names` may be a symbol, string, function, vector of symbols, vector of strings, or `AsTable`.
 
 ```julia
 julia> df = DataFrame(a=1:4, b=5:8)
@@ -2094,7 +2125,7 @@ julia> transform(df, :a => ByRow(x->x+10) => "a+10")
 The `source_column_selector => new_column_names` operation form
 can be used to rename columns without an intermediate function.
 However, there are `rename` and `rename!` functions,
-which accept the same syntax,
+which accept similar syntax,
 that tend to be more useful for this operation.
 
 ```julia
@@ -2179,7 +2210,33 @@ julia> transform(df, :a => (x -> 10 .* x) => (s -> "new_" * s)) # with anonymous
    4 │     4      8     40
 ```
 
-Note that a renaming function will not work in the
+!!! Note
+      It is a good idea to wrap anonymous functions in parentheses
+      to avoid the `=>` operator accidently becoming part of the anonymous function.
+      The examples above do not work correctly without the parentheses!
+      ```julia
+      julia> transform(df, :a => x -> 10 .* x => add_prefix)  # Not what we wanted!
+      4×3 DataFrame
+       Row │ a      b      a_function
+           │ Int64  Int64  Pair…
+      ─────┼────────────────────────────────────────────
+         1 │     1      5  [10, 20, 30, 40]=>add_prefix
+         2 │     2      6  [10, 20, 30, 40]=>add_prefix
+         3 │     3      7  [10, 20, 30, 40]=>add_prefix
+         4 │     4      8  [10, 20, 30, 40]=>add_prefix
+
+      julia> transform(df, :a => x -> 10 .* x => s -> "new_" * s)  # Not what we wanted!
+      4×3 DataFrame
+       Row │ a      b      a_function
+           │ Int64  Int64  Pair…
+      ─────┼─────────────────────────────────────
+         1 │     1      5  [10, 20, 30, 40]=>#18
+         2 │     2      6  [10, 20, 30, 40]=>#18
+         3 │     3      7  [10, 20, 30, 40]=>#18
+         4 │     4      8  [10, 20, 30, 40]=>#18
+      ```
+
+A renaming function will not work in the
 `source_column_selector => new_column_names` operation form
 because a function in the second element of the operation pair is assumed to take
 the `source_column_selector => operation_function` operation form.
