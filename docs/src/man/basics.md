@@ -2151,5 +2151,9 @@ julia> select(german, :Age, :Job, [:Age, :Job] => (+) => :res)
             985 rows omitted
 ```
 
-This concludes the introductory explanation of data frame manipulations.
-For more advanced examples, see later sections of the manual.
+This concludes the introductory examples of data frame manipulations.
+See later sections of the manual,
+particularly [Data Frame Manipulation Functions](@ref),
+for additional explanations and functionality,
+including how to broadcast operation functions and operation pairs
+and how to pass or produce multiple columns using `AsTable`.
