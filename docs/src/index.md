@@ -218,6 +218,7 @@ page](https://github.com/JuliaData/DataFrames.jl/releases).
 Pages = ["man/basics.md",
          "man/getting_started.md",
          "man/joins.md",
+         "man/manipulation_functions.md",
          "man/split_apply_combine.md",
          "man/reshaping_and_pivoting.md",
          "man/sorting.md",
@@ -277,7 +278,7 @@ missing please kindly report an issue
     during which it is deprecated. The situations where such a breaking change
     might be allowed are (still such breaking changes will be avoided if
     possible):
-    
+
     * the affected functionality was previously clearly identified in the
       documentation as being subject to changes (for example in DataFrames.jl 1.4
       release propagation rules of `:note`-style metadata are documented as such);

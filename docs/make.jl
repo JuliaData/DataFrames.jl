@@ -26,6 +26,7 @@ makedocs(
             "Working with DataFrames" => "man/working_with_dataframes.md",
             "Importing and Exporting Data (I/O)" => "man/importing_and_exporting.md",
             "Joins" => "man/joins.md",
+            "Data Frame Manipulation Functions" => "man/manipulation_functions.md",
             "Split-apply-combine" => "man/split_apply_combine.md",
             "Reshaping" => "man/reshaping_and_pivoting.md",
             "Sorting" => "man/sorting.md",
