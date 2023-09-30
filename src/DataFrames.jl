@@ -55,6 +55,7 @@ export AbstractDataFrame,
        GroupedDataFrame,
        SubDataFrame,
        Tables,
+       @alias,
        allcombinations,
        allowmissing!,
        antijoin,
@@ -135,6 +136,7 @@ const METADATA_FIXED =
 
 include("other/utils.jl")
 include("other/index.jl")
+include("other/alias.jl")
 
 include("abstractdataframe/abstractdataframe.jl")
 include("abstractdataframe/unique.jl")

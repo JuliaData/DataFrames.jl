@@ -934,7 +934,7 @@ end
               DataFrame(x1=Char[], a=Int[])
     end
     @test_throws ArgumentError select(df, [] => (() -> [9]) => :a, :)
-    @test_throws ArgumentError select(df, :, [] => (() -> [9]) => :a)
+    @test_throws DimensionMismatch select(df, :, [] => (() -> [9]) => :a)
     @test transform(df, names(df) .=> (x -> 9) .=> names(df)) ==
           repeat(DataFrame([9 9 9], :auto), nrow(df))
     @test combine(df, names(df) .=> (x -> 9) .=> names(df)) ==
@@ -1020,7 +1020,7 @@ end
         @test df2.x4_last isa CategoricalVector{Int}
     end
 
-    @test_throws ArgumentError select(df, names(df) .=> first, [] => (() -> Int[]) => :x1)
+    @test_throws DimensionMismatch select(df, names(df) .=> first, [] => (() -> Int[]) => :x1)
     df2 = combine(df, names(df) .=> first, [] => (() -> Int[]) => :x1)
     @test size(df2) == (0, 5)
     @test df2.x1_first isa Vector{Int}
@@ -1028,7 +1028,7 @@ end
     @test df2.x3_first isa Vector{Missing}
     @test df2.x4_first isa Vector{Missing}
 
-    @test_throws ArgumentError select(df, names(df) .=> last, [] => (() -> Int[]) => :x1)
+    @test_throws DimensionMismatch select(df, names(df) .=> last, [] => (() -> Int[]) => :x1)
     df2 = combine(df, names(df) .=> last, [] => (() -> Int[]) => :x1)
     @test size(df2) == (0, 5)
     @test df2.x1_last isa Vector{Int}
@@ -1210,7 +1210,7 @@ end
 @testset "make sure select! is safe on error" begin
     a = [1]
     df = DataFrame()
-    df.a = a
+    @alias df.a = a
     @test_throws DomainError select!(df, :a => x -> sqrt(-1))
     @test df.a === a
     @test propertynames(df) == [:a, ]
@@ -1286,8 +1286,8 @@ end
     @test df2.y === df.y
     @test transform(df, names(df) .=> first .=> names(df)) ==
           DataFrame(x=fill(1, 3), y=fill(4, 3))
-    @test_throws ArgumentError transform(df, :x => x -> [first(x)], copycols=true)
-    @test_throws ArgumentError transform(df, :x => x -> [first(x)], copycols=false)
+    @test_throws DimensionMismatch transform(df, :x => x -> [first(x)], copycols=true)
+    @test_throws DimensionMismatch transform(df, :x => x -> [first(x)], copycols=false)
 
     dfv = view(df, [2, 1], [2, 1])
     @test select(dfv, :x => first) == DataFrame(x_first=fill(2, 2))
@@ -1305,8 +1305,8 @@ end
     @test_throws ArgumentError transform(dfv, :x => first, copycols=false)
     @test transform(dfv, names(dfv) .=> first .=> names(dfv)) ==
           DataFrame(y=fill(5, 2), x=fill(2, 2))
-    @test_throws ArgumentError transform(df, :x => x -> [first(x)], copycols=true)
-    @test_throws ArgumentError transform(df, :x => x -> [first(x)], copycols=false)
+    @test_throws DimensionMismatch transform(df, :x => x -> [first(x)], copycols=true)
+    @test_throws DimensionMismatch transform(df, :x => x -> [first(x)], copycols=false)
 end
 
 @testset "select! and transform! AbstractDataFrame" begin
@@ -1340,7 +1340,7 @@ end
     @test df == DataFrame(x=fill(1, 3), y=fill(4, 3))
 
     df = DataFrame(x=1:3, y=4:6)
-    @test_throws ArgumentError transform!(df, :x => x -> [1])
+    @test_throws DimensionMismatch transform!(df, :x => x -> [1])
     @test df == DataFrame(x=1:3, y=4:6)
 
     dfv = view(df, [2, 1], [2, 1])
@@ -1400,7 +1400,7 @@ end
         @test transform(sdf -> sdf.b, df) == [df DataFrame(x1=3:4)]
         @test transform(sdf -> (b = 2sdf.b,), df) == DataFrame(a=1:2, b=[6, 8], c=5:6)
         @test transform(sdf -> (b = 1,), df) == DataFrame(a=[1, 2], b=[1, 1], c=[5, 6])
-        @test_throws ArgumentError transform(sdf -> (b = [1],), df)
+        @test_throws DimensionMismatch transform(sdf -> (b = [1],), df)
         @test transform(sdf -> (b = [1, 5],), df) == DataFrame(a=[1, 2], b=[1, 5], c=[5, 6])
         @test transform(sdf -> 1, df) == DataFrame(a=1:2, b=3:4, c=5:6, x1=1)
         @test transform(sdf -> fill([1]), df) == DataFrame(a=1:2, b=3:4, c=5:6, x1=[[1], [1]])
@@ -1410,8 +1410,8 @@ end
         for ret in (DataFrame(), NamedTuple(), zeros(0, 0), DataFrame(t=1)[1, 1:0])
             @test transform(sdf -> ret, df) == df
         end
-        @test_throws ArgumentError transform(sdf -> DataFrame(a=10), df)
-        @test_throws ArgumentError transform(sdf -> zeros(1, 2), df)
+        @test_throws DimensionMismatch transform(sdf -> DataFrame(a=10), df)
+        @test_throws DimensionMismatch transform(sdf -> zeros(1, 2), df)
         @test transform(sdf -> DataFrame(a=[10, 11]), df) == DataFrame(a=[10, 11], b=3:4, c=5:6)
         @test transform(sdf -> [10 11; 12 13], df) == DataFrame(a=1:2, b=3:4, c=5:6, x1=[10, 12], x2=[11, 13])
         @test transform(sdf -> DataFrame(a=10)[1, :], df) == DataFrame(a=[10, 10], b=3:4, c=5:6)
@@ -1459,7 +1459,7 @@ end
     @test transform!(sdf -> sdf.b, copy(df)) == [df DataFrame(x1=3:4)]
     @test transform!(sdf -> (b = 2sdf.b,), copy(df)) == DataFrame(a=1:2, b=[6, 8], c=5:6)
     @test transform!(sdf -> (b = 1,), copy(df)) == DataFrame(a=[1, 2], b=[1, 1], c=[5, 6])
-    @test_throws ArgumentError transform!(sdf -> (b = [1],), copy(df))
+    @test_throws DimensionMismatch transform!(sdf -> (b = [1],), copy(df))
     @test transform!(sdf -> (b = [1, 5],), copy(df)) == DataFrame(a=[1, 2], b=[1, 5], c=[5, 6])
     @test transform!(sdf -> 1, copy(df)) == DataFrame(a=1:2, b=3:4, c=5:6, x1=1)
     @test transform!(sdf -> fill([1]), copy(df)) == DataFrame(a=1:2, b=3:4, c=5:6, x1=[[1], [1]])
@@ -1469,8 +1469,8 @@ end
     for ret in (DataFrame(), NamedTuple(), zeros(0, 0), DataFrame(t=1)[1, 1:0])
         @test transform!(sdf -> ret, copy(df)) == df
     end
-    @test_throws ArgumentError transform!(sdf -> DataFrame(a=10), copy(df))
-    @test_throws ArgumentError transform!(sdf -> zeros(1, 2), copy(df))
+    @test_throws DimensionMismatch transform!(sdf -> DataFrame(a=10), copy(df))
+    @test_throws DimensionMismatch transform!(sdf -> zeros(1, 2), copy(df))
     @test transform!(sdf -> DataFrame(a=[10, 11]), copy(df)) == DataFrame(a=[10, 11], b=3:4, c=5:6)
     @test transform!(sdf -> [10 11; 12 13], copy(df)) == DataFrame(a=1:2, b=3:4, c=5:6, x1=[10, 12], x2=[11, 13])
     @test transform!(sdf -> DataFrame(a=10)[1, :], copy(df)) == DataFrame(a=[10, 10], b=3:4, c=5:6)
@@ -1502,7 +1502,7 @@ end
             @test combine(df, :a => (x -> res) => [:p, :q]) == DataFrame(p=1, q=2)
             @test_throws ArgumentError combine(df, :a => (x -> res) => [:p])
             @test_throws ArgumentError select(df, :a => (x -> res) => AsTable)
-            @test_throws ArgumentError transform(df, :a => (x -> res) => AsTable)
+            @test_throws DimensionMismatch transform(df, :a => (x -> res) => AsTable)
         end
         @test combine(df, :a => ByRow(x -> [x, x+1]),
                       :a => ByRow(x -> [x, x+1]) => AsTable,
@@ -1638,8 +1638,8 @@ end
           DataFrame(a1=1, a2=2, a=1:2)
     @test select(df, :a => (x -> 1) => :a1, :a => (x -> 2) => :a2, [:a]) ==
           DataFrame(a1=1, a2=2, a=1:2)
-    @test_throws ArgumentError combine(df, :a => (x -> 1) => :a1, :a => (x -> [2]) => :a2, [:a])
-    @test_throws ArgumentError select(df, :a => (x -> 1) => :a1, :a => (x -> [2]) => :a2, [:a])
+    @test_throws DimensionMismatch combine(df, :a => (x -> 1) => :a1, :a => (x -> [2]) => :a2, [:a])
+    @test_throws DimensionMismatch select(df, :a => (x -> 1) => :a1, :a => (x -> [2]) => :a2, [:a])
 end
 
 @testset "normalize_selection" begin
@@ -2633,7 +2633,7 @@ end
 
     # multialias detection
     df = DataFrame(a=1:3)
-    df.b = df.a
+    @alias df.b = df.a
     df2 = select(df, [:a, :b] => ((x, y) -> x) => :c, :a, :b, copycols=false)
     @test df2.c === df.a === df.b
     @test df2.a == df2.b == df.a

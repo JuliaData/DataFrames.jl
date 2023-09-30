@@ -2,7 +2,7 @@ module TestDataFrame
 
 using Dates, DataFrames, Statistics, Random, Test, Logging, DataStructures,
       CategoricalArrays
-using DataFrames: _columns, index
+using DataFrames: _columns, index, @alias
 using OffsetArrays: OffsetArray
 const ≅ = isequal
 const ≇ = !isequal
@@ -148,7 +148,7 @@ end
     @test DataFrames._columns(dfdc) !== DataFrames._columns(df)
 
     df[1, :a] = 4
-    df[1, :b][!, :e] .= 5
+    df[1, :b][!, :e] = 5
 
     @test names(rename(df, [:f, :g])) == ["f", "g"]
     @test names(rename(df, [:f, :f], makeunique=true)) == ["f", "f_1"]
@@ -643,7 +643,7 @@ end
 
     df = DataFrame()
     df.a = [1, 2, 3]
-    df.b = df.a
+    @alias df.b = df.a
     dfc = copy(df)
     with_logger(sl) do
         @test_throws AssertionError append!(df, dfc)
@@ -653,7 +653,7 @@ end
 
     df = DataFrame()
     df.a = [1, 2, 3, 4]
-    df.b = df.a
+    @alias df.b = df.a
     df.c = [1, 2, 3, 4]
     dfc = copy(df)
     with_logger(sl) do
@@ -714,7 +714,7 @@ end
 
     df = DataFrame()
     df.a = [1, 2, 3]
-    df.b = df.a
+    @alias df.b = df.a
     dfc = copy(df)
     with_logger(sl) do
         @test_throws AssertionError prepend!(df, dfc)
@@ -724,7 +724,7 @@ end
 
     df = DataFrame()
     df.a = [1, 2, 3, 4]
-    df.b = df.a
+    @alias df.b = df.a
     df.c = [1, 2, 3, 4]
     dfc = copy(df)
     with_logger(sl) do
@@ -850,7 +850,7 @@ end
 
             df1 = DataFrame()
             df1.x = 1:3
-            df1.y = df1.x
+            @alias df1.y = df1.x
             df2 = DataFrame(x=1:3, y=4:6)
             with_logger(sl) do
                 @test_throws AssertionError append!(df1, df2, cols=cols, promote=promote)
@@ -964,7 +964,7 @@ end
 
             df1 = DataFrame()
             df1.x = 1:3
-            df1.y = df1.x
+            @alias df1.y = df1.x
             df2 = DataFrame(x=1:3, y=4:6)
             with_logger(sl) do
                 @test_throws AssertionError prepend!(df1, df2, cols=cols, promote=promote)
@@ -1641,14 +1641,10 @@ end
     @test x == 1:10
     df.y .= 1
     @test df.y == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        @test y == 1.0:10.0
-    else
-        @test df.y === y
-    end
-    df.z = z
+    @test df.y === y
+    @alias df.z = z
     @test df.z === z
-    df[!, :zz] .= 1
+    df[!, :zz] = 1
     @test df.zz == df.y
 end
 
@@ -1983,7 +1979,7 @@ end
     @test reverse(df, 3) == df[[1; 2; end:-1:3], :]
 
     df = DataFrame(a=1:5)
-    df.b = df.a
+    @alias df.b = df.a
     @test reverse(df) == DataFrame(a=5:-1:1, b=5:-1:1)
 end
 
@@ -1999,14 +1995,14 @@ end
     @test reverse!(df, 3) == cdf[[1; 2; end:-1:3], :]
 
     df = DataFrame(a=1:5)
-    df.b = df.a
+    @alias df.b = df.a
     df.c = 11:15
     @test reverse!(df) == DataFrame(a=5:-1:1, b=5:-1:1, c=15:-1:11)
 
     x = collect(1:6)
     df = DataFrame()
-    df.a = view(x, 1:5)
-    df.b = view(x, 2:6)
+    @alias df.a = view(x, 1:5)
+    @alias df.b = view(x, 2:6)
     @test reverse(df) == DataFrame(a=5:-1:1, b=6:-1:2)
     # incorrect result due to aliasing
     @test reverse!(df) != DataFrame(a=5:-1:1, b=6:-1:2)
@@ -2031,13 +2027,13 @@ end
     @test reverse(view(df, 2:5, 2:3), 2, 3) == DataFrame(b=[9, 7, 8, 6], c=[12, 14, 13, 15])
 
     df = DataFrame(a=1:5)
-    df.b = df.a
+    @alias df.b = df.a
     @test reverse!(view(df, 2:4, 1:2)) == DataFrame(a=4:-1:2, b=4:-1:2)
 
     x = collect(1:6)
     df = DataFrame()
-    df.a = view(x, 1:5)
-    df.b = view(x, 2:6)
+    @alias df.a = view(x, 1:5)
+    @alias df.b = view(x, 2:6)
     dfv = view(df, 2:4, :)
     @test reverse(dfv) == DataFrame(a=4:-1:2, b=5:-1:3)
     # incorrect result due to aliasing
@@ -2047,7 +2043,7 @@ end
 
 @testset "permute!, invpermute!" begin
     df = DataFrame(a=1:5, b=6:10, c=11:15)
-    df.d = df.a
+    @alias df.d = df.a
     dfc = copy(df)
     @test permute!(df, [5, 3, 1, 2, 4]) === df
     @test df == dfc[[5, 3, 1, 2, 4], :]
@@ -2055,7 +2051,7 @@ end
     @test df == dfc
 
     df = DataFrame(a=1:5, b=6:10, c=11:15)
-    df.d = df.a
+    @alias df.d = df.a
     dfc = copy(df)
     @test permute!(df, [5, 3, 1, 2, 4]) === df
     @test df == dfc[[5, 3, 1, 2, 4], :]
@@ -2128,7 +2124,7 @@ end
 
 @testset "shuffle, shuffle!" begin
     refdf = DataFrame(a=1:5, b=11:15)
-    refdf.c = refdf.a
+    @alias refdf.c = refdf.a
     for df in (refdf, view(refdf, 2:5, [2, 1]))
         x = randperm(MersenneTwister(1234), nrow(df))
         mt = MersenneTwister(1234)

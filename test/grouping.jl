@@ -4196,7 +4196,7 @@ end
     # eachindex on DataFrame
     @test combine(df, eachindex) == DataFrame(eachindex=1:6)
     @test isequal_coltyped(combine(DataFrame(), eachindex),
-                           DataFrame(eachindex=Int[]))
+                           DataFrame(eachindex=Base.OneTo(0), copycols = false))
 
     # Disallowed operations
     @test_throws ArgumentError groupindices(df)
@@ -4273,14 +4273,16 @@ end
           DataFrame(x = df.x, id = df.id, eachindex = 1:6)
     df = view(df, [], :)
     df2 = combine(df, eachindex)
-    @test isequal_coltyped(df2, DataFrame(eachindex = Int[]))
+    @test isequal_coltyped(df2, DataFrame(eachindex = Base.OneTo(0), copycols = false))
     @test isequal_coltyped(df2, combine(eachindex, df))
-    @test isequal_coltyped(df2, rename(combine(df, eachindex => :a), :a => :eachindex))
+    @test isequal_coltyped(df2, rename!(combine(df, eachindex => :a), :a => :eachindex))
+    @test isequal_coltyped(copy(df2), rename(combine(df, eachindex => :a), :a => :eachindex))
 
     df2 = transform(df, eachindex)
-    @test isequal_coltyped(df2, DataFrame(x = Int[], id = Int[], eachindex = Int[]))
+    @test isequal_coltyped(df2, DataFrame(x = Int[], id = Int[], eachindex = Base.OneTo(0), copycols = false))
     @test isequal_coltyped(df2, transform(eachindex, df))
-    @test isequal_coltyped(df2, rename(transform(df, eachindex => :a), :a => :eachindex))
+    @test isequal_coltyped(df2, rename!(transform(df, eachindex => :a), :a => :eachindex))
+    @test isequal_coltyped(copy(df2), rename(transform(df, eachindex => :a), :a => :eachindex))
 end
 
 @testset "fillfirst! correctness tests" begin

@@ -324,7 +324,7 @@ end
     df[!, :D] = [4, 5, missing]
     push!(answer, Vector{Union{Int, Missing}})
     @test map(typeof, eachcol(df)) == answer
-    df[!, :E] .= 'c'
+    df[!, :E] = 'c'
     push!(answer, Vector{Char})
     @test map(typeof, eachcol(df)) == answer
 end

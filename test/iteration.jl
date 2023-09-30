@@ -77,7 +77,7 @@ end
     df = DataFrame(a=1)
     df = mapcols(x -> 2:2, df)
     @test df == DataFrame(a=2)
-    @test df.a isa Vector{Int}
+    @test df.a isa AbstractRange{Int}
 end
 
 @testset "mapcols!" begin
@@ -130,7 +130,7 @@ end
     df[!, 1] = 51:56
     @test df[1, :] == erd[1]
     @test copy(erv[1]) == (y3=33, y1=53, y4=43)
-    df[!, :z] .= 1
+    df[!, :z] = 1
     @test length(erd[1]) == 5 # the added column is reflected
     select!(df, Not([4, 5]))
     @test copy(erd[1]) == (y1 = 51, y2 = 21, y3 = 31) # the removed columns are reflected

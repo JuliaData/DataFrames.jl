@@ -125,7 +125,7 @@ const ≅ = isequal
 
     df = DataFrame()
     df.a = [1, 2, 3]
-    df.b = df.a
+    @alias df.b = df.a
     dfc = copy(df)
     with_logger(sl) do
         @test_throws AssertionError push!(df, [1, 2])
@@ -151,7 +151,7 @@ const ≅ = isequal
 
     df = DataFrame()
     df.a = [1, 2, 3, 4]
-    df.b = df.a
+    @alias df.b = df.a
     df.c = [1, 2, 3, 4]
     dfc = copy(df)
     with_logger(sl) do
@@ -307,7 +307,7 @@ end
 
     df = DataFrame()
     df.a = [1, 2, 3]
-    df.b = df.a
+    @alias df.b = df.a
     dfc = copy(df)
     with_logger(sl) do
         @test_throws AssertionError pushfirst!(df, [1, 2])
@@ -333,7 +333,7 @@ end
 
     df = DataFrame()
     df.a = [1, 2, 3, 4]
-    df.b = df.a
+    @alias df.b = df.a
     df.c = [1, 2, 3, 4]
     dfc = copy(df)
     with_logger(sl) do
@@ -500,7 +500,7 @@ end
 
     df = DataFrame()
     df.a = [1, 2, 3]
-    df.b = df.a
+    @alias df.b = df.a
     dfc = copy(df)
     with_logger(sl) do
         @test_throws AssertionError insert!(df, 2, [1, 2])
@@ -526,7 +526,7 @@ end
 
     df = DataFrame()
     df.a = [1, 2, 3, 4]
-    df.b = df.a
+    @alias df.b = df.a
     df.c = [1, 2, 3, 4]
     dfc = copy(df)
     with_logger(sl) do
@@ -1227,7 +1227,7 @@ end
     @test pushfirst!(df, df[3, :]) == DataFrame(a=[3; 1:3; 2], b=[4; 2:4; 3], c=[5; 3:5; 4])
     @test insert!(df, 3, df[1, :]) == DataFrame(a=[3; 1; 3; 2:3; 2], b=[4; 2; 4; 3:4; 3], c=[5; 3; 5; 4:5; 4])
     df = DataFrame(a=1:3, b=2:4)
-    df.c = df.a
+    @alias df.c = df.a
     @test_throws AssertionError push!(df, df[2, :])
     @test_throws AssertionError pushfirst!(df, df[2, :])
     @test_throws AssertionError insert!(df, 2, df[2, :])
@@ -1236,11 +1236,11 @@ end
 
 @testset "multicolumn aliasing" begin
     df = DataFrame(a1=1:3, b1=11:13)
-    df.a2 = df.a1
-    df.a3 = df.a1
-    df.b2 = df.b1
-    df.b3 = df.b1
-    df.a4 = df.a1
+    @alias df.a2 = df.a1
+    @alias df.a3 = df.a1
+    @alias df.b2 = df.b1
+    @alias df.b3 = df.b1
+    @alias df.a4 = df.a1
     refdf = copy(df)
 
     buf = IOBuffer()

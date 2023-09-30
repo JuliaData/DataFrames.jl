@@ -683,13 +683,13 @@ function _add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
     @assert parent_cols isa Union{Int, AbstractVector{Int}}
     if copycols
         if !(fun isa ByRow) && (v isa SubArray || any(i -> vpar === parent(cdf[i]), parent_cols))
-            newdf[!, newname] = copy(v)
-        else
             newdf[!, newname] = v
+        else
+            @alias newdf[!, newname] = v
         end
     else
         if fun isa ByRow
-            newdf[!, newname] = v
+            @alias newdf[!, newname] = v
         else
             must_copy = false
             for i in parent_cols
@@ -703,7 +703,11 @@ function _add_col_check_copy(newdf::DataFrame, df::AbstractDataFrame,
                     end
                 end
             end
-            newdf[!, newname] = must_copy ? copy(v) : v
+            if must_copy
+                newdf[!, newname] = v
+            else
+                @alias newdf[!, newname] = v
+            end
         end
     end
 end
@@ -817,7 +821,7 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
             end
             newres = DataFrame()
             for n in kp1
-                newres[!, prepend ? Symbol("x", n) : Symbol(n)] = [x[n] for x in res]
+                @alias newres[!, prepend ? Symbol("x", n) : Symbol(n)] = [x[n] for x in res]
             end
             res = newres
         elseif !(res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix,
@@ -884,7 +888,7 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
             # allow squashing a scalar to 0 rows
             rows = nrow(newdf)
         end
-        newdf[!, newname] = fill!(Tables.allocatecolumn(typeof(res_unwrap), rows),
+        @alias newdf[!, newname] = fill!(Tables.allocatecolumn(typeof(res_unwrap), rows),
                                   res_unwrap)
         if (col_idx isa Int || (col_idx isa AbstractVector{Int} && length(col_idx) == 1)) &&
            (fun === identity || fun === copy || _names(df)[only(col_idx)] == newname)
@@ -1768,7 +1772,7 @@ function _manipulate(df::AbstractDataFrame, normalized_cs::Vector{Any}, copycols
                         end
                     end
                     # here even if keeprows is true all is OK
-                    newdf[!, newname] = column_to_copy[i] ? df[:, i] : df[!, i]
+                    @alias newdf[!, newname] = column_to_copy[i] ? df[:, i] : df[!, i]
                     column_to_copy[i] = true
                     allow_resizing_newdf[] = false
                     _copy_col_note_metadata!(newdf, newname, df, i)
