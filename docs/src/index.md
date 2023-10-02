@@ -218,7 +218,6 @@ page](https://github.com/JuliaData/DataFrames.jl/releases).
 Pages = ["man/basics.md",
          "man/getting_started.md",
          "man/joins.md",
-         "man/manipulation_functions.md",
          "man/split_apply_combine.md",
          "man/reshaping_and_pivoting.md",
          "man/sorting.md",
@@ -227,6 +226,13 @@ Pages = ["man/basics.md",
          "man/comparisons.md",
          "man/querying_frameworks.md"]
 Depth = 2
+```
+
+## A Gentle Introduction to Data Frame Manipulation Functions
+
+```@contents
+Pages = ["man/manipulation_functions.md"]
+Depth = 1
 ```
 
 ## API

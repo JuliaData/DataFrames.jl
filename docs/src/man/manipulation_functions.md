@@ -1,7 +1,10 @@
-# Data Frame Manipulation Functions
+# A Gentle Introduction to Data Frame Manipulation Functions
 
 The seven functions below can be used to manipulate data frames
 by applying operations to them.
+This section of the documentation aims to methodically build understanding
+of these functions and their possible arguments
+by reinforcing foundational concepts and slowly increasing complexity.
 
 The functions without a `!` in their name
 will create a new data frame based on the source data frame,
@@ -68,11 +71,11 @@ which is a type to link one object to another.
 [Dictionary](https://docs.julialang.org/en/v1/base/collections/#Dictionaries).)
 In DataFrames.jl manipulation functions,
 `Pair` arguments are used to define column `operations` to be performed.
-The provided examples will be explained in more detail below.
+The examples shown above will be explained in more detail later.
 
-The manipulation functions also have methods for applying multiple operations.
+*The manipulation functions also have methods for applying multiple operations.
 See the later sections [Multiple Operations per Manipulation](@ref)
-and [Broadcasting Operation Pairs](@ref) for more information.
+and [Broadcasting Operation Pairs](@ref) for more information.*
 
 ### `source_column_selector`
 Inside an `operation`, `source_column_selector` is usually a column name
@@ -494,6 +497,8 @@ This automatic column naming behavior can be avoided in two ways.
 First, the operation result can be placed back into the original column
 with the original column name by switching the keyword argument `renamecols`
 from its default value (`true`) to `renamecols=false`.
+This option prevents the function name from being appended to the column name
+as it usually would be.
 
 ```julia
 julia> df = DataFrame(a=1:4, b=5:8)
@@ -616,9 +621,90 @@ julia> rename(df, :a => :apple) # renames column `a` to `apple` in-place
    4 │     4      8
 ```
 
-Additionally, in the
-`source_column_selector => operation_function => new_column_names` operation form,
-`new_column_names` may be a renaming function which operates on a string
+If `new_column_names` already exist in the source data frame,
+those columns will be replaced in the existing column location
+rather than being added to the end.
+This can be done by manually specifying an existing column name
+or by using the `renamecols=false` keyword argument.
+
+```julia
+julia> df = DataFrame(a=1:4, b=5:8)
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
+
+julia> transform(df, :b => (x -> x .+ 10))  # automatic new column and column name
+4×3 DataFrame
+ Row │ a      b      b_function
+     │ Int64  Int64  Int64
+─────┼──────────────────────────
+   1 │     1      5          15
+   2 │     2      6          16
+   3 │     3      7          17
+   4 │     4      8          18
+
+julia> transform(df, :b => (x -> x .+ 10), renamecols=false)  # transform column in-place
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     15
+   2 │     2     16
+   3 │     3     17
+   4 │     4     18
+
+julia> transform(df, :b => (x -> x .+ 10) => :a)  # replace column :a
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │    15      5
+   2 │    16      6
+   3 │    17      7
+   4 │    18      8
+```
+
+Actually, `renamecols=false` just prevents the function name from being appended to the final column name such that the operation is *usually* returned to the same column.
+
+```julia
+julia> transform(df, [:a, :b] => +)  # new column name is all source columns and function name
+4×3 DataFrame
+ Row │ a      b      a_b_+
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5      6
+   2 │     2      6      8
+   3 │     3      7     10
+   4 │     4      8     12
+
+julia> transform(df, [:a, :b] => +, renamecols=false)  # same as above but with no function name
+4×3 DataFrame
+ Row │ a      b      a_b
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5      6
+   2 │     2      6      8
+   3 │     3      7     10
+   4 │     4      8     12
+
+julia> transform(df, [:a, :b] => (+) => :a)  # manually overwrite column :a (see Note below about parentheses)
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     6      5
+   2 │     8      6
+   3 │    10      7
+   4 │    12      8
+```
+
+In the `source_column_selector => operation_function => new_column_names` operation form,
+`new_column_names` may also be a renaming function which operates on a string
 to create the destination column names programmatically.
 
 ```julia

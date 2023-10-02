@@ -1586,9 +1586,14 @@ which can be used to perform operations on data frame columns:
 as the source data frame, but with only the rows where the passed operations are true;
 - `subset!`: the same as `subset` but updates the passed data frame in place;
 
-These functions and their methods are explained in more detail in the section
-[Data Frame Manipulation Functions](@ref).
-In this section, we will move straight to examples using the German dataset.
+!!! Note Other Resources
+    * For formal, comprehensive explanations of all manipulation functions,
+    see the [Functions](@ref) API.
+
+    * For an informal, long-form tutorial on these functions,
+    see [A Gentle Introduction to Data Frame Manipulation Functions](@ref).
+
+Let us now move straight to examples using the German dataset.
 
 ```jldoctest dataframe
 julia> using Statistics
@@ -2153,7 +2158,7 @@ julia> select(german, :Age, :Job, [:Age, :Job] => (+) => :res)
 
 This concludes the introductory examples of data frame manipulations.
 See later sections of the manual,
-particularly [Data Frame Manipulation Functions](@ref),
+particularly [A Gentle Introduction to Data Frame Manipulation Functions](@ref),
 for additional explanations and functionality,
 including how to broadcast operation functions and operation pairs
 and how to pass or produce multiple columns using `AsTable`.
