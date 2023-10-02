@@ -74,7 +74,7 @@ In DataFrames.jl manipulation functions,
 The examples shown above will be explained in more detail later.
 
 *The manipulation functions also have methods for applying multiple operations.
-See the later sections [Multiple Operations per Manipulation](@ref)
+See the later sections [Applying Multiple Operations per Manipulation](@ref)
 and [Broadcasting Operation Pairs](@ref) for more information.*
 
 ### `source_column_selector`
