@@ -1589,7 +1589,6 @@ as the source data frame, but with only the rows where the passed operations are
 !!! Note Other Resources
     * For formal, comprehensive explanations of all manipulation functions,
     see the [Functions](@ref) API.
-
     * For an informal, long-form tutorial on these functions,
     see [A Gentle Introduction to Data Frame Manipulation Functions](@ref).
 
