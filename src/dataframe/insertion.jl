@@ -1103,11 +1103,9 @@ end
 function Base.push!(df::DataFrame, @nospecialize rows...;
                     cols::Symbol=:setequal,
                     promote::Bool=(cols in [:union, :subset]))
-    if isempty(rows)
-        if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
-            throw(ArgumentError("`cols` keyword argument must be " *
-                                ":orderequal, :setequal, :intersect, :subset or :union)"))
-        end
+    if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
+        throw(ArgumentError("`cols` keyword argument must be " *
+                            ":orderequal, :setequal, :intersect, :subset or :union)"))
     end
     with_names_count = count(rows) do row
         row isa Union{DataFrameRow,AbstractDict,NamedTuple,Tables.AbstractRow}
@@ -1122,11 +1120,9 @@ end
 function Base.pushfirst!(df::DataFrame, @nospecialize rows...;
                          cols::Symbol=:setequal,
                          promote::Bool=(cols in [:union, :subset]))
-    if isempty(rows)
-        if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
-            throw(ArgumentError("`cols` keyword argument must be " *
-                                ":orderequal, :setequal, :intersect, :subset or :union)"))
-        end
+    if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
+        throw(ArgumentError("`cols` keyword argument must be " *
+                            ":orderequal, :setequal, :intersect, :subset or :union)"))
     end
     with_names_count = count(rows) do row
         row isa Union{DataFrameRow,AbstractDict,NamedTuple,Tables.AbstractRow}
