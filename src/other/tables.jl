@@ -63,30 +63,12 @@ function DataFrame(x; copycols::Union{Nothing, Bool}=nothing)
 end
 
 # the logic here relies on the fact that Tables.CopiedColumns
-# is the only exception for default copycols value 
+# is the only exception for default copycols value
 DataFrame(x, cnames::AbstractVector; makeunique::Bool=false,
           copycols::Union{Nothing, Bool}=nothing) =
     rename!(DataFrame(x, copycols=something(copycols, !(x isa Tables.CopiedColumns))),
             _name2symbol(cnames),
             makeunique=makeunique)
-
-function Base.append!(df::DataFrame, table; cols::Symbol=:setequal,
-                      promote::Bool=(cols in [:union, :subset]))
-    if table isa Dict && cols == :orderequal
-        throw(ArgumentError("passing `Dict` as `table` when `cols` is equal to " *
-                            "`:orderequal` is not allowed as it is unordered"))
-    end
-    append!(df, DataFrame(table, copycols=false), cols=cols, promote=promote)
-end
-
-function Base.prepend!(df::DataFrame, table; cols::Symbol=:setequal,
-                      promote::Bool=(cols in [:union, :subset]))
-    if table isa Dict && cols == :orderequal
-        throw(ArgumentError("passing `Dict` as `table` when `cols` is equal to " *
-                            "`:orderequal` is not allowed as it is unordered"))
-    end
-    prepend!(df, DataFrame(table, copycols=false), cols=cols, promote=promote)
-end
 
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
 DataFrame(x::AbstractVector{NamedTuple{names, T}}; copycols::Bool=true) where {names, T} =
