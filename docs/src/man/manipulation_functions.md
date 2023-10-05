@@ -336,7 +336,7 @@ julia> transform(df, :a => g)
    2 │     2      5      3
    3 │     3      4      4
 
-julia> h(x, y) = 2x .+ y
+julia> h(x, y) = x .+ y .+ 1
 h (generic function with 1 method)
 
 julia> transform(df, [:a, :b] => h)
@@ -345,8 +345,8 @@ julia> transform(df, [:a, :b] => h)
      │ Int64  Int64  Int64
 ─────┼─────────────────────
    1 │     1      4      6
-   2 │     2      5      9
-   3 │     3      4     10
+   2 │     2      5      8
+   3 │     3      4      8
 ```
 
 [Anonymous functions](https://docs.julialang.org/en/v1/manual/functions/#man-anonymous-functions)
