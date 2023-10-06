@@ -2853,7 +2853,7 @@ end
                   DataFrame(x=[missing, missing, missing])
             @test combine(table, AsTable([p, q]) => ByRow(median∘skipmissing) => :x) ==
                   DataFrame(x=[1, 2, 4])
-            # a bit surpriting how non-broadcasted and broadcasted minimum works
+            # a bit surprising how non-broadcasted and broadcasted minimum works
             @test combine(table, AsTable([p, q]) => minimum => :x) ==
                   DataFrame(x=[1, 2, 4])
             @test combine(table, AsTable([p, q]) => ByRow(minimum) => :x) ≅

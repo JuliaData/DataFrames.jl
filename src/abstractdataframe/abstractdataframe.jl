@@ -254,7 +254,7 @@ function rename!(df::AbstractDataFrame,
     return df
 end
 
- # needed because of dispach ambiguity
+ # needed because of dispatch ambiguity
 function rename!(df::AbstractDataFrame)
     _drop_all_nonnote_metadata!(parent(df))
     return df
