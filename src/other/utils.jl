@@ -221,16 +221,22 @@ end
 Equivalent to `Threads.@spawn` if `threads === true`,
 otherwise run `expr` and return a `Task` that returns its value.
 """
-macro spawn_or_run_task(threads, expr)
-    letargs = Base._lift_one_interp!(expr)
+macro spawn_or_run_task(threads, ex)
+    letargs = Base._lift_one_interp!(ex)
 
-    thunk = esc(:(()->($expr)))
+    thunk = :(()->($(esc(ex))))
+    @static if VERSION >= v"1.10.0-DEV"
+        Base.replace_linenums!(thunk, __source__)
+    end
     var = esc(Base.sync_varname)
     quote
         let $(letargs...)
             if $(esc(threads))
                 local task = Task($thunk)
                 task.sticky = false
+                if VERSION >= v"1.9.0"
+                    Base.Threads._spawn_set_thrpool(task, :default)
+                end
             else
                 # Run expr immediately
                 res = $thunk()
