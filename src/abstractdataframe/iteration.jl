@@ -470,7 +470,7 @@ function mapcols(f::Union{Function, Type}, df::AbstractDataFrame; cols=All())
     seenscalar = false
     seenvector = false
     for (v, doapply) in zip(eachcol(df), apply)
-        fv = apply ? f(v) : copy(v)
+        fv = doapply ? f(v) : copy(v)
         if fv isa AbstractVector
             if seenscalar
                 throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
