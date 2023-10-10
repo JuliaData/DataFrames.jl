@@ -559,8 +559,8 @@ function mapcols!(f::Union{Function,Type}, df::DataFrame; cols=All())
     vs = AbstractVector[]
     seenscalar = false
     seenvector = false
-    for (v, toapply) in zip(eachcol(df), apply)
-        fv = toapply ? f(v) : v
+    for (v, doapply) in zip(eachcol(df), apply)
+        fv = doapply ? f(v) : v
         if fv isa AbstractVector
             if seenscalar
                 throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
