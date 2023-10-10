@@ -107,20 +107,20 @@ as a `DataFrameRows` over a view of rows of parent of `dfr`.
 julia> collect(Iterators.partition(eachrow(DataFrame(x=1:5)), 2))
 3-element Vector{DataFrames.DataFrameRows{SubDataFrame{DataFrame, DataFrames.Index, UnitRange{Int64}}}}:
  2×1 DataFrameRows
- Row │ x     
-     │ Int64 
+ Row │ x
+     │ Int64
 ─────┼───────
    1 │     1
    2 │     2
  2×1 DataFrameRows
- Row │ x     
-     │ Int64 
+ Row │ x
+     │ Int64
 ─────┼───────
    1 │     3
    2 │     4
  1×1 DataFrameRows
- Row │ x     
-     │ Int64 
+ Row │ x
+     │ Int64
 ─────┼───────
    1 │     5
 ```
@@ -408,11 +408,15 @@ Base.show(dfcs::DataFrameColumns;
          summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 
 """
-    mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
+    mapcols(f::Union{Function, Type}, df::AbstractDataFrame; cols=All())
 
-Return a `DataFrame` where each column of `df` is transformed using function `f`.
+Return a `DataFrame` where each column of `df` selected by `cols` is transformed using function `f`.
+Columns not selected by `cols` are copied.
+
 `f` must return `AbstractVector` objects all with the same length or scalars
 (all values other than `AbstractVector` are considered to be a scalar).
+
+The `cols` column selector can be any value accepted as column selector by the `names` function.
 
 Note that `mapcols` guarantees not to reuse the columns from `df` in the returned
 `DataFrame`. If `f` returns its argument then it gets copied before being stored.
@@ -440,15 +444,33 @@ julia> mapcols(x -> x.^2, df)
    2 │     4    144
    3 │     9    169
    4 │    16    196
+
+julia> mapcols(x -> x.^2, df, cols="y")
+4×2 DataFrame
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1    121
+   2 │     2    144
+   3 │     3    169
+   4 │     4    196
 ```
 """
-function mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
+function mapcols(f::Union{Function, Type}, df::AbstractDataFrame; cols=All())
+    if cols == All() || cols == Colon()
+        apply = fill(true, ncol(df))
+    else
+        picked = Set(names(df, cols))
+        apply = Bool[name in picked for allnames in names(df)]
+    end
+    @assert length(apply) == ncol(df)
+
     # note: `f` must return a consistent length
     vs = AbstractVector[]
     seenscalar = false
     seenvector = false
-    for v in eachcol(df)
-        fv = f(v)
+    for (v, doapply) in zip(eachcol(df), apply)
+        fv = apply ? f(v) : copy(v)
         if fv isa AbstractVector
             if seenscalar
                 throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))
@@ -470,9 +492,11 @@ function mapcols(f::Union{Function, Type}, df::AbstractDataFrame)
 end
 
 """
-    mapcols!(f::Union{Function, Type}, df::DataFrame)
+    mapcols!(f::Union{Function, Type}, df::DataFrame; cols=All())
 
-Update a `DataFrame` in-place where each column of `df` is transformed using function `f`.
+Update a `DataFrame` in-place where each column of `df` selected by `cols` is transformed using function `f`.
+Columns not selected by `cols` are left unchanged.
+
 `f` must return `AbstractVector` objects all with the same length or scalars
 (all values other than `AbstractVector` are considered to be a scalar).
 
@@ -503,20 +527,40 @@ julia> df
    2 │     4    144
    3 │     9    169
    4 │    16    196
+
+julia> mapcols!(x -> 2 * x, df, cols="x");
+
+julia> df
+4×2 DataFrame
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2    121
+   2 │     8    144
+   3 │    18    169
+   4 │    32    196
 ```
 """
-function mapcols!(f::Union{Function, Type}, df::DataFrame)
-    # note: `f` must return a consistent length
+function mapcols!(f::Union{Function,Type}, df::DataFrame; cols=All())
     if ncol(df) == 0 # skip if no columns
         _drop_all_nonnote_metadata!(df)
         return df
     end
 
+    if cols == All() || cols == Colon()
+        apply = fill(true, ncol(df))
+    else
+        picked = Set(names(df, cols))
+        apply = Bool[name in picked for allnames in names(df)]
+    end
+    @assert length(apply) == ncol(df)
+
+    # note: `f` must return a consistent length
     vs = AbstractVector[]
     seenscalar = false
     seenvector = false
-    for v in eachcol(df)
-        fv = f(v)
+    for (v, toapply) in zip(eachcol(df), apply)
+        fv = toapply ? f(v) : v
         if fv isa AbstractVector
             if seenscalar
                 throw(ArgumentError("mixing scalars and vectors in mapcols not allowed"))

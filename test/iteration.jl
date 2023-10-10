@@ -78,6 +78,14 @@ end
     df = mapcols(x -> 2:2, df)
     @test df == DataFrame(a=2)
     @test df.a isa Vector{Int}
+
+    df = DataFrame(a1=[1, 2], a2=[2, 3], b=[3, 4])
+    @test mapcols(x -> 2x, df, cols=r"a") == DataFrame(a1=[2, 4], a2=[4, 6], b=[3, 4])
+    @test mapcols(x -> 2x, df, cols="b") == DataFrame(a1=[1, 2], a2=[2, 3], b=[6, 8])
+    @test mapcols(x -> 2x, df, cols=Not(r"a")) == DataFrame(a1=[1, 2], a2=[2, 3], b=[6, 8])
+    @test mapcols(x -> 2x, df, cols=Int) == DataFrame(a1=[2, 4], a2=[4, 6], b=[6, 8])
+    @test mapcols(x -> 2x, df, cols=Not(All())) == DataFrame(a1=[1, 2], a2=[2, 3], b=[3, 6])
+    @test mapcols(x -> 2x, df, cols=:) == DataFrame(a1=[2, 4], a2=[4, 6], b=[6, 8])
 end
 
 @testset "mapcols!" begin
@@ -109,6 +117,18 @@ end
     mapcols!(x -> 2:2, df)
     @test df == DataFrame(a=2)
     @test df.a isa Vector{Int}
+
+    df = DataFrame(a1=[1, 2], a2=[2, 3], b=[3, 4])
+    @test mapcols!(x -> 2x, copy(df), cols=r"a") == DataFrame(a1=[2, 4], a2=[4, 6], b=[3, 4])
+    @test mapcols!(x -> 2x, copy(df), cols="b") == DataFrame(a1=[1, 2], a2=[2, 3], b=[6, 8])
+    @test mapcols!(x -> 2x, copy(df), cols=Not(r"a")) == DataFrame(a1=[1, 2], a2=[2, 3], b=[6, 8])
+    @test mapcols!(x -> 2x, copy(df), cols=Int) == DataFrame(a1=[2, 4], a2=[4, 6], b=[6, 8])
+    @test mapcols!(x -> 2x, copy(df), cols=Not(All())) == DataFrame(a1=[1, 2], a2=[2, 3], b=[3, 6])
+    @test mapcols!(x -> 2x, copy(df), cols=:) == DataFrame(a1=[2, 4], a2=[4, 6], b=[6, 8])
+    a1, a2, b = eachcol(df)
+    mapcols!(x -> 2x, df, Not(All()))
+    @test df == DataFrame(a1=[1, 2], a2=[2, 3], b=[3, 4])
+    @test df.a1 == a1 && df.a2 == a2 && df.b == b
 end
 
 @testset "SubDataFrame" begin

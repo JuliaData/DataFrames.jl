@@ -9,6 +9,10 @@
   column names only to a subset of the columns specified by the `cols`
   keyword argument
   ([#3380](https://github.com/JuliaData/DataFrames.jl/pull/3380))
+* `mapcols` and `mapcols!` now allow to apply a function transforming
+  columns only to a subset of the columns specified by the `cols`
+  keyword argument
+  ([#3386](https://github.com/JuliaData/DataFrames.jl/pull/3386))
 
 # DataFrames.jl v1.6.1 Release Notes
 
