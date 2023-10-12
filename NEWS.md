@@ -1,3 +1,22 @@
+# DataFrames.jl v1.7.0 Release Notes
+
+## New functionalities
+
+* Allow passing multiple values to add in `push!`, `pushfirst!`,
+  `append!`, and `prepend!`
+  ([#3372](https://github.com/JuliaData/DataFrames.jl/pull/3372))
+* `rename` and `rename!` now allow to apply a function transforming
+  column names only to a subset of the columns specified by the `cols`
+  keyword argument
+  ([#3380](https://github.com/JuliaData/DataFrames.jl/pull/3380))
+
+## Bug fixes
+
+* Always use the default thread pool for multithreaded operations,
+  instead of using the interactive thread pool when Julia was started
+  with `-tM,N` with N > 0
+  ([#3385](https://github.com/JuliaData/DataFrames.jl/pull/3385))
+
 # DataFrames.jl v1.6.1 Release Notes
 
 ## Bug fixes

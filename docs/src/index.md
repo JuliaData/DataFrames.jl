@@ -8,6 +8,7 @@ running with tabular data manipulation using the DataFrames.jl package.
 For more illustrations of DataFrames.jl usage, in particular in conjunction with
 other packages you can check-out the following resources
 (they are kept up to date with the released version of DataFrames.jl):
+* [DataFrames.jl: Flexible and Fast Tabular Data in Julia](https://www.jstatsoft.org/article/view/v107i04) article published in the *Journal of Statistical Software*
 * [Data Wrangling with DataFrames.jl Cheat Sheet](https://www.ahsmart.com/pub/data-wrangling-with-data-frames-jl-cheat-sheet/)
 * [DataFrames Tutorial using Jupyter Notebooks](https://github.com/bkamins/Julia-DataFrames-Tutorial/)
 * [Julia Academy DataFrames.jl tutorial](https://github.com/JuliaAcademy/DataFrames)
@@ -277,7 +278,7 @@ missing please kindly report an issue
     during which it is deprecated. The situations where such a breaking change
     might be allowed are (still such breaking changes will be avoided if
     possible):
-    
+
     * the affected functionality was previously clearly identified in the
       documentation as being subject to changes (for example in DataFrames.jl 1.4
       release propagation rules of `:note`-style metadata are documented as such);
