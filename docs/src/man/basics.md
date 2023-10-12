@@ -1075,7 +1075,7 @@ true
 
 If in indexing you select a subset of rows from a data frame the mutation is
 performed in place, i.e. writing to an existing vector.
-Below setting values of column `:Job` in rows `1:3` to values `[2, 4, 6]`:
+Below setting values of column `:Job` in rows `1:3` to values `[2, 3, 2]`:
 
 ```jldoctest dataframe
 julia> df1[1:3, :Job] = [2, 3, 2]
@@ -1181,7 +1181,7 @@ DataFrameRow
    2 │    98  male        2
 ```
 
-This operations updated the data stored in the `df1` data frame.
+These operations updated the data stored in the `df1` data frame.
 
 In a similar fashion views can be used to update data stored in their parent
 data frame. Here are some examples:
