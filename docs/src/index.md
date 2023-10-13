@@ -229,13 +229,6 @@ Pages = ["man/basics.md",
 Depth = 2
 ```
 
-## A Gentle Introduction to Data Frame Manipulation Functions
-
-```@contents
-Pages = ["man/manipulation_functions.md"]
-Depth = 1
-```
-
 ## API
 
 Only exported (i.e. available for use without `DataFrames.` qualifier after
