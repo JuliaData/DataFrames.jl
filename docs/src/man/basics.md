@@ -3075,19 +3075,19 @@ The approach with dot syntax is very versatile
 since the data getting, mathematics, and data setting can be separate steps.
 
 ```julia
-julia> df.x
+julia> df.x  # dot syntax returns a vector
 3-element Vector{Int64}:
  1
  2
  3
 
-julia> v = df.x + df.y
+julia> v = df.x + df.y  # assign mathematical result to a vector `v`
 3-element Vector{Int64}:
  5
  7
  9
 
-julia> df.z = v
+julia> df.z = v  # place `v` into the data frame `df` with the column name `z`
 3-element Vector{Int64}:
  5
  7
