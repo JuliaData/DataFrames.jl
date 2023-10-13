@@ -3133,6 +3133,9 @@ julia> df  # see that the previous expression updated the data frame `df`
 
 One benefit of using manipulation functions is that
 the name of the data frame only needs to be written once.
+(The `@with` macro from the
+[DataFramesMeta](https://juliadata.github.io/DataFramesMeta.jl/stable/#@with) package
+can somewhat relieve this issue in the other approaches.)
 
 Setup:
 
