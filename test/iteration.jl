@@ -128,7 +128,7 @@ end
     a1, a2, b = eachcol(df)
     mapcols!(x -> 2x, df, cols=Not(All()))
     @test df == DataFrame(a1=[1, 2], a2=[2, 3], b=[3, 4])
-    @test df.a1 == a1 && df.a2 == a2 && df.b == b
+    @test df.a1 === a1 && df.a2 === a2 && df.b === b
 end
 
 @testset "SubDataFrame" begin

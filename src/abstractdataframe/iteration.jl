@@ -410,7 +410,8 @@ Base.show(dfcs::DataFrameColumns;
 """
     mapcols(f::Union{Function, Type}, df::AbstractDataFrame; cols=All())
 
-Return a `DataFrame` where each column of `df` selected by `cols` is transformed using function `f`.
+Return a `DataFrame` where each column of `df` selected by `cols` (by default, all columns)
+is transformed using function `f`.
 Columns not selected by `cols` are copied.
 
 `f` must return `AbstractVector` objects all with the same length or scalars
@@ -445,7 +446,7 @@ julia> mapcols(x -> x.^2, df)
    3 │     9    169
    4 │    16    196
 
-julia> mapcols(x -> x.^2, df, cols="y")
+julia> mapcols(x -> x.^2, df, cols=r"y")
 4×2 DataFrame
  Row │ x      y
      │ Int64  Int64
@@ -457,7 +458,7 @@ julia> mapcols(x -> x.^2, df, cols="y")
 ```
 """
 function mapcols(f::Union{Function, Type}, df::AbstractDataFrame; cols=All())
-    if cols == All() || cols == Colon()
+    if cols === All() || cols === Colon()
         apply = fill(true, ncol(df))
     else
         picked = Set(names(df, cols))
@@ -494,7 +495,8 @@ end
 """
     mapcols!(f::Union{Function, Type}, df::DataFrame; cols=All())
 
-Update a `DataFrame` in-place where each column of `df` selected by `cols` is transformed using function `f`.
+Update a `DataFrame` in-place where each column of `df` selected by `cols` (by default, all columns)
+is transformed using function `f`.
 Columns not selected by `cols` are left unchanged.
 
 `f` must return `AbstractVector` objects all with the same length or scalars
@@ -528,7 +530,7 @@ julia> df
    3 │     9    169
    4 │    16    196
 
-julia> mapcols!(x -> 2 * x, df, cols="x");
+julia> mapcols!(x -> 2 * x, df, cols=r"x");
 
 julia> df
 4×2 DataFrame
