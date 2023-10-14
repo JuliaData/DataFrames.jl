@@ -86,6 +86,11 @@ end
     @test mapcols(x -> 2x, df, cols=Int) == DataFrame(a1=[2, 4], a2=[4, 6], b=[6, 8])
     @test mapcols(x -> 2x, df, cols=Not(All())) == DataFrame(a1=[1, 2], a2=[2, 3], b=[3, 4])
     @test mapcols(x -> 2x, df, cols=:) == DataFrame(a1=[2, 4], a2=[4, 6], b=[6, 8])
+
+    df2 = mapcols(x -> 2x, df, cols="b")
+    @test df2.a1 == df.a && df2.a1 !== df.a
+    @test df2.a2 == df.a && df2.a2 !== df.a
+    @test df2.b == 2*df.b
 end
 
 @testset "mapcols!" begin
