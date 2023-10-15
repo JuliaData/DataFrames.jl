@@ -459,12 +459,12 @@ julia> mapcols(x -> x.^2, df, cols=r"y")
 """
 function mapcols(f::Union{Function, Type}, df::AbstractDataFrame; cols=All())
     if cols === All() || cols === Colon()
-        apply = fill(true, ncol(df))
+        apply = Iterators.repeated(true)
     else
         picked = Set(names(df, cols))
         apply = Bool[name in picked for name in names(df)]
+        @assert length(apply) == ncol(df)
     end
-    @assert length(apply) == ncol(df)
 
     # note: `f` must return a consistent length
     vs = AbstractVector[]
@@ -549,13 +549,13 @@ function mapcols!(f::Union{Function,Type}, df::DataFrame; cols=All())
         return df
     end
 
-    if cols == All() || cols == Colon()
-        apply = fill(true, ncol(df))
+    if cols === All() || cols === Colon()
+        apply = Iterators.repeated(true)
     else
         picked = Set(names(df, cols))
         apply = Bool[name in picked for name in names(df)]
+        @assert length(apply) == ncol(df)
     end
-    @assert length(apply) == ncol(df)
 
     # note: `f` must return a consistent length
     vs = AbstractVector[]
