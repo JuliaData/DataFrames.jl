@@ -88,8 +88,8 @@ end
     @test mapcols(x -> 2x, df, cols=:) == DataFrame(a1=[2, 4], a2=[4, 6], b=[6, 8])
 
     df2 = mapcols(x -> 2x, df, cols="b")
-    @test df2.a1 == df.a && df2.a1 !== df.a
-    @test df2.a2 == df.a && df2.a2 !== df.a
+    @test df2.a1 == df.a1 && df2.a1 !== df.a1
+    @test df2.a2 == df.a2 && df2.a2 !== df.a2
     @test df2.b == 2*df.b
 end
 
