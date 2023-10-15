@@ -3041,12 +3041,6 @@ julia> transform!(df, [:x, :y] => (+) => :z)
 Dot Syntax:
 
 ```julia
-julia> df.x  # dot syntax returns a vector
-3-element Vector{Int64}:
- 1
- 2
- 3
-
 julia> df.z = df.x + df.y
 3-element Vector{Int64}:
  5
