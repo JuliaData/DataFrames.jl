@@ -14,6 +14,13 @@
   keyword argument
   ([#3386](https://github.com/JuliaData/DataFrames.jl/pull/3386))
 
+## Bug fixes
+
+* Always use the default thread pool for multithreaded operations,
+  instead of using the interactive thread pool when Julia was started
+  with `-tM,N` with N > 0
+  ([#3385](https://github.com/JuliaData/DataFrames.jl/pull/3385))
+
 # DataFrames.jl v1.6.1 Release Notes
 
 ## Bug fixes
