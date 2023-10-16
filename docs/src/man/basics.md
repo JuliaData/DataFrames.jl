@@ -3002,9 +3002,7 @@ to help simplify manipulations that may be tedious with operation pairs alone.
 After that deep dive into [Manipulation Functions](@ref),
 it is a good idea to review the alternative approaches covered in
 [Getting and Setting Data in a Data Frame](@ref).
-Let us compare the two approaches with a few examples.
-
-### Convenience
+Let us compare the approaches with a few examples.
 
 For simple operations,
 often getting/setting data with dot syntax
@@ -3012,10 +3010,10 @@ is simpler than the equivalent data frame manipulation.
 Here we will add the two columns of our data frame together
 and place the result in a new third column.
 
-Setup:
+**Setup:**
 
 ```julia
-julia> df = DataFrame(x = 1:3, y = 4:6)  # define data frame
+julia> df = DataFrame(x = 1:3, y = 4:6)  # define a data frame
 3×2 DataFrame
  Row │ x      y
      │ Int64  Int64
@@ -3025,7 +3023,7 @@ julia> df = DataFrame(x = 1:3, y = 4:6)  # define data frame
    3 │     3      6
 ```
 
-Manipulation:
+**Manipulation:**
 
 ```julia
 julia> transform!(df, [:x, :y] => (+) => :z)
@@ -3038,7 +3036,7 @@ julia> transform!(df, [:x, :y] => (+) => :z)
    3 │     3      6      9
 ```
 
-Dot Syntax:
+**Dot Syntax:**
 
 ```julia
 julia> df.z = df.x + df.y
@@ -3088,12 +3086,19 @@ julia> df.z = v  # place `v` into the data frame `df` with the column name `z`
  9
 ```
 
-One downside to dot syntax is that the column name must be explicitly written in the code.
-Indexing syntax can perform a similar operation with dynamic column names.
-(Manipulation functions can also work with dynamic column names as will be shown in the next example.)
+However, one way in which dot syntax is less versatile
+is that the column name must be explicitly written in the code.
+Indexing syntax is a good alternative in these cases
+which is only slightly longer to write than dot syntax.
+Both indexing syntax and manipulation functions can operate on dynamic column names
+stored in variables.
+
+**Setup:**
+
+Imagine this setup data was read from a file and/or entered by a user at runtime.
 
 ```julia
-julia> df = DataFrame("My First Column" => 1:3, "My Second Column" => 4:6)  # define data frame
+julia> df = DataFrame("My First Column" => 1:3, "My Second Column" => 4:6)  # define a data frame
 3×2 DataFrame
  Row │ My First Column  My Second Column
      │ Int64            Int64
@@ -3103,12 +3108,18 @@ julia> df = DataFrame("My First Column" => 1:3, "My Second Column" => 4:6)  # de
    3 │               3                 6
 
 julia> c1 = "My First Column"; c2 = "My Second Column"; c3 = "My Third Column";  # define column names
+```
 
-# Imagine the above data was read from a file or entered by a user at runtime.
+**Dot Syntax:**
 
-julia> df.c1  # dot syntax expects an explicit column name and cannot be used
+```julia
+julia> df.c1  # dot syntax expects an explicit column name and cannot be used to access variable column name
 ERROR: ArgumentError: column name :c1 not found in the data frame
+```
 
+**Indexing:**
+
+```julia
 julia> df[:, c3] = df[:, c1] + df[:, c2]  # access columns with names stored in variables
 3-element Vector{Int64}:
  5
@@ -3125,19 +3136,30 @@ julia> df  # see that the previous expression updated the data frame `df`
    3 │               3                 6                9
 ```
 
-One benefit of using manipulation functions is that
-the name of the data frame only needs to be written once.
-(The `@with` macro from the
-[DataFramesMeta](https://juliadata.github.io/DataFramesMeta.jl/stable/#@with) package
-can somewhat relieve this issue in the other approaches.)
+**Manipulation:**
 
-Setup:
+```julia
+julia> transform!(df, [c1, c2] => (+) => c3)  # access columns with names stored in variables
+3×3 DataFrame
+ Row │ My First Column  My Second Column  My Third Column
+     │ Int64            Int64             Int64
+─────┼────────────────────────────────────────────────────
+   1 │               1                 4                5
+   2 │               2                 5                7
+   3 │               3                 6                9
+```
+
+Additionally, manipulation functions only require
+the name of the data frame to be written once.
+This can be helpful when dealing with long variable and column names.
+
+**Setup:**
 
 ```julia
 julia> my_very_long_data_frame_name = DataFrame(
            "My First Column" => 1:3,
            "My Second Column" => 4:6
-       )  # define data frame
+       )  # define a data frame
 3×2 DataFrame
  Row │ My First Column  My Second Column
      │ Int64            Int64
@@ -3149,7 +3171,7 @@ julia> my_very_long_data_frame_name = DataFrame(
 julia> c1 = "My First Column"; c2 = "My Second Column"; c3 = "My Third Column";  # define column names
 ```
 
-Manipulation:
+**Manipulation:**
 
 ```julia
 
@@ -3163,7 +3185,7 @@ julia> transform!(my_very_long_data_frame_name, [c1, c2] => (+) => c3)
    3 │               3                 6                9
 ```
 
-Indexing:
+**Indexing:**
 
 ```julia
 julia> my_very_long_data_frame_name[:, c3] = my_very_long_data_frame_name[:, c1] + my_very_long_data_frame_name[:, c2]
@@ -3182,7 +3204,70 @@ julia> df  # see that the previous expression updated the data frame `df`
    3 │               3                 6                9
 ```
 
-### Speed
+Another benefit of manipulation functions and indexing over dot syntax is that
+it is easier to operate on a subset of columns.
 
-TODO: Compare speed, memory, and view options (@view, !, :, copycols=false).
-(May need someone else to write this part unless I do more studying.)
+**Setup:**
+
+```julia
+julia> df = DataFrame(x = 1:3, y = 4:6, z = 7:9)  # define data frame
+3×3 DataFrame
+ Row │ x      y      z
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      7
+   2 │     2      5      8
+   3 │     3      6      9
+```
+
+**Dot Syntax:**
+
+```julia
+julia> df.Not(:x)  # will not work; requires a literal column name
+ERROR: ArgumentError: column name :Not not found in the data frame
+```
+
+**Indexing:**
+
+```julia
+julia> df[:, :y_z_max] = maximum.(eachrow(df[:, Not(:x)]))  # find maximum value across all rows except for column `x`
+3-element Vector{Int64}:
+ 7
+ 8
+ 9
+
+julia> df  # see that the previous expression updated the data frame `df`
+3×4 DataFrame
+ Row │ x      y      z      y_z_max
+     │ Int64  Int64  Int64  Int64
+─────┼──────────────────────────────
+   1 │     1      4      7        7
+   2 │     2      5      8        8
+   3 │     3      6      9        9
+```
+
+**Manipulation:**
+
+```julia
+julia> transform!(df, Not(:x) => ByRow(max))  # find maximum value across all rows except for column `x`
+3×4 DataFrame
+ Row │ x      y      z      y_z_max
+     │ Int64  Int64  Int64  Int64
+─────┼──────────────────────────────
+   1 │     1      4      7        7
+   2 │     2      5      8        8
+   3 │     3      6      9        9
+```
+
+Moreover, indexing can operate on a subset of columns *and* rows.
+
+**Indexing:**
+
+```julia
+julia> y_z_max_row3 = maximum(df[3, Not(:x)])  # find maximum value across row 3 except for column `x`
+9
+```
+
+Hopefully this small comparison has illustrated some of the benefits and drawbacks
+of the various syntaxes available in DataFrames.jl.
+The best syntax to use depends on the situation.
