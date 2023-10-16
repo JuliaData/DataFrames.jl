@@ -463,7 +463,6 @@ function mapcols(f::Union{Function, Type}, df::AbstractDataFrame; cols=All())
     else
         picked = Set(names(df, cols))
         apply = Bool[name in picked for name in names(df)]
-        @assert length(apply) == ncol(df)
     end
 
     # note: `f` must return a consistent length
@@ -554,7 +553,6 @@ function mapcols!(f::Union{Function,Type}, df::DataFrame; cols=All())
     else
         picked = Set(names(df, cols))
         apply = Bool[name in picked for name in names(df)]
-        @assert length(apply) == ncol(df)
     end
 
     # note: `f` must return a consistent length
