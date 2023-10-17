@@ -1,12 +1,10 @@
 """
-    append!(df::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
-            promote::Bool=(cols in [:union, :subset]))
-    append!(df::DataFrame, table; cols::Symbol=:setequal,
+    append!(df::DataFrame, tables...; cols::Symbol=:setequal,
             promote::Bool=(cols in [:union, :subset]))
 
-Add the rows of `df2` to the end of `df`. If the second argument `table` is not
-an `AbstractDataFrame` then it is converted using `DataFrame(table,
-copycols=false)` before being appended.
+Add the rows of tables passed as `tables` to the end of `df`. If the table is not
+an `AbstractDataFrame` then it is converted using
+`DataFrame(table, copycols=false)` before being appended.
 
 The exact behavior of `append!` depends on the `cols` argument:
 * If `cols == :setequal` (this is the default) then `df2` must contain exactly
@@ -78,17 +76,52 @@ julia> df1
    4 │     4      4
    5 │     5      5
    6 │     6      6
+
+julia> append!(df2, DataFrame(A=1), (; C=1:2), cols=:union)
+6×3 DataFrame
+ Row │ A          B        C
+     │ Float64?   Int64?   Int64?
+─────┼─────────────────────────────
+   1 │       4.0        4  missing
+   2 │       5.0        5  missing
+   3 │       6.0        6  missing
+   4 │       1.0  missing  missing
+   5 │ missing    missing        1
+   6 │ missing    missing        2
 ```
 """
 Base.append!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
              promote::Bool=(cols in [:union, :subset])) =
     _append_or_prepend!(df1, df2, cols=cols, promote=promote, atend=true)
 
+function Base.append!(df::DataFrame, table; cols::Symbol=:setequal,
+                      promote::Bool=(cols in [:union, :subset]))
+    if table isa Dict && cols == :orderequal
+        throw(ArgumentError("passing `Dict` as `table` when `cols` is equal to " *
+                            "`:orderequal` is not allowed as it is unordered"))
+    end
+    append!(df, DataFrame(table, copycols=false), cols=cols, promote=promote)
+end
+
+function Base.append!(df::DataFrame, @nospecialize tables...;
+                      cols::Symbol=:setequal,
+                      promote::Bool=(cols in [:union, :subset]))
+    if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
+        throw(ArgumentError("`cols` keyword argument must be " *
+                            ":orderequal, :setequal, :intersect, :subset or :union)"))
+    end
+
+    return foldl((df, table) -> append!(df, table, cols=cols, promote=promote),
+                 collect(Any, tables), init=df)
+end
+
 """
-    prepend!(df::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
+    prepend!(df::DataFrame, tables...; cols::Symbol=:setequal,
              promote::Bool=(cols in [:union, :subset]))
-    prepend!(df::DataFrame, table; cols::Symbol=:setequal,
-             promote::Bool=(cols in [:union, :subset]))
+
+Add the rows of tables passed as `tables` to the beginning of `df`. If the table is not
+an `AbstractDataFrame` then it is converted using
+`DataFrame(table, copycols=false)` before being appended.
 
 Add the rows of `df2` to the beginning of `df`. If the second argument `table`
 is not an `AbstractDataFrame` then it is converted using `DataFrame(table,
@@ -164,11 +197,44 @@ julia> df1
    4 │     1      1
    5 │     2      2
    6 │     3      3
+
+julia> prepend!(df2, DataFrame(A=1), (; C=1:2), cols=:union)
+6×3 DataFrame
+ Row │ A          B        C
+     │ Float64?   Int64?   Int64?
+─────┼─────────────────────────────
+   1 │       1.0  missing  missing
+   2 │ missing    missing        1
+   3 │ missing    missing        2
+   4 │       4.0        4  missing
+   5 │       5.0        5  missing
+   6 │       6.0        6  missing
 ```
 """
 Base.prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol=:setequal,
               promote::Bool=(cols in [:union, :subset])) =
     _append_or_prepend!(df1, df2, cols=cols, promote=promote, atend=false)
+
+function Base.prepend!(df::DataFrame, table; cols::Symbol=:setequal,
+                       promote::Bool=(cols in [:union, :subset]))
+    if table isa Dict && cols == :orderequal
+        throw(ArgumentError("passing `Dict` as `table` when `cols` is equal to " *
+                            "`:orderequal` is not allowed as it is unordered"))
+    end
+    prepend!(df, DataFrame(table, copycols=false), cols=cols, promote=promote)
+end
+
+function Base.prepend!(df::DataFrame, @nospecialize tables...;
+                       cols::Symbol=:setequal,
+                       promote::Bool=(cols in [:union, :subset]))
+    if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
+        throw(ArgumentError("`cols` keyword argument must be " *
+                            ":orderequal, :setequal, :intersect, :subset or :union)"))
+    end
+
+    return foldr((table, df) -> prepend!(df, table, cols=cols, promote=promote),
+                 collect(Any, tables), init=df)
+end
 
 function _append_or_prepend!(df1::DataFrame, df2::AbstractDataFrame; cols::Symbol,
                              promote::Bool, atend::Bool)
@@ -355,6 +421,10 @@ following way:
   added to `df` (using `missing` for existing rows) and a `missing` value is
   pushed to columns missing in `row` that are present in `df`.
 
+If `row` is not a `DataFrameRow`, `NamedTuple`, `AbstractDict`, or `Tables.AbstractRow`
+the `cols` keyword argument must be `:setequal` (the default),
+because such rows do not provide column name information.
+
 If `promote=true` and element type of a column present in `df` does not allow
 the type of a pushed argument then a new column with a promoted element type
 allowing it is freshly allocated and stored in `df`. If `promote=false` an error
@@ -371,12 +441,14 @@ $METADATA_FIXED
 """
 
 """
-    push!(df::DataFrame, row::Union{Tuple, AbstractArray}; promote::Bool=false)
+    push!(df::DataFrame, row::Union{Tuple, AbstractArray}...;
+          cols::Symbol=:setequal, promote::Bool=false)
     push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict,
-                                    Tables.AbstractRow};
+                                    Tables.AbstractRow}...;
           cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
 Add one row at the end of `df` in-place, taking the values from `row`.
+Several rows can be added by passing them as separate arguments.
 
 $INSERTION_COMMON
 
@@ -452,18 +524,36 @@ julia> push!(df, NamedTuple(), cols=:subset)
    6 │ 11            12  missing
    7 │ 1.0      missing        1.0
    8 │ missing  missing  missing
+
+julia> push!(DataFrame(a=1, b=2), (3, 4), (5, 6))
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      2
+   2 │     3      4
+   3 │     5      6
 ```
 """
-Base.push!(df::DataFrame, row::Any; promote::Bool=false) =
-    _row_inserter!(df, -1, row, Val{:push}(), promote)
+function Base.push!(df::DataFrame, row::Any;
+                    cols=:setequal, promote::Bool=false)
+    if cols !== :setequal
+        throw(ArgumentError("`cols` can only be `:setequal` when `row` is a `$(typeof(row))` " *
+                            "as this type does not provide column names"))
+    end
+
+    return _row_inserter!(df, -1, row, Val{:push}(), promote)
+end
 
 """
-    pushfirst!(df::DataFrame, row::Union{Tuple, AbstractArray}; promote::Bool=false)
+    pushfirst!(df::DataFrame, row::Union{Tuple, AbstractArray}...;
+               cols::Symbol=:setequal, promote::Bool=false)
     pushfirst!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict,
-                                         Tables.AbstractRow};
+                                         Tables.AbstractRow}...;
                cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
 
 Add one row at the beginning of `df` in-place, taking the values from `row`.
+Several rows can be added by passing them as separate arguments.
 
 $INSERTION_COMMON
 
@@ -539,13 +629,30 @@ julia> pushfirst!(df, NamedTuple(), cols=:subset)
    6 │ a              1  missing
    7 │ b              2  missing
    8 │ c              3  missing
+
+julia> pushfirst!(DataFrame(a=1, b=2), (3, 4), (5, 6))
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     3      4
+   2 │     5      6
+   3 │     1      2
 ```
 """
-Base.pushfirst!(df::DataFrame, row::Any; promote::Bool=false) =
-    _row_inserter!(df, -1, row, Val{:pushfirst}(), promote)
+function Base.pushfirst!(df::DataFrame, row::Any;
+                         cols=:setequal, promote::Bool=false)
+    if cols !== :setequal
+        throw(ArgumentError("`cols` can only be `:setequal` when `row` is a `$(typeof(row))` " *
+                            "as this type does not provide column names"))
+    end
+
+    return _row_inserter!(df, -1, row, Val{:pushfirst}(), promote)
+end
 
 """
-    insert!(df::DataFrame, index::Integer, row::Union{Tuple, AbstractArray}; promote::Bool=false)
+    insert!(df::DataFrame, index::Integer, row::Union{Tuple, AbstractArray};
+            cols::Symbol=:setequal, promote::Bool=false)
     insert!(df::DataFrame, index::Integer, row::Union{DataFrameRow, NamedTuple,
                                                       AbstractDict, Tables.AbstractRow};
             cols::Symbol=:setequal, promote::Bool=(cols in [:union, :subset]))
@@ -629,7 +736,13 @@ julia> insert!(df, 3, NamedTuple(), cols=:subset)
    8 │ 1.0      missing        1.0
 ```
 """
-function Base.insert!(df::DataFrame, index::Integer, row::Any; promote::Bool=false)
+function Base.insert!(df::DataFrame, index::Integer, row::Any;
+                      cols=:setequal, promote::Bool=false)
+    if cols !== :setequal
+        throw(ArgumentError("`cols` can only be `:setequal` when `row` is a `$(typeof(row))` " *
+                            "as this type does not provide column names"))
+    end
+
     index isa Bool && throw(ArgumentError("invalid index: $index of type Bool"))
     1 <= index <= nrow(df)+1 ||
         throw(ArgumentError("invalid index: $index for data frame with $(nrow(df)) rows"))
@@ -985,4 +1098,38 @@ function _row_inserter!(df::DataFrame, loc::Integer,
     end
     _drop_all_nonnote_metadata!(df)
     return df
+end
+
+function Base.push!(df::DataFrame, @nospecialize rows...;
+                    cols::Symbol=:setequal,
+                    promote::Bool=(cols in [:union, :subset]))
+    if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
+        throw(ArgumentError("`cols` keyword argument must be " *
+                            ":orderequal, :setequal, :intersect, :subset or :union)"))
+    end
+    with_names_count = count(rows) do row
+        row isa Union{DataFrameRow,AbstractDict,NamedTuple,Tables.AbstractRow}
+    end
+    if 0 < with_names_count < length(rows)
+        throw(ArgumentError("Mixing rows with column names and without column names " *
+                            "in a single `push!` call is not allowed"))
+    end
+    return foldl((df, row) -> push!(df, row, cols=cols, promote=promote), rows, init=df)
+end
+
+function Base.pushfirst!(df::DataFrame, @nospecialize rows...;
+                         cols::Symbol=:setequal,
+                         promote::Bool=(cols in [:union, :subset]))
+    if !(cols in (:orderequal, :setequal, :intersect, :subset, :union))
+        throw(ArgumentError("`cols` keyword argument must be " *
+                            ":orderequal, :setequal, :intersect, :subset or :union)"))
+    end
+    with_names_count = count(rows) do row
+        row isa Union{DataFrameRow,AbstractDict,NamedTuple,Tables.AbstractRow}
+    end
+    if 0 < with_names_count < length(rows)
+        throw(ArgumentError("Mixing rows with column names and without column names " *
+                            "in a single `push!` call is not allowed"))
+    end
+    return foldr((row, df) -> pushfirst!(df, row, cols=cols, promote=promote), rows, init=df)
 end
