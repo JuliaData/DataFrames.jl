@@ -2387,4 +2387,17 @@ end
     @test eltype(collect(p)) <: DataFrames.DataFrameRows
 end
 
+@testset "findcols" begin
+    df = DataFrame(a=[1, missing], b=[2, 3], c=[missing, 4])
+    @test findcols(x -> any(ismissing, x), df) == [1, 3]
+    @test findcols(x -> true, df) == [1, 2, 3]
+    @test findcols(x -> false, df) == Int[]
+    @test_throws TypeError findcols(x -> 1, df)
+
+    @test findcols(x -> any(ismissing, x), view(df, :, [1, 2])) == [1]
+    @test findcols(x -> true, view(df, :, [1, 2])) == [1, 2]
+    @test findcols(x -> false, view(df, :, [1, 2])) == Int[]
+    @test_throws TypeError findcols(x -> 1, view(df, :, [1, 2]))
+end
+
 end # module

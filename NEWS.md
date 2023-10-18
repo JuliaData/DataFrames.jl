@@ -13,6 +13,9 @@
   columns only to a subset of the columns specified by the `cols`
   keyword argument
   ([#3386](https://github.com/JuliaData/DataFrames.jl/pull/3386))
+* add `findcols` that returns a vector of integer column indices
+  of a data frame that meet the passed condition function
+  ([#3389](https://github.com/JuliaData/DataFrames.jl/pull/3389))
 
 ## Bug fixes
 
