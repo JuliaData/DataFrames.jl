@@ -3270,7 +3270,7 @@ julia> df = DataFrame(a=[1, missing], b=[2, 3], c=[missing, 4])
    1 │       1      2  missing
    2 │ missing      3        4
 
-   julia> findcols(x -> any(ismissing, x), df)
+julia> findcols(x -> any(ismissing, x), df)
 2-element Vector{Int64}:
  1
  3
