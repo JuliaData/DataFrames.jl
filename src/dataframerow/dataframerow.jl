@@ -259,10 +259,44 @@ for T in MULTICOLUMNINDEX_TUPLE
     end
 end
 
-Base.@propagate_inbounds Base.setindex!(r::DataFrameRow, value, idx) =
-    setindex!(parent(r), value, row(r), parentcols(index(r), idx))
-
 index(r::DataFrameRow) = getfield(r, :colindex)
+
+is_column_insertion_allowed(dfr::DataFrameRow) = index(dfr) isa Index
+
+Base.@propagate_inbounds function Base.setindex!(dfr::DataFrameRow, value, idx)
+    if colinds isa SymbolOrString && columnindex(dfr, colinds) == 0
+        if !is_column_insertion_allowed(dfr)
+            throw(ArgumentError("creating new columns in a DataFrameRow that subsets " *
+                                "columns of its parent data frame is disallowed"))
+        end
+        T = typeof(val)
+        newcol = similar(val, Union{T,Missing}, nrow(parent(dfr)))
+        fill!(newcol, missing)
+        newcol[row(dfr)] = val
+        parent(dfr)[!, colinds] = newcol
+    else
+        setindex!(parent(dfr), value, row(dfr), parentcols(index(dfr), idx))
+    end
+    return dfr
+end
+
+insertcols(dfr::DataFrameRow, args...;
+    after::Bool=false, makeunique::Bool=false, copycols::Bool=true) =
+    throw(ArgumentError("insertcols is not supported for DataFrameRow. " *
+                        "Maybe you wanted to use insertcols!?"))
+
+function insertcols!(dfr::DataFrameRow, col::ColumnIndex, name_cols::Pair{Symbol}...;
+                     after::Bool=false, makeunique::Bool=false, copycols::Bool=false)
+    if !is_column_insertion_allowed(dfr)
+        throw(ArgumentError("creating new columns in a DataFrameRow that subsets " *
+                            "columns of its parent data frame is disallowed"))
+    end
+    r = row(dfr)
+    insertcols!(view(parent(dfr), r:r, :),
+                col, (k => [v] for (k,v) in name_cols)...,
+                after=after, makeunique=makeunique, copycols=copycols)
+    return dfr
+end
 
 Base.names(r::DataFrameRow, cols::Colon=:) = names(index(r))
 
