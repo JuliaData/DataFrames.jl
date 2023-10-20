@@ -337,7 +337,11 @@ function row_group_slots!(cols::NTuple{N, AbstractVector},
        nt = max(1, lg ÷ 100_000)
     end
     # if there are few rows per group limit the number of threads used
-    nt = clamp(round(Int, (lg / 4) / ngroups - 2), 1, nt)
+    if ngroups == 0
+        nt = 1
+    else
+        nt = clamp(round(Int, (lg / 4) / ngroups - 2), 1, nt)
+    end
 
     seen = fill(false, ngroups)
     seen_vec = Vector{Vector{Bool}}(undef, nt)

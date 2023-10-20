@@ -1,6 +1,6 @@
 module TestDuplicates
 
-using Test, DataFrames, CategoricalArrays, Random
+using Test, DataFrames, CategoricalArrays, Random, PooledArrays
 const ≅ = isequal
 
 @testset "nonunique" begin
@@ -30,8 +30,8 @@ const ≅ = isequal
     @test_throws ArgumentError unique!(df)
     @test_throws ArgumentError unique(df, true)
 
-     pdf = view(DataFrame(a=CategoricalArray(["a", "a", missing, missing, "b", missing, "a", missing]),
-                          b=CategoricalArray(["a", "b", missing, missing, "b", "a", "a", "a"])), :,  :)
+    pdf = view(DataFrame(a=CategoricalArray(["a", "a", missing, missing, "b", missing, "a", missing]),
+                         b=CategoricalArray(["a", "b", missing, missing, "b", "a", "a", "a"])), :,  :)
     updf = DataFrame(a=CategoricalArray(["a", "a", missing, "b", missing]),
                      b=CategoricalArray(["a", "b", missing, "b", "a"]))
     @test nonunique(pdf) == [false, false, false, true, false, false, true, true]
@@ -39,6 +39,9 @@ const ≅ = isequal
     @test updf ≅ unique(pdf)
     @test_throws ArgumentError unique!(pdf)
     @test_throws ArgumentError unique(pdf, true)
+
+    @test isempty(nonunique(DataFrame(a=PooledArray(Int[]))))
+    @test typeof(nonunique(DataFrame(a=PooledArray(Int[])))) === Vector{Bool}
 end
 
 @testset "nonunique, nonunique, unique! with extra argument" begin
