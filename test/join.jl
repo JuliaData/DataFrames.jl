@@ -84,7 +84,7 @@ anti = left[Bool[ismissing(x) for x in left.Job], [:ID, :Name]]
     @test_throws ArgumentError crossjoin(df1, df2, renamecols=(x -> "a") => x -> "a")
     @test crossjoin(df1, df2, renamecols=(x -> "a") => x -> "a", makeunique=true) ==
           rename(cross, [:a, :a_1, :a_2])
-          
+
     # Cross joins handle naming collisions
     @test size(crossjoin(df1, df1, makeunique=true)) == (4, 4)
 
@@ -2176,7 +2176,7 @@ end
     @test_throws ArgumentError outerjoin(df1, df2, on=:x, order=:x)
 end
 
-@time @testset "randomized join tests with sort" begin
+@testset "randomized join tests with sort" begin
     Random.seed!(1234)
     for lenl in 0:20, lenr in 0:20, rep in 1:10
         df1 = DataFrame(x=rand(0:lenl, lenl), id1=1:lenl)
@@ -2221,7 +2221,7 @@ end
 @testset "wide joins" begin
     Random.seed!(1234)
     # we need many repetitions to make sure we cover all cases
-    @time for _ in 1:1000, k in 2:4
+    for _ in 1:1000, k in 2:4
         dfs = [(n=rand(10:20);
                 DataFrame("id" => randperm(n), "x$i" => 1:n)) for i in 1:4]
         @test issorted(innerjoin(dfs..., on="id", order=:left)[:, 2])
@@ -2232,9 +2232,9 @@ end
 
     dfs = [DataFrame("id" => 0, "x$i" => i) for i in 1:10000]
     res = innerjoin(dfs..., on="id")
-    @test res == DataFrame(["id" => 0; ["x$i" => i for i in 1:10000]]) 
+    @test res == DataFrame(["id" => 0; ["x$i" => i for i in 1:10000]])
     res = outerjoin(dfs..., on="id")
-    @test res == DataFrame(["id" => 0; ["x$i" => i for i in 1:10000]]) 
+    @test res == DataFrame(["id" => 0; ["x$i" => i for i in 1:10000]])
 end
 
 end # module
