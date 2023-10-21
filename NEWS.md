@@ -13,6 +13,8 @@
   columns only to a subset of the columns specified by the `cols`
   keyword argument
   ([#3386](https://github.com/JuliaData/DataFrames.jl/pull/3386))
+* Add `sortrows` and `sortcols` keyword arguments to `unstack`
+  ([#3395](https://github.com/JuliaData/DataFrames.jl/pull/3395))
 
 ## Bug fixes
 
