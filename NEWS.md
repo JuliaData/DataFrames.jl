@@ -20,6 +20,9 @@
   instead of using the interactive thread pool when Julia was started
   with `-tM,N` with N > 0
   ([#3385](https://github.com/JuliaData/DataFrames.jl/pull/3385))
+* Correctly return `Bool[]` in the `nonunique` function applied to a data frame
+  with a pulled column that has zero levels in the pool
+  ([#3393](https://github.com/JuliaData/DataFrames.jl/pull/3393))
 
 # DataFrames.jl v1.6.1 Release Notes
 
