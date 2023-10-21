@@ -4531,4 +4531,9 @@ end
     end
 end
 
+@testset "no levels in pooled grouping bug #3393" begin
+    @test isempty(groupby_checked(DataFrame(x=PooledArray([missing])), :x, skipmissing=true))
+    @test isempty(groupby_checked(DataFrame(x=categorical([missing])), :x, skipmissing=true))
+end
+
 end # module
