@@ -281,7 +281,7 @@ Base.@propagate_inbounds function Base.setindex!(dfr::DataFrameRow, value, idx)
 end
 
 insertcols(dfr::DataFrameRow, args...;
-    after::Bool=false, makeunique::Bool=false, copycols::Bool=true) =
+           after::Bool=false, makeunique::Bool=false, copycols::Bool=true) =
     throw(ArgumentError("insertcols is not supported for DataFrameRow. " *
                         "Maybe you wanted to use insertcols!?"))
 
