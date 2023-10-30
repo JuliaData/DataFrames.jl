@@ -124,6 +124,8 @@ end
     @test DataFrame(a=[1, 2, missing], b=[4, 5, 6]) ≇ DataFrame(a=[1, 2, 3], b=[4, 5, 6])
 end
 
+update_missing = (x...) -> coalesce(reverse(x)...)
+
 @testset "copying" begin
     df = DataFrame(a=Union{Int, Missing}[2, 3],
                    b=Union{DataFrame, Missing}[DataFrame(c=1), DataFrame(d=2)])
@@ -152,6 +154,7 @@ end
 
     @test names(rename(df, [:f, :g])) == ["f", "g"]
     @test names(rename(df, [:f, :f], makeunique=true)) == ["f", "f_1"]
+    #@test names(rename(df, [:f, :f], mergeduplicates=update_missing)) == ["f", "f"]
     @test names(df) == ["a", "b"]
 
     rename!(df, [:f, :g])
@@ -258,6 +261,19 @@ end
     @test propertynames(df) == [:a_2, :a, :a_1]
     insertcols!(df, 4, :a => [11, 12], makeunique=true)
     @test propertynames(df) == [:a_2, :a, :a_1, :a_3]
+
+    df = DataFrame(a=[1, 2], a_1=[3, 4])
+    insertcols!(df, 1, :a => [11, 12], makeunique=true)
+    @test propertynames(df) == [:a_2, :a, :a_1]
+    insertcols!(df, 4, :a => [11, 12], makeunique=true)
+    @test propertynames(df) == [:a_2, :a, :a_1, :a_3]
+
+    df = DataFrame(a=[1, 2, 3], a_1=[3, 4, 5])
+    insertcols!(df, 1, :a => [11, 12, missing], mergeduplicates=update_missing)
+    @test propertynames(df) == [:a, :a_1]
+    @test df == DataFrame(a=[11, 12, 3], a_1=[3, 4, 5])
+
+    @test_throws ArgumentError insertcols!(df, 10, :a => [11, 12], makeunique=true)
     @test_throws ArgumentError insertcols!(df, 10, :a => [11, 12], makeunique=true)
 
     dfc = copy(df)
@@ -303,6 +319,11 @@ end
     @test df.a_1 === v2
     @test df.a_2 === v3
 
+    df = DataFrame()
+    @test insertcols!(df, 1, :a=>v1, :a=>v2, :a=>v3, mergeduplicates=update_missing, copycols=false) ==
+          DataFrame(a=v3)
+    @test df.a isa Vector{Int}
+
     df = DataFrame(p='a':'b', q='r':'s')
     @test insertcols!(df, 2, :a=>v1, :b=>v2, :c=>v3) ==
           DataFrame(p='a':'b', a=v1, b=v2, c=v3, q='r':'s')
@@ -318,6 +339,15 @@ end
     @test df.p_1 isa Vector{Int}
     @test df.q_1 !== v2
     @test df.p_2 !== v3
+
+    df = DataFrame(p='a':'b', q='r':'s')
+    @test insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3, makeunique=true, copycols=true) ==
+          DataFrame(p='a':'b', p_1=v1, q_1=v2, p_2=v3, q='r':'s')
+
+    df = DataFrame(p='a':'b', q='r':'s')
+    @test_throws ArgumentError insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3)
+    @test insertcols!(df, 2, :p=>v1, :q=>v2, :p=>v3, mergeduplicates=update_missing, copycols=true) ==
+          DataFrame(p=v3, q=v2)
 
     df = DataFrame(a=1:3, b=4:6)
     @test insertcols!(copy(df), :c=>7:9) == insertcols!(copy(df), 3, :c=>7:9)

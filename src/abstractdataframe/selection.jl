@@ -1822,7 +1822,7 @@ end
 
 function manipulate(df::DataFrame, args::AbstractVector{Int};
                     copycols::Bool, keeprows::Bool, renamecols::Bool)
-    new_df = DataFrame(_columns(df)[args], Index(_names(df)[args]), copycols=copycols)
+    new_df = DataFrame(_columns(df)[args], UpdateIndex(_names(df)[args]), copycols=copycols)
     _copy_all_note_metadata!(new_df, df)
     return new_df
 end

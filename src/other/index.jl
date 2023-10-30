@@ -33,13 +33,14 @@ Index() = Index(Dict{Symbol, Int}(), Symbol[])
 Base.length(x::Index) = length(x.names)
 Base.names(x::Index) = string.(x.names)
 
+column_length(x::Index) = length(x.names)
+
 # _names returns Vector{Symbol}
 _names(x::Index) = x.names
 
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.isequal(x::AbstractIndex, y::AbstractIndex) = _names(x) == _names(y) # it is enough to check names
 Base.:(==)(x::AbstractIndex, y::AbstractIndex) = isequal(x, y)
-
 
 function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false)
     if !makeunique
@@ -241,7 +242,7 @@ end
 
 @inline _getindex_cols(x::AbstractIndex, idx::Any) = x[idx]
 @inline _getindex_cols(x::AbstractIndex, idx::Function) = findall(idx, names(x))
-# the definition below is needed because `:` is a Function
+# the definition below is needed because `:` is a `Function`
 @inline _getindex_cols(x::AbstractIndex, idx::Colon) = x[idx]
 
 @inline function Base.getindex(x::AbstractIndex, idx::Cols)
@@ -432,7 +433,7 @@ end
 
 # return Vector{Symbol} of names from add_ind that do not clash with `ind`.
 # if `makeunique=false` error on collision
-# if `makeunique=false` generate new names that are deduplicated
+# if `make=:makeunique` generate new names that are deduplicated
 function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
     u = copy(_names(add_ind))
 
@@ -451,6 +452,7 @@ function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
             throw(ArgumentError(msg))
         end
     end
+
     for i in dups
         nm = u[i]
         k = 1
