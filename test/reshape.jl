@@ -700,6 +700,7 @@ end
     @test names(permutedims(df3, 1, makeunique=true)) == d3pd_names
     @test_throws ArgumentError permutedims(df3[!, [:a]], 1) # single column branch
     @test names(permutedims(df3[!, [:a]], 1, makeunique=true)) == d3pd_names
+    @test names(permutedims(df3, 1, mergeduplicates=sum∘tuple)) == ["a", "x"]
 
     df4 = DataFrame(a=rand(2), b=rand(2), c=[1, 2], d=[1.0, missing],
                     e=["x", "y"], f=[:x, :y], # valid src
@@ -753,6 +754,7 @@ end
     @test permutedims(df, ["p", "p"], makeunique=true) == DataFrame(p=[1, 3], p_1=[2, 4])
     @test permutedims(DataFrame()) == permutedims(DataFrame(a=[], b=[])) ==
           permutedims(DataFrame(), []) == permutedims(DataFrame(a=[], b=[]), []) == DataFrame()
+    @test permutedims(df, ["p", "p"], makeunique=false, mergeduplicates=sum∘tuple) == DataFrame(p=[3, 7])
 end
 
 @testset "stack view=true additional tests" begin
