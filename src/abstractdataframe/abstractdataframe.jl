@@ -1568,7 +1568,9 @@ with `_i` (`i` starting at 1 for the first duplicate).
 
 If `makeunique=false` and `mergeduplicates` is a `Function` then duplicate columns 
 will be combined by invoking the function with all values from those columns.
-e.g. `mergeduplicates=coalesce` will use the first non-missing value.
+e.g. `mergeduplicates=coalesce` will use the first non-missing value. Since `hcat` and
+`hcat!` are performed recursively for more than two frames, this `mergeduplicates` 
+function will only combine two columns at a time.
 
 If `copycols=true` (the default) then the `DataFrame` returned by `hcat` will
 contain copied columns from the source data frames.

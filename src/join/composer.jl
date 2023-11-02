@@ -668,10 +668,16 @@ change in future releases.
   can be used instead of a name, for the case where a key has different names
   in `df1` and `df2` (it is allowed to mix names and name pairs in a vector).
   Key values are compared using `isequal`. `on` is a required argument.
-- `makeunique` : if `false` (the default), an error will be raised
+- `makeunique` : if `false` (the default), an error will be raised or the `mergeduplicates`
+  function will be used to combine columns if provided;
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
+- `mergeduplicates` : defines what to do if `name` already exists in `df` and `makeunique`
+  is false. It should be given a Function that combines the values of each of the duplicated
+  columns which will be passed as a vararg, the return value is then used to fill the column. 
+  Because these joins are performed recursively, this `mergeduplicates` function will only 
+  combine two values at a time. 
 - `validate` : whether to check that columns passed as the `on` argument
   define unique keys in each input data frame (according to `isequal`).
   Can be a tuple or a pair, with the first element indicating whether to
@@ -827,13 +833,14 @@ change in future releases.
   the case where a key has different names in `df1` and `df2` (it is allowed to
   mix names and name pairs in a vector). Key values are compared using
   `isequal`. `on` is a required argument.
-- `makeunique` : if `false` (the default), an error will be raised
+- `makeunique` : if `false` (the default), an error will be raised or the `mergeduplicates`
+  function will be used to combine columns if provided;
   if duplicate names are found in columns not joined on;
-  if `true`, duplicate names will be suffixed with `_i` (deprecated)
+  if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
 - `mergeduplicates` : defines what to do if `name` already exists in `df` and `makeunique`
-  is false. It should be given a Function that combines the values of all of the duplicated
-  columns which will be passed as a varargs. The return value is used.
+  is false. It should be given a Function that combines the values of each of the duplicated
+  columns which will be passed as a vararg, the return value is then used to fill the column. 
 - `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
   column with the given name, for whether a row appeared in only `df1` (`"left_only"`)
   or in both (`"both"`). If the name is already in use,
@@ -988,13 +995,14 @@ change in future releases.
   the case where a key has different names in `df1` and `df2` (it is allowed to
   mix names and name pairs in a vector). Key values are compared using
   `isequal`. `on` is a required argument.
-- `makeunique` : if `false` (the default), an error will be raised
+  - `makeunique` : if `false` (the default), an error will be raised or the `mergeduplicates`
+  function will be used to combine columns if provided;
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
-  (`i` starting at 1 for the first duplicate). (deprecated)
+  (`i` starting at 1 for the first duplicate).
 - `mergeduplicates` : defines what to do if `name` already exists in `df` and `makeunique`
-  is false. It should be given a Function that combines the values of all of the duplicated
-  columns which will be passed as a varargs. The return value is used.
+  is false. It should be given a Function that combines the values of each of the duplicated
+  columns which will be passed as a vararg, the return value is then used to fill the column. 
 - `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
   column with the given name for whether a row appeared in only `df2` (`"right_only"`)
   or in both (`"both"`). If the name is already in use,
@@ -1150,13 +1158,16 @@ This behavior may change in future releases.
   can be used instead of a name, for the case where a key has different names
   in `df1` and `df2` (it is allowed to mix names and name pairs in a vector).
   Key values are compared using `isequal`. `on` is a required argument.
-- `makeunique` : if `false` (the default), an error will be raised
+- `makeunique` : if `false` (the default), an error will be raised or the `mergeduplicates`
+  function will be used to combine columns if provided;
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
-  (`i` starting at 1 for the first duplicate). (deprecated)
+  (`i` starting at 1 for the first duplicate).
 - `mergeduplicates` : defines what to do if `name` already exists in `df` and `makeunique`
-  is false. It should be given a Function that combines the values of all of the duplicated
-  columns which will be passed as a varargs. The return value is used.
+  is false. It should be given a Function that combines the values of each of the duplicated
+  columns which will be passed as a vararg, the return value is then used to fill the column. 
+  Because these joins are performed recursively, this `mergeduplicates` function will only 
+  combine two values at a time.
 - `source` : Default: `nothing`. If a `Symbol` or string, adds indicator
   column with the given name for whether a row appeared in only `df1` (`"left_only"`),
   only `df2` (`"right_only"`) or in both (`"both"`). If the name is already in use,
@@ -1544,10 +1555,16 @@ dimension that changes the fastest.
 - `df1`, `df2`, `dfs...` : the `AbstractDataFrames` to be joined
 
 # Keyword Arguments
-- `makeunique` : if `false` (the default), an error will be raised
+- `makeunique` : if `false` (the default), an error will be raised or the `mergeduplicates`
+  function will be used to combine columns if provided;
   if duplicate names are found in columns not joined on;
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
+- `mergeduplicates` : defines what to do if `name` already exists in `df` and `makeunique`
+  is false. It should be given a Function that combines the values of each of the duplicated
+  columns which will be passed as a vararg, the return value is then used to fill the column. 
+  Because these joins are performed recursively, this `mergeduplicates` function will only 
+  combine two values at a time.
 - `renamecols` : a `Pair` specifying how columns of left and right data frames should
   be renamed in the resulting data frame. Each element of the pair can be a
   string or a `Symbol` can be passed in which case it is appended to the original
