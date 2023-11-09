@@ -16,6 +16,9 @@
 
 ## Bug fixes
 
+* Correctly throw an error if negative number of rows is passed
+  to `first` or `last`
+  ([#3402](https://github.com/JuliaData/DataFrames.jl/pull/3402))
 * Always use the default thread pool for multithreaded operations,
   instead of using the interactive thread pool when Julia was started
   with `-tM,N` with N > 0

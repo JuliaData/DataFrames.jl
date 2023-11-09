@@ -1180,10 +1180,16 @@ end
     @test_throws BoundsError first(DataFrame(x=[]))
     @test_throws BoundsError last(DataFrame(x=[]))
 
-    @test first(df, 6) == DataFrame(A=1:6)
-    @test first(df, 1) == DataFrame(A=1)
-    @test last(df, 6) == DataFrame(A=5:10)
-    @test last(df, 1) == DataFrame(A=10)
+    for v in (true, false)
+        @test first(df, 6, view=v) == DataFrame(A=1:6)
+        @test first(df, 1, view=v) == DataFrame(A=1)
+        @test first(df, 0, view=v) == DataFrame()
+        @test_throws ArgumentError first(df, -1, view=v)
+        @test last(df, 6, view=v) == DataFrame(A=5:10)
+        @test last(df, 1, view=v) == DataFrame(A=10)
+        @test last(df, 0, view=v) == DataFrame()
+        @test_throws ArgumentError last(df, -1, view=v)
+    end
 
     @inferred first(df, 6)
     @inferred last(df, 6)
