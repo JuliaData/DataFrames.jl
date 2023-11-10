@@ -1183,11 +1183,11 @@ end
     for v in (true, false)
         @test first(df, 6, view=v) == DataFrame(A=1:6)
         @test first(df, 1, view=v) == DataFrame(A=1)
-        @test first(df, 0, view=v) == DataFrame()
+        @test first(df, 0, view=v) == DataFrame(A=Int[])
         @test_throws ArgumentError first(df, -1, view=v)
         @test last(df, 6, view=v) == DataFrame(A=5:10)
         @test last(df, 1, view=v) == DataFrame(A=10)
-        @test last(df, 0, view=v) == DataFrame()
+        @test last(df, 0, view=v) == DataFrame(A=Int[])
         @test_throws ArgumentError last(df, -1, view=v)
     end
 
