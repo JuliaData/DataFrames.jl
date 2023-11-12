@@ -558,7 +558,7 @@ Base.first(df::AbstractDataFrame) = df[1, :]
     first(df::AbstractDataFrame, n::Integer; view::Bool=false)
 
 Get a data frame with the `n` first rows of `df`.
-If `n` is greater than number of rows of `df` get all rows.
+Get all rows if `n` is greater than the number of rows in `df`.
 Error if `n` is negative.
 
 If `view=false` a freshly allocated `DataFrame` is returned.
@@ -585,7 +585,7 @@ Base.last(df::AbstractDataFrame) = df[nrow(df), :]
     last(df::AbstractDataFrame, n::Integer; view::Bool=false)
 
 Get a data frame with the `n` last rows of `df`.
-If `n` is greater than number of rows of `df` get all rows.
+Get all rows if `n` is greater than the number of rows in `df`.
 Error if `n` is negative.
 
 If `view=false` a freshly allocated `DataFrame` is returned.
