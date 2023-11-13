@@ -558,14 +558,19 @@ Base.first(df::AbstractDataFrame) = df[1, :]
     first(df::AbstractDataFrame, n::Integer; view::Bool=false)
 
 Get a data frame with the `n` first rows of `df`.
+Get all rows if `n` is greater than the number of rows in `df`.
+Error if `n` is negative.
 
 If `view=false` a freshly allocated `DataFrame` is returned.
 If `view=true` then a `SubDataFrame` view into `df` is returned.
 
 $METADATA_FIXED
 """
-@inline Base.first(df::AbstractDataFrame, n::Integer; view::Bool=false) =
-    view ? Base.view(df, 1:min(n ,nrow(df)), :) : df[1:min(n, nrow(df)), :]
+@inline function Base.first(df::AbstractDataFrame, n::Integer; view::Bool=false)
+    n < 0 && throw(ArgumentError("Number of elements must be nonnegative"))
+    r = min(n, nrow(df))
+    return view ? Base.view(df, 1:r, :) : df[1:r, :]
+end
 
 """
     last(df::AbstractDataFrame)
@@ -580,14 +585,19 @@ Base.last(df::AbstractDataFrame) = df[nrow(df), :]
     last(df::AbstractDataFrame, n::Integer; view::Bool=false)
 
 Get a data frame with the `n` last rows of `df`.
+Get all rows if `n` is greater than the number of rows in `df`.
+Error if `n` is negative.
 
 If `view=false` a freshly allocated `DataFrame` is returned.
 If `view=true` then a `SubDataFrame` view into `df` is returned.
 
 $METADATA_FIXED
 """
-@inline Base.last(df::AbstractDataFrame, n::Integer; view::Bool=false) =
-    view ? Base.view(df, max(1, nrow(df)-n+1):nrow(df), :) : df[max(1, nrow(df)-n+1):nrow(df), :]
+@inline function Base.last(df::AbstractDataFrame, n::Integer; view::Bool=false)
+    n < 0 && throw(ArgumentError("Number of elements must be nonnegative"))
+    r = max(1, nrow(df) - n + 1)
+    return view ? Base.view(df, r:nrow(df), :) : df[r:nrow(df), :]
+end
 
 """
     describe(df::AbstractDataFrame; cols=:)
