@@ -186,7 +186,7 @@ julia> source = [(type="circle", radius=10), (type="square", side=20)]
 ```
 
 If you want to create a data frame from such data containing all columns present in at least
-one of the source observations, and holding `missing` entry if some column is not present then
+one of the source observations, with a `missing` entry if some column is not present then
 you can use `Tables.dictcolumntable` function to help you create the desired data frame:
 
 ```
@@ -199,7 +199,7 @@ julia> DataFrame(Tables.dictcolumntable(source))
    2 │ square  missing       20
 ```
 
-The `Tables.dictcolumntable` role is to make sure that the `DataFrame` constructor gets information
+The role of `Tables.dictcolumntable` is to make sure that the `DataFrame` constructor gets information
 about all columns present in the source data and properly instantiates them. If we did not use
 this function the `DataFrame` constructor would assume that the first row of data contains the set
 of columns present in the source, which would lead to an error in our example:
