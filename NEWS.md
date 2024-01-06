@@ -26,6 +26,9 @@
 * Correctly return `Bool[]` in the `nonunique` function applied to a data frame
   with a pulled column that has zero levels in the pool
   ([#3393](https://github.com/JuliaData/DataFrames.jl/pull/3393))
+* Correctly index `eachrow` and `eachcol` with `CartesianIndex`
+  ([#3413](https://github.com/JuliaData/DataFrames.jl/issues/3413))
+
 
 # DataFrames.jl v1.6.1 Release Notes
 
