@@ -81,6 +81,7 @@ Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
 Base.size(itr::DataFrameRows) = (size(parent(itr), 1), )
 
 Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, i::Int) = parent(itr)[i, :]
+Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, i::CartesianIndex{1}) = itr[i[1]]
 Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, idx) =
     eachrow(@view parent(itr)[idx isa AbstractVector && !(eltype(idx) <: Bool) ? copy(idx) : idx, :])
 
@@ -263,6 +264,8 @@ Base.iterate(itr::DataFrameColumns, i::Integer=1) =
     i <= length(itr) ? (itr[i], i + 1) : nothing
 Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns, idx::ColumnIndex) =
     parent(itr)[!, idx]
+Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns, idx::CartesianIndex{1}) =
+    itr[idx[1]]
 Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns, idx::MultiColumnIndex) =
     eachcol(parent(itr)[!, idx])
 Base.:(==)(itr1::DataFrameColumns, itr2::DataFrameColumns) =

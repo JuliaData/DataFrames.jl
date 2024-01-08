@@ -15,6 +15,8 @@ using Test, DataFrames
     @test sprint(summary, eachrow(df)) == "2-element DataFrameRows"
     @test Base.IndexStyle(eachrow(df)) == IndexLinear()
     @test eachrow(df)[1] == DataFrameRow(df, 1, :)
+    @test eachrow(df)[CartesianIndex(1)] == DataFrameRow(df, 1, :)
+    @test_throws MethodError eachrow(df)[CartesianIndex(1, 1)]
     @test collect(eachrow(df)) isa Vector{<:DataFrameRow}
     @test eltype(eachrow(df)) <: DataFrameRow
     for row in eachrow(df)
@@ -35,6 +37,8 @@ using Test, DataFrames
     @test_throws ArgumentError size(eachcol(df), 2)
     @test_throws ArgumentError size(eachcol(df), 0)
     @test eachcol(df)[1] == df[:, 1]
+    @test eachcol(df)[CartesianIndex(1)] == df[:, 1]
+    @test_throws MethodError eachcol(df)[CartesianIndex(1, 1)]
     @test eachcol(df)[:A] === df[!, :A]
     @test eachcol(df)[All()] == eachcol(df)
     @test eachcol(df)[Cols(:)] == eachcol(df)
