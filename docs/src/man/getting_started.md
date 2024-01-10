@@ -443,7 +443,7 @@ A particular common case of a collection that supports the
 a vector of `NamedTuple`s:
 ```jldoctest dataframe
 julia> v = [(a=1, b=2), (a=3, b=4)]
-2-element Vector{NamedTuple{(:a, :b), Tuple{Int64, Int64}}}:
+2-element Vector{@NamedTuple{a::Int64, b::Int64}}:
  (a = 1, b = 2)
  (a = 3, b = 4)
 
@@ -460,7 +460,7 @@ You can also easily convert a data frame back to a vector of `NamedTuple`s:
 julia> using Tables
 
 julia> Tables.rowtable(df)
-2-element Vector{NamedTuple{(:a, :b), Tuple{Int64, Int64}}}:
+2-element Vector{@NamedTuple{a::Int64, b::Int64}}:
  (a = 1, b = 2)
  (a = 3, b = 4)
 ```

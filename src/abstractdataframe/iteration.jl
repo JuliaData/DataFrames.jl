@@ -57,7 +57,7 @@ julia> eachrow(df)
    4 │     4     14
 
 julia> copy.(eachrow(df))
-4-element Vector{NamedTuple{(:x, :y), Tuple{Int64, Int64}}}:
+4-element Vector{@NamedTuple{x::Int64, y::Int64}}:
  (x = 1, y = 11)
  (x = 2, y = 12)
  (x = 3, y = 13)
