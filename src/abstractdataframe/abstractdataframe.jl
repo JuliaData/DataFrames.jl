@@ -1486,7 +1486,7 @@ function fillcombinations(df::AbstractDataFrame, indexcols;
     end
 
     # make sure we do not overflow in the target data frame size
-    target_rows = Int(prod(x -> big(length(x)), uniquevals))
+    target_rows = Int(prod(x -> BigInt(length(x)), uniquevals))
     if iszero(target_rows)
         @assert iszero(nrow(df))
         cdf = copy(df)

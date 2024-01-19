@@ -156,7 +156,7 @@ function refpool_and_array(x::AbstractArray)
         else
             minval, maxval = extrema(x)
         end
-        ngroups = big(maxval) - big(minval) + 1
+        ngroups = BigInt(maxval) - BigInt(minval) + 1
         # Threshold chosen with the same rationale as the row_group_slots! refpool method:
         # refpool approach is faster but we should not allocate too much memory either
         # We also have to avoid overflow, including with ngroups + 1 for missing values

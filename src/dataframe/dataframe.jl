@@ -1546,7 +1546,7 @@ function allcombinations(::Type{DataFrame}, pairs::Pair{Symbol, <:Any}...)
     @assert length(colvalues) == length(colnames)
     @assert all(x -> x isa AbstractVector, colvalues)
 
-    target_rows = Int(prod(x -> big(length(x)), colvalues))
+    target_rows = Int(prod(x -> BigInt(length(x)), colvalues))
     out_df = DataFrame()
     inner = 1
     for (val, cname) in zip(colvalues, colnames)
@@ -1563,4 +1563,3 @@ function allcombinations(::Type{DataFrame}, pairs::Pair{Symbol, <:Any}...)
 end
 
 _try_select_no_copy(df::DataFrame, cols) = select(df, cols, copycols=false)
-
