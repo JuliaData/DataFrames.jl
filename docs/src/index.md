@@ -16,6 +16,7 @@ other packages you can check-out the following resources
   [JuliaCon 2020](https://github.com/bkamins/JuliaCon2020-DataFrames-Tutorial),
   [JuliaCon 2021](https://github.com/bkamins/JuliaCon2021-DataFrames-Tutorial),
   [JuliaCon 2022](https://github.com/bkamins/JuliaCon2022-DataFrames-Tutorial),
+  [JuliaCon 2023](https://github.com/bkamins/JuliaCon2023-Tutorial),
   [PyData Global 2020](https://github.com/bkamins/PyDataGlobal2020),
   and [ODSC Europe 2021](https://github.com/bkamins/ODSC-EUROPE-2021) tutorials
 * [DataFrames.jl showcase](https://github.com/bkamins/DataFrames-Showcase)
