@@ -29,6 +29,11 @@
 * Correctly index `eachrow` and `eachcol` with `CartesianIndex`
   ([#3413](https://github.com/JuliaData/DataFrames.jl/issues/3413))
 
+## Removed deprecations
+
+* The `by` and `aggregate` functions that were deprecated before 1.0
+  release are now removed.
+  ([#3422](https://github.com/JuliaData/DataFrames.jl/issues/3422))
 
 # DataFrames.jl v1.6.1 Release Notes
 
