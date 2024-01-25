@@ -328,7 +328,7 @@ function _innerjoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}}
                                  right::AbstractVector{<:Union{Integer, Missing}})
     minv, maxv = extrema_missing(right)
 
-    val_range = big(maxv) - big(minv)
+    val_range = BigInt(maxv) - BigInt(minv)
     if val_range > typemax(Int) - 3 || val_range ÷ 2 > max(64, length(right)) ||
        minv < typemin(Int) + 2 || maxv > typemax(Int) - 3
        return _innerjoin_unsorted(left, right)
@@ -648,7 +648,7 @@ function _semijoin_unsorted_int(left::AbstractVector{<:Union{Integer, Missing}},
                                 right_shorter::Bool)
     minv, maxv = extrema_missing(right)
 
-    val_range = big(maxv) - big(minv)
+    val_range = BigInt(maxv) - BigInt(minv)
     if val_range > typemax(Int) - 3 || val_range ÷ 2 > max(64, length(right)) ||
        minv < typemin(Int) + 2 || maxv > typemax(Int) - 3
        return _semijoin_unsorted(left, right, seen_rows, right_shorter)

@@ -28,6 +28,8 @@
   ([#3393](https://github.com/JuliaData/DataFrames.jl/pull/3393))
 * Correctly index `eachrow` and `eachcol` with `CartesianIndex`
   ([#3413](https://github.com/JuliaData/DataFrames.jl/issues/3413))
+* Correctly handle non-standard integers when converting them to `BigInt`
+  ([#3419](https://github.com/JuliaData/DataFrames.jl/issues/3419))
 
 
 # DataFrames.jl v1.6.1 Release Notes
