@@ -31,6 +31,11 @@
 * Correctly handle non-standard integers when converting them to `BigInt`
   ([#3419](https://github.com/JuliaData/DataFrames.jl/issues/3419))
 
+## Removed deprecations
+
+* The `by` and `aggregate` functions that were deprecated before 1.0
+  release are now removed.
+  ([#3422](https://github.com/JuliaData/DataFrames.jl/issues/3422))
 
 # DataFrames.jl v1.6.1 Release Notes
 
