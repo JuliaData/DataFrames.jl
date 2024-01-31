@@ -1665,6 +1665,22 @@ julia> combine(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
    7 │     4      1      4      5
    8 │     4      1      8      9
 ```
+
+# aggregation over array-like elements
+```jldoctest
+julia> df = DataFrame(a=[1, 1, 2, 2],
+                      b=[[1, 2], [2, 3], [3, 4], [4, 5]]);
+
+julia> gd = groupby(df, :a);
+
+julia> combine(gd, :b => Ref∘sum)
+2×2 DataFrame
+ Row │ a      b_Ref_sum
+     │ Int64  Array…
+─────┼──────────────────
+   1 │     1  [3, 5]
+   2 │     2  [7, 9]
+```
 """
 combine(df::AbstractDataFrame, @nospecialize(args...);
         renamecols::Bool=true, threads::Bool=true) =
