@@ -830,6 +830,72 @@ julia> combine(df, names(df) .=> sum, names(df) .=> prod)
 If you would prefer the result to have the same number of rows as the source
 data frame, use `select` instead of `combine`.
 
+Note that a `DataFrame` can store values of any type as its columns, for example
+below we show how one can store a `Tuple`:
+
+```
+julia> df2 = combine(df, All() .=> extrema)
+1×2 DataFrame
+ Row │ A_extrema  B_extrema
+     │ Tuple…     Tuple…
+─────┼───────────────────────
+   1 │ (1, 4)     (1.0, 4.0)
+```
+
+Later you might want to expand the tuples into separate columns storing the computed
+minima and maxima. This can be achieved by passing multiple columns for the output.
+In the example below we show how this can be done in combination with a function
+so that we can generate target column names conditional on source column names:
+
+```
+julia> combine(df2, All() .=> identity .=> [c -> first(c) .* ["_min", "_max"]])
+1×4 DataFrame
+ Row │ A_min  A_max  B_min    B_max
+     │ Int64  Int64  Float64  Float64
+─────┼────────────────────────────────
+   1 │     1      4      1.0      4.0
+```
+
+Note that in this example we needed to pass `identity` explicitly as otherwise the
+functions generated with `c -> first(c) .* ["_min", "_max"]` would be treated as transformations
+and not as rules for target column names generation.
+
+You might want to perform the transformation of the source data frame into the result
+we have just shown in one step. This can be achieved with the following expression:
+
+```
+julia> combine(df, All() .=> Ref∘extrema .=> [c -> c .* ["_min", "_max"]])
+1×4 DataFrame
+ Row │ A_min  A_max  B_min    B_max
+     │ Int64  Int64  Float64  Float64
+─────┼────────────────────────────────
+   1 │     1      4      1.0      4.0
+```
+
+Note that in this case we needed to add a `Ref` call in the `Ref∘extrema` operation specification.
+The reason why this is needed is that instead `combine` iterates the contents of the value returned
+by the operation specification function and tries to expand it, which in our case is a tuple of numbers,
+so one gets an error:
+
+```
+julia> combine(df, names(df) .=> extrema .=> [c -> c .* ["_min", "_max"]])
+ERROR: ArgumentError: 'Tuple{Int64, Int64}' iterates 'Int64' values,
+which doesn't satisfy the Tables.jl `AbstractRow` interface
+```
+
+Note that we used `Ref` as it is a container that is typically used in DataFrames.jl when one
+wants to store one value, however, in general it could be another iterator. Here is an example
+when the tuple returned by `extrema` is wrapped in a `Tuple`, producing the same result:
+
+```
+julia> combine(df, names(df) .=> tuple∘extrema .=> [c -> c .* ["_min", "_max"]])
+1×4 DataFrame
+ Row │ A_min  A_max  B_min    B_max
+     │ Int64  Int64  Float64  Float64
+─────┼────────────────────────────────
+   1 │     1      4      1.0      4.0
+```
+
 ## Handling of Columns Stored in a `DataFrame`
 
 Functions that transform a `DataFrame` to produce a
