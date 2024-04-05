@@ -37,6 +37,12 @@
   release are now removed.
   ([#3422](https://github.com/JuliaData/DataFrames.jl/issues/3422))
 
+## Julia compatibility change
+
+* Ensure that `allunique(::AbstractDataFrame, ::Any)` always gets
+  interpreted as test for uniqueness of rows in the first positional argument
+  ([#3434](https://github.com/JuliaData/DataFrames.jl/issues/3434))
+
 # DataFrames.jl v1.6.1 Release Notes
 
 ## Bug fixes
