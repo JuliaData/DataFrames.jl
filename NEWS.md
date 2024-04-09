@@ -42,6 +42,9 @@
 * Ensure that `allunique(::AbstractDataFrame, ::Any)` always gets
   interpreted as test for uniqueness of rows in the first positional argument
   ([#3434](https://github.com/JuliaData/DataFrames.jl/issues/3434))
+* Make sure that an empty vector of `Any` or of `AbstractVector` is treated as having
+  no columns when a data frame is being processed with `combine`/`select`/`transform`.
+  ([#3435](https://github.com/JuliaData/DataFrames.jl/issues/3435))
 
 # DataFrames.jl v1.6.1 Release Notes
 
