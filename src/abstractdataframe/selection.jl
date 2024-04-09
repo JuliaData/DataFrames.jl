@@ -805,28 +805,29 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
     res = _transformation_helper(df, col_idx, Ref{Any}(fun))
 
     if newname === AsTable || newname isa AbstractVector{Symbol}
-        if res isa AbstractVector
-            if isempty(res)
-                res = NamedTuple()
-            else
-                kp1 = keys(res[1])
-                prepend = all(x -> x isa Integer, kp1)
-                if !(prepend || all(x -> x isa Symbol, kp1) || all(x -> x isa AbstractString, kp1))
-                    throw(ArgumentError("keys of the returned elements must be " *
-                                        "`Symbol`s, strings or integers"))
-                end
-                if any(x -> !isequal(keys(x), kp1), res)
-                    throw(ArgumentError("keys of the returned elements must be identical"))
-                end
-                newres = DataFrame()
-                for n in kp1
-                    newres[!, prepend ? Symbol("x", n) : Symbol(n)] = [x[n] for x in res]
-                end
-                res = newres
+        if res isa AbstractVector && !isempty(res)
+            kp1 = keys(res[1])
+            prepend = all(x -> x isa Integer, kp1)
+            if !(prepend || all(x -> x isa Symbol, kp1) || all(x -> x isa AbstractString, kp1))
+                throw(ArgumentError("keys of the returned elements must be " *
+                                    "`Symbol`s, strings or integers"))
             end
+            if any(x -> !isequal(keys(x), kp1), res)
+                throw(ArgumentError("keys of the returned elements must be identical"))
+            end
+            newres = DataFrame()
+            for n in kp1
+                newres[!, prepend ? Symbol("x", n) : Symbol(n)] = [x[n] for x in res]
+            end
+            res = newres
         elseif !(res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix,
                                Tables.AbstractRow})
-            res = Tables.columntable(res)
+            if res isa Union{AbstractVector{Any}, AbstractVector{<:AbstractVector}}
+                @assert isempty(res)
+                res = DataFrame()
+            else
+                res = Tables.columntable(res)
+            end
         end
     end
 
