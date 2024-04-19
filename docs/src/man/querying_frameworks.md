@@ -5,6 +5,9 @@ DataFramesMeta.jl, DataFrameMacros.jl and Query.jl. They implement a functionali
 [dplyr](https://dplyr.tidyverse.org/) or
 [LINQ](https://en.wikipedia.org/wiki/Language_Integrated_Query).
 
+These frameworks are designed both to make it easier for new users to start working with data frames in Julia
+and to allow advanced users to write more compact code.
+
 ## DataFramesMeta.jl
 
 The [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package
