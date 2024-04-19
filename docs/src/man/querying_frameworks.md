@@ -33,7 +33,7 @@ pipe the output of one transformation as an input to another, as with
 Below we present several selected examples of usage of the package.
 
 First we subset rows of the source data frame using a logical condition
-and select its two columns, renaming one of them:
+and select two of its columns, renaming one of them:
 
 ```jldoctest dataframesmeta
 julia> using DataFramesMeta
