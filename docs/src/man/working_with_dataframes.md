@@ -837,8 +837,8 @@ julia> combine(df, All() .=> [sum prod]) # the same using 2-dimensional broadcas
 If you would prefer the result to have the same number of rows as the source
 data frame, use `select` instead of `combine`.
 
-In the remainder of this section we will discuss some of the more advanced topis
-related to operation specification syntax, so you may decide to skip them if you
+In the remainder of this section we will discuss more advanced topics related
+to the operation specification syntax, so you may decide to skip them if you
 want to focus on the most common usage patterns.
 
 A `DataFrame` can store values of any type as its columns, for example
@@ -855,7 +855,7 @@ julia> df2 = combine(df, All() .=> extrema)
 
 Later you might want to expand the tuples into separate columns storing the computed
 minima and maxima. This can be achieved by passing multiple columns for the output.
-Here is an example how this can be done by writing the column names by-hand for a single
+Here is an example of how this can be done by writing the column names by-hand for a single
 input column:
 
 ```
@@ -880,7 +880,7 @@ julia> combine(df2, All() .=> identity .=> [["A_min", "A_max"], ["B_min", "B_max
 
 This approach works, but can be improved. Instead of writing all the column names
 manually we can instead use a function as a way to specify target column names
-conditional on source column names:
+based on source column names:
 
 ```
 julia> combine(df2, All() .=> identity .=> c -> first(c) .* ["_min", "_max"])
@@ -909,7 +909,7 @@ julia> combine(df, All() .=> Ref∘extrema .=> c -> c .* ["_min", "_max"])
 
 Note that in this case we needed to add a `Ref` call in the `Ref∘extrema` operation specification.
 Without `Ref`, `combine` iterates the contents of the value returned by the operation specification function,
-which in our case is a tuple of numbers, and tries to expand it assuming that each produced value specifies one row,
+which in our case is a tuple of numbers, and tries to expand it assuming that each produced value represents one row,
 so one gets an error:
 
 ```
