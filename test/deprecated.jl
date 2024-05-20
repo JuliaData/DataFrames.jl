@@ -4,11 +4,6 @@ using Test, DataFrames, CategoricalArrays
 
 const ≅ = isequal
 
-@testset "by and aggregate" begin
-    @test_throws ArgumentError by()
-    @test_throws ArgumentError aggregate()
-end
-
 @testset "indicator in joins" begin
     name = DataFrame(ID=[1, 2, 3], Name=["John Doe", "Jane Doe", "Joe Blogs"])
     job = DataFrame(ID=[1, 2, 4], Job=["Lawyer", "Doctor", "Farmer"])

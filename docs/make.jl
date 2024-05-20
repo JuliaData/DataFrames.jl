@@ -16,7 +16,8 @@ makedocs(
     format = Documenter.HTML(
         canonical = "https://juliadata.github.io/DataFrames.jl/stable/",
         assets = ["assets/favicon.ico"],
-        edit_link = "main"
+        edit_link = "main",
+        size_threshold_ignore = ["man/basics.md", "lib/functions.md"],
     ),
     pages = Any[
         "Introduction" => "index.md",
@@ -42,11 +43,10 @@ makedocs(
             hide("Internals" => "lib/internals.md"),
         ]
     ],
-    strict = true
 )
 
-# Deploy built documentation from Travis.
-# =======================================
+# Deploy built documentation.
+# ===========================
 
 deploydocs(
     # options

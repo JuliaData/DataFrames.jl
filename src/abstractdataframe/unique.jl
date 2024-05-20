@@ -87,7 +87,7 @@ function nonunique(df::AbstractDataFrame; keep::Symbol=:first)
     if !(keep in (:first, :last, :noduplicates))
         throw(ArgumentError("`keep` must be :first, :last, or :noduplicates"))
     end
-    ncol(df) == 0 && return Bool[]
+    nrow(df) == 0 && return Bool[]
     res = fill(true, nrow(df))
     cols = ntuple(i -> df[!, i], ncol(df))
     if keep == :first
@@ -206,6 +206,11 @@ function Base.allunique(df::AbstractDataFrame, cols=:)
     return row_group_slots!(ntuple(i -> udf[!, i], ncol(udf)),
                             Val(false), nothing, false, nothing, true)[1] == nrow(df)
 end
+
+# avoid invoking Base.allunique(f, iterator) introduced in Julia 1.11
+
+Base.allunique(df::AbstractDataFrame, cols::Tuple) =
+    invoke(Base.allunique, Tuple{AbstractDataFrame, Any}, df, cols)
 
 """
     unique(df::AbstractDataFrame; view::Bool=false, keep::Symbol=:first)

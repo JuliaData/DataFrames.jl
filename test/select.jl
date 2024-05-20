@@ -3024,4 +3024,22 @@ end
     @test_throws ArgumentError combine(gdf, :x => (x -> x[1] == 2 ? "x" : cr) => AsTable)
 end
 
+@testset "empty vector" begin
+    df = DataFrame(a=1:3)
+
+    @test_throws ArgumentError select(df, :a => (x -> Vector{Any}[]))
+
+    for T in (Vector{Any}, Any, NamedTuple{(:x,),Tuple{Int64}})
+        v = combine(df, :a => (x -> T[])).a_function
+        @test isempty(v)
+        @test eltype(v) === T
+    end
+
+    @test size(combine(df, :a => (x -> Vector{Any}[]) => AsTable)) == (0, 0)
+    @test size(combine(df, :a => (x -> Any[]) => AsTable)) == (0, 0)
+    df2 = combine(df, :a => (x -> NamedTuple{(:x,),Tuple{Int64}}[]) => AsTable)
+    @test size(df2) == (0, 1)
+    @test eltype(df2.x) === Int
+end
+
 end # module

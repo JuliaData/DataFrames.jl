@@ -175,6 +175,40 @@ julia> DataFrame([(a=1, b=0), (a=2, b=0)])
    2 │     2      0
 ```
 
+Sometimes your source data might have a heterogeneous set of columns for each observation.
+Here is an example:
+
+```
+julia> source = [(type="circle", radius=10), (type="square", side=20)]
+2-element Vector{NamedTuple{names, Tuple{String, Int64}} where names}:
+ (type = "circle", radius = 10)
+ (type = "square", side = 20)
+```
+
+If you want to create a data frame from such data containing all columns present in at least
+one of the source observations, with a `missing` entry if some column is not present then
+you can use `Tables.dictcolumntable` function to help you create the desired data frame:
+
+```
+julia> DataFrame(Tables.dictcolumntable(source))
+2×3 DataFrame
+ Row │ type    radius   side
+     │ String  Int64?   Int64?
+─────┼──────────────────────────
+   1 │ circle       10  missing
+   2 │ square  missing       20
+```
+
+The role of `Tables.dictcolumntable` is to make sure that the `DataFrame` constructor gets information
+about all columns present in the source data and properly instantiates them. If we did not use
+this function the `DataFrame` constructor would assume that the first row of data contains the set
+of columns present in the source, which would lead to an error in our example:
+
+```
+julia> DataFrame(source)
+ERROR: type NamedTuple has no field radius
+```
+
 Let us finish our review of constructors by showing how to create a `DataFrame`
 from a matrix. In this case you pass a matrix as a first argument. If the second
 argument is just `:auto` then column names `x1`, `x2`, ... will be auto generated.
