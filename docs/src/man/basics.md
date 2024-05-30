@@ -3020,7 +3020,7 @@ In this way, every combination of selected columns and functions will be applied
 
 Pair broadcasting is a simple but powerful tool
 that can be used in any of the manipulation functions listed under
-[Basic Usage of Manipulation Functions](@ref).
+[Manipulation Functions](@ref).
 Experiment for yourself to discover other useful operations.
 
 ### Additional Resources
