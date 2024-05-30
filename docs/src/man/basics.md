@@ -1752,11 +1752,12 @@ a `Not`, `Between`, `All`, or `Cols` expression,
 or a `:`.
 See the [Indexing](@ref) API for the full list of possible values with references.
 
-!!! Note
-      The Julia parser sometimes prevents `:` from being used by itself.
-      If you get
-      `ERROR: syntax: whitespace not allowed after ":" used for quoting`,
-      try using `All()`, `Cols(:)`, or `(:)` instead to select all columns.
+!!! note
+
+    The Julia parser sometimes prevents `:` from being used by itself.
+    If you get
+    `ERROR: syntax: whitespace not allowed after ":" used for quoting`,
+    try using `All()`, `Cols(:)`, or `(:)` instead to select all columns.
 
 ```julia
 julia> df = DataFrame(
@@ -1831,14 +1832,15 @@ julia> subset(df2, [:minor, :male])
    1 │ Jimmy    true  true
 ```
 
-!!! Note
-      Using `Symbol` in `source_column_selector` will perform slightly faster than using `String`.
-      However, `String` is convenient when column names contain spaces.
+!!! note
 
-      All elements of `source_column_selector` must be the same type
-      (unless wrapped in `Cols`),
-      e.g. `subset(df2, [:minor, "male"])` will error
-      since `Symbol` and `String` are used simultaneously.)
+    Using `Symbol` in `source_column_selector` will perform slightly faster than using `String`.
+    However, `String` is convenient when column names contain spaces.
+
+    All elements of `source_column_selector` must be the same type
+    (unless wrapped in `Cols`),
+    e.g. `subset(df2, [:minor, "male"])` will error
+    since `Symbol` and `String` are used simultaneously.
 
 #### `operation_function`
 Inside an `operation` pair, `operation_function` is a function
@@ -1996,7 +1998,8 @@ julia> subset(df, :b => ByRow(<(5))) # shorter version of the previous
    2 │     3      4
 ```
 
-!!! Note
+!!! note
+
     `operation_functions` within `subset` or `subset!` function calls
     must return a Boolean vector.
     `true` elements in the Boolean vector will determine
@@ -2349,31 +2352,31 @@ julia> transform(df, :a => (x -> 10 .* x) => (s -> "new_" * s)) # with anonymous
    4 │     4      8     40
 ```
 
-!!! Note
-      It is a good idea to wrap anonymous functions in parentheses
-      to avoid the `=>` operator accidently becoming part of the anonymous function.
-      The examples above do not work correctly without the parentheses!
-      ```julia
-      julia> transform(df, :a => x -> 10 .* x => add_prefix)  # Not what we wanted!
-      4×3 DataFrame
-       Row │ a      b      a_function
-           │ Int64  Int64  Pair…
-      ─────┼────────────────────────────────────────────
-         1 │     1      5  [10, 20, 30, 40]=>add_prefix
-         2 │     2      6  [10, 20, 30, 40]=>add_prefix
-         3 │     3      7  [10, 20, 30, 40]=>add_prefix
-         4 │     4      8  [10, 20, 30, 40]=>add_prefix
+!!! note
 
-      julia> transform(df, :a => x -> 10 .* x => s -> "new_" * s)  # Not what we wanted!
-      4×3 DataFrame
-       Row │ a      b      a_function
-           │ Int64  Int64  Pair…
-      ─────┼─────────────────────────────────────
-         1 │     1      5  [10, 20, 30, 40]=>#18
-         2 │     2      6  [10, 20, 30, 40]=>#18
-         3 │     3      7  [10, 20, 30, 40]=>#18
-         4 │     4      8  [10, 20, 30, 40]=>#18
-      ```
+    It is a good idea to wrap anonymous functions in parentheses
+    to avoid the `=>` operator accidently becoming part of the anonymous function.
+    The examples above do not work correctly without the parentheses!
+    ```julia
+    julia> transform(df, :a => x -> 10 .* x => add_prefix)  # Not what we wanted!
+    4×3 DataFrame
+     Row │ a      b      a_function
+         │ Int64  Int64  Pair…
+    ─────┼────────────────────────────────────────────
+       1 │     1      5  [10, 20, 30, 40]=>add_prefix
+       2 │     2      6  [10, 20, 30, 40]=>add_prefix
+       3 │     3      7  [10, 20, 30, 40]=>add_prefix
+       4 │     4      8  [10, 20, 30, 40]=>add_prefix
+    julia> transform(df, :a => x -> 10 .* x => s -> "new_" * s)  # Not what we wanted!
+    4×3 DataFrame
+     Row │ a      b      a_function
+         │ Int64  Int64  Pair…
+    ─────┼─────────────────────────────────────
+       1 │     1      5  [10, 20, 30, 40]=>#18
+       2 │     2      6  [10, 20, 30, 40]=>#18
+       3 │     3      7  [10, 20, 30, 40]=>#18
+       4 │     4      8  [10, 20, 30, 40]=>#18
+    ```
 
 A renaming function will not work in the
 `source_column_selector => new_column_names` operation form
@@ -2481,11 +2484,12 @@ julia> transform(df, :data => AsTable) # keeps names from named tuples
    2 │ (a = 3, b = 4)      3      4
 ```
 
-!!! Note
-      To pack multiple columns into a single column of `NamedTuple`s
-      (reverse of the above operation)
-      apply the `identity` function `ByRow`, e.g.
-      `transform(df, AsTable([:a, :b]) => ByRow(identity) => :data)`.
+!!! note
+
+    To pack multiple columns into a single column of `NamedTuple`s
+    (reverse of the above operation)
+    apply the `identity` function `ByRow`, e.g.
+    `transform(df, AsTable([:a, :b]) => ByRow(identity) => :data)`.
 
 Renaming functions also work for multi-column transformations,
 but they must operate on a vector of strings.
@@ -2756,18 +2760,19 @@ julia> ["x" => "a", "y" => "b"] == (["x", "y"] .=> ["a", "b"])
 true
 ```
 
-!!! Note
-      These operation pairs (or vector of pairs) can be given variable names.
-      This is uncommon in practice but could be helpful for intermediate
-      inspection and testing.
-      ```julia
-      df = DataFrame(x = 1:3, y = 4:6)       # create data frame
-      operation = ["x", "y"] .=> ["a", "b"]  # save operation to variable
-      typeof(operation)                      # check type of operation
-      first(operation)                       # check first pair in operation
-      last(operation)                        # check last pair in operation
-      select(df, operation)                  # manipulate `df` with `operation`
-      ```
+!!! note
+
+    These operation pairs (or vector of pairs) can be given variable names.
+    This is uncommon in practice but could be helpful for intermediate
+    inspection and testing.
+    ```julia
+    df = DataFrame(x = 1:3, y = 4:6)       # create data frame
+    operation = ["x", "y"] .=> ["a", "b"]  # save operation to variable
+    typeof(operation)                      # check type of operation
+    first(operation)                       # check first pair in operation
+    last(operation)                        # check last pair in operation
+    select(df, operation)                  # manipulate `df` with `operation`
+    ```
 
 In Julia,
 a non-vector broadcasted with a vector will be repeated in each resultant pair element.
@@ -2932,14 +2937,15 @@ julia> select(
    4 │     4                301                317                273
 ```
 
-!!! Note Notes
-      * `Not("Time")` or `2:4` would have been equally good choices for `source_column_selector` in the above operations.
-      * Don't forget `ByRow` if your function is to be applied to elements rather than entire column vectors.
-      Without `ByRow`, the manipulations above would have thrown
-      `ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)`.
-      * Regular expression (`r""`) and `:` `source_column_selectors`
-      must be wrapped in `Cols` to be properly broadcasted
-      because otherwise the broadcasting occurs before the expression is expanded into a vector of matches.
+!!! note "Notes"
+
+    * `Not("Time")` or `2:4` would have been equally good choices for `source_column_selector` in the above operations.
+    * Don't forget `ByRow` if your function is to be applied to elements rather than entire column vectors.
+    Without `ByRow`, the manipulations above would have thrown
+    `ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)`.
+    * Regular expression (`r""`) and `:` `source_column_selectors`
+    must be wrapped in `Cols` to be properly broadcasted
+    because otherwise the broadcasting occurs before the expression is expanded into a vector of matches.
 
 You could also broadcast different columns to different functions
 by supplying a vector of functions.
