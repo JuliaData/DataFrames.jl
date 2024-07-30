@@ -50,7 +50,7 @@ julia> @chain df begin
    2 │ Roger              4
 ```
 
-Below are examples showcasing `@group_by` with `@summarize` or `@mutate` - analagous to the split, apply combine pattern.
+Below are examples showcasing `@group_by` with `@summarize` or `@mutate` - analagous to the split, apply, combine pattern.
 
 ```jldoctest tidierdata
 julia> df = DataFrame(groups = repeat('a':'e', inner = 2), b_col = 1:10, c_col = 11:20,  d_col = 111:120)
@@ -86,13 +86,12 @@ julia> @chain df begin
 julia> @chain df begin
          @filter(b_col > 4 && c_col <= 18)
          @group_by(groups)
-         @mutate begin
-            new_col = b_col + maximum(d_col)
-            new_col2 = c_col - maximum(d_col)
+         @mutate(
+            new_col = b_col + maximum(d_col),
+            new_col2 = c_col - maximum(d_col),
             new_col3 = case_when(c_col >= 18 => "high",
                                  c_col > 15 => "medium",
-                                 true => "low")
-         end
+                                 true => "low"))
          @select(starts_with("new"))
          @ungroup
       end
