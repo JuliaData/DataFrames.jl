@@ -8,6 +8,106 @@ DataFramesMeta.jl, DataFrameMacros.jl and Query.jl. They implement a functionali
 These frameworks are designed both to make it easier for new users to start working with data frames in Julia
 and to allow advanced users to write more compact code.
 
+## TidierData.jl
+[TidierData.jl](https://tidierorg.github.io/TidierData.jl/latest/), part of the [Tidier](https://tidierorg.github.io/Tidier.jl/dev/) metapackage, is a macro based interface that works on `DataFrames`.  The instructions below are for version 0.16.0 of TidierData.jl.
+
+First, install the TidierData.jl package:
+
+```julia
+using Pkg
+Pkg.add("TidierData")
+```
+
+TidierData.jl allows clean, readable, and fast code for all major data transformation functions including [aggregating](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/summarize/), [pivoting](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/pivots/), [nesting](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/nesting/), and [joining](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/joins/). TidierData reexports `@chain` from Chains.jl in addition to Statistics.jl to streamline working data operations and pipelines. 
+
+TidierData abstracts away vectorization with "autovectorization" (which a user can override with `~`). This abstraction means 
+TidierData code can work directly on databases via [TidierDB](https://github.com/TidierOrg/TidierDB.jl), 
+which converts TidierData Chains to DuckDB-compatible SQL which then runs on the database (in addition to 10 other backends). 
+
+```jldoctest tidierdata
+julia> using TidierData
+
+julia> df = DataFrame(name=["John", "Sally", "Roger"],
+                      age=[54.0, 34.0, 79.0],
+                      children=[0, 2, 4])
+3×3 DataFrame
+ Row │ name    age      children
+     │ String  Float64  Int64
+─────┼───────────────────────────
+   1 │ John       54.0         0
+   2 │ Sally      34.0         2
+   3 │ Roger      79.0         4
+
+julia> @chain df begin
+         @filter(children != 2)
+         @select(name, num_children = children)
+       end
+2×2 DataFrame
+ Row │ name    num_children 
+     │ String  Int64        
+─────┼──────────────────────
+   1 │ John               0
+   2 │ Roger              4
+```
+
+Below are examples showcasing `@group_by` with `@summarize` or `@mutate` - analagous to the split, apply combine pattern.
+
+```jldoctest tidierdata
+julia> df = DataFrame(groups = repeat('a':'e', inner = 2), b_col = 1:10, c_col = 11:20,  d_col = 111:120)
+10×4 DataFrame
+ Row │ groups  b_col  c_col  d_col 
+     │ Char    Int64  Int64  Int64 
+─────┼─────────────────────────────
+   1 │ a           1     11    111
+   2 │ a           2     12    112
+   3 │ b           3     13    113
+   4 │ b           4     14    114
+   5 │ c           5     15    115
+   6 │ c           6     16    116
+   7 │ d           7     17    117
+   8 │ d           8     18    118
+   9 │ e           9     19    119
+  10 │ e          10     20    120
+
+julia> @chain df begin
+         @filter(b_col > 2)
+         @group_by(groups)
+         @summarise(median_b = median(b_col), across((b_col:d_col), mean))   
+       end
+4×5 DataFrame
+ Row │ groups  median_b  b_col_mean  c_col_mean  d_col_mean 
+     │ Char    Float64   Float64     Float64     Float64    
+─────┼──────────────────────────────────────────────────────
+   1 │ b            3.5         3.5        13.5       113.5
+   2 │ c            5.5         5.5        15.5       115.5
+   3 │ d            7.5         7.5        17.5       117.5
+   4 │ e            9.5         9.5        19.5       119.5
+
+julia> @chain df begin
+         @filter(b_col > 4 && c_col <= 18)
+         @group_by(groups)
+         @mutate begin
+            new_col = b_col + maximum(d_col)
+            new_col2 = c_col - maximum(d_col)
+            new_col3 = case_when(c_col >= 18 => "high",
+                                 c_col > 15 => "medium",
+                                 true => "low")
+         end
+         @select(starts_with("new"))
+         @ungroup
+      end
+4×4 DataFrame
+ Row │ groups  new_col  new_col2  new_col3 
+     │ Char    Int64    Int64     String   
+─────┼─────────────────────────────────────
+   1 │ c           121      -101  low
+   2 │ c           122      -100  medium
+   3 │ d           125      -101  medium
+   4 │ d           126      -100  high
+```
+
+For more examples, please visit the getting started [TidierData documentation page.](https://tidierorg.github.io/TidierData.jl/latest/)
+
 ## DataFramesMeta.jl
 
 The [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package
