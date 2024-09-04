@@ -9,7 +9,10 @@ These frameworks are designed both to make it easier for new users to start work
 and to allow advanced users to write more compact code.
 
 ## TidierData.jl
-[TidierData.jl](https://tidierorg.github.io/TidierData.jl/latest/), part of the [Tidier](https://tidierorg.github.io/Tidier.jl/dev/) metapackage, is a macro based interface that works on `DataFrames`.  The instructions below are for version 0.16.0 of TidierData.jl.
+[TidierData.jl](https://tidierorg.github.io/TidierData.jl/latest/), part of 
+the [Tidier](https://tidierorg.github.io/Tidier.jl/dev/) ecosystem, is a macro-based 
+data analysis interface that wraps `DataFrames`.  The instructions below are for version 
+0.16.0 of TidierData.jl.
 
 First, install the TidierData.jl package:
 
@@ -18,18 +21,49 @@ using Pkg
 Pkg.add("TidierData")
 ```
 
-TidierData.jl allows clean, readable, and fast code for all major data transformation functions including [aggregating](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/summarize/), [pivoting](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/pivots/), [nesting](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/nesting/), and [joining](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/joins/). TidierData reexports `@chain` from Chains.jl in addition to Statistics.jl to streamline working data operations and pipelines. 
+TidierData.jl enables clean, readable, and fast code for all major data transformation 
+functions including 
+[aggregating](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/summarize/), 
+[pivoting](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/pivots/), 
+[nesting](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/nesting/), 
+and [joining](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/joins/) 
+data frames. TidierData re-exports `DataFrame()` from DataFrames.jl, `@chain` from Chain.jl, and 
+Statistics.jl to streamline data operations. 
 
-TidierData abstracts away vectorization with "autovectorization" (which a user can override with `~`). This abstraction means 
-TidierData code can work directly on databases via [TidierDB](https://github.com/TidierOrg/TidierDB.jl), 
-which converts TidierData Chains to DuckDB-compatible SQL which then runs on the database (in addition to 10 other backends). 
+TidierData.jl is heavily inspired by the `dplyr` and `tidyr` R packages (part of the R 
+`tidyverse`), which it aims to implement using pure Julia by wrapping DataFrames.jl. While
+TidierData.jl borrows conventions from the `tidyverse`, it is important to note that the 
+`tidyverse` itself is often not considered idiomatic R code. TidierData.jl brings 
+data analysis conventions from `tidyverse` into Julia to have the best of both worlds: 
+tidy syntax and the speed and flexibility of the Julia language.
+
+TidierData.jl has two major differences from other macro-based packages. First, TidierData.jl 
+uses tidy expressions. An example of a tidy expression is `a = mean(b)`, where `b` refers 
+to an existing column in the data frame, and `a` refers to either a new or existing column. 
+Referring to variables outside of the data frame requires prefixing variables with `!!`. 
+For example, `a = mean(!!b)` refers to a variable `b` outside the data frame. Second, 
+TidierData.jl aims to make broadcasting mostly invisible through 
+[auto-vectorization](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/autovec/). TidierData.jl currently uses a lookup table to decide which functions not to 
+vectorize; all other functions are automatically vectorized. This allows for 
+writing of concise expressions: `@mutate(df, a = a - mean(a))` transforms the `a` column 
+by subtracting each value by the mean of the column. Behind the scenes, the right-hand 
+expression is converted to `a .- mean(a)` because `mean()` is in the lookup table as a 
+function that should not be vectorized. Take a look at the 
+[auto-vectorization](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/autovec/) documentation for details.
+
+One major benefit of combining tidy expressions with auto-vectorization is that 
+TidierData.jl code (which uses DataFrames.jl as its backend) can work directly on 
+databases using [TidierDB.jl](https://github.com/TidierOrg/TidierDB.jl), 
+which converts tidy expressions into SQL, supporting DuckDB and several other backends.
 
 ```jldoctest tidierdata
 julia> using TidierData
 
-julia> df = DataFrame(name=["John", "Sally", "Roger"],
-                      age=[54.0, 34.0, 79.0],
-                      children=[0, 2, 4])
+julia> df = DataFrame(
+                name = ["John", "Sally", "Roger"],
+                age = [54.0, 34.0, 79.0],
+                children = [0, 2, 4]
+            )
 3×3 DataFrame
  Row │ name    age      children
      │ String  Float64  Int64
@@ -39,8 +73,8 @@ julia> df = DataFrame(name=["John", "Sally", "Roger"],
    3 │ Roger      79.0         4
 
 julia> @chain df begin
-         @filter(children != 2)
-         @select(name, num_children = children)
+           @filter(children != 2)
+           @select(name, num_children = children)
        end
 2×2 DataFrame
  Row │ name    num_children 
@@ -53,7 +87,12 @@ julia> @chain df begin
 Below are examples showcasing `@group_by` with `@summarize` or `@mutate` - analagous to the split, apply, combine pattern.
 
 ```jldoctest tidierdata
-julia> df = DataFrame(groups = repeat('a':'e', inner = 2), b_col = 1:10, c_col = 11:20,  d_col = 111:120)
+julia> df = DataFrame(
+                groups = repeat('a':'e', inner = 2), 
+                b_col = 1:10, 
+                c_col = 11:20, 
+                d_col = 111:120
+            )
 10×4 DataFrame
  Row │ groups  b_col  c_col  d_col 
      │ Char    Int64  Int64  Int64 
@@ -70,9 +109,10 @@ julia> df = DataFrame(groups = repeat('a':'e', inner = 2), b_col = 1:10, c_col =
   10 │ e          10     20    120
 
 julia> @chain df begin
-         @filter(b_col > 2)
-         @group_by(groups)
-         @summarise(median_b = median(b_col), across((b_col:d_col), mean))   
+           @filter(b_col > 2)
+           @group_by(groups)
+           @summarise(median_b = median(b_col), 
+                      across((b_col:d_col), mean))   
        end
 4×5 DataFrame
  Row │ groups  median_b  b_col_mean  c_col_mean  d_col_mean 
@@ -84,17 +124,17 @@ julia> @chain df begin
    4 │ e            9.5         9.5        19.5       119.5
 
 julia> @chain df begin
-         @filter(b_col > 4 && c_col <= 18)
-         @group_by(groups)
-         @mutate(
-            new_col = b_col + maximum(d_col),
-            new_col2 = c_col - maximum(d_col),
-            new_col3 = case_when(c_col >= 18 => "high",
-                                 c_col > 15 => "medium",
-                                 true => "low"))
-         @select(starts_with("new"))
-         @ungroup
-      end
+           @filter(b_col > 4 && c_col <= 18)
+           @group_by(groups)
+           @mutate(
+               new_col = b_col + maximum(d_col),
+               new_col2 = c_col - maximum(d_col),
+               new_col3 = case_when(c_col >= 18  => "high",
+                                    c_col > 15   => "medium",
+                                    true         => "low"))
+           @select(starts_with("new"))
+           @ungroup # required because `@mutate` does not ungroup
+       end
 4×4 DataFrame
  Row │ groups  new_col  new_col2  new_col3 
      │ Char    Int64    Int64     String   
@@ -105,7 +145,7 @@ julia> @chain df begin
    4 │ d           126      -100  high
 ```
 
-For more examples, please visit the getting started [TidierData documentation page.](https://tidierorg.github.io/TidierData.jl/latest/)
+For more examples, please visit the [TidierData.jl](https://tidierorg.github.io/TidierData.jl/latest/) documentation.
 
 ## DataFramesMeta.jl
 
