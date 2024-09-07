@@ -11,7 +11,7 @@ and to allow advanced users to write more compact code.
 ## TidierData.jl
 [TidierData.jl](https://tidierorg.github.io/TidierData.jl/latest/), part of 
 the [Tidier](https://tidierorg.github.io/Tidier.jl/dev/) ecosystem, is a macro-based 
-data analysis interface that wraps `DataFrames`.  The instructions below are for version 
+data analysis interface that wraps DataFrames.jl.  The instructions below are for version 
 0.16.0 of TidierData.jl.
 
 First, install the TidierData.jl package:
@@ -27,7 +27,7 @@ functions including
 [pivoting](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/pivots/), 
 [nesting](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/nesting/), 
 and [joining](https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/joins/) 
-data frames. TidierData re-exports `DataFrame()` from DataFrames.jl, `@chain` from Chain.jl, and 
+data frames. TidierData re-exports `DataFrame` from DataFrames.jl, `@chain` from Chain.jl, and 
 Statistics.jl to streamline data operations. 
 
 TidierData.jl is heavily inspired by the `dplyr` and `tidyr` R packages (part of the R 
