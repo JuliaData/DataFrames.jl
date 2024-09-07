@@ -1151,6 +1151,11 @@ data frames.
     function instead as it is consistent with other DataFrames.jl functions
     (as opposed to `filter`).
 
+!!! note
+
+    Due to type stability the `filter(cols => fun, df::AbstractDataFrame; view::Bool=false)`
+    call is preferred in performance critical applications.
+
 $METADATA_FIXED
 
 See also: [`filter!`](@ref)
@@ -1280,6 +1285,11 @@ data frames.
     collections, but it is generally recommended to use the [`subset!`](@ref)
     function instead as it is consistent with other DataFrames.jl functions
     (as opposed to `filter!`).
+
+!!! note
+
+    Due to type stability the `filter!(cols => fun, df::AbstractDataFrame)`
+    call is preferred in performance critical applications.
 
 $METADATA_FIXED
 
