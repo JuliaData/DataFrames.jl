@@ -1152,6 +1152,7 @@ data frames.
     (as opposed to `filter`).
 
 !!! note
+
     Due to type stability the `filter(cols => fun, df::AbstractDataFrame; view::Bool=false)`
     call is preferred in performance critical applications.
 
@@ -1286,6 +1287,7 @@ data frames.
     (as opposed to `filter!`).
 
 !!! note
+
     Due to type stability the `filter!(cols => fun, df::AbstractDataFrame)`
     call is preferred in performance critical applications.
 
