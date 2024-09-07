@@ -793,7 +793,7 @@ end
     @test sprint(show, "text/csv", df) ==
         """
         \"A\",\"B\"
-        1,\"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)\"
+        1,\"ABC\"
         4,\"\$\\\\frac{x^2}{x^2+y^2}\$\"
         9,\"`Header`\"
         16,\"This is *very*, **very**, very, very, very, very, very, very, very long line\"
