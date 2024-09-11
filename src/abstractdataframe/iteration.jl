@@ -598,6 +598,12 @@ function mapcols!(f::Union{Function,Type}, df::DataFrame; cols=All())
     return df
 end
 
+##############################################################################
+##
+## Reduction
+##
+##############################################################################
+
 """
     reduce(::typeof(vcat),
            dfs::Union{AbstractVector{<:AbstractDataFrame},
@@ -686,7 +692,10 @@ julia> reduce(vcat, [df1, df2, df3], cols=:union, source=:source)
 ```
 """
 function Base.reduce(::typeof(vcat),
-    dfs::Union{AbstractVector{<:AbstractDataFrame},
+    dfs::Union{AbstractVector{AbstractDataFrame},
+        AbstractVector{DataFrame},
+        AbstractVector{SubDataFrame},
+        AbstractVector{Union{DataFrame,SubDataFrame}},
         Tuple{AbstractDataFrame,Vararg{AbstractDataFrame}}};
     cols::Union{Symbol,AbstractVector{Symbol},
         AbstractVector{<:AbstractString}}=:setequal,
@@ -741,8 +750,10 @@ end
 
 # definition needed to avoid dispatch ambiguity
 Base.reduce(::typeof(vcat),
-    dfs::SentinelArrays.ChainedVector{T,A} where {T<:AbstractDataFrame,
-        A<:AbstractVector{T}};
+    dfs::Union{SentinelArrays.ChainedVector{AbstractDataFrame,<:AbstractVector{AbstractDataFrame}},
+        SentinelArrays.ChainedVector{DataFrame,<:AbstractVector{DataFrame}},
+        SentinelArrays.ChainedVector{SubDataFrame,<:AbstractVector{SubDataFrame}},
+        SentinelArrays.ChainedVector{Union{DataFrame,SubDataFrame},<:AbstractVector{Union{DataFrame,SubDataFrame}}}};
     cols::Union{Symbol,AbstractVector{Symbol},
         AbstractVector{<:AbstractString}}=:setequal,
     source::Union{Nothing,SymbolOrString,
