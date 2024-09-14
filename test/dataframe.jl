@@ -2331,6 +2331,7 @@ end
         @test allunique(df, [])
         @test allunique(df, x -> 1:4)
         @test allunique(df, [:a, :b] => ByRow(string))
+        @test_throws ArgumentError allunique(df, ())
     end
 end
 
