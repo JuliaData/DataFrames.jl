@@ -294,6 +294,26 @@ end
 @inline Base.getindex(x::AbstractIndex, rx::Regex) =
     getindex(x, filter(name -> occursin(rx, String(name)), _names(x)))
 
+# Levenshtein Distance
+# taken from https://github.com/JuliaLang/julia/blob/b5af119a6c608de43d6591a6c4129e9369239898/stdlib/REPL/src/docview.jl#L760-L776
+function _levenshtein(s1, s2)
+    a, b = collect(s1), collect(s2)
+    m = length(a)
+    n = length(b)
+    d = Matrix{Int}(undef, m+1, n+1)
+
+    d[1:m+1, 1] = 0:m
+    d[1, 1:n+1] = 0:n
+
+    for i = 1:m, j = 1:n
+        d[i+1,j+1] = min(d[i  , j+1] + 1,
+                         d[i+1, j  ] + 1,
+                         d[i  , j  ] + (a[i] != b[j]))
+    end
+
+    return d[m+1, n+1]
+end
+
 # Fuzzy matching rules:
 # 1. ignore case
 # 2. maximum Levenshtein distance is 2
@@ -302,7 +322,7 @@ end
 # Returns candidates ordered by (distance, name) pair
 function fuzzymatch(l::Dict{Symbol, Int}, idx::Symbol)
         idxs = uppercase(string(idx))
-        dist = [(REPL.levenshtein(uppercase(string(x)), idxs), x) for x in keys(l)]
+        dist = [(_levenshtein(uppercase(string(x)), idxs), x) for x in keys(l)]
         sort!(dist)
         c = [count(x -> x[1] <= i, dist) for i in 0:2]
         maxd = max(0, searchsortedlast(c, 8) - 1)
