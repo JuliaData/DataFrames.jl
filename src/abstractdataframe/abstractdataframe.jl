@@ -47,7 +47,8 @@ selector (this is useful in particular with regular expressions, `Cols`, `Not`, 
 * a `Function` predicate taking the column name as a string and returning `true`
   for columns that should be kept
 
-See also [`propertynames`](@ref) which returns a `Vector{Symbol}`.
+See also [`propertynames`](@ref) which returns a `Vector{Symbol}`
+(except for `GroupedDataFrame` in which case use `Symbol.(names(df))`).
 
 # Examples
 
