@@ -1,6 +1,6 @@
 module DataFrames
 
-using Statistics, Printf, REPL
+using Statistics, Printf
 using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays
 @reexport using Missings, InvertedIndices
 using Base.Sort, Base.Order, Base.Iterators, Base.Threads
@@ -20,6 +20,7 @@ import DataAPI,
        DataAPI.Between,
        DataAPI.Cols,
        DataAPI.describe,
+       DataAPI.groupby,
        DataAPI.innerjoin,
        DataAPI.outerjoin,
        DataAPI.rightjoin,

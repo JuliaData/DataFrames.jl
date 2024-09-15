@@ -822,7 +822,12 @@ function select_transform!((nc,)::Ref{Any}, df::AbstractDataFrame, newdf::DataFr
             res = newres
         elseif !(res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix,
                                Tables.AbstractRow})
-            res = Tables.columntable(res)
+            if res isa Union{AbstractVector{Any}, AbstractVector{<:AbstractVector}}
+                @assert isempty(res)
+                res = DataFrame()
+            else
+                res = Tables.columntable(res)
+            end
         end
     end
 

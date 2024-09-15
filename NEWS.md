@@ -16,6 +16,9 @@
 
 ## Bug fixes
 
+* Correctly throw an error if negative number of rows is passed
+  to `first` or `last`
+  ([#3402](https://github.com/JuliaData/DataFrames.jl/pull/3402))
 * Always use the default thread pool for multithreaded operations,
   instead of using the interactive thread pool when Julia was started
   with `-tM,N` with N > 0
@@ -23,6 +26,25 @@
 * Correctly return `Bool[]` in the `nonunique` function applied to a data frame
   with a pulled column that has zero levels in the pool
   ([#3393](https://github.com/JuliaData/DataFrames.jl/pull/3393))
+* Correctly index `eachrow` and `eachcol` with `CartesianIndex`
+  ([#3413](https://github.com/JuliaData/DataFrames.jl/issues/3413))
+* Correctly handle non-standard integers when converting them to `BigInt`
+  ([#3419](https://github.com/JuliaData/DataFrames.jl/issues/3419))
+
+## Removed deprecations
+
+* The `by` and `aggregate` functions that were deprecated before 1.0
+  release are now removed.
+  ([#3422](https://github.com/JuliaData/DataFrames.jl/issues/3422))
+
+## Julia compatibility change
+
+* Ensure that `allunique(::AbstractDataFrame, ::Any)` always gets
+  interpreted as test for uniqueness of rows in the first positional argument
+  ([#3434](https://github.com/JuliaData/DataFrames.jl/issues/3434))
+* Make sure that an empty vector of `Any` or of `AbstractVector` is treated as having
+  no columns when a data frame is being processed with `combine`/`select`/`transform`.
+  ([#3435](https://github.com/JuliaData/DataFrames.jl/issues/3435))
 
 # DataFrames.jl v1.6.1 Release Notes
 

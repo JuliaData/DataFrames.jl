@@ -207,6 +207,11 @@ function Base.allunique(df::AbstractDataFrame, cols=:)
                             Val(false), nothing, false, nothing, true)[1] == nrow(df)
 end
 
+# avoid invoking Base.allunique(f, iterator) introduced in Julia 1.11
+
+Base.allunique(df::AbstractDataFrame, cols::Tuple) =
+    invoke(Base.allunique, Tuple{AbstractDataFrame, Any}, df, cols)
+
 """
     unique(df::AbstractDataFrame; view::Bool=false, keep::Symbol=:first)
     unique(df::AbstractDataFrame, cols; view::Bool=false, keep::Symbol=:first)
