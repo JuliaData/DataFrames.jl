@@ -1,7 +1,7 @@
 DataFrames.jl
 =============
 
-[![Coverage Status](http://codecov.io/github/JuliaData/DataFrames.jl/coverage.svg?branch=main)](http://codecov.io/github/JuliaData/DataFrames.jl?branch=main)
+[![codecov](https://codecov.io/gh/JuliaData/DataFrames.jl/graph/badge.svg?token=DHYzeKcumV)](https://codecov.io/gh/JuliaData/DataFrames.jl)
 [![CI Testing](https://github.com/JuliaData/DataFrames.jl/workflows/CI/badge.svg)](https://github.com/JuliaData/DataFrames.jl/actions?query=workflow%3ACI+branch%3Amain)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7632427.svg)](https://doi.org/10.5281/zenodo.7632427)
 
