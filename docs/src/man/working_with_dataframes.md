@@ -891,8 +891,8 @@ julia> combine(df2, All() .=> identity .=> c -> first(c) .* ["_min", "_max"])
    1 │     1      4      1.0      4.0
 ```
 
-Note that in this example we needed to pass `identity` explicitly as with
-`All() =>  (c -> first(c) .* ["_min", "_max"])` the right-hand side part would be
+Note that in this example we needed to pass `identity` explicitly since with
+`All() => (c -> first(c) .* ["_min", "_max"])` the right-hand side part would be
 treated as a transformation and not as a rule for target column names generation.
 
 You might want to perform the transformation of the source data frame into the result
