@@ -540,19 +540,53 @@ julia&gt; mean(df.A)
    3 │     3      2.0
    4 │     4      1.0
 
-julia&gt; combine(df, names(df) .=&gt; sum)
+julia&gt; combine(df, All() .=&gt; sum)
 1×2 DataFrame
  Row │ A_sum  B_sum
      │ Int64  Float64
 ─────┼────────────────
    1 │    10     10.0
 
-julia&gt; combine(df, names(df) .=&gt; sum, names(df) .=&gt; prod)
+julia&gt; combine(df, All() .=&gt; sum, All() .=&gt; prod)
 1×4 DataFrame
  Row │ A_sum  B_sum    A_prod  B_prod
      │ Int64  Float64  Int64   Float64
 ─────┼─────────────────────────────────
-   1 │    10     10.0      24     24.0</code></pre><p>If you would prefer the result to have the same number of rows as the source data frame, use <code>select</code> instead of <code>combine</code>.</p><h2 id="Handling-of-Columns-Stored-in-a-DataFrame"><a class="docs-heading-anchor" href="#Handling-of-Columns-Stored-in-a-DataFrame">Handling of Columns Stored in a <code>DataFrame</code></a><a id="Handling-of-Columns-Stored-in-a-DataFrame-1"></a><a class="docs-heading-anchor-permalink" href="#Handling-of-Columns-Stored-in-a-DataFrame" title="Permalink"></a></h2><p>Functions that transform a <code>DataFrame</code> to produce a new <code>DataFrame</code> always perform a copy of the columns by default, for example:</p><pre><code class="language-julia-repl hljs">julia&gt; df = DataFrame(A=1:4, B=4.0:-1.0:1.0)
+   1 │    10     10.0      24     24.0
+
+julia&gt; combine(df, All() .=&gt; [sum prod]) # the same using 2-dimensional broadcasting
+1×4 DataFrame
+ Row │ A_sum  B_sum    A_prod  B_prod
+     │ Int64  Float64  Int64   Float64
+─────┼─────────────────────────────────
+   1 │    10     10.0      24     24.0</code></pre><p>If you would prefer the result to have the same number of rows as the source data frame, use <code>select</code> instead of <code>combine</code>.</p><p>In the remainder of this section we will discuss more advanced topics related to the operation specification syntax, so you may decide to skip them if you want to focus on the most common usage patterns.</p><p>A <code>DataFrame</code> can store values of any type as its columns, for example below we show how one can store a <code>Tuple</code>:</p><pre><code class="nohighlight hljs">julia&gt; df2 = combine(df, All() .=&gt; extrema)
+1×2 DataFrame
+ Row │ A_extrema  B_extrema
+     │ Tuple…     Tuple…
+─────┼───────────────────────
+   1 │ (1, 4)     (1.0, 4.0)</code></pre><p>Later you might want to expand the tuples into separate columns storing the computed minima and maxima. This can be achieved by passing multiple columns for the output. Here is an example of how this can be done by writing the column names by-hand for a single input column:</p><pre><code class="nohighlight hljs">julia&gt; combine(df2, &quot;A_extrema&quot; =&gt; identity =&gt; [&quot;A_min&quot;, &quot;A_max&quot;])
+1×2 DataFrame
+ Row │ A_min  A_max
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4</code></pre><p>You can extend it to handling all columns in <code>df2</code> using broadcasting:</p><pre><code class="nohighlight hljs">julia&gt; combine(df2, All() .=&gt; identity .=&gt; [[&quot;A_min&quot;, &quot;A_max&quot;], [&quot;B_min&quot;, &quot;B_max&quot;]])
+1×4 DataFrame
+ Row │ A_min  A_max  B_min    B_max
+     │ Int64  Int64  Float64  Float64
+─────┼────────────────────────────────
+   1 │     1      4      1.0      4.0</code></pre><p>This approach works, but can be improved. Instead of writing all the column names manually we can instead use a function as a way to specify target column names based on source column names:</p><pre><code class="nohighlight hljs">julia&gt; combine(df2, All() .=&gt; identity .=&gt; c -&gt; first(c) .* [&quot;_min&quot;, &quot;_max&quot;])
+1×4 DataFrame
+ Row │ A_min  A_max  B_min    B_max
+     │ Int64  Int64  Float64  Float64
+─────┼────────────────────────────────
+   1 │     1      4      1.0      4.0</code></pre><p>Note that in this example we needed to pass <code>identity</code> explicitly since with <code>All() =&gt; (c -&gt; first(c) .* [&quot;_min&quot;, &quot;_max&quot;])</code> the right-hand side part would be treated as a transformation and not as a rule for target column names generation.</p><p>You might want to perform the transformation of the source data frame into the result we have just shown in one step. This can be achieved with the following expression:</p><pre><code class="nohighlight hljs">julia&gt; combine(df, All() .=&gt; Ref∘extrema .=&gt; c -&gt; c .* [&quot;_min&quot;, &quot;_max&quot;])
+1×4 DataFrame
+ Row │ A_min  A_max  B_min    B_max
+     │ Int64  Int64  Float64  Float64
+─────┼────────────────────────────────
+   1 │     1      4      1.0      4.0</code></pre><p>Note that in this case we needed to add a <code>Ref</code> call in the <code>Ref∘extrema</code> operation specification. Without <code>Ref</code>, <code>combine</code> iterates the contents of the value returned by the operation specification function, which in our case is a tuple of numbers, and tries to expand it assuming that each produced value represents one row, so one gets an error:</p><pre><code class="nohighlight hljs">julia&gt; combine(df, All() .=&gt; extrema .=&gt; [c -&gt; c .* [&quot;_min&quot;, &quot;_max&quot;]])
+ERROR: ArgumentError: &#39;Tuple{Int64, Int64}&#39; iterates &#39;Int64&#39; values,
+which doesn&#39;t satisfy the Tables.jl `AbstractRow` interface</code></pre><p>Note that we used <code>Ref</code> as it is a container that is typically used in DataFrames.jl when one wants to store one row, however, in general it could be another iterator (e.g. a tuple).</p><h2 id="Handling-of-Columns-Stored-in-a-DataFrame"><a class="docs-heading-anchor" href="#Handling-of-Columns-Stored-in-a-DataFrame">Handling of Columns Stored in a <code>DataFrame</code></a><a id="Handling-of-Columns-Stored-in-a-DataFrame-1"></a><a class="docs-heading-anchor-permalink" href="#Handling-of-Columns-Stored-in-a-DataFrame" title="Permalink"></a></h2><p>Functions that transform a <code>DataFrame</code> to produce a new <code>DataFrame</code> always perform a copy of the columns by default, for example:</p><pre><code class="language-julia-repl hljs">julia&gt; df = DataFrame(A=1:4, B=4.0:-1.0:1.0)
 4×2 DataFrame
  Row │ A      B
      │ Int64  Float64
@@ -710,4 +744,4 @@ julia&gt; df .= ifelse.(df .== &quot;None&quot;, missing, df)
    1 │ a             1  missing  x
    2 │ missing       2  j        y
    3 │ b             3  k        missing
-   4 │ missing       4  h        z</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../getting_started/">« Getting Started</a><a class="docs-footer-nextpage" href="../importing_and_exporting/">Importing and Exporting Data (I/O) »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Sunday 22 September 2024 20:14">Sunday 22 September 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+   4 │ missing       4  h        z</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../getting_started/">« Getting Started</a><a class="docs-footer-nextpage" href="../importing_and_exporting/">Importing and Exporting Data (I/O) »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Sunday 22 September 2024 20:15">Sunday 22 September 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
