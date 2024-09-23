@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Data manipulation frameworks · DataFrames.jl</title><meta name="title" content="Data manipulation frameworks · DataFrames.jl"/><meta property="og:title" content="Data manipulation frameworks · DataFrames.jl"/><meta property="twitter:title" content="Data manipulation frameworks · DataFrames.jl"/><meta name="description" content="Documentation for DataFrames.jl."/><meta property="og:description" content="Documentation for DataFrames.jl."/><meta property="twitter:description" content="Documentation for DataFrames.jl."/><meta property="og:url" content="https://juliadata.github.io/DataFrames.jl/stable/man/querying_frameworks/"/><meta property="twitter:url" content="https://juliadata.github.io/DataFrames.jl/stable/man/querying_frameworks/"/><link rel="canonical" href="https://juliadata.github.io/DataFrames.jl/stable/man/querying_frameworks/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="DataFrames.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">DataFrames.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><a class="tocitem" href="../basics/">First Steps with DataFrames.jl</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../getting_started/">Getting Started</a></li><li><a class="tocitem" href="../working_with_dataframes/">Working with DataFrames</a></li><li><a class="tocitem" href="../importing_and_exporting/">Importing and Exporting Data (I/O)</a></li><li><a class="tocitem" href="../joins/">Joins</a></li><li><a class="tocitem" href="../split_apply_combine/">Split-apply-combine</a></li><li><a class="tocitem" href="../reshaping_and_pivoting/">Reshaping</a></li><li><a class="tocitem" href="../sorting/">Sorting</a></li><li><a class="tocitem" href="../categorical/">Categorical Data</a></li><li><a class="tocitem" href="../missing/">Missing Data</a></li><li class="is-active"><a class="tocitem" href>Data manipulation frameworks</a><ul class="internal"><li><a class="tocitem" href="#TidierData.jl"><span>TidierData.jl</span></a></li><li><a class="tocitem" href="#DataFramesMeta.jl"><span>DataFramesMeta.jl</span></a></li><li><a class="tocitem" href="#DataFrameMacros.jl"><span>DataFrameMacros.jl</span></a></li><li><a class="tocitem" href="#Query.jl"><span>Query.jl</span></a></li></ul></li><li><a class="tocitem" href="../comparisons/">Comparison with Python/R/Stata</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../lib/types/">Types</a></li><li><a class="tocitem" href="../../lib/functions/">Functions</a></li><li><a class="tocitem" href="../../lib/indexing/">Indexing</a></li><li><a class="tocitem" href="../../lib/metadata/">Metadata</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href>Data manipulation frameworks</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Data manipulation frameworks</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaData/DataFrames.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JuliaData/DataFrames.jl/blob/main/docs/src/man/querying_frameworks.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Data-manipulation-frameworks"><a class="docs-heading-anchor" href="#Data-manipulation-frameworks">Data manipulation frameworks</a><a id="Data-manipulation-frameworks-1"></a><a class="docs-heading-anchor-permalink" href="#Data-manipulation-frameworks" title="Permalink"></a></h1><p>Three frameworks provide convenience methods to manipulate <code>DataFrame</code>s: DataFramesMeta.jl, DataFrameMacros.jl and Query.jl. They implement a functionality similar to <a href="https://dplyr.tidyverse.org/">dplyr</a> or <a href="https://en.wikipedia.org/wiki/Language_Integrated_Query">LINQ</a>.</p><p>These frameworks are designed both to make it easier for new users to start working with data frames in Julia and to allow advanced users to write more compact code.</p><h2 id="TidierData.jl"><a class="docs-heading-anchor" href="#TidierData.jl">TidierData.jl</a><a id="TidierData.jl-1"></a><a class="docs-heading-anchor-permalink" href="#TidierData.jl" title="Permalink"></a></h2><p><a href="https://tidierorg.github.io/TidierData.jl/latest/">TidierData.jl</a>, part of  the <a href="https://tidierorg.github.io/Tidier.jl/dev/">Tidier</a> ecosystem, is a macro-based  data analysis interface that wraps DataFrames.jl.  The instructions below are for version  0.16.0 of TidierData.jl.</p><p>First, install the TidierData.jl package:</p><pre><code class="language-julia hljs">using Pkg
+Pkg.add(&quot;TidierData&quot;)</code></pre><p>TidierData.jl enables clean, readable, and fast code for all major data transformation  functions including  <a href="https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/summarize/">aggregating</a>,  <a href="https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/pivots/">pivoting</a>,  <a href="https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/nesting/">nesting</a>,  and <a href="https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/joins/">joining</a>  data frames. TidierData re-exports <code>DataFrame</code> from DataFrames.jl, <code>@chain</code> from Chain.jl, and  Statistics.jl to streamline data operations. </p><p>TidierData.jl is heavily inspired by the <code>dplyr</code> and <code>tidyr</code> R packages (part of the R  <code>tidyverse</code>), which it aims to implement using pure Julia by wrapping DataFrames.jl. While TidierData.jl borrows conventions from the <code>tidyverse</code>, it is important to note that the  <code>tidyverse</code> itself is often not considered idiomatic R code. TidierData.jl brings  data analysis conventions from <code>tidyverse</code> into Julia to have the best of both worlds:  tidy syntax and the speed and flexibility of the Julia language.</p><p>TidierData.jl has two major differences from other macro-based packages. First, TidierData.jl  uses tidy expressions. An example of a tidy expression is <code>a = mean(b)</code>, where <code>b</code> refers  to an existing column in the data frame, and <code>a</code> refers to either a new or existing column.  Referring to variables outside of the data frame requires prefixing variables with <code>!!</code>.  For example, <code>a = mean(!!b)</code> refers to a variable <code>b</code> outside the data frame. Second,  TidierData.jl aims to make broadcasting mostly invisible through  <a href="https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/autovec/">auto-vectorization</a>. TidierData.jl currently uses a lookup table to decide which functions not to  vectorize; all other functions are automatically vectorized. This allows for  writing of concise expressions: <code>@mutate(df, a = a - mean(a))</code> transforms the <code>a</code> column  by subtracting each value by the mean of the column. Behind the scenes, the right-hand  expression is converted to <code>a .- mean(a)</code> because <code>mean()</code> is in the lookup table as a  function that should not be vectorized. Take a look at the  <a href="https://tidierorg.github.io/TidierData.jl/latest/examples/generated/UserGuide/autovec/">auto-vectorization</a> documentation for details.</p><p>One major benefit of combining tidy expressions with auto-vectorization is that  TidierData.jl code (which uses DataFrames.jl as its backend) can work directly on  databases using <a href="https://github.com/TidierOrg/TidierDB.jl">TidierDB.jl</a>,  which converts tidy expressions into SQL, supporting DuckDB and several other backends.</p><pre><code class="language-julia-repl hljs">julia&gt; using TidierData
+
+julia&gt; df = DataFrame(
+                name = [&quot;John&quot;, &quot;Sally&quot;, &quot;Roger&quot;],
+                age = [54.0, 34.0, 79.0],
+                children = [0, 2, 4]
+            )
+3×3 DataFrame
+ Row │ name    age      children
+     │ String  Float64  Int64
+─────┼───────────────────────────
+   1 │ John       54.0         0
+   2 │ Sally      34.0         2
+   3 │ Roger      79.0         4
+
+julia&gt; @chain df begin
+           @filter(children != 2)
+           @select(name, num_children = children)
+       end
+2×2 DataFrame
+ Row │ name    num_children 
+     │ String  Int64        
+─────┼──────────────────────
+   1 │ John               0
+   2 │ Roger              4</code></pre><p>Below are examples showcasing <code>@group_by</code> with <code>@summarize</code> or <code>@mutate</code> - analagous to the split, apply, combine pattern.</p><pre><code class="language-julia-repl hljs">julia&gt; df = DataFrame(
+                groups = repeat(&#39;a&#39;:&#39;e&#39;, inner = 2), 
+                b_col = 1:10, 
+                c_col = 11:20, 
+                d_col = 111:120
+            )
+10×4 DataFrame
+ Row │ groups  b_col  c_col  d_col 
+     │ Char    Int64  Int64  Int64 
+─────┼─────────────────────────────
+   1 │ a           1     11    111
+   2 │ a           2     12    112
+   3 │ b           3     13    113
+   4 │ b           4     14    114
+   5 │ c           5     15    115
+   6 │ c           6     16    116
+   7 │ d           7     17    117
+   8 │ d           8     18    118
+   9 │ e           9     19    119
+  10 │ e          10     20    120
+
+julia&gt; @chain df begin
+           @filter(b_col &gt; 2)
+           @group_by(groups)
+           @summarise(median_b = median(b_col), 
+                      across((b_col:d_col), mean))   
+       end
+4×5 DataFrame
+ Row │ groups  median_b  b_col_mean  c_col_mean  d_col_mean 
+     │ Char    Float64   Float64     Float64     Float64    
+─────┼──────────────────────────────────────────────────────
+   1 │ b            3.5         3.5        13.5       113.5
+   2 │ c            5.5         5.5        15.5       115.5
+   3 │ d            7.5         7.5        17.5       117.5
+   4 │ e            9.5         9.5        19.5       119.5
+
+julia&gt; @chain df begin
+           @filter(b_col &gt; 4 &amp;&amp; c_col &lt;= 18)
+           @group_by(groups)
+           @mutate(
+               new_col = b_col + maximum(d_col),
+               new_col2 = c_col - maximum(d_col),
+               new_col3 = case_when(c_col &gt;= 18  =&gt; &quot;high&quot;,
+                                    c_col &gt; 15   =&gt; &quot;medium&quot;,
+                                    true         =&gt; &quot;low&quot;))
+           @select(starts_with(&quot;new&quot;))
+           @ungroup # required because `@mutate` does not ungroup
+       end
+4×4 DataFrame
+ Row │ groups  new_col  new_col2  new_col3 
+     │ Char    Int64    Int64     String   
+─────┼─────────────────────────────────────
+   1 │ c           121      -101  low
+   2 │ c           122      -100  medium
+   3 │ d           125      -101  medium
+   4 │ d           126      -100  high</code></pre><p>For more examples, please visit the <a href="https://tidierorg.github.io/TidierData.jl/latest/">TidierData.jl</a> documentation.</p><h2 id="DataFramesMeta.jl"><a class="docs-heading-anchor" href="#DataFramesMeta.jl">DataFramesMeta.jl</a><a id="DataFramesMeta.jl-1"></a><a class="docs-heading-anchor-permalink" href="#DataFramesMeta.jl" title="Permalink"></a></h2><p>The <a href="https://github.com/JuliaStats/DataFramesMeta.jl">DataFramesMeta.jl</a> package provides a convenient yet fast macro-based interface to work with <code>DataFrame</code>s. The instructions below are for version 0.10.0 of DataFramesMeta.jl.</p><p>First install the DataFramesMeta.jl package:</p><pre><code class="language-julia hljs">using Pkg
+Pkg.add(&quot;DataFramesMeta&quot;)</code></pre><p>The major benefit of the package is it provides a more convenient syntax for the transformation functions <code>transform</code>, <code>select</code>, and <code>combine</code>  via the macros <code>@transform</code>, <code>@select</code>, <code>@combine</code>, and more.</p><p>DataFramesMeta.jl also reexports the <code>@chain</code> macro from  <a href="https://github.com/jkrumbiegel/Chain.jl">Chain.jl</a>, allowing users to pipe the output of one transformation as an input to another, as with  <code>|&gt;</code> and <code>%&gt;%</code> in R. </p><p>Below we present several selected examples of usage of the package.</p><p>First we subset rows of the source data frame using a logical condition and select two of its columns, renaming one of them:</p><pre><code class="language-julia-repl hljs">julia&gt; using DataFramesMeta
+
+julia&gt; df = DataFrame(name=[&quot;John&quot;, &quot;Sally&quot;, &quot;Roger&quot;],
+                      age=[54.0, 34.0, 79.0],
+                      children=[0, 2, 4])
+3×3 DataFrame
+ Row │ name    age      children
+     │ String  Float64  Int64
+─────┼───────────────────────────
+   1 │ John       54.0         0
+   2 │ Sally      34.0         2
+   3 │ Roger      79.0         4
+
+julia&gt; @chain df begin
+           @rsubset :age &gt; 40 
+           @select(:number_of_children = :children, :name)
+       end
+2×2 DataFrame
+ Row │ number_of_children  name
+     │ Int64               String
+─────┼────────────────────────────
+   1 │                  0  John
+   2 │                  4  Roger</code></pre><p>In the following examples we show that DataFramesMeta.jl also supports the split-apply-combine pattern:</p><pre><code class="language-julia-repl hljs">julia&gt; df = DataFrame(key=repeat(1:3, 4), value=1:12)
+12×2 DataFrame
+ Row │ key    value
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
+   4 │     1      4
+   5 │     2      5
+   6 │     3      6
+   7 │     1      7
+   8 │     2      8
+   9 │     3      9
+  10 │     1     10
+  11 │     2     11
+  12 │     3     12
+
+julia&gt; @chain df begin
+           @rsubset :value &gt; 3 
+           @by(:key, :min = minimum(:value), :max = maximum(:value))
+           @select(:key, :range = :max - :min)
+        end
+3×2 DataFrame
+ Row │ key    range
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      6
+   2 │     2      6
+   3 │     3      6
+
+julia&gt; @chain df begin
+           groupby(:key)
+           @transform :value0 = :value .- minimum(:value)
+       end
+12×3 DataFrame
+ Row │ key    value  value0
+     │ Int64  Int64  Int64
+─────┼──────────────────────
+   1 │     1      1       0
+   2 │     2      2       0
+   3 │     3      3       0
+   4 │     1      4       3
+   5 │     2      5       3
+   6 │     3      6       3
+   7 │     1      7       6
+   8 │     2      8       6
+   9 │     3      9       6
+  10 │     1     10       9
+  11 │     2     11       9
+  12 │     3     12       9</code></pre><p>You can find more details about how this package can be used on the <a href="https://github.com/JuliaData/DataFramesMeta.jl">DataFramesMeta.jl GitHub page</a>.</p><h2 id="DataFrameMacros.jl"><a class="docs-heading-anchor" href="#DataFrameMacros.jl">DataFrameMacros.jl</a><a id="DataFrameMacros.jl-1"></a><a class="docs-heading-anchor-permalink" href="#DataFrameMacros.jl" title="Permalink"></a></h2><p><a href="https://github.com/jkrumbiegel/DataFrameMacros.jl">DataFrameMacros.jl</a> is an alternative to DataFramesMeta.jl with an additional focus on convenient solutions for the transformation of multiple columns at once. The instructions below are for version 0.3 of DataFrameMacros.jl.</p><p>First, install the DataFrameMacros.jl package:</p><pre><code class="language-julia hljs">using Pkg
+Pkg.add(&quot;DataFrameMacros&quot;)</code></pre><p>In DataFrameMacros.jl, all but the <code>@combine</code> macro are row-wise by default. There is also a <code>@groupby</code> which allows creating grouping columns on the fly using the same syntax as <code>@transform</code>, for grouping by new columns without writing them out twice.</p><p>In the example below, you can also see some of DataFrameMacros.jl&#39;s multi-column features, where <code>mean</code> is applied to both age columns at once by selecting them with the <code>r&quot;age&quot;</code> regex. The new column names are then derived using the <code>&quot;{}&quot;</code> shortcut which splices the transformed column names into a string.</p><pre><code class="language-julia-repl hljs">julia&gt; using DataFrames, DataFrameMacros, Chain, Statistics
+
+julia&gt; df = DataFrame(name=[&quot;John&quot;, &quot;Sally&quot;, &quot;Roger&quot;],
+                      age=[54.0, 34.0, 79.0],
+                      children=[0, 2, 4])
+3×3 DataFrame
+ Row │ name    age      children 
+     │ String  Float64  Int64    
+─────┼───────────────────────────
+   1 │ John       54.0         0
+   2 │ Sally      34.0         2
+   3 │ Roger      79.0         4
+
+julia&gt; @chain df begin
+           @transform :age_months = :age * 12
+           @groupby :has_child = :children &gt; 0
+           @combine &quot;mean_{}&quot; = mean({r&quot;age&quot;})
+       end
+2×3 DataFrame
+ Row │ has_child  mean_age  mean_age_months 
+     │ Bool       Float64   Float64         
+─────┼──────────────────────────────────────
+   1 │     false      54.0            648.0
+   2 │      true      56.5            678.0</code></pre><p>There&#39;s also the capability to reference a group of multiple columns as a single unit, for example to run aggregations over them, with the <code>{{ }}</code> syntax. In the following example, the first quarter is compared to the maximum of the other three:</p><pre><code class="language-julia-repl hljs">julia&gt; df = DataFrame(q1 = [12.0, 0.4, 42.7],
+                      q2 = [6.4, 2.3, 40.9],
+                      q3 = [9.5, 0.2, 13.6],
+                      q4 = [6.3, 5.4, 39.3])
+3×4 DataFrame
+ Row │ q1       q2       q3       q4      
+     │ Float64  Float64  Float64  Float64 
+─────┼────────────────────────────────────
+   1 │    12.0      6.4      9.5      6.3
+   2 │     0.4      2.3      0.2      5.4
+   3 │    42.7     40.9     13.6     39.3
+
+julia&gt; @transform df :q1_best = :q1 &gt; maximum({{Not(:q1)}})
+3×5 DataFrame
+ Row │ q1       q2       q3       q4       q1_best 
+     │ Float64  Float64  Float64  Float64  Bool    
+─────┼─────────────────────────────────────────────
+   1 │    12.0      6.4      9.5      6.3     true
+   2 │     0.4      2.3      0.2      5.4    false
+   3 │    42.7     40.9     13.6     39.3     true</code></pre><h2 id="Query.jl"><a class="docs-heading-anchor" href="#Query.jl">Query.jl</a><a id="Query.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Query.jl" title="Permalink"></a></h2><p>The <a href="https://github.com/queryverse/Query.jl">Query.jl</a> package provides advanced data manipulation capabilities for <code>DataFrame</code>s (and many other data structures). This section provides a short introduction to the package, the <a href="http://www.queryverse.org/Query.jl/stable/">Query.jl documentation</a> has a more comprehensive documentation of the package. The instructions here are for version 1.0.0 of Query.jl.</p><p>To get started, install the Query.jl package:</p><pre><code class="language-julia hljs">using Pkg
+Pkg.add(&quot;Query&quot;)</code></pre><p>A query is started with the <code>@from</code> macro and consists of a series of query commands. Query.jl provides commands that can filter, project, join, flatten and group data from a <code>DataFrame</code>. A query can return an iterator, or one can materialize the results of a query into a variety of data structures, including a new <code>DataFrame</code>.</p><p>A simple example of a query looks like this:</p><pre><code class="language-julia-repl hljs">julia&gt; using DataFrames, Query
+
+julia&gt; df = DataFrame(name=[&quot;John&quot;, &quot;Sally&quot;, &quot;Roger&quot;],
+                      age=[54.0, 34.0, 79.0],
+                      children=[0, 2, 4])
+3×3 DataFrame
+ Row │ name    age      children
+     │ String  Float64  Int64
+─────┼───────────────────────────
+   1 │ John       54.0         0
+   2 │ Sally      34.0         2
+   3 │ Roger      79.0         4
+
+julia&gt; q1 = @from i in df begin
+            @where i.age &gt; 40
+            @select {number_of_children=i.children, i.name}
+            @collect DataFrame
+       end
+2×2 DataFrame
+ Row │ number_of_children  name
+     │ Int64               String
+─────┼────────────────────────────
+   1 │                  0  John
+   2 │                  4  Roger</code></pre><p>The query starts with the <code>@from</code> macro. The first argument <code>i</code> is the name of the range variable that will be used to refer to an individual row in later query commands. The next argument <code>df</code> is the data source that one wants to query. The <code>@where</code> command in this query will filter the source data by applying the filter condition <code>i.age &gt; 40</code>. This filters out any rows in which the <code>age</code> column is not larger than 40. The <code>@select</code> command then projects the columns of the source data onto a new column structure. The example here applies three specific modifications: 1) it only keeps a subset of the columns in the source <code>DataFrame</code>, i.e. the <code>age</code> column will not be part of the transformed data; 2) it changes the order of the two columns that are selected; and 3) it renames one of the columns that is selected from <code>children</code> to <code>number_of_children</code>. The example query uses the <code>{}</code> syntax to achieve this. A <code>{}</code> in a Query.jl expression instantiates a new <a href="https://github.com/blackrock/NamedTuples.jl">NamedTuple</a>, i.e. it is a shortcut for writing <code>@NT(number_of_children=&gt;i.children, name=&gt;i.name)</code>. The <code>@collect</code> statement determines the data structure that the query returns. In this example the results are returned as a <code>DataFrame</code>.</p><p>A query without a <code>@collect</code> statement returns a standard julia iterator that can be used with any normal julia language construct that can deal with iterators. The following code returns a julia iterator for the query results:</p><pre><code class="language-julia-repl hljs">julia&gt; q2 = @from i in df begin
+                   @where i.age &gt; 40
+                   @select {number_of_children=i.children, i.name}
+              end; # suppress printing the iterator type
+</code></pre><p>One can loop over the results using a standard julia <code>for</code> statement:</p><pre><code class="language-julia-repl hljs">julia&gt; total_children = 0
+0
+
+julia&gt; for i in q2
+           global total_children += i.number_of_children
+       end
+
+julia&gt; total_children
+4
+</code></pre><p>Or one can use a comprehension to extract the name of a subset of rows:</p><pre><code class="language-julia-repl hljs">julia&gt; y = [i.name for i in q2 if i.number_of_children &gt; 0]
+1-element Vector{String}:
+ &quot;Roger&quot;
+</code></pre><p>The last example (extracting only the name and applying a second filter) could of course be completely expressed as a query expression:</p><pre><code class="language-julia-repl hljs">julia&gt; q3 = @from i in df begin
+            @where i.age &gt; 40 &amp;&amp; i.children &gt; 0
+            @select i.name
+            @collect
+       end
+1-element Vector{String}:
+ &quot;Roger&quot;
+</code></pre><p>A query that ends with a <code>@collect</code> statement without a specific type will materialize the query results into an array. Note also the difference in the <code>@select</code> statement: The previous queries all used the <code>{}</code> syntax in the <code>@select</code> statement to project results into a tabular format. The last query instead just selects a single value from each row in the <code>@select</code> statement.</p><p>These examples only scratch the surface of what one can do with <a href="https://github.com/queryverse/Query.jl">Query.jl</a>, and the interested reader is referred to the <a href="http://www.queryverse.org/Query.jl/stable/">Query.jl documentation</a> for more information.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../missing/">« Missing Data</a><a class="docs-footer-nextpage" href="../comparisons/">Comparison with Python/R/Stata »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Monday 23 September 2024 21:41">Monday 23 September 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
