@@ -3039,7 +3039,7 @@ end
     @test size(combine(df, :a => (x -> Any[]) => AsTable)) == (0, 0)
     df2 = combine(df, :a => (x -> NamedTuple{(:x,),Tuple{Int64}}[]) => AsTable)
     @test size(df2) == (0, 1)
-    @test eltype(df2.x) === Int
+    @test eltype(df2.x) === Int64
 end
 
 end # module

@@ -477,4 +477,19 @@ end
     @test reduce(vcat, (df1, df2)) == DataFrame(a=[1, 1], b=[2, 2])
 end
 
+@testset "vcat type piracy" begin
+    x = Int[]
+    @test reduce(vcat, Union{}[], init=x) === x
+
+    @test reduce(vcat, AbstractDataFrame[DataFrame(a=1), DataFrame(a=2)]) ==
+          DataFrame(a=[1, 2])
+    @test reduce(vcat, Union{DataFrame, SubDataFrame}[DataFrame(a=1), DataFrame(a=2)]) ==
+          DataFrame(a=[1, 2])
+    @test reduce(vcat, AbstractDataFrame[DataFrame(a=1), DataFrame(a=2)]; source=:source) ==
+          DataFrame(a=[1, 2], source=[1, 2])
+    @test reduce(vcat, Union{DataFrame,SubDataFrame}[DataFrame(a=1), DataFrame(a=2)]; source=:source) ==
+          DataFrame(a=[1, 2], source=[1, 2])
+end
+
+
 end # module
