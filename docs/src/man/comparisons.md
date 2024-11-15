@@ -17,7 +17,7 @@ df2 = DataFrame(grp=[1, 3], w=[10, 11])
     Some of the operations mutate the tables so every operation assumes that it is done on the original data frame.
 
 Note that in the comparisons presented below predicates like `x -> x >= 1` can
-be more compactly written as `=>(1)`. The latter form has an additional benefit
+be more compactly written as `>=(1)`. The latter form has an additional benefit
 that it is compiled only once per Julia session (as opposed to `x -> x >= 1`
 which defines a new anonymous function every time it is introduced).
 
