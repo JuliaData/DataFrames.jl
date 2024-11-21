@@ -291,6 +291,8 @@ df2 <- data.table(grp=c(1,3), w = c(10,11))
 |                                   | `df[, argmax_xy := which.max(.SD) , .SDcols = patterns("*x"), by = 1:nrow(df) ]`           | `transform!(df, AsTable(r"^x") => ByRow(argmax))`                           |
 | DataFrame as output               | `df[, .SD[1], by=grp]`                                                                     | `combine(groupby(df, :grp), first)`                                         |
 | DataFrame as output               | `df[, .SD[which.max(x)], by=grp]`                                                          | `combine(groupby(df, :grp), sdf -> sdf[argmax(sdf.x), :])`                  |
+| Reshape longer                    | `longdf = melt(df, measure.vars=c("x","y"), id.vars="id")`                                 | `longdf = stack(df, [:x, :y], :id)`                                         |
+| Reshape wider                     | `dcast(longdf, id ~ variable, value.var="value")`                                          | `unstack(longdf, :id, :variable, :value)`
 
 ### Joining data frames
 
