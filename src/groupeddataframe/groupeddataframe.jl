@@ -48,7 +48,7 @@ mutable struct GroupedDataFrame{T<:AbstractDataFrame}
 end
 
 """
-    groupby(d::AbstractDataFrame, cols;
+    groupby(df::AbstractDataFrame, cols;
             sort::Union{Bool, Nothing, NamedTuple}=nothing,
             skipmissing::Bool=false)
 
