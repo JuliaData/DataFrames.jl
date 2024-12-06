@@ -2547,9 +2547,9 @@ $METADATA_FIXED
 # Examples
 
 ```jldoctest
-julia> using Random
+julia> using Random, StableRNGs
 
-julia> rng = MersenneTwister(1234);
+julia> rng = StableRNG(1234);
 
 julia> shuffle(rng, DataFrame(a=1:5, b=1:5))
 5×2 DataFrame
@@ -2558,9 +2558,9 @@ julia> shuffle(rng, DataFrame(a=1:5, b=1:5))
 ─────┼──────────────
    1 │     2      2
    2 │     1      1
-   3 │     4      4
-   4 │     3      3
-   5 │     5      5
+   3 │     3      3
+   4 │     5      5
+   5 │     4      4
 ```
 """
 Random.shuffle(df::AbstractDataFrame) =
@@ -2585,9 +2585,9 @@ Metadata having other styles is dropped (from parent data frame when `df` is a `
 # Examples
 
 ```jldoctest
-julia> using Random
+julia> using Random, StableRNGs
 
-julia> rng = MersenneTwister(1234);
+julia> rng = StableRNG(1234);
 
 julia> shuffle!(rng, DataFrame(a=1:5, b=1:5))
 5×2 DataFrame
@@ -2596,9 +2596,9 @@ julia> shuffle!(rng, DataFrame(a=1:5, b=1:5))
 ─────┼──────────────
    1 │     2      2
    2 │     1      1
-   3 │     4      4
-   4 │     3      3
-   5 │     5      5
+   3 │     3      3
+   4 │     5      5
+   5 │     4      4
 ```
 """
 Random.shuffle!(df::AbstractDataFrame) =

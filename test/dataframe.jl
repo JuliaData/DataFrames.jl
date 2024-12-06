@@ -1,7 +1,7 @@
 module TestDataFrame
 
 using Dates, DataFrames, Statistics, Random, Test, Logging, DataStructures,
-      CategoricalArrays
+      CategoricalArrays, StableRNGs
 using DataFrames: _columns, index
 using OffsetArrays: OffsetArray
 const ≅ = isequal
@@ -2136,8 +2136,8 @@ end
     refdf = DataFrame(a=1:5, b=11:15)
     refdf.c = refdf.a
     for df in (refdf, view(refdf, 2:5, [2, 1]))
-        x = randperm(MersenneTwister(1234), nrow(df))
-        mt = MersenneTwister(1234)
+        x = randperm(StableRNG(1234), nrow(df))
+        mt = StableRNG(1234)
         @test shuffle(mt, df) == df[x, :]
         Random.seed!(1234)
         x = randperm(nrow(df))
@@ -2145,8 +2145,8 @@ end
         @test shuffle(df) == df[x, :]
     end
     df = copy(refdf)
-    x = randperm(MersenneTwister(1234), nrow(df))
-    mt = MersenneTwister(1234)
+    x = randperm(StableRNG(1234), nrow(df))
+    mt = StableRNG(1234)
     @test shuffle!(mt, df) === df
     @test df == refdf[x, :]
     df = copy(refdf)
@@ -2158,8 +2158,8 @@ end
 
     df = copy(refdf)
     dfv = view(df, 2:4, [3, 1])
-    x = randperm(MersenneTwister(1234), nrow(dfv))
-    mt = MersenneTwister(1234)
+    x = randperm(StableRNG(1234), nrow(dfv))
+    mt = StableRNG(1234)
     @test shuffle!(mt, dfv) === dfv
     @test dfv == view(refdf, 2:4, [3, 1])[x, :]
     @test df[1, :] == refdf[1, :]
