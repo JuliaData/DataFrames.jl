@@ -1,6 +1,7 @@
 using Documenter
 using DataFrames
 using CategoricalArrays
+using StableRNGs
 
 DocMeta.setdocmeta!(DataFrames, :DocTestSetup, :(using DataFrames); recursive=true)
 

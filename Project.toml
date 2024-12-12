@@ -45,6 +45,7 @@ Reexport = "1"
 SentinelArrays = "1.2"
 ShiftedArrays = "1, 2"
 SortingAlgorithms = "0.3, 1"
+StableRNGs = "1"
 Statistics = "1"
 TableTraits = "0.4, 1"
 Tables = "1.9.0"
@@ -60,8 +61,21 @@ Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 ShiftedArrays = "1277b4bf-5013-50f5-be3d-901d8477a67a"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["CategoricalArrays", "Combinatorics", "DataValues", "Dates", "Logging", "OffsetArrays", "Test", "Unitful", "ShiftedArrays", "SparseArrays"]
+test = [
+    "CategoricalArrays",
+    "Combinatorics",
+    "DataValues",
+    "Dates",
+    "Logging",
+    "OffsetArrays",
+    "ShiftedArrays",
+    "SparseArrays",
+    "StableRNGs",
+    "Test",
+    "Unitful",
+]
