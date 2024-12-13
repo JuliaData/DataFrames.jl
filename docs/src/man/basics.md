@@ -3210,7 +3210,6 @@ julia> c1 = "My First Column"; c2 = "My Second Column"; c3 = "My Third Column"; 
 **Manipulation:**
 
 ```julia
-
 julia> transform!(my_very_long_data_frame_name, [c1, c2] => (+) => c3)
 3×3 DataFrame
  Row │ My First Column  My Second Column  My Third Column
