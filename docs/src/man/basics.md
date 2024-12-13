@@ -1635,32 +1635,36 @@ The `operation` argument defines the
 operation to be applied to the source `dataframe`,
 and it can take any of the following common forms explained below:
 
-`source_column_selector`
-: selects source column(s) without manipulating or renaming them
+* `source_column_selector`
 
-   Examples: `:a`, `[:a, :b]`, `All()`, `Not(:a)`
+  selects source column(s) without manipulating or renaming them
 
-`source_column_selector => operation_function`
-: passes source column(s) as arguments to a function
-and automatically names the resulting column(s)
+  Examples: `:a`, `[:a, :b]`, `All()`, `Not(:a)`
 
-   Examples: `:a => sum`, `[:a, :b] => +`, `:a => ByRow(==(3))`
+* `source_column_selector => operation_function`
 
-`source_column_selector => operation_function => new_column_names`
-: passes source column(s) as arguments to a function
-and names the resulting column(s) `new_column_names`
+  passes source column(s) as arguments to a function
+  and automatically names the resulting column(s)
 
-   Examples: `:a => sum => :sum_of_a`, `[:a, :b] => (+) => :a_plus_b`
+  Examples: `:a => sum`, `[:a, :b] => +`, `:a => ByRow(==(3))`
 
-   *(Not available for `subset` or `subset!`)*
+* `source_column_selector => operation_function => new_column_names`
 
-`source_column_selector => new_column_names`
-: renames a source column,
-or splits a column containing collection elements into multiple new columns
+  passes source column(s) as arguments to a function
+  and names the resulting column(s) `new_column_names`
 
-   Examples: `:a => :new_a`, `:a_b => [:a, :b]`, `:nt => AsTable`
+  Examples: `:a => sum => :sum_of_a`, `[:a, :b] => (+) => :a_plus_b`
 
-   (*Not available for `subset` or `subset!`*)
+  *(Not available for `subset` or `subset!`)*
+
+* `source_column_selector => new_column_names`
+
+  renames a source column,
+  or splits a column containing collection elements into multiple new columns
+
+  Examples: `:a => :new_a`, `:a_b => [:a, :b]`, `:nt => AsTable`
+
+  (*Not available for `subset` or `subset!`*)
 
 The `=>` operator constructs a
 [Pair](https://docs.julialang.org/en/v1/base/collections/#Core.Pair),
@@ -1747,7 +1751,7 @@ julia> subset(df, :minor)
 ```
 
 `source_column_selector` may instead be a collection of columns such as a vector,
-a [regular expression](https://docs.julialang.org/en/v1/manual/strings/#Regular-Expressions),
+a [regular expression](https://docs.julialang.org/en/v1/manual/strings/#man-regex-literals),
 a `Not`, `Between`, `All`, or `Cols` expression,
 or a `:`.
 See the [Indexing](@ref) API for the full list of possible values with references.
@@ -2279,7 +2283,8 @@ julia> transform(df, :b => (x -> x .+ 10) => :a)  # replace column :a
    4 │    18      8
 ```
 
-Actually, `renamecols=false` just prevents the function name from being appended to the final column name such that the operation is *usually* returned to the same column.
+Actually, `renamecols=false` just prevents the function name from being appended
+to the final column name such that the operation is *usually* returned to the same column.
 
 ```julia
 julia> transform(df, [:a, :b] => +)  # new column name is all source columns and function name
@@ -2939,13 +2944,18 @@ julia> select(
 
 !!! note "Notes"
 
-    * `Not("Time")` or `2:4` would have been equally good choices for `source_column_selector` in the above operations.
-    * Don't forget `ByRow` if your function is to be applied to elements rather than entire column vectors.
-    Without `ByRow`, the manipulations above would have thrown
-    `ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)`.
+    * `Not("Time")` or `2:4` would have been equally good choices
+      for `source_column_selector` in the above operations.
+
+    * Don't forget `ByRow` if your function is to be applied to elements
+      rather than entire column vectors.
+      Without `ByRow`, the manipulations above would have thrown
+      `ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)`.
+
     * Regular expression (`r""`) and `:` `source_column_selectors`
-    must be wrapped in `Cols` to be properly broadcasted
-    because otherwise the broadcasting occurs before the expression is expanded into a vector of matches.
+      must be wrapped in `Cols` to be properly broadcasted
+      because otherwise the broadcasting occurs before the expression
+      is expanded into a vector of matches.
 
 You could also broadcast different columns to different functions
 by supplying a vector of functions.
@@ -3095,7 +3105,8 @@ julia> df  # see that the previous expression updated the data frame `df`
    3 │     3      6      9
 ```
 
-Recall that the return type from a data frame manipulation function call is always a data frame.
+Recall that the return type from a data frame manipulation function call
+is always a data frame.
 The return type of a data frame column accessed with dot syntax is a `Vector`.
 Thus the expression `df.x + df.y` gets the column data as vectors
 and returns the result of the vector addition.
@@ -3210,7 +3221,6 @@ julia> my_very_long_data_frame_name = DataFrame(
 
 julia> c1 = "My First Column"; c2 = "My Second Column"; c3 = "My Third Column";  # define column names
 ```
-
 **Manipulation:**
 
 ```julia
@@ -3267,6 +3277,19 @@ julia> df.Not(:x)  # will not work; requires a literal column name
 ERROR: ArgumentError: column name :Not not found in the data frame
 ```
 
+**Manipulation:**
+
+```julia
+julia> transform!(df, Not(:x) => ByRow(max))  # find maximum value across all rows except for column `x`
+3×4 DataFrame
+ Row │ x      y      z      y_z_max
+     │ Int64  Int64  Int64  Int64
+─────┼──────────────────────────────
+   1 │     1      4      7        7
+   2 │     2      5      8        8
+   3 │     3      6      9        9
+```
+
 **Indexing:**
 
 ```julia
@@ -3277,19 +3300,6 @@ julia> df[:, :y_z_max] = maximum.(eachrow(df[:, Not(:x)]))  # find maximum value
  9
 
 julia> df  # see that the previous expression updated the data frame `df`
-3×4 DataFrame
- Row │ x      y      z      y_z_max
-     │ Int64  Int64  Int64  Int64
-─────┼──────────────────────────────
-   1 │     1      4      7        7
-   2 │     2      5      8        8
-   3 │     3      6      9        9
-```
-
-**Manipulation:**
-
-```julia
-julia> transform!(df, Not(:x) => ByRow(max))  # find maximum value across all rows except for column `x`
 3×4 DataFrame
  Row │ x      y      z      y_z_max
      │ Int64  Int64  Int64  Int64
