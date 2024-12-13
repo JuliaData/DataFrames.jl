@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>First Steps with DataFrames.jl · DataFrames.jl</title><meta name="title" content="First Steps with DataFrames.jl · DataFrames.jl"/><meta property="og:title" content="First Steps with DataFrames.jl · DataFrames.jl"/><meta property="twitter:title" content="First Steps with DataFrames.jl · DataFrames.jl"/><meta name="description" content="Documentation for DataFrames.jl."/><meta property="og:description" content="Documentation for DataFrames.jl."/><meta property="twitter:description" content="Documentation for DataFrames.jl."/><meta property="og:url" content="https://juliadata.github.io/DataFrames.jl/stable/man/basics/"/><meta property="twitter:url" content="https://juliadata.github.io/DataFrames.jl/stable/man/basics/"/><link rel="canonical" href="https://juliadata.github.io/DataFrames.jl/stable/man/basics/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="DataFrames.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">DataFrames.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li class="is-active"><a class="tocitem" href>First Steps with DataFrames.jl</a><ul class="internal"><li><a class="tocitem" href="#Setting-up-the-Environment"><span>Setting up the Environment</span></a></li><li><a class="tocitem" href="#Constructors-and-Basic-Utility-Functions"><span>Constructors and Basic Utility Functions</span></a></li><li><a class="tocitem" href="#Getting-and-Setting-Data-in-a-Data-Frame"><span>Getting and Setting Data in a Data Frame</span></a></li><li><a class="tocitem" href="#Basic-Usage-of-Transformation-Functions"><span>Basic Usage of Transformation Functions</span></a></li></ul></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../getting_started/">Getting Started</a></li><li><a class="tocitem" href="../working_with_dataframes/">Working with DataFrames</a></li><li><a class="tocitem" href="../importing_and_exporting/">Importing and Exporting Data (I/O)</a></li><li><a class="tocitem" href="../joins/">Joins</a></li><li><a class="tocitem" href="../split_apply_combine/">Split-apply-combine</a></li><li><a class="tocitem" href="../reshaping_and_pivoting/">Reshaping</a></li><li><a class="tocitem" href="../sorting/">Sorting</a></li><li><a class="tocitem" href="../categorical/">Categorical Data</a></li><li><a class="tocitem" href="../missing/">Missing Data</a></li><li><a class="tocitem" href="../querying_frameworks/">Data manipulation frameworks</a></li><li><a class="tocitem" href="../comparisons/">Comparison with Python/R/Stata</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../lib/types/">Types</a></li><li><a class="tocitem" href="../../lib/functions/">Functions</a></li><li><a class="tocitem" href="../../lib/indexing/">Indexing</a></li><li><a class="tocitem" href="../../lib/metadata/">Metadata</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>First Steps with DataFrames.jl</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>First Steps with DataFrames.jl</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaData/DataFrames.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JuliaData/DataFrames.jl/blob/main/docs/src/man/basics.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="First-Steps-with-DataFrames.jl"><a class="docs-heading-anchor" href="#First-Steps-with-DataFrames.jl">First Steps with DataFrames.jl</a><a id="First-Steps-with-DataFrames.jl-1"></a><a class="docs-heading-anchor-permalink" href="#First-Steps-with-DataFrames.jl" title="Permalink"></a></h1><h2 id="Setting-up-the-Environment"><a class="docs-heading-anchor" href="#Setting-up-the-Environment">Setting up the Environment</a><a id="Setting-up-the-Environment-1"></a><a class="docs-heading-anchor-permalink" href="#Setting-up-the-Environment" title="Permalink"></a></h2><p>If want to use the DataFrames.jl package you need to install it first. You can do it using the following commands:</p><pre><code class="language-julia hljs">julia&gt; using Pkg
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>First Steps with DataFrames.jl · DataFrames.jl</title><meta name="title" content="First Steps with DataFrames.jl · DataFrames.jl"/><meta property="og:title" content="First Steps with DataFrames.jl · DataFrames.jl"/><meta property="twitter:title" content="First Steps with DataFrames.jl · DataFrames.jl"/><meta name="description" content="Documentation for DataFrames.jl."/><meta property="og:description" content="Documentation for DataFrames.jl."/><meta property="twitter:description" content="Documentation for DataFrames.jl."/><meta property="og:url" content="https://juliadata.github.io/DataFrames.jl/stable/man/basics/"/><meta property="twitter:url" content="https://juliadata.github.io/DataFrames.jl/stable/man/basics/"/><link rel="canonical" href="https://juliadata.github.io/DataFrames.jl/stable/man/basics/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="DataFrames.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">DataFrames.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li class="is-active"><a class="tocitem" href>First Steps with DataFrames.jl</a><ul class="internal"><li><a class="tocitem" href="#Setting-up-the-Environment"><span>Setting up the Environment</span></a></li><li><a class="tocitem" href="#Constructors-and-Basic-Utility-Functions"><span>Constructors and Basic Utility Functions</span></a></li><li><a class="tocitem" href="#Getting-and-Setting-Data-in-a-Data-Frame"><span>Getting and Setting Data in a Data Frame</span></a></li><li><a class="tocitem" href="#Manipulation-Functions"><span>Manipulation Functions</span></a></li><li><a class="tocitem" href="#Approach-Comparison"><span>Approach Comparison</span></a></li></ul></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../getting_started/">Getting Started</a></li><li><a class="tocitem" href="../working_with_dataframes/">Working with DataFrames</a></li><li><a class="tocitem" href="../importing_and_exporting/">Importing and Exporting Data (I/O)</a></li><li><a class="tocitem" href="../joins/">Joins</a></li><li><a class="tocitem" href="../split_apply_combine/">Split-apply-combine</a></li><li><a class="tocitem" href="../reshaping_and_pivoting/">Reshaping</a></li><li><a class="tocitem" href="../sorting/">Sorting</a></li><li><a class="tocitem" href="../categorical/">Categorical Data</a></li><li><a class="tocitem" href="../missing/">Missing Data</a></li><li><a class="tocitem" href="../querying_frameworks/">Data manipulation frameworks</a></li><li><a class="tocitem" href="../comparisons/">Comparison with Python/R/Stata</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../lib/types/">Types</a></li><li><a class="tocitem" href="../../lib/functions/">Functions</a></li><li><a class="tocitem" href="../../lib/indexing/">Indexing</a></li><li><a class="tocitem" href="../../lib/metadata/">Metadata</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>First Steps with DataFrames.jl</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>First Steps with DataFrames.jl</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaData/DataFrames.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JuliaData/DataFrames.jl/blob/main/docs/src/man/basics.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="First-Steps-with-DataFrames.jl"><a class="docs-heading-anchor" href="#First-Steps-with-DataFrames.jl">First Steps with DataFrames.jl</a><a id="First-Steps-with-DataFrames.jl-1"></a><a class="docs-heading-anchor-permalink" href="#First-Steps-with-DataFrames.jl" title="Permalink"></a></h1><h2 id="Setting-up-the-Environment"><a class="docs-heading-anchor" href="#Setting-up-the-Environment">Setting up the Environment</a><a id="Setting-up-the-Environment-1"></a><a class="docs-heading-anchor-permalink" href="#Setting-up-the-Environment" title="Permalink"></a></h2><p>If want to use the DataFrames.jl package you need to install it first. You can do it using the following commands:</p><pre><code class="language-julia hljs">julia&gt; using Pkg
 
 julia&gt; Pkg.add(&quot;DataFrames&quot;)</code></pre><p>or</p><pre><code class="language-julia hljs">julia&gt; ] # &#39;]&#39; should be pressed
 
@@ -580,7 +580,7 @@ julia&gt; df1
    4 │    95  male         2
    5 │    78  male         2
    6 │    89  male         1</code></pre><p>This is a non-copying operation. One can perform it only if <code>val</code> vector has the same length as number of rows of <code>df1</code> or as a special case if <code>df1</code> would not have any columns.</p><pre><code class="language-julia-repl hljs">julia&gt; df1.Age === val # no copy is performed
-true</code></pre><p>If in indexing you select a subset of rows from a data frame the mutation is performed in place, i.e. writing to an existing vector. Below setting values of column <code>:Job</code> in rows <code>1:3</code> to values <code>[2, 4, 6]</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; df1[1:3, :Job] = [2, 3, 2]
+true</code></pre><p>If in indexing you select a subset of rows from a data frame the mutation is performed in place, i.e. writing to an existing vector. Below setting values of column <code>:Job</code> in rows <code>1:3</code> to values <code>[2, 3, 2]</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; df1[1:3, :Job] = [2, 3, 2]
 3-element Vector{Int64}:
  2
  3
@@ -658,7 +658,7 @@ DataFrameRow
  Row │ Age    Sex     Job
      │ Int64  String  Int64
 ─────┼──────────────────────
-   2 │    98  male        2</code></pre><p>This operations updated the data stored in the <code>df1</code> data frame.</p><p>In a similar fashion views can be used to update data stored in their parent data frame. Here are some examples:</p><pre><code class="language-julia-repl hljs">julia&gt; sdf = view(df1, :, 2:3)
+   2 │    98  male        2</code></pre><p>These operations updated the data stored in the <code>df1</code> data frame.</p><p>In a similar fashion views can be used to update data stored in their parent data frame. Here are some examples:</p><pre><code class="language-julia-repl hljs">julia&gt; sdf = view(df1, :, 2:3)
 6×2 SubDataFrame
  Row │ Sex          Job
      │ String       Int64
@@ -908,420 +908,1046 @@ julia&gt; df1
  997 │ male     little
  998 │ male     little
  999 │ male     moderate
-                984 rows omitted</code></pre><h2 id="Basic-Usage-of-Transformation-Functions"><a class="docs-heading-anchor" href="#Basic-Usage-of-Transformation-Functions">Basic Usage of Transformation Functions</a><a id="Basic-Usage-of-Transformation-Functions-1"></a><a class="docs-heading-anchor-permalink" href="#Basic-Usage-of-Transformation-Functions" title="Permalink"></a></h2><p>In DataFrames.jl we have five functions that we can be used to perform transformations of columns of a data frame:</p><ul><li><code>combine</code>: creates a new data frame populated with columns that are results of transformation applied to the source data frame columns, potentially combining its rows;</li><li><code>select</code>: creates a new data frame that has the same number of rows as the source data frame populated with columns that are results of transformations applied to the source data frame columns;</li><li><code>select!</code>: the same as <code>select</code> but updates the passed data frame in place;</li><li><code>transform</code>: the same as <code>select</code> but keeps the columns that were already present in the data frame (note though that these columns can be potentially modified by the transformation passed to <code>transform</code>);</li><li><code>transform!</code>: the same as <code>transform</code> but updates the passed data frame in place.</li></ul><p>The fundamental ways to specify a transformation are:</p><ul><li><code>source_column =&gt; transformation =&gt; target_column_name</code>; In this scenario the <code>source_column</code> is passed as an argument to <code>transformation</code> function and stored in <code>target_column_name</code> column.</li><li><code>source_column =&gt; transformation</code>; In this scenario we apply the transformation function to <code>source_column</code> and the target column names is automatically generated.</li><li><code>source_column =&gt; target_column_name</code> renames the <code>source_column</code> to <code>target_column_name</code>.</li><li><code>source_column</code> just keep the source column as is in the result without any transformation;</li></ul><p>These rules are typically called transformation mini-language.</p><p>Let us move to the examples of application of these rules</p><pre><code class="language-julia-repl hljs">julia&gt; using Statistics
+                984 rows omitted</code></pre><h2 id="Manipulation-Functions"><a class="docs-heading-anchor" href="#Manipulation-Functions">Manipulation Functions</a><a id="Manipulation-Functions-1"></a><a class="docs-heading-anchor-permalink" href="#Manipulation-Functions" title="Permalink"></a></h2><p>The seven functions below can be used to manipulate data frames by applying operations to them.</p><p>The functions without a <code>!</code> in their name will create a new data frame based on the source data frame, so you will probably want to store the new data frame to a new variable name, e.g. <code>new_df = transform(source_df, operation)</code>. The functions with a <code>!</code> at the end of their name will modify an existing data frame in-place, so there is typically no need to assign the result to a variable, e.g. <code>transform!(source_df, operation)</code> instead of <code>source_df = transform(source_df, operation)</code>.</p><p>The number of columns and rows in the resultant data frame varies depending on the manipulation function employed.</p><table><tr><th style="text-align: right">Function</th><th style="text-align: right">Memory Usage</th><th style="text-align: right">Column Retention</th><th style="text-align: right">Row Retention</th></tr><tr><td style="text-align: right"><code>transform</code></td><td style="text-align: right">Creates a new data frame.</td><td style="text-align: right">Retains original and resultant columns.</td><td style="text-align: right">Retains same number of rows as original data frame.</td></tr><tr><td style="text-align: right"><code>transform!</code></td><td style="text-align: right">Modifies an existing data frame.</td><td style="text-align: right">Retains original and resultant columns.</td><td style="text-align: right">Retains same number of rows as original data frame.</td></tr><tr><td style="text-align: right"><code>select</code></td><td style="text-align: right">Creates a new data frame.</td><td style="text-align: right">Retains only resultant columns.</td><td style="text-align: right">Retains same number of rows as original data frame.</td></tr><tr><td style="text-align: right"><code>select!</code></td><td style="text-align: right">Modifies an existing data frame.</td><td style="text-align: right">Retains only resultant columns.</td><td style="text-align: right">Retains same number of rows as original data frame.</td></tr><tr><td style="text-align: right"><code>subset</code></td><td style="text-align: right">Creates a new data frame.</td><td style="text-align: right">Retains original columns.</td><td style="text-align: right">Retains only rows where condition is true.</td></tr><tr><td style="text-align: right"><code>subset!</code></td><td style="text-align: right">Modifies an existing data frame.</td><td style="text-align: right">Retains original columns.</td><td style="text-align: right">Retains only rows where condition is true.</td></tr><tr><td style="text-align: right"><code>combine</code></td><td style="text-align: right">Creates a new data frame.</td><td style="text-align: right">Retains only resultant columns.</td><td style="text-align: right">Retains only resultant rows.</td></tr></table><h3 id="Constructing-Operations"><a class="docs-heading-anchor" href="#Constructing-Operations">Constructing Operations</a><a id="Constructing-Operations-1"></a><a class="docs-heading-anchor-permalink" href="#Constructing-Operations" title="Permalink"></a></h3><p>All of the functions above use the same syntax which is commonly <code>manipulation_function(dataframe, operation)</code>. The <code>operation</code> argument defines the operation to be applied to the source <code>dataframe</code>, and it can take any of the following common forms explained below:</p><p><code>source_column_selector</code> : selects source column(s) without manipulating or renaming them</p><p>Examples: <code>:a</code>, <code>[:a, :b]</code>, <code>All()</code>, <code>Not(:a)</code></p><p><code>source_column_selector =&gt; operation_function</code> : passes source column(s) as arguments to a function and automatically names the resulting column(s)</p><p>Examples: <code>:a =&gt; sum</code>, <code>[:a, :b] =&gt; +</code>, <code>:a =&gt; ByRow(==(3))</code></p><p><code>source_column_selector =&gt; operation_function =&gt; new_column_names</code> : passes source column(s) as arguments to a function and names the resulting column(s) <code>new_column_names</code></p><p>Examples: <code>:a =&gt; sum =&gt; :sum_of_a</code>, <code>[:a, :b] =&gt; (+) =&gt; :a_plus_b</code></p><p><em>(Not available for <code>subset</code> or <code>subset!</code>)</em></p><p><code>source_column_selector =&gt; new_column_names</code> : renames a source column, or splits a column containing collection elements into multiple new columns</p><p>Examples: <code>:a =&gt; :new_a</code>, <code>:a_b =&gt; [:a, :b]</code>, <code>:nt =&gt; AsTable</code></p><p>(<em>Not available for <code>subset</code> or <code>subset!</code></em>)</p><p>The <code>=&gt;</code> operator constructs a <a href="https://docs.julialang.org/en/v1/base/collections/#Core.Pair">Pair</a>, which is a type to link one object to another. (Pairs are commonly used to create elements of a <a href="https://docs.julialang.org/en/v1/base/collections/#Dictionaries">Dictionary</a>.) In DataFrames.jl manipulation functions, <code>Pair</code> arguments are used to define column <code>operations</code> to be performed. The examples shown above will be explained in more detail later.</p><p><em>The manipulation functions also have methods for applying multiple operations. See the later sections <a href="#Applying-Multiple-Operations-per-Manipulation">Applying Multiple Operations per Manipulation</a> and <a href="#Broadcasting-Operation-Pairs">Broadcasting Operation Pairs</a> for more information.</em></p><h4 id="source_column_selector"><a class="docs-heading-anchor" href="#source_column_selector"><code>source_column_selector</code></a><a id="source_column_selector-1"></a><a class="docs-heading-anchor-permalink" href="#source_column_selector" title="Permalink"></a></h4><p>Inside an <code>operation</code>, <code>source_column_selector</code> is usually a column name or column index which identifies a data frame column.</p><p><code>source_column_selector</code> may be used as the entire <code>operation</code> with <code>select</code> or <code>select!</code> to isolate or reorder columns.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(a = [1, 2, 3], b = [4, 5, 6], c = [7, 8, 9])
+3×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      7
+   2 │     2      5      8
+   3 │     3      6      9
 
-julia&gt; combine(german, :Age =&gt; mean =&gt; :mean_age)
-1×1 DataFrame
- Row │ mean_age
-     │ Float64
-─────┼──────────
-   1 │   35.546
+julia&gt; select(df, :b)
+3×1 DataFrame
+ Row │ b
+     │ Int64
+─────┼───────
+   1 │     4
+   2 │     5
+   3 │     6
 
-julia&gt; select(german, :Age =&gt; mean =&gt; :mean_age)
-1000×1 DataFrame
-  Row │ mean_age
-      │ Float64
-──────┼──────────
-    1 │   35.546
-    2 │   35.546
-    3 │   35.546
-    4 │   35.546
-    5 │   35.546
-    6 │   35.546
-    7 │   35.546
-    8 │   35.546
-  ⋮   │    ⋮
-  994 │   35.546
-  995 │   35.546
-  996 │   35.546
-  997 │   35.546
-  998 │   35.546
-  999 │   35.546
- 1000 │   35.546
- 985 rows omitted</code></pre><p>As you can see in both cases the <code>mean</code> function was applied to <code>:Age</code> column and the result was stored in the <code>:mean_age</code> column. The difference between the <code>combine</code> and <code>select</code> functions is that the <code>combine</code> aggregates data and produces as many rows as were returned by the transformation function. On the other hand the <code>select</code> function always keeps the number of rows in a data frame to be the same as in the source data frame. Therefore in this case the result of the <code>mean</code> function got broadcasted.</p><p>As <code>combine</code> potentially allows any number of rows to be produced as a result of the transformation if we have a combination of transformations where some of them produce a vector, and other produce scalars then scalars get broadcasted exactly like in  <code>select</code>. Here is an example:</p><pre><code class="language-julia-repl hljs">julia&gt; combine(german, :Age =&gt; mean =&gt; :mean_age, :Housing =&gt; unique =&gt; :housing)
+julia&gt; select(df, &quot;b&quot;)
+3×1 DataFrame
+ Row │ b
+     │ Int64
+─────┼───────
+   1 │     4
+   2 │     5
+   3 │     6
+
+julia&gt; select(df, 2)
+3×1 DataFrame
+ Row │ b
+     │ Int64
+─────┼───────
+   1 │     4
+   2 │     5
+   3 │     6</code></pre><p><code>source_column_selector</code> may also be used as the entire <code>operation</code> with <code>subset</code> or <code>subset!</code> if the source column contains <code>Bool</code> values.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(
+           name = [&quot;Scott&quot;, &quot;Jill&quot;, &quot;Erica&quot;, &quot;Jimmy&quot;],
+           minor = [false, true, false, true],
+       )
+4×2 DataFrame
+ Row │ name    minor
+     │ String  Bool
+─────┼───────────────
+   1 │ Scott   false
+   2 │ Jill     true
+   3 │ Erica   false
+   4 │ Jimmy    true
+
+julia&gt; subset(df, :minor)
+2×2 DataFrame
+ Row │ name    minor
+     │ String  Bool
+─────┼───────────────
+   1 │ Jill     true
+   2 │ Jimmy    true</code></pre><p><code>source_column_selector</code> may instead be a collection of columns such as a vector, a <a href="https://docs.julialang.org/en/v1/manual/strings/#Regular-Expressions">regular expression</a>, a <code>Not</code>, <code>Between</code>, <code>All</code>, or <code>Cols</code> expression, or a <code>:</code>. See the <a href="../../lib/indexing/#Indexing">Indexing</a> API for the full list of possible values with references.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>The Julia parser sometimes prevents <code>:</code> from being used by itself. If you get <code>ERROR: syntax: whitespace not allowed after &quot;:&quot; used for quoting</code>, try using <code>All()</code>, <code>Cols(:)</code>, or <code>(:)</code> instead to select all columns.</p></div></div><pre><code class="language-julia hljs">julia&gt; df = DataFrame(
+           id = [1, 2, 3],
+           first_name = [&quot;José&quot;, &quot;Emma&quot;, &quot;Nathan&quot;],
+           last_name = [&quot;Garcia&quot;, &quot;Marino&quot;, &quot;Boyer&quot;],
+           age = [61, 24, 33]
+       )
+3×4 DataFrame
+ Row │ id     first_name  last_name  age
+     │ Int64  String      String     Int64
+─────┼─────────────────────────────────────
+   1 │     1  José        Garcia        61
+   2 │     2  Emma        Marino        24
+   3 │     3  Nathan      Boyer         33
+
+julia&gt; select(df, [:last_name, :first_name])
 3×2 DataFrame
- Row │ mean_age  housing
-     │ Float64   String7
-─────┼───────────────────
-   1 │   35.546  own
-   2 │   35.546  free
-   3 │   35.546  rent</code></pre><p>Note, however, that it is not allowed to return vectors of different lengths in different transformations:</p><pre><code class="language-julia-repl hljs">julia&gt; combine(german, :Age, :Housing =&gt; unique =&gt; :Housing)
-ERROR: ArgumentError: New columns must have the same length as old columns</code></pre><p>Let us discuss some other examples using <code>select</code>. Often we want to apply some function not to the whole column of a data frame, but rather to its individual elements. Normally we can achieve this using broadcasting like this:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, :Sex =&gt; (x -&gt; uppercase.(x)) =&gt; :Sex)
-1000×1 DataFrame
-  Row │ Sex
-      │ String
-──────┼────────
-    1 │ MALE
-    2 │ FEMALE
-    3 │ MALE
-    4 │ MALE
-    5 │ MALE
-    6 │ MALE
-    7 │ MALE
-    8 │ MALE
-  ⋮   │   ⋮
-  994 │ MALE
-  995 │ MALE
-  996 │ FEMALE
-  997 │ MALE
-  998 │ MALE
-  999 │ MALE
- 1000 │ MALE
-985 rows omitted</code></pre><p>This pattern is encountered very often in practice, therefore there is a <code>ByRow</code> convenience wrapper for a function that creates its broadcasted variant. In these examples <code>ByRow</code> is a special type used for selection operations to signal that the wrapped function should be applied to each element (row) of the selection. Here we are passing <code>ByRow</code> wrapper to target column name <code>:Sex</code> using <code>uppercase</code> function:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, :Sex =&gt; ByRow(uppercase) =&gt; :SEX)
-1000×1 DataFrame
-  Row │ SEX
-      │ String
-──────┼────────
-    1 │ MALE
-    2 │ FEMALE
-    3 │ MALE
-    4 │ MALE
-    5 │ MALE
-    6 │ MALE
-    7 │ MALE
-    8 │ MALE
-  ⋮   │   ⋮
-  994 │ MALE
-  995 │ MALE
-  996 │ FEMALE
-  997 │ MALE
-  998 │ MALE
-  999 │ MALE
- 1000 │ MALE
-985 rows omitted</code></pre><p>In this case we transform our source column <code>:Age</code> using <code>ByRow</code> wrapper and automatically generate the target column name:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, :Age, :Age =&gt; ByRow(sqrt))
-1000×2 DataFrame
-  Row │ Age    Age_sqrt
-      │ Int64  Float64
-──────┼─────────────────
-    1 │    67   8.18535
-    2 │    22   4.69042
-    3 │    49   7.0
-    4 │    45   6.7082
-    5 │    53   7.28011
-    6 │    35   5.91608
-    7 │    53   7.28011
-    8 │    35   5.91608
-  ⋮   │   ⋮       ⋮
-  994 │    30   5.47723
-  995 │    50   7.07107
-  996 │    31   5.56776
-  997 │    40   6.32456
-  998 │    38   6.16441
-  999 │    23   4.79583
- 1000 │    27   5.19615
-        985 rows omitted</code></pre><p>When we pass just a column (without the <code>=&gt;</code> part) we can use any column selector that is allowed in indexing.</p><p>Here we exclude the column <code>:Age</code> from the resulting data frame:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, Not(:Age))
-1000×9 DataFrame
-  Row │ id     Sex      Job    Housing  Saving accounts  Checking account  Cre ⋯
-      │ Int64  String7  Int64  String7  String15         String15          Int ⋯
-──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     0  male         2  own      NA               little                ⋯
-    2 │     1  female       2  own      little           moderate
-    3 │     2  male         1  own      little           NA
-    4 │     3  male         2  free     little           little
-    5 │     4  male         2  free     little           little                ⋯
-    6 │     5  male         1  free     NA               NA
-    7 │     6  male         2  own      quite rich       NA
-    8 │     7  male         3  rent     little           moderate
-  ⋮   │   ⋮       ⋮       ⋮       ⋮            ⋮                ⋮              ⋱
-  994 │   993  male         3  own      little           little                ⋯
-  995 │   994  male         2  own      NA               NA
-  996 │   995  female       1  own      little           NA
-  997 │   996  male         3  own      little           little
-  998 │   997  male         2  own      little           NA                    ⋯
-  999 │   998  male         2  free     little           little
- 1000 │   999  male         2  own      moderate         moderate
-                                                  3 columns and 985 rows omitted</code></pre><p>In the next example we drop columns <code>&quot;Age&quot;</code>, <code>&quot;Saving accounts&quot;</code>, <code>&quot;Checking account&quot;</code>, <code>&quot;Credit amount&quot;</code>, and <code>&quot;Purpose&quot;</code>. Note that this time we use string column selectors because some of the column names have spaces in them:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, Not([&quot;Age&quot;, &quot;Saving accounts&quot;, &quot;Checking account&quot;,
-                           &quot;Credit amount&quot;, &quot;Purpose&quot;]))
-1000×5 DataFrame
-  Row │ id     Sex      Job    Housing  Duration
-      │ Int64  String7  Int64  String7  Int64
-──────┼──────────────────────────────────────────
-    1 │     0  male         2  own             6
-    2 │     1  female       2  own            48
-    3 │     2  male         1  own            12
-    4 │     3  male         2  free           42
-    5 │     4  male         2  free           24
-    6 │     5  male         1  free           36
-    7 │     6  male         2  own            24
-    8 │     7  male         3  rent           36
-  ⋮   │   ⋮       ⋮       ⋮       ⋮        ⋮
-  994 │   993  male         3  own            36
-  995 │   994  male         2  own            12
-  996 │   995  female       1  own            12
-  997 │   996  male         3  own            30
-  998 │   997  male         2  own            12
-  999 │   998  male         2  free           45
- 1000 │   999  male         2  own            45
-                                 985 rows omitted
-</code></pre><p>As another example let us present that the <code>r&quot;S&quot;</code> regular expression we used above also works with <code>select</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, r&quot;S&quot;)
-1000×2 DataFrame
-  Row │ Sex      Saving accounts
-      │ String7  String15
-──────┼──────────────────────────
-    1 │ male     NA
-    2 │ female   little
-    3 │ male     little
-    4 │ male     little
-    5 │ male     little
-    6 │ male     NA
-    7 │ male     quite rich
-    8 │ male     little
-  ⋮   │    ⋮            ⋮
-  994 │ male     little
-  995 │ male     NA
-  996 │ female   little
-  997 │ male     little
-  998 │ male     little
-  999 │ male     little
- 1000 │ male     moderate
-                 985 rows omitted</code></pre><p>The benefit of <code>select</code> or <code>combine</code> over indexing is that it is easier to get the union of several column selectors, e.g.:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, r&quot;S&quot;, &quot;Job&quot;, 1)
-1000×4 DataFrame
-  Row │ Sex      Saving accounts  Job    id
-      │ String7  String15         Int64  Int64
-──────┼────────────────────────────────────────
-    1 │ male     NA                   2      0
-    2 │ female   little               2      1
-    3 │ male     little               1      2
-    4 │ male     little               2      3
-    5 │ male     little               2      4
-    6 │ male     NA                   1      5
-    7 │ male     quite rich           2      6
-    8 │ male     little               3      7
-  ⋮   │    ⋮            ⋮           ⋮      ⋮
-  994 │ male     little               3    993
-  995 │ male     NA                   2    994
-  996 │ female   little               1    995
-  997 │ male     little               3    996
-  998 │ male     little               2    997
-  999 │ male     little               2    998
- 1000 │ male     moderate             2    999
-                               985 rows omitted</code></pre><p>Taking advantage of this flexibility here is an idiomatic pattern to move some column to the front of a data frame:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, &quot;Sex&quot;, :)
-1000×10 DataFrame
-  Row │ Sex      id     Age    Job    Housing  Saving accounts  Checking accou ⋯
-      │ String7  Int64  Int64  Int64  String7  String15         String15       ⋯
-──────┼─────────────────────────────────────────────────────────────────────────
-    1 │ male         0     67      2  own      NA               little         ⋯
-    2 │ female       1     22      2  own      little           moderate
-    3 │ male         2     49      1  own      little           NA
-    4 │ male         3     45      2  free     little           little
-    5 │ male         4     53      2  free     little           little         ⋯
-    6 │ male         5     35      1  free     NA               NA
-    7 │ male         6     53      2  own      quite rich       NA
-    8 │ male         7     35      3  rent     little           moderate
-  ⋮   │    ⋮       ⋮      ⋮      ⋮       ⋮            ⋮                ⋮       ⋱
-  994 │ male       993     30      3  own      little           little         ⋯
-  995 │ male       994     50      2  own      NA               NA
-  996 │ female     995     31      1  own      little           NA
-  997 │ male       996     40      3  own      little           little
-  998 │ male       997     38      2  own      little           NA             ⋯
-  999 │ male       998     23      2  free     little           little
- 1000 │ male       999     27      2  own      moderate         moderate
-                                                  4 columns and 985 rows omitted</code></pre><p>Below, we are simply passing source column and target column name to rename them (without specifying the transformation part):</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, :Sex =&gt; :x1, :Age =&gt; :x2)
-1000×2 DataFrame
-  Row │ x1       x2
-      │ String7  Int64
-──────┼────────────────
-    1 │ male        67
-    2 │ female      22
-    3 │ male        49
-    4 │ male        45
-    5 │ male        53
-    6 │ male        35
-    7 │ male        53
-    8 │ male        35
-  ⋮   │    ⋮       ⋮
-  994 │ male        30
-  995 │ male        50
-  996 │ female      31
-  997 │ male        40
-  998 │ male        38
-  999 │ male        23
- 1000 │ male        27
-       985 rows omitted</code></pre><p>It is important to note that <code>select</code> always returns a data frame, even if a single column selected as opposed to indexing syntax. Compare the following:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, :Age)
-1000×1 DataFrame
-  Row │ Age
-      │ Int64
-──────┼───────
-    1 │    67
-    2 │    22
-    3 │    49
-    4 │    45
-    5 │    53
-    6 │    35
-    7 │    53
-    8 │    35
-  ⋮   │   ⋮
-  994 │    30
-  995 │    50
-  996 │    31
-  997 │    40
-  998 │    38
-  999 │    23
- 1000 │    27
-985 rows omitted
+ Row │ last_name  first_name
+     │ String     String
+─────┼───────────────────────
+   1 │ Garcia     José
+   2 │ Marino     Emma
+   3 │ Boyer      Nathan
 
-julia&gt; german[:, :Age]
-1000-element Vector{Int64}:
- 67
- 22
- 49
- 45
- 53
- 35
- 53
- 35
- 61
- 28
-  ⋮
- 34
- 23
- 30
- 50
- 31
- 40
- 38
- 23
- 27</code></pre><p>By default <code>select</code> copies columns of a passed source data frame. In order to avoid copying, pass the <code>copycols=false</code> keyword argument:</p><pre><code class="language-julia-repl hljs">julia&gt; df = select(german, :Sex)
-1000×1 DataFrame
-  Row │ Sex
-      │ String7
-──────┼─────────
-    1 │ male
-    2 │ female
-    3 │ male
-    4 │ male
-    5 │ male
-    6 │ male
-    7 │ male
-    8 │ male
-  ⋮   │    ⋮
-  994 │ male
-  995 │ male
-  996 │ female
-  997 │ male
-  998 │ male
-  999 │ male
- 1000 │ male
-985 rows omitted
+julia&gt; select(df, r&quot;name&quot;)
+3×2 DataFrame
+ Row │ first_name  last_name
+     │ String      String
+─────┼───────────────────────
+   1 │ José        Garcia
+   2 │ Emma        Marino
+   3 │ Nathan      Boyer
 
-julia&gt; df.Sex === german.Sex # copy
-false
+julia&gt; select(df, Not(:id))
+3×3 DataFrame
+ Row │ first_name  last_name  age
+     │ String      String     Int64
+─────┼──────────────────────────────
+   1 │ José        Garcia        61
+   2 │ Emma        Marino        24
+   3 │ Nathan      Boyer         33
 
-julia&gt; df = select(german, :Sex, copycols=false)
-1000×1 DataFrame
-  Row │ Sex
-      │ String7
-──────┼─────────
-    1 │ male
-    2 │ female
-    3 │ male
-    4 │ male
-    5 │ male
-    6 │ male
-    7 │ male
-    8 │ male
-  ⋮   │    ⋮
-  994 │ male
-  995 │ male
-  996 │ female
-  997 │ male
-  998 │ male
-  999 │ male
- 1000 │ male
-985 rows omitted
+julia&gt; select(df, Between(2,4))
+3×3 DataFrame
+ Row │ first_name  last_name  age
+     │ String      String     Int64
+─────┼──────────────────────────────
+   1 │ José        Garcia        61
+   2 │ Emma        Marino        24
+   3 │ Nathan      Boyer         33
 
-julia&gt; df.Sex === german.Sex # no-copy is performed
-true</code></pre><p>To perform the selection operation in-place use <code>select!</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; select!(german, Not(:Age));
+julia&gt; df2 = DataFrame(
+           name = [&quot;Scott&quot;, &quot;Jill&quot;, &quot;Erica&quot;, &quot;Jimmy&quot;],
+           minor = [false, true, false, true],
+           male = [true, false, false, true],
+       )
+4×3 DataFrame
+ Row │ name    minor  male
+     │ String  Bool   Bool
+─────┼──────────────────────
+   1 │ Scott   false   true
+   2 │ Jill     true  false
+   3 │ Erica   false  false
+   4 │ Jimmy    true   true
 
-julia&gt; german
-1000×9 DataFrame
-  Row │ id     Sex      Job    Housing  Saving accounts  Checking account  Cre ⋯
-      │ Int64  String7  Int64  String7  String15         String15          Int ⋯
-──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     0  male         2  own      NA               little                ⋯
-    2 │     1  female       2  own      little           moderate
-    3 │     2  male         1  own      little           NA
-    4 │     3  male         2  free     little           little
-    5 │     4  male         2  free     little           little                ⋯
-    6 │     5  male         1  free     NA               NA
-    7 │     6  male         2  own      quite rich       NA
-    8 │     7  male         3  rent     little           moderate
-  ⋮   │   ⋮       ⋮       ⋮       ⋮            ⋮                ⋮              ⋱
-  994 │   993  male         3  own      little           little                ⋯
-  995 │   994  male         2  own      NA               NA
-  996 │   995  female       1  own      little           NA
-  997 │   996  male         3  own      little           little
-  998 │   997  male         2  own      little           NA                    ⋯
-  999 │   998  male         2  free     little           little
- 1000 │   999  male         2  own      moderate         moderate
-                                                  3 columns and 985 rows omitted</code></pre><p>As you can see the <code>:Age</code> column was dropped from the <code>german</code> data frame.</p><p>The <code>transform</code> and <code>transform!</code> functions work identically to <code>select</code> and <code>select!</code> with the only difference that they retain all columns that are present in the source data frame. Here are some examples:</p><pre><code class="language-julia-repl hljs">julia&gt; german = copy(german_ref);
+julia&gt; subset(df2, [:minor, :male])
+1×3 DataFrame
+ Row │ name    minor  male
+     │ String  Bool   Bool
+─────┼─────────────────────
+   1 │ Jimmy    true  true</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>Using <code>Symbol</code> in <code>source_column_selector</code> will perform slightly faster than using string. However, a string is convenient when column names contain spaces.</p><p>All elements of <code>source_column_selector</code> must be the same type (unless wrapped in <code>Cols</code>), e.g. <code>subset(df2, [:minor, &quot;male&quot;])</code> will error since <code>Symbol</code> and string are used simultaneously.</p></div></div><h4 id="operation_function"><a class="docs-heading-anchor" href="#operation_function"><code>operation_function</code></a><a id="operation_function-1"></a><a class="docs-heading-anchor-permalink" href="#operation_function" title="Permalink"></a></h4><p>Inside an <code>operation</code> pair, <code>operation_function</code> is a function which operates on data frame columns passed as vectors. When multiple columns are selected by <code>source_column_selector</code>, the <code>operation_function</code> will receive the columns as separate positional arguments in the order they were selected, e.g. <code>f(column1, column2, column3)</code>.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(a = [1, 2, 3], b = [4, 5, 4])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      4
 
-julia&gt; df = german_ref[1:8, 1:5]
-8×5 DataFrame
- Row │ id     Age    Sex      Job    Housing
-     │ Int64  Int64  String7  Int64  String7
+julia&gt; combine(df, :a =&gt; sum)
+1×1 DataFrame
+ Row │ a_sum
+     │ Int64
+─────┼───────
+   1 │     6
+
+julia&gt; transform(df, :b =&gt; maximum) # `transform` and `select` copy scalar result to all rows
+3×3 DataFrame
+ Row │ a      b      b_maximum
+     │ Int64  Int64  Int64
+─────┼─────────────────────────
+   1 │     1      4          5
+   2 │     2      5          5
+   3 │     3      4          5
+
+julia&gt; transform(df, [:b, :a] =&gt; -) # vector subtraction is okay
+3×3 DataFrame
+ Row │ a      b      b_a_-
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      3
+   2 │     2      5      3
+   3 │     3      4      1
+
+julia&gt; transform(df, [:a, :b] =&gt; *) # vector multiplication is not defined
+ERROR: MethodError: no method matching *(::Vector{Int64}, ::Vector{Int64})</code></pre><p>Don&#39;t worry! There is a quick fix for the previous error. If you want to apply a function to each element in a column instead of to the entire column vector, then you can wrap your element-wise function in <code>ByRow</code> like <code>ByRow(my_elementwise_function)</code>. This will apply <code>my_elementwise_function</code> to every element in the column and then collect the results back into a vector.</p><pre><code class="language-julia hljs">julia&gt; transform(df, [:a, :b] =&gt; ByRow(*))
+3×3 DataFrame
+ Row │ a      b      a_b_*
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      4
+   2 │     2      5     10
+   3 │     3      4     12
+
+julia&gt; transform(df, Cols(:) =&gt; ByRow(max))
+3×3 DataFrame
+ Row │ a      b      a_b_max
+     │ Int64  Int64  Int64
+─────┼───────────────────────
+   1 │     1      4        4
+   2 │     2      5        5
+   3 │     3      4        4
+
+julia&gt; f(x) = x + 1
+f (generic function with 1 method)
+
+julia&gt; transform(df, :a =&gt; ByRow(f))
+3×3 DataFrame
+ Row │ a      b      a_f
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      2
+   2 │     2      5      3
+   3 │     3      4      4</code></pre><p>Alternatively, you may just want to define the function itself so it <a href="https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting">broadcasts</a> over vectors.</p><pre><code class="language-julia hljs">julia&gt; g(x) = x .+ 1
+g (generic function with 1 method)
+
+julia&gt; transform(df, :a =&gt; g)
+3×3 DataFrame
+ Row │ a      b      a_g
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      2
+   2 │     2      5      3
+   3 │     3      4      4
+
+julia&gt; h(x, y) = x .+ y .+ 1
+h (generic function with 1 method)
+
+julia&gt; transform(df, [:a, :b] =&gt; h)
+3×3 DataFrame
+ Row │ a      b      a_b_h
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      6
+   2 │     2      5      8
+   3 │     3      4      8</code></pre><p><a href="https://docs.julialang.org/en/v1/manual/functions/#man-anonymous-functions">Anonymous functions</a> are a convenient way to define and use an <code>operation_function</code> all within the manipulation function call.</p><pre><code class="language-julia hljs">julia&gt; select(df, :a =&gt; ByRow(x -&gt; x + 1))
+3×1 DataFrame
+ Row │ a_function
+     │ Int64
+─────┼────────────
+   1 │          2
+   2 │          3
+   3 │          4
+
+julia&gt; transform(df, [:a, :b] =&gt; ByRow((x, y) -&gt; 2x + y))
+3×3 DataFrame
+ Row │ a      b      a_b_function
+     │ Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      4             6
+   2 │     2      5             9
+   3 │     3      4            10
+
+julia&gt; subset(df, :b =&gt; ByRow(x -&gt; x &lt; 5))
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     3      4
+
+julia&gt; subset(df, :b =&gt; ByRow(&lt;(5))) # shorter version of the previous
+2×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     3      4</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p><code>operation_functions</code> within <code>subset</code> or <code>subset!</code> function calls must return a Boolean vector. <code>true</code> elements in the Boolean vector will determine which rows are retained in the resulting data frame.</p></div></div><p>As demonstrated above, <code>DataFrame</code> columns are usually passed from <code>source_column_selector</code> to <code>operation_function</code> as one or more vector arguments. However, when <code>AsTable(source_column_selector)</code> is used, the selected columns are collected and passed as a single <code>NamedTuple</code> to <code>operation_function</code>.</p><p>This is often useful when your <code>operation_function</code> is defined to operate on a single collection argument rather than on multiple positional arguments. The distinction is somewhat similar to the difference between the built-in <code>min</code> and <code>minimum</code> functions. <code>min</code> is defined to find the minimum value among multiple positional arguments, while <code>minimum</code> is defined to find the minimum value among the elements of a single collection argument.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(a = 1:2, b = 3:4, c = 5:6, d = 2:-1:1)
+2×4 DataFrame
+ Row │ a      b      c      d
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      3      5      2
+   2 │     2      4      6      1
+
+julia&gt; select(df, Cols(:) =&gt; ByRow(min)) # min operates on multiple arguments
+2×1 DataFrame
+ Row │ a_b_etc_min
+     │ Int64
+─────┼─────────────
+   1 │           1
+   2 │           1
+
+julia&gt; select(df, AsTable(:) =&gt; ByRow(minimum)) # minimum operates on a collection
+2×1 DataFrame
+ Row │ a_b_etc_minimum
+     │ Int64
+─────┼─────────────────
+   1 │               1
+   2 │               1
+
+julia&gt; select(df, [:a,:b] =&gt; ByRow(+)) # `+` operates on a multiple arguments
+2×1 DataFrame
+ Row │ a_b_+
+     │ Int64
+─────┼───────
+   1 │     4
+   2 │     6
+
+julia&gt; select(df, AsTable([:a,:b]) =&gt; ByRow(sum)) # `sum` operates on a collection
+2×1 DataFrame
+ Row │ a_b_sum
+     │ Int64
+─────┼─────────
+   1 │       4
+   2 │       6
+
+julia&gt; using Statistics # contains the `mean` function
+
+julia&gt; select(df, AsTable(Between(:b, :d)) =&gt; ByRow(mean)) # `mean` operates on a collection
+2×1 DataFrame
+ Row │ b_c_d_mean
+     │ Float64
+─────┼────────────
+   1 │    3.33333
+   2 │    3.66667</code></pre><p><code>AsTable</code> can also be used to pass columns to a function which operates on fields of a <code>NamedTuple</code>.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(a = 1:2, b = 3:4, c = 5:6, d = 7:8)
+2×4 DataFrame
+ Row │ a      b      c      d
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      3      5      7
+   2 │     2      4      6      8
+
+julia&gt; f(nt) = nt.a + nt.d
+f (generic function with 1 method)
+
+julia&gt; transform(df, AsTable(:) =&gt; ByRow(f))
+2×5 DataFrame
+ Row │ a      b      c      d      a_b_etc_f
+     │ Int64  Int64  Int64  Int64  Int64
 ─────┼───────────────────────────────────────
-   1 │     0     67  male         2  own
-   2 │     1     22  female       2  own
-   3 │     2     49  male         1  own
-   4 │     3     45  male         2  free
-   5 │     4     53  male         2  free
-   6 │     5     35  male         1  free
-   7 │     6     53  male         2  own
-   8 │     7     35  male         3  rent
+   1 │     1      3      5      7          8
+   2 │     2      4      6      8         10</code></pre><p>As demonstrated above, in the <code>source_column_selector =&gt; operation_function</code> operation pair form, the results of an operation will be placed into a new column with an automatically-generated name based on the operation; the new column name will be the <code>operation_function</code> name appended to the source column name(s) with an underscore.</p><p>This automatic column naming behavior can be avoided in two ways. First, the operation result can be placed back into the original column with the original column name by switching the keyword argument <code>renamecols</code> from its default value (<code>true</code>) to <code>renamecols=false</code>. This option prevents the function name from being appended to the column name as it usually would be.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(a=1:4, b=5:8)
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
 
-julia&gt; transform(df, :Age =&gt; maximum)
-8×6 DataFrame
- Row │ id     Age    Sex      Job    Housing  Age_maximum
-     │ Int64  Int64  String7  Int64  String7  Int64
+julia&gt; transform(df, :a =&gt; ByRow(x-&gt;x+10), renamecols=false) # add 10 in-place
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │    11      5
+   2 │    12      6
+   3 │    13      7
+   4 │    14      8</code></pre><p>The second method to avoid the default manipulation column naming is to specify your own <code>new_column_names</code>.</p><h4 id="new_column_names"><a class="docs-heading-anchor" href="#new_column_names"><code>new_column_names</code></a><a id="new_column_names-1"></a><a class="docs-heading-anchor-permalink" href="#new_column_names" title="Permalink"></a></h4><p><code>new_column_names</code> can be included at the end of an <code>operation</code> pair to specify the name of the new column(s). <code>new_column_names</code> may be a symbol, string, function, vector of symbols, vector of strings, or <code>AsTable</code>.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(a=1:4, b=5:8)
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
+
+julia&gt; transform(df, Cols(:) =&gt; ByRow(+) =&gt; :c)
+4×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5      6
+   2 │     2      6      8
+   3 │     3      7     10
+   4 │     4      8     12
+
+julia&gt; transform(df, Cols(:) =&gt; ByRow(+) =&gt; &quot;a+b&quot;)
+4×3 DataFrame
+ Row │ a      b      a+b
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5      6
+   2 │     2      6      8
+   3 │     3      7     10
+   4 │     4      8     12
+
+julia&gt; transform(df, :a =&gt; ByRow(x-&gt;x+10) =&gt; &quot;a+10&quot;)
+4×3 DataFrame
+ Row │ a      b      a+10
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5     11
+   2 │     2      6     12
+   3 │     3      7     13
+   4 │     4      8     14</code></pre><p>The <code>source_column_selector =&gt; new_column_names</code> operation form can be used to rename columns without an intermediate function. However, there are <code>rename</code> and <code>rename!</code> functions, which accept similar syntax, that tend to be more useful for this operation.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(a=1:4, b=5:8)
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
+
+julia&gt; transform(df, :a =&gt; :apple) # adds column `apple`
+4×3 DataFrame
+ Row │ a      b      apple
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5      1
+   2 │     2      6      2
+   3 │     3      7      3
+   4 │     4      8      4
+
+julia&gt; select(df, :a =&gt; :apple) # retains only column `apple`
+4×1 DataFrame
+ Row │ apple
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+   4 │     4
+
+julia&gt; rename(df, :a =&gt; :apple) # renames column `a` to `apple` in-place
+4×2 DataFrame
+ Row │ apple  b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8</code></pre><p>If <code>new_column_names</code> already exist in the source data frame, those columns will be replaced in the existing column location rather than being added to the end. This can be done by manually specifying an existing column name or by using the <code>renamecols=false</code> keyword argument.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(a=1:4, b=5:8)
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
+
+julia&gt; transform(df, :b =&gt; (x -&gt; x .+ 10))  # automatic new column and column name
+4×3 DataFrame
+ Row │ a      b      b_function
+     │ Int64  Int64  Int64
+─────┼──────────────────────────
+   1 │     1      5          15
+   2 │     2      6          16
+   3 │     3      7          17
+   4 │     4      8          18
+
+julia&gt; transform(df, :b =&gt; (x -&gt; x .+ 10), renamecols=false)  # transform column in-place
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1     15
+   2 │     2     16
+   3 │     3     17
+   4 │     4     18
+
+julia&gt; transform(df, :b =&gt; (x -&gt; x .+ 10) =&gt; :a)  # replace column :a
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │    15      5
+   2 │    16      6
+   3 │    17      7
+   4 │    18      8</code></pre><p>Actually, <code>renamecols=false</code> just prevents the function name from being appended to the final column name such that the operation is <em>usually</em> returned to the same column.</p><pre><code class="language-julia hljs">julia&gt; transform(df, [:a, :b] =&gt; +)  # new column name is all source columns and function name
+4×3 DataFrame
+ Row │ a      b      a_b_+
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5      6
+   2 │     2      6      8
+   3 │     3      7     10
+   4 │     4      8     12
+
+julia&gt; transform(df, [:a, :b] =&gt; +, renamecols=false)  # same as above but with no function name
+4×3 DataFrame
+ Row │ a      b      a_b
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5      6
+   2 │     2      6      8
+   3 │     3      7     10
+   4 │     4      8     12
+
+julia&gt; transform(df, [:a, :b] =&gt; (+) =&gt; :a)  # manually overwrite column :a (see Note below about parentheses)
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     6      5
+   2 │     8      6
+   3 │    10      7
+   4 │    12      8</code></pre><p>In the <code>source_column_selector =&gt; operation_function =&gt; new_column_names</code> operation form, <code>new_column_names</code> may also be a renaming function which operates on a string to create the destination column names programmatically.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(a=1:4, b=5:8)
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
+
+julia&gt; add_prefix(s) = &quot;new_&quot; * s
+add_prefix (generic function with 1 method)
+
+julia&gt; transform(df, :a =&gt; (x -&gt; 10 .* x) =&gt; add_prefix) # with named renaming function
+4×3 DataFrame
+ Row │ a      b      new_a
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5     10
+   2 │     2      6     20
+   3 │     3      7     30
+   4 │     4      8     40
+
+julia&gt; transform(df, :a =&gt; (x -&gt; 10 .* x) =&gt; (s -&gt; &quot;new_&quot; * s)) # with anonymous renaming function
+4×3 DataFrame
+ Row │ a      b      new_a
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5     10
+   2 │     2      6     20
+   3 │     3      7     30
+   4 │     4      8     40</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>It is a good idea to wrap anonymous functions in parentheses to avoid the <code>=&gt;</code> operator accidently becoming part of the anonymous function. The examples above do not work correctly without the parentheses!</p><pre><code class="language-julia hljs">julia&gt; transform(df, :a =&gt; x -&gt; 10 .* x =&gt; add_prefix)  # Not what we wanted!
+4×3 DataFrame
+ Row │ a      b      a_function
+     │ Int64  Int64  Pair…
+─────┼────────────────────────────────────────────
+   1 │     1      5  [10, 20, 30, 40]=&gt;add_prefix
+   2 │     2      6  [10, 20, 30, 40]=&gt;add_prefix
+   3 │     3      7  [10, 20, 30, 40]=&gt;add_prefix
+   4 │     4      8  [10, 20, 30, 40]=&gt;add_prefix
+julia&gt; transform(df, :a =&gt; x -&gt; 10 .* x =&gt; s -&gt; &quot;new_&quot; * s)  # Not what we wanted!
+4×3 DataFrame
+ Row │ a      b      a_function
+     │ Int64  Int64  Pair…
+─────┼─────────────────────────────────────
+   1 │     1      5  [10, 20, 30, 40]=&gt;#18
+   2 │     2      6  [10, 20, 30, 40]=&gt;#18
+   3 │     3      7  [10, 20, 30, 40]=&gt;#18
+   4 │     4      8  [10, 20, 30, 40]=&gt;#18</code></pre></div></div><p>A renaming function will not work in the <code>source_column_selector =&gt; new_column_names</code> operation form because a function in the second element of the operation pair is assumed to take the <code>source_column_selector =&gt; operation_function</code> operation form. To work around this limitation, use the <code>source_column_selector =&gt; operation_function =&gt; new_column_names</code> operation form with <code>identity</code> as the <code>operation_function</code>.</p><pre><code class="language-julia hljs">julia&gt; transform(df, :a =&gt; add_prefix)
+ERROR: MethodError: no method matching *(::String, ::Vector{Int64})
+
+julia&gt; transform(df, :a =&gt; identity =&gt; add_prefix)
+4×3 DataFrame
+ Row │ a      b      new_a
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      5      1
+   2 │     2      6      2
+   3 │     3      7      3
+   4 │     4      8      4</code></pre><p>In this case though, it is probably again more useful to use the <code>rename</code> or <code>rename!</code> function rather than one of the manipulation functions in order to rename in-place and avoid the intermediate <code>operation_function</code>.</p><pre><code class="language-julia hljs">julia&gt; rename(add_prefix, df)  # rename all columns with a function
+4×2 DataFrame
+ Row │ new_a  new_b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
+
+julia&gt; rename(add_prefix, df; cols=:a)  # rename some columns with a function
+4×2 DataFrame
+ Row │ new_a  b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8</code></pre><p>In the <code>source_column_selector =&gt; new_column_names</code> operation form, only a single source column may be selected per operation, so why is <code>new_column_names</code> plural? It is possible to split the data contained inside a single column into multiple new columns by supplying a vector of strings or symbols as <code>new_column_names</code>.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(data = [(1,2), (3,4)]) # vector of tuples
+2×1 DataFrame
+ Row │ data
+     │ Tuple…
+─────┼────────
+   1 │ (1, 2)
+   2 │ (3, 4)
+
+julia&gt; transform(df, :data =&gt; [:first, :second]) # manual naming
+2×3 DataFrame
+ Row │ data    first  second
+     │ Tuple…  Int64  Int64
+─────┼───────────────────────
+   1 │ (1, 2)      1       2
+   2 │ (3, 4)      3       4</code></pre><p>This kind of data splitting can even be done automatically with <code>AsTable</code>.</p><pre><code class="language-julia hljs">julia&gt; transform(df, :data =&gt; AsTable) # default automatic naming with tuples
+2×3 DataFrame
+ Row │ data    x1     x2
+     │ Tuple…  Int64  Int64
+─────┼──────────────────────
+   1 │ (1, 2)      1      2
+   2 │ (3, 4)      3      4</code></pre><p>If a data frame column contains <code>NamedTuple</code>s, then <code>AsTable</code> will preserve the field names.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(data = [(a=1,b=2), (a=3,b=4)]) # vector of named tuples
+2×1 DataFrame
+ Row │ data
+     │ NamedTup…
+─────┼────────────────
+   1 │ (a = 1, b = 2)
+   2 │ (a = 3, b = 4)
+
+julia&gt; transform(df, :data =&gt; AsTable) # keeps names from named tuples
+2×3 DataFrame
+ Row │ data            a      b
+     │ NamedTup…       Int64  Int64
+─────┼──────────────────────────────
+   1 │ (a = 1, b = 2)      1      2
+   2 │ (a = 3, b = 4)      3      4</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>To pack multiple columns into a single column of <code>NamedTuple</code>s (reverse of the above operation) apply the <code>identity</code> function <code>ByRow</code>, e.g. <code>transform(df, AsTable([:a, :b]) =&gt; ByRow(identity) =&gt; :data)</code>.</p></div></div><p>Renaming functions also work for multi-column transformations, but they must operate on a vector of strings.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(data = [(1,2), (3,4)])
+2×1 DataFrame
+ Row │ data
+     │ Tuple…
+─────┼────────
+   1 │ (1, 2)
+   2 │ (3, 4)
+
+julia&gt; new_names(v) = [&quot;primary &quot;, &quot;secondary &quot;] .* v
+new_names (generic function with 1 method)
+
+julia&gt; transform(df, :data =&gt; identity =&gt; new_names)
+2×3 DataFrame
+ Row │ data    primary data  secondary data
+     │ Tuple…  Int64         Int64
+─────┼──────────────────────────────────────
+   1 │ (1, 2)             1               2
+   2 │ (3, 4)             3               4</code></pre><h3 id="Applying-Multiple-Operations-per-Manipulation"><a class="docs-heading-anchor" href="#Applying-Multiple-Operations-per-Manipulation">Applying Multiple Operations per Manipulation</a><a id="Applying-Multiple-Operations-per-Manipulation-1"></a><a class="docs-heading-anchor-permalink" href="#Applying-Multiple-Operations-per-Manipulation" title="Permalink"></a></h3><p>All data frame manipulation functions can accept multiple <code>operation</code> pairs at once using any of the following methods:</p><ul><li><code>manipulation_function(dataframe, operation1, operation2)</code>   : multiple arguments</li><li><code>manipulation_function(dataframe, [operation1, operation2])</code> : vector argument</li><li><code>manipulation_function(dataframe, [operation1 operation2])</code>  : matrix argument</li></ul><p>Passing multiple operations is especially useful for the <code>select</code>, <code>select!</code>, and <code>combine</code> manipulation functions, since they only retain columns which are a result of the passed operations.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(a = 1:4, b = [50,50,60,60], c = [&quot;hat&quot;,&quot;bat&quot;,&quot;cat&quot;,&quot;dog&quot;])
+4×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  String
+─────┼──────────────────────
+   1 │     1     50  hat
+   2 │     2     50  bat
+   3 │     3     60  cat
+   4 │     4     60  dog
+
+julia&gt; combine(df, :a =&gt; maximum, :b =&gt; sum, :c =&gt; join) # 3 combine operations
+1×3 DataFrame
+ Row │ a_maximum  b_sum  c_join
+     │ Int64      Int64  String
+─────┼────────────────────────────────
+   1 │         4    220  hatbatcatdog
+
+julia&gt; select(df, :c, :b, :a) # re-order columns
+4×3 DataFrame
+ Row │ c       b      a
+     │ String  Int64  Int64
+─────┼──────────────────────
+   1 │ hat        50      1
+   2 │ bat        50      2
+   3 │ cat        60      3
+   4 │ dog        60      4
+
+ulia&gt; select(df, :b, :) # `:` here means all other columns
+4×3 DataFrame
+ Row │ b      a      c
+     │ Int64  Int64  String
+─────┼──────────────────────
+   1 │    50      1  hat
+   2 │    50      2  bat
+   3 │    60      3  cat
+   4 │    60      4  dog
+
+julia&gt; select(
+           df,
+           :c =&gt; (x -&gt; &quot;a &quot; .* x) =&gt; :one_c,
+           :a =&gt; (x -&gt; 100x),
+           :b,
+           renamecols=false
+       ) # can mix operation forms
+4×3 DataFrame
+ Row │ one_c   a      b
+     │ String  Int64  Int64
+─────┼──────────────────────
+   1 │ a hat     100     50
+   2 │ a bat     200     50
+   3 │ a cat     300     60
+   4 │ a dog     400     60
+
+julia&gt; select(
+           df,
+           :c =&gt; ByRow(reverse),
+           :c =&gt; ByRow(uppercase)
+       ) # multiple operations on same column
+4×2 DataFrame
+ Row │ c_reverse  c_uppercase
+     │ String     String
+─────┼────────────────────────
+   1 │ tah        HAT
+   2 │ tab        BAT
+   3 │ tac        CAT
+   4 │ god        DOG</code></pre><p>In the last two examples, the manipulation function arguments were split across multiple lines. This is a good way to make manipulations with many operations more readable.</p><p>Passing multiple operations to <code>subset</code> or <code>subset!</code> is an easy way to narrow in on a particular row of data.</p><pre><code class="language-julia hljs">julia&gt; subset(
+           df,
+           :b =&gt; ByRow(==(60)),
+           :c =&gt; ByRow(contains(&quot;at&quot;))
+       ) # rows with 60 and &quot;at&quot;
+1×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  String
+─────┼──────────────────────
+   1 │     3     60  cat</code></pre><p>Note that all operations within a single manipulation must use the data as it existed before the function call i.e. you cannot use newly created columns for subsequent operations within the same manipulation.</p><pre><code class="language-julia hljs">julia&gt; transform(
+           df,
+           [:a, :b] =&gt; ByRow(+) =&gt; :d,
+           :d =&gt; (x -&gt; x ./ 2),
+       ) # requires two separate transformations
+ERROR: ArgumentError: column name :d not found in the data frame; existing most similar names are: :a, :b and :c
+
+julia&gt; new_df = transform(df, [:a, :b] =&gt; ByRow(+) =&gt; :d)
+4×4 DataFrame
+ Row │ a      b      c       d
+     │ Int64  Int64  String  Int64
+─────┼─────────────────────────────
+   1 │     1     50  hat        51
+   2 │     2     50  bat        52
+   3 │     3     60  cat        63
+   4 │     4     60  dog        64
+
+julia&gt; transform!(new_df, :d =&gt; (x -&gt; x ./ 2) =&gt; :d_2)
+4×5 DataFrame
+ Row │ a      b      c       d      d_2
+     │ Int64  Int64  String  Int64  Float64
+─────┼──────────────────────────────────────
+   1 │     1     50  hat        51     25.5
+   2 │     2     50  bat        52     26.0
+   3 │     3     60  cat        63     31.5
+   4 │     4     60  dog        64     32.0</code></pre><h3 id="Broadcasting-Operation-Pairs"><a class="docs-heading-anchor" href="#Broadcasting-Operation-Pairs">Broadcasting Operation Pairs</a><a id="Broadcasting-Operation-Pairs-1"></a><a class="docs-heading-anchor-permalink" href="#Broadcasting-Operation-Pairs" title="Permalink"></a></h3><p><a href="https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting">Broadcasting</a> pairs with <code>.=&gt;</code> is often a convenient way to generate multiple similar <code>operation</code>s to be applied within a single manipulation. Broadcasting within the <code>Pair</code> of an <code>operation</code> is no different than broadcasting in base Julia. The broadcasting <code>.=&gt;</code> will be expanded into a vector of pairs (<code>[operation1, operation2, ...]</code>), and this expansion will occur before the manipulation function is invoked. Then the manipulation function will use the <code>manipulation_function(dataframe, [operation1, operation2, ...])</code> method. This process will be explained in more detail below.</p><p>To illustrate these concepts, let us first examine the <code>Type</code> of a basic <code>Pair</code>. In DataFrames.jl, a symbol, string, or integer may be used to select a single column. Some <code>Pair</code>s with these types are below.</p><pre><code class="language-julia hljs">julia&gt; typeof(:x =&gt; :a)
+Pair{Symbol, Symbol}
+
+julia&gt; typeof(&quot;x&quot; =&gt; &quot;a&quot;)
+Pair{String, String}
+
+julia&gt; typeof(1 =&gt; &quot;a&quot;)
+Pair{Int64, String}</code></pre><p>Any of the <code>Pair</code>s above could be used to rename the first column of the data frame below to <code>a</code>.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(x = 1:3, y = 4:6)
+3×2 DataFrame
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia&gt; select(df, :x =&gt; :a)
+3×1 DataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+
+julia&gt; select(df, 1 =&gt; &quot;a&quot;)
+3×1 DataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3</code></pre><p>What should we do if we want to keep and rename both the <code>x</code> and <code>y</code> column? One option is to supply a <code>Vector</code> of operation <code>Pair</code>s to <code>select</code>. <code>select</code> will process all of these operations in order.</p><pre><code class="language-julia hljs">julia&gt; [&quot;x&quot; =&gt; &quot;a&quot;, &quot;y&quot; =&gt; &quot;b&quot;]
+2-element Vector{Pair{String, String}}:
+ &quot;x&quot; =&gt; &quot;a&quot;
+ &quot;y&quot; =&gt; &quot;b&quot;
+
+julia&gt; select(df, [&quot;x&quot; =&gt; &quot;a&quot;, &quot;y&quot; =&gt; &quot;b&quot;])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6</code></pre><p>We can use broadcasting to simplify the syntax above.</p><pre><code class="language-julia hljs">julia&gt; [&quot;x&quot;, &quot;y&quot;] .=&gt; [&quot;a&quot;, &quot;b&quot;]
+2-element Vector{Pair{String, String}}:
+ &quot;x&quot; =&gt; &quot;a&quot;
+ &quot;y&quot; =&gt; &quot;b&quot;
+
+julia&gt; select(df, [&quot;x&quot;, &quot;y&quot;] .=&gt; [&quot;a&quot;, &quot;b&quot;])
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6</code></pre><p>Notice that <code>select</code> sees the same <code>Vector{Pair{String, String}}</code> operation argument whether the individual pairs are written out explicitly or constructed with broadcasting. The broadcasting is applied before the call to <code>select</code>.</p><pre><code class="language-julia hljs">julia&gt; [&quot;x&quot; =&gt; &quot;a&quot;, &quot;y&quot; =&gt; &quot;b&quot;] == ([&quot;x&quot;, &quot;y&quot;] .=&gt; [&quot;a&quot;, &quot;b&quot;])
+true</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>These operation pairs (or vector of pairs) can be given variable names. This is uncommon in practice but could be helpful for intermediate inspection and testing.</p><pre><code class="language-julia hljs">df = DataFrame(x = 1:3, y = 4:6)       # create data frame
+operation = [&quot;x&quot;, &quot;y&quot;] .=&gt; [&quot;a&quot;, &quot;b&quot;]  # save operation to variable
+typeof(operation)                      # check type of operation
+first(operation)                       # check first pair in operation
+last(operation)                        # check last pair in operation
+select(df, operation)                  # manipulate `df` with `operation`</code></pre></div></div><p>In Julia, a non-vector broadcasted with a vector will be repeated in each resultant pair element.</p><pre><code class="language-julia hljs">julia&gt; [&quot;x&quot;, &quot;y&quot;] .=&gt; :a    # :a is repeated
+2-element Vector{Pair{String, Symbol}}:
+ &quot;x&quot; =&gt; :a
+ &quot;y&quot; =&gt; :a
+
+julia&gt; 1 .=&gt; [:a, :b]       # 1 is repeated
+2-element Vector{Pair{Int64, Symbol}}:
+ 1 =&gt; :a
+ 1 =&gt; :b</code></pre><p>We can use this fact to easily broadcast an <code>operation_function</code> to multiple columns.</p><pre><code class="language-julia hljs">julia&gt; f(x) = 2 * x
+f (generic function with 1 method)
+
+julia&gt; [&quot;x&quot;, &quot;y&quot;] .=&gt; f  # f is repeated
+2-element Vector{Pair{String, typeof(f)}}:
+ &quot;x&quot; =&gt; f
+ &quot;y&quot; =&gt; f
+
+julia&gt; select(df, [&quot;x&quot;, &quot;y&quot;] .=&gt; f)  # apply f with automatic column renaming
+3×2 DataFrame
+ Row │ x_f    y_f
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      8
+   2 │     4     10
+   3 │     6     12
+
+julia&gt; [&quot;x&quot;, &quot;y&quot;] .=&gt; f .=&gt; [&quot;a&quot;, &quot;b&quot;]  # f is repeated
+2-element Vector{Pair{String, Pair{typeof(f), String}}}:
+ &quot;x&quot; =&gt; (f =&gt; &quot;a&quot;)
+ &quot;y&quot; =&gt; (f =&gt; &quot;b&quot;)
+
+julia&gt; select(df, [&quot;x&quot;, &quot;y&quot;] .=&gt; f .=&gt; [&quot;a&quot;, &quot;b&quot;])  # apply f with manual column renaming
+3×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      8
+   2 │     4     10
+   3 │     6     12</code></pre><p>A renaming function can be applied to multiple columns in the same way. It will also be repeated in each operation <code>Pair</code>.</p><pre><code class="language-julia hljs">julia&gt; newname(s::String) = s * &quot;_new&quot;
+newname (generic function with 1 method)
+
+julia&gt; [&quot;x&quot;, &quot;y&quot;] .=&gt; f .=&gt; newname  # both f and newname are repeated
+2-element Vector{Pair{String, Pair{typeof(f), typeof(newname)}}}:
+ &quot;x&quot; =&gt; (f =&gt; newname)
+ &quot;y&quot; =&gt; (f =&gt; newname)
+
+julia&gt; select(df, [&quot;x&quot;, &quot;y&quot;] .=&gt; f .=&gt; newname)  # apply f then rename column with newname
+3×2 DataFrame
+ Row │ x_new  y_new
+     │ Int64  Int64
+─────┼──────────────
+   1 │     2      8
+   2 │     4     10
+   3 │     6     12</code></pre><p>You can see from the type output above that a three element pair does not actually exist. A <code>Pair</code> (as the name implies) can only contain two elements. Thus, <code>:x =&gt; :y =&gt; :z</code> becomes a nested <code>Pair</code>, where <code>:x</code> is the first element and points to the <code>Pair</code> <code>:y =&gt; :z</code>, which is the second element.</p><pre><code class="language-julia hljs">julia&gt; p = :x =&gt; :y =&gt; :z
+:x =&gt; (:y =&gt; :z)
+
+julia&gt; p[1]
+:x
+
+julia&gt; p[2]
+:y =&gt; :z
+
+julia&gt; p[2][1]
+:y
+
+julia&gt; p[2][2]
+:z
+
+julia&gt; p[3] # there is no index 3 for a pair
+ERROR: BoundsError: attempt to access Pair{Symbol, Pair{Symbol, Symbol}} at index [3]</code></pre><p>In the previous examples, the source columns have been individually selected. When broadcasting multiple columns to the same function, often similarities in the column names or position can be exploited to avoid tedious selection. Consider a data frame with temperature data at three different locations taken over time.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(Time = 1:4,
+                      Temperature1 = [20, 23, 25, 28],
+                      Temperature2 = [33, 37, 41, 44],
+                      Temperature3 = [15, 10, 4, 0])
+4×4 DataFrame
+ Row │ Time   Temperature1  Temperature2  Temperature3
+     │ Int64  Int64         Int64         Int64
+─────┼─────────────────────────────────────────────────
+   1 │     1            20            33            15
+   2 │     2            23            37            10
+   3 │     3            25            41             4
+   4 │     4            28            44             0</code></pre><p>To convert all of the temperature data in one transformation, we just need to define a conversion function and broadcast it to all of the &quot;Temperature&quot; columns.</p><pre><code class="language-julia hljs">julia&gt; celsius_to_kelvin(x) = x + 273
+celsius_to_kelvin (generic function with 1 method)
+
+julia&gt; transform(
+           df,
+           Cols(r&quot;Temp&quot;) .=&gt; ByRow(celsius_to_kelvin),
+           renamecols = false
+       )
+4×4 DataFrame
+ Row │ Time   Temperature1  Temperature2  Temperature3
+     │ Int64  Int64         Int64         Int64
+─────┼─────────────────────────────────────────────────
+   1 │     1           293           306           288
+   2 │     2           296           310           283
+   3 │     3           298           314           277
+   4 │     4           301           317           273</code></pre><p>Or, simultaneously changing the column names:</p><pre><code class="language-julia hljs">julia&gt; rename_function(s) = &quot;Temperature $(last(s)) (K)&quot;
+rename_function (generic function with 1 method)
+
+julia&gt; select(
+           df,
+           &quot;Time&quot;,
+           Cols(r&quot;Temp&quot;) .=&gt; ByRow(celsius_to_kelvin) .=&gt; rename_function
+       )
+4×4 DataFrame
+ Row │ Time   Temperature 1 (K)  Temperature 2 (K)  Temperature 3 (K)
+     │ Int64  Int64              Int64              Int64
+─────┼────────────────────────────────────────────────────────────────
+   1 │     1                293                306                288
+   2 │     2                296                310                283
+   3 │     3                298                314                277
+   4 │     4                301                317                273</code></pre><div class="admonition is-info"><header class="admonition-header">Notes</header><div class="admonition-body"><ul><li><code>Not(&quot;Time&quot;)</code> or <code>2:4</code> would have been equally good choices for <code>source_column_selector</code> in the above operations.</li><li>Don&#39;t forget <code>ByRow</code> if your function is to be applied to elements rather than entire column vectors.</li></ul><p>Without <code>ByRow</code>, the manipulations above would have thrown <code>ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)</code>.</p><ul><li>Regular expression (<code>r&quot;&quot;</code>) and <code>:</code> <code>source_column_selectors</code></li></ul><p>must be wrapped in <code>Cols</code> to be properly broadcasted because otherwise the broadcasting occurs before the expression is expanded into a vector of matches.</p></div></div><p>You could also broadcast different columns to different functions by supplying a vector of functions.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(a=1:4, b=5:8)
+4×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     2      6
+   3 │     3      7
+   4 │     4      8
+
+julia&gt; f1(x) = x .+ 1
+f1 (generic function with 1 method)
+
+julia&gt; f2(x) = x ./ 10
+f2 (generic function with 1 method)
+
+julia&gt; transform(df, [:a, :b] .=&gt; [f1, f2])
+4×4 DataFrame
+ Row │ a      b      a_f1   b_f2
+     │ Int64  Int64  Int64  Float64
+─────┼──────────────────────────────
+   1 │     1      5      2      0.5
+   2 │     2      6      3      0.6
+   3 │     3      7      4      0.7
+   4 │     4      8      5      0.8</code></pre><p>However, this form is not much more convenient than supplying multiple individual operations.</p><pre><code class="language-julia hljs">julia&gt; transform(df, [:a =&gt; f1, :b =&gt; f2]) # same manipulation as previous
+4×4 DataFrame
+ Row │ a      b      a_f1   b_f2
+     │ Int64  Int64  Int64  Float64
+─────┼──────────────────────────────
+   1 │     1      5      2      0.5
+   2 │     2      6      3      0.6
+   3 │     3      7      4      0.7
+   4 │     4      8      5      0.8</code></pre><p>Perhaps more useful for broadcasting syntax is to apply multiple functions to multiple columns by changing the vector of functions to a 1-by-x matrix of functions. (Recall that a list, a vector, or a matrix of operation pairs are all valid for passing to the manipulation functions.)</p><pre><code class="language-julia hljs">julia&gt; [:a, :b] .=&gt; [f1 f2] # No comma `,` between f1 and f2
+2×2 Matrix{Pair{Symbol}}:
+ :a=&gt;f1  :a=&gt;f2
+ :b=&gt;f1  :b=&gt;f2
+
+julia&gt; transform(df, [:a, :b] .=&gt; [f1 f2]) # No comma `,` between f1 and f2
+4×6 DataFrame
+ Row │ a      b      a_f1   b_f1   a_f2     b_f2
+     │ Int64  Int64  Int64  Int64  Float64  Float64
+─────┼──────────────────────────────────────────────
+   1 │     1      5      2      6      0.1      0.5
+   2 │     2      6      3      7      0.2      0.6
+   3 │     3      7      4      8      0.3      0.7
+   4 │     4      8      5      9      0.4      0.8</code></pre><p>In this way, every combination of selected columns and functions will be applied.</p><p>Pair broadcasting is a simple but powerful tool that can be used in any of the manipulation functions listed under <a href="#Manipulation-Functions">Manipulation Functions</a>. Experiment for yourself to discover other useful operations.</p><h3 id="Additional-Resources"><a class="docs-heading-anchor" href="#Additional-Resources">Additional Resources</a><a id="Additional-Resources-1"></a><a class="docs-heading-anchor-permalink" href="#Additional-Resources" title="Permalink"></a></h3><p>More details and examples of operation pair syntax can be found in <a href="https://bkamins.github.io/julialang/2020/12/24/minilanguage.html">this blog post</a>. (The official wording describing the syntax has changed since the blog post was written, but the examples are still illustrative. The operation pair syntax is sometimes referred to as the DataFrames.jl mini-language or Domain-Specific Language.)</p><p>For additional syntax niceties, many users find the <a href="https://github.com/jkrumbiegel/Chain.jl">Chain.jl</a> and <a href="https://github.com/JuliaData/DataFramesMeta.jl">DataFramesMeta.jl</a> packages useful to help simplify manipulations that may be tedious with operation pairs alone.</p><h2 id="Approach-Comparison"><a class="docs-heading-anchor" href="#Approach-Comparison">Approach Comparison</a><a id="Approach-Comparison-1"></a><a class="docs-heading-anchor-permalink" href="#Approach-Comparison" title="Permalink"></a></h2><p>After that deep dive into <a href="#Manipulation-Functions">Manipulation Functions</a>, it is a good idea to review the alternative approaches covered in <a href="#Getting-and-Setting-Data-in-a-Data-Frame">Getting and Setting Data in a Data Frame</a>. Let us compare the approaches with a few examples.</p><p>For simple operations, often getting/setting data with dot syntax is simpler than the equivalent data frame manipulation. Here we will add the two columns of our data frame together and place the result in a new third column.</p><p><strong>Setup:</strong></p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(x = 1:3, y = 4:6)  # define a data frame
+3×2 DataFrame
+ Row │ x      y
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6</code></pre><p><strong>Manipulation:</strong></p><pre><code class="language-julia hljs">julia&gt; transform!(df, [:x, :y] =&gt; (+) =&gt; :z)
+3×3 DataFrame
+ Row │ x      y      z
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      5
+   2 │     2      5      7
+   3 │     3      6      9</code></pre><p><strong>Dot Syntax:</strong></p><pre><code class="language-julia hljs">julia&gt; df.z = df.x + df.y
+3-element Vector{Int64}:
+ 5
+ 7
+ 9
+
+julia&gt; df  # see that the previous expression updated the data frame `df`
+3×3 DataFrame
+ Row │ x      y      z
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      5
+   2 │     2      5      7
+   3 │     3      6      9</code></pre><p>Recall that the return type from a data frame manipulation function call is always a data frame. The return type of a data frame column accessed with dot syntax is a <code>Vector</code>. Thus the expression <code>df.x + df.y</code> gets the column data as vectors and returns the result of the vector addition. However, in that same line, we assigned the resultant <code>Vector</code> to a new column <code>z</code> in the data frame <code>df</code>. We could have instead assigned the resultant <code>Vector</code> to some other variable, and then <code>df</code> would not have been altered. The approach with dot syntax is very versatile since the data getting, mathematics, and data setting can be separate steps.</p><pre><code class="language-julia hljs">julia&gt; df.x  # dot syntax returns a vector
+3-element Vector{Int64}:
+ 1
+ 2
+ 3
+
+julia&gt; v = df.x + df.y  # assign mathematical result to a vector `v`
+3-element Vector{Int64}:
+ 5
+ 7
+ 9
+
+julia&gt; df.z = v  # place `v` into the data frame `df` with the column name `z`
+3-element Vector{Int64}:
+ 5
+ 7
+ 9</code></pre><p>However, one way in which dot syntax is less versatile is that the column name must be explicitly written in the code. Indexing syntax is a good alternative in these cases which is only slightly longer to write than dot syntax. Both indexing syntax and manipulation functions can operate on dynamic column names stored in variables.</p><p><strong>Setup:</strong></p><p>Imagine this setup data was read from a file and/or entered by a user at runtime.</p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(&quot;My First Column&quot; =&gt; 1:3, &quot;My Second Column&quot; =&gt; 4:6)  # define a data frame
+3×2 DataFrame
+ Row │ My First Column  My Second Column
+     │ Int64            Int64
+─────┼───────────────────────────────────
+   1 │               1                 4
+   2 │               2                 5
+   3 │               3                 6
+
+julia&gt; c1 = &quot;My First Column&quot;; c2 = &quot;My Second Column&quot;; c3 = &quot;My Third Column&quot;;  # define column names</code></pre><p><strong>Dot Syntax:</strong></p><pre><code class="language-julia hljs">julia&gt; df.c1  # dot syntax expects an explicit column name and cannot be used to access variable column name
+ERROR: ArgumentError: column name :c1 not found in the data frame</code></pre><p><strong>Indexing:</strong></p><pre><code class="language-julia hljs">julia&gt; df[:, c3] = df[:, c1] + df[:, c2]  # access columns with names stored in variables
+3-element Vector{Int64}:
+ 5
+ 7
+ 9
+
+julia&gt; df  # see that the previous expression updated the data frame `df`
+3×3 DataFrame
+ Row │ My First Column  My Second Column  My Third Column
+     │ Int64            Int64             Int64
 ─────┼────────────────────────────────────────────────────
-   1 │     0     67  male         2  own               67
-   2 │     1     22  female       2  own               67
-   3 │     2     49  male         1  own               67
-   4 │     3     45  male         2  free              67
-   5 │     4     53  male         2  free              67
-   6 │     5     35  male         1  free              67
-   7 │     6     53  male         2  own               67
-   8 │     7     35  male         3  rent              67</code></pre><p>In the example below we are swapping values stored in columns <code>:Sex</code> and <code>:Age</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; transform(german, :Age =&gt; :Sex, :Sex =&gt; :Age)
-1000×10 DataFrame
-  Row │ id     Age      Sex    Job    Housing  Saving accounts  Checking accou ⋯
-      │ Int64  String7  Int64  Int64  String7  String15         String15       ⋯
-──────┼─────────────────────────────────────────────────────────────────────────
-    1 │     0  male        67      2  own      NA               little         ⋯
-    2 │     1  female      22      2  own      little           moderate
-    3 │     2  male        49      1  own      little           NA
-    4 │     3  male        45      2  free     little           little
-    5 │     4  male        53      2  free     little           little         ⋯
-    6 │     5  male        35      1  free     NA               NA
-    7 │     6  male        53      2  own      quite rich       NA
-    8 │     7  male        35      3  rent     little           moderate
-  ⋮   │   ⋮       ⋮       ⋮      ⋮       ⋮            ⋮                ⋮       ⋱
-  994 │   993  male        30      3  own      little           little         ⋯
-  995 │   994  male        50      2  own      NA               NA
-  996 │   995  female      31      1  own      little           NA
-  997 │   996  male        40      3  own      little           little
-  998 │   997  male        38      2  own      little           NA             ⋯
-  999 │   998  male        23      2  free     little           little
- 1000 │   999  male        27      2  own      moderate         moderate
-                                                  4 columns and 985 rows omitted</code></pre><p>If we give more than one source column to a transformation they are passed as consecutive positional arguments. So for example the <code>[:Age, :Job] =&gt; (+) =&gt; :res</code> transformation below evaluates <code>+(df1.Age, df1.Job)</code> (which adds two columns) and stores the result in the <code>:res</code> column:</p><pre><code class="language-julia-repl hljs">julia&gt; select(german, :Age, :Job, [:Age, :Job] =&gt; (+) =&gt; :res)
-1000×3 DataFrame
-  Row │ Age    Job    res
-      │ Int64  Int64  Int64
-──────┼─────────────────────
-    1 │    67      2     69
-    2 │    22      2     24
-    3 │    49      1     50
-    4 │    45      2     47
-    5 │    53      2     55
-    6 │    35      1     36
-    7 │    53      2     55
-    8 │    35      3     38
-  ⋮   │   ⋮      ⋮      ⋮
-  994 │    30      3     33
-  995 │    50      2     52
-  996 │    31      1     32
-  997 │    40      3     43
-  998 │    38      2     40
-  999 │    23      2     25
- 1000 │    27      2     29
-            985 rows omitted</code></pre><p>In the examples given in this introductory tutorial we did not cover all options of the transformation mini-language. More advanced examples, in particular showing how to pass or produce multiple columns using the <code>AsTable</code> operation (which you might have seen in some DataFrames.jl demos) are given in the later sections of the manual.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../getting_started/">Getting Started »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Thursday 12 December 2024 15:48">Thursday 12 December 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+   1 │               1                 4                5
+   2 │               2                 5                7
+   3 │               3                 6                9</code></pre><p><strong>Manipulation:</strong></p><pre><code class="language-julia hljs">julia&gt; transform!(df, [c1, c2] =&gt; (+) =&gt; c3)  # access columns with names stored in variables
+3×3 DataFrame
+ Row │ My First Column  My Second Column  My Third Column
+     │ Int64            Int64             Int64
+─────┼────────────────────────────────────────────────────
+   1 │               1                 4                5
+   2 │               2                 5                7
+   3 │               3                 6                9</code></pre><p>Additionally, manipulation functions only require the name of the data frame to be written once. This can be helpful when dealing with long variable and column names.</p><p><strong>Setup:</strong></p><pre><code class="language-julia hljs">julia&gt; my_very_long_data_frame_name = DataFrame(
+           &quot;My First Column&quot; =&gt; 1:3,
+           &quot;My Second Column&quot; =&gt; 4:6
+       )  # define a data frame
+3×2 DataFrame
+ Row │ My First Column  My Second Column
+     │ Int64            Int64
+─────┼───────────────────────────────────
+   1 │               1                 4
+   2 │               2                 5
+   3 │               3                 6
+
+julia&gt; c1 = &quot;My First Column&quot;; c2 = &quot;My Second Column&quot;; c3 = &quot;My Third Column&quot;;  # define column names</code></pre><p><strong>Manipulation:</strong></p><pre><code class="language-julia hljs">
+julia&gt; transform!(my_very_long_data_frame_name, [c1, c2] =&gt; (+) =&gt; c3)
+3×3 DataFrame
+ Row │ My First Column  My Second Column  My Third Column
+     │ Int64            Int64             Int64
+─────┼────────────────────────────────────────────────────
+   1 │               1                 4                5
+   2 │               2                 5                7
+   3 │               3                 6                9</code></pre><p><strong>Indexing:</strong></p><pre><code class="language-julia hljs">julia&gt; my_very_long_data_frame_name[:, c3] = my_very_long_data_frame_name[:, c1] + my_very_long_data_frame_name[:, c2]
+3-element Vector{Int64}:
+ 5
+ 7
+ 9
+
+julia&gt; df  # see that the previous expression updated the data frame `df`
+3×3 DataFrame
+ Row │ My First Column  My Second Column  My Third Column
+     │ Int64            Int64             Int64
+─────┼────────────────────────────────────────────────────
+   1 │               1                 4                5
+   2 │               2                 5                7
+   3 │               3                 6                9</code></pre><p>Another benefit of manipulation functions and indexing over dot syntax is that it is easier to operate on a subset of columns.</p><p><strong>Setup:</strong></p><pre><code class="language-julia hljs">julia&gt; df = DataFrame(x = 1:3, y = 4:6, z = 7:9)  # define data frame
+3×3 DataFrame
+ Row │ x      y      z
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      7
+   2 │     2      5      8
+   3 │     3      6      9</code></pre><p><strong>Dot Syntax:</strong></p><pre><code class="language-julia hljs">julia&gt; df.Not(:x)  # will not work; requires a literal column name
+ERROR: ArgumentError: column name :Not not found in the data frame</code></pre><p><strong>Indexing:</strong></p><pre><code class="language-julia hljs">julia&gt; df[:, :y_z_max] = maximum.(eachrow(df[:, Not(:x)]))  # find maximum value across all rows except for column `x`
+3-element Vector{Int64}:
+ 7
+ 8
+ 9
+
+julia&gt; df  # see that the previous expression updated the data frame `df`
+3×4 DataFrame
+ Row │ x      y      z      y_z_max
+     │ Int64  Int64  Int64  Int64
+─────┼──────────────────────────────
+   1 │     1      4      7        7
+   2 │     2      5      8        8
+   3 │     3      6      9        9</code></pre><p><strong>Manipulation:</strong></p><pre><code class="language-julia hljs">julia&gt; transform!(df, Not(:x) =&gt; ByRow(max))  # find maximum value across all rows except for column `x`
+3×4 DataFrame
+ Row │ x      y      z      y_z_max
+     │ Int64  Int64  Int64  Int64
+─────┼──────────────────────────────
+   1 │     1      4      7        7
+   2 │     2      5      8        8
+   3 │     3      6      9        9</code></pre><p>Moreover, indexing can operate on a subset of columns <em>and</em> rows.</p><p><strong>Indexing:</strong></p><pre><code class="language-julia hljs">julia&gt; y_z_max_row3 = maximum(df[3, Not(:x)])  # find maximum value across row 3 except for column `x`
+9</code></pre><p>Hopefully this small comparison has illustrated some of the benefits and drawbacks of the various syntaxes available in DataFrames.jl. The best syntax to use depends on the situation.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Introduction</a><a class="docs-footer-nextpage" href="../getting_started/">Getting Started »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Friday 13 December 2024 11:52">Friday 13 December 2024</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
