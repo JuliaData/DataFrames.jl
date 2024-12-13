@@ -2940,12 +2940,8 @@ julia> select(
 !!! note "Notes"
 
     * `Not("Time")` or `2:4` would have been equally good choices for `source_column_selector` in the above operations.
-    * Don't forget `ByRow` if your function is to be applied to elements rather than entire column vectors.
-    Without `ByRow`, the manipulations above would have thrown
-    `ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)`.
-    * Regular expression (`r""`) and `:` `source_column_selectors`
-    must be wrapped in `Cols` to be properly broadcasted
-    because otherwise the broadcasting occurs before the expression is expanded into a vector of matches.
+    * Don't forget `ByRow` if your function is to be applied to elements rather than entire column vectors. Without `ByRow`, the manipulations above would have thrown `ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)`.
+    * Regular expression (`r""`) and `:` `source_column_selectors` must be wrapped in `Cols` to be properly broadcasted because otherwise the broadcasting occurs before the expression is expanded into a vector of matches.
 
 You could also broadcast different columns to different functions
 by supplying a vector of functions.
