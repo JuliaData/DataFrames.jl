@@ -1747,7 +1747,7 @@ julia> subset(df, :minor)
 ```
 
 `source_column_selector` may instead be a collection of columns such as a vector,
-a [regular expression](https://docs.julialang.org/en/v1/manual/strings/#Regular-Expressions),
+a [regular expression](https://docs.julialang.org/en/v1/manual/strings/#man-regex-literals),
 a `Not`, `Between`, `All`, or `Cols` expression,
 or a `:`.
 See the [Indexing](@ref) API for the full list of possible values with references.
