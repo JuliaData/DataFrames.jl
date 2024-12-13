@@ -2279,7 +2279,8 @@ julia> transform(df, :b => (x -> x .+ 10) => :a)  # replace column :a
    4 │    18      8
 ```
 
-Actually, `renamecols=false` just prevents the function name from being appended to the final column name such that the operation is *usually* returned to the same column.
+Actually, `renamecols=false` just prevents the function name from being appended
+to the final column name such that the operation is *usually* returned to the same column.
 
 ```julia
 julia> transform(df, [:a, :b] => +)  # new column name is all source columns and function name
@@ -2939,9 +2940,18 @@ julia> select(
 
 !!! note "Notes"
 
-    * `Not("Time")` or `2:4` would have been equally good choices for `source_column_selector` in the above operations.
-    * Don't forget `ByRow` if your function is to be applied to elements rather than entire column vectors. Without `ByRow`, the manipulations above would have thrown `ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)`.
-    * Regular expression (`r""`) and `:` `source_column_selectors` must be wrapped in `Cols` to be properly broadcasted because otherwise the broadcasting occurs before the expression is expanded into a vector of matches.
+    * `Not("Time")` or `2:4` would have been equally good choices
+      for `source_column_selector` in the above operations.
+
+    * Don't forget `ByRow` if your function is to be applied to elements
+      rather than entire column vectors.
+      Without `ByRow`, the manipulations above would have thrown
+      `ERROR: MethodError: no method matching +(::Vector{Int64}, ::Int64)`.
+
+    * Regular expression (`r""`) and `:` `source_column_selectors`
+      must be wrapped in `Cols` to be properly broadcasted
+      because otherwise the broadcasting occurs before the expression
+      is expanded into a vector of matches.
 
 You could also broadcast different columns to different functions
 by supplying a vector of functions.
@@ -3091,7 +3101,8 @@ julia> df  # see that the previous expression updated the data frame `df`
    3 │     3      6      9
 ```
 
-Recall that the return type from a data frame manipulation function call is always a data frame.
+Recall that the return type from a data frame manipulation function call
+is always a data frame.
 The return type of a data frame column accessed with dot syntax is a `Vector`.
 Thus the expression `df.x + df.y` gets the column data as vectors
 and returns the result of the vector addition.
