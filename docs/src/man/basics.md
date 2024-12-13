@@ -1650,7 +1650,7 @@ and automatically names the resulting column(s)
 : passes source column(s) as arguments to a function
 and names the resulting column(s) `new_column_names`
 
-   Examples: `:a => sum => :sum_of_a`, `[:a, :b] => + => :a_plus_b`
+   Examples: `:a => sum => :sum_of_a`, `[:a, :b] => (+) => :a_plus_b`
 
    *(Not available for `subset` or `subset!`)*
 
@@ -1834,13 +1834,13 @@ julia> subset(df2, [:minor, :male])
 
 !!! note
 
-    Using `Symbol` in `source_column_selector` will perform slightly faster than using `String`.
-    However, `String` is convenient when column names contain spaces.
+    Using `Symbol` in `source_column_selector` will perform slightly faster than using string.
+    However, a string is convenient when column names contain spaces.
 
     All elements of `source_column_selector` must be the same type
     (unless wrapped in `Cols`),
     e.g. `subset(df2, [:minor, "male"])` will error
-    since `Symbol` and `String` are used simultaneously.
+    since `Symbol` and string are used simultaneously.
 
 #### `operation_function`
 Inside an `operation` pair, `operation_function` is a function
@@ -3095,7 +3095,7 @@ julia> df  # see that the previous expression updated the data frame `df`
    3 │     3      6      9
 ```
 
-Recall that the return type from a data frame manipulation function call is always a `DataFrame`.
+Recall that the return type from a data frame manipulation function call is always a data frame.
 The return type of a data frame column accessed with dot syntax is a `Vector`.
 Thus the expression `df.x + df.y` gets the column data as vectors
 and returns the result of the vector addition.
