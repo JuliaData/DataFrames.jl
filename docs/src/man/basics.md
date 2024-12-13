@@ -3262,6 +3262,19 @@ julia> df.Not(:x)  # will not work; requires a literal column name
 ERROR: ArgumentError: column name :Not not found in the data frame
 ```
 
+**Manipulation:**
+
+```julia
+julia> transform!(df, Not(:x) => ByRow(max))  # find maximum value across all rows except for column `x`
+3×4 DataFrame
+ Row │ x      y      z      y_z_max
+     │ Int64  Int64  Int64  Int64
+─────┼──────────────────────────────
+   1 │     1      4      7        7
+   2 │     2      5      8        8
+   3 │     3      6      9        9
+```
+
 **Indexing:**
 
 ```julia
@@ -3272,19 +3285,6 @@ julia> df[:, :y_z_max] = maximum.(eachrow(df[:, Not(:x)]))  # find maximum value
  9
 
 julia> df  # see that the previous expression updated the data frame `df`
-3×4 DataFrame
- Row │ x      y      z      y_z_max
-     │ Int64  Int64  Int64  Int64
-─────┼──────────────────────────────
-   1 │     1      4      7        7
-   2 │     2      5      8        8
-   3 │     3      6      9        9
-```
-
-**Manipulation:**
-
-```julia
-julia> transform!(df, Not(:x) => ByRow(max))  # find maximum value across all rows except for column `x`
 3×4 DataFrame
  Row │ x      y      z      y_z_max
      │ Int64  Int64  Int64  Int64
