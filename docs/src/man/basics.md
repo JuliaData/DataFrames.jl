@@ -1635,32 +1635,36 @@ The `operation` argument defines the
 operation to be applied to the source `dataframe`,
 and it can take any of the following common forms explained below:
 
-`source_column_selector`
-: selects source column(s) without manipulating or renaming them
+* `source_column_selector`
 
-   Examples: `:a`, `[:a, :b]`, `All()`, `Not(:a)`
+  selects source column(s) without manipulating or renaming them
 
-`source_column_selector => operation_function`
-: passes source column(s) as arguments to a function
-and automatically names the resulting column(s)
+  Examples: `:a`, `[:a, :b]`, `All()`, `Not(:a)`
 
-   Examples: `:a => sum`, `[:a, :b] => +`, `:a => ByRow(==(3))`
+* `source_column_selector => operation_function`
 
-`source_column_selector => operation_function => new_column_names`
-: passes source column(s) as arguments to a function
-and names the resulting column(s) `new_column_names`
+  passes source column(s) as arguments to a function
+  and automatically names the resulting column(s)
 
-   Examples: `:a => sum => :sum_of_a`, `[:a, :b] => (+) => :a_plus_b`
+  Examples: `:a => sum`, `[:a, :b] => +`, `:a => ByRow(==(3))`
 
-   *(Not available for `subset` or `subset!`)*
+* `source_column_selector => operation_function => new_column_names`
 
-`source_column_selector => new_column_names`
-: renames a source column,
-or splits a column containing collection elements into multiple new columns
+  passes source column(s) as arguments to a function
+  and names the resulting column(s) `new_column_names`
 
-   Examples: `:a => :new_a`, `:a_b => [:a, :b]`, `:nt => AsTable`
+  Examples: `:a => sum => :sum_of_a`, `[:a, :b] => (+) => :a_plus_b`
 
-   (*Not available for `subset` or `subset!`*)
+  *(Not available for `subset` or `subset!`)*
+
+* `source_column_selector => new_column_names`
+
+  renames a source column,
+  or splits a column containing collection elements into multiple new columns
+
+  Examples: `:a => :new_a`, `:a_b => [:a, :b]`, `:nt => AsTable`
+
+  (*Not available for `subset` or `subset!`*)
 
 The `=>` operator constructs a
 [Pair](https://docs.julialang.org/en/v1/base/collections/#Core.Pair),
