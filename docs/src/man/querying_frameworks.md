@@ -1,7 +1,7 @@
 # Data manipulation frameworks
 
-Three frameworks provide convenience methods to manipulate `DataFrame`s:
-DataFramesMeta.jl, DataFrameMacros.jl and Query.jl. They implement a functionality similar to
+Four frameworks provide convenience methods to manipulate `DataFrame`s:
+TidierData.jl, DataFramesMeta.jl, DataFrameMacros.jl and Query.jl. They implement a functionality similar to
 [dplyr](https://dplyr.tidyverse.org/) or
 [LINQ](https://en.wikipedia.org/wiki/Language_Integrated_Query).
 
