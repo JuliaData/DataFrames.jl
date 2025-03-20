@@ -1671,7 +1671,7 @@ julia> combine(gd, :, AsTable(Not(:a)) => sum, renamecols=false)
    8 │     4      1      8      9
 ```
 
-# aggregation over array-like elements
+# protecting returned vectors from being expanded into multiple rows
 ```jldoctest
 julia> df = DataFrame(a=[1, 1, 2, 2],
                       b=[[1, 2], [2, 3], [3, 4], [4, 5]]);
