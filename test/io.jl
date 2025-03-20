@@ -760,7 +760,7 @@ end
     df = DataFrame(
         A=Int64[1,4,9,16,25,36,49,64],
         B = [
-            md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)",
+            md"ABC",
             md"``\frac{x^2}{x^2+y^2}``",
             md"`Header`",
             md"This is *very*, **very**, very, very, very, very, very, very, very long line" ,
@@ -781,7 +781,7 @@ end
          Row │ A      B
              │ Int64  MD
         ─────┼──────────────────────────────────────────
-           1 │     1    DataFrames.jl (http://juliadat…
+           1 │     1    ABC
            2 │     4    \\frac{x^2}{x^2+y^2}
            3 │     9    Header
            4 │    16    This is very, very, very, very…
@@ -793,7 +793,7 @@ end
     @test sprint(show, "text/csv", df) ==
         """
         \"A\",\"B\"
-        1,\"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)\"
+        1,\"ABC\"
         4,\"\$\\\\frac{x^2}{x^2+y^2}\$\"
         9,\"`Header`\"
         16,\"This is *very*, **very**, very, very, very, very, very, very, very long line\"

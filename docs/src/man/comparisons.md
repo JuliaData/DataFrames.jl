@@ -17,7 +17,7 @@ df2 = DataFrame(grp=[1, 3], w=[10, 11])
     Some of the operations mutate the tables so every operation assumes that it is done on the original data frame.
 
 Note that in the comparisons presented below predicates like `x -> x >= 1` can
-be more compactly written as `=>(1)`. The latter form has an additional benefit
+be more compactly written as `>=(1)`. The latter form has an additional benefit
 that it is compiled only once per Julia session (as opposed to `x -> x >= 1`
 which defines a new anonymous function every time it is introduced).
 
@@ -285,12 +285,14 @@ df2 <- data.table(grp=c(1,3), w = c(10,11))
 | Transform several columns         | `df[, .(max(x), min(y)) ]`                                                                 | `combine(df, :x => maximum, :y => minimum)`                                 |
 |                                   | `df[, lapply(.SD, mean), .SDcols = c("x", "y") ]`                                          | `combine(df, [:x, :y] .=> mean)`                                            |
 |                                   | `df[, lapply(.SD, mean), .SDcols = patterns("*x") ]`                                       | `combine(df, names(df, r"^x") .=> mean)`                                    |
-|                                   | `df[, unlist(lapply(.SD, function(x) c(max=max(x), min=min(x)))), .SDcols = c("x", "y") ]` | `combine(df, ([:x, :y] .=> [maximum minimum])...)`                          |
+|                                   | `dcast(df, . ~ ., list(max,min), value.var = c("x","y"))`                                  | `combine(df, ([:x, :y] .=> [maximum minimum])...)`                          |
 | Multivariate function             | `df[, .(cor(x,y)) ]`                                                                       | `transform(df, [:x, :y] => cor)`                                            |
 | Row-wise                          | `df[, min_xy := min(x, y), by = 1:nrow(df)]`                                               | `transform!(df, [:x, :y] => ByRow(min))`                                    |
 |                                   | `df[, argmax_xy := which.max(.SD) , .SDcols = patterns("*x"), by = 1:nrow(df) ]`           | `transform!(df, AsTable(r"^x") => ByRow(argmax))`                           |
 | DataFrame as output               | `df[, .SD[1], by=grp]`                                                                     | `combine(groupby(df, :grp), first)`                                         |
 | DataFrame as output               | `df[, .SD[which.max(x)], by=grp]`                                                          | `combine(groupby(df, :grp), sdf -> sdf[argmax(sdf.x), :])`                  |
+| Reshape longer                    | `longdf = melt(df, measure.vars=c("x","y"), id.vars="id")`                                 | `longdf = stack(df, [:x, :y], :id)`                                         |
+| Reshape wider                     | `dcast(longdf, id ~ variable, value.var="value")`                                          | `unstack(longdf, :id, :variable, :value)`
 
 ### Joining data frames
 

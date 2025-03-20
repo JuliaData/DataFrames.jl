@@ -597,3 +597,296 @@ function mapcols!(f::Union{Function,Type}, df::DataFrame; cols=All())
     _drop_all_nonnote_metadata!(df)
     return df
 end
+
+##############################################################################
+##
+## Reduction
+##
+##############################################################################
+
+"""
+    reduce(::typeof(vcat),
+           dfs::Union{AbstractVector{<:AbstractDataFrame},
+                      Tuple{AbstractDataFrame, Vararg{AbstractDataFrame}}};
+           cols::Union{Symbol, AbstractVector{Symbol},
+                       AbstractVector{<:AbstractString}}=:setequal,
+           source::Union{Nothing, Symbol, AbstractString,
+                         Pair{<:Union{Symbol, AbstractString}, <:AbstractVector}}=nothing,
+           init::AbstractDataFrame=DataFrame())
+
+Efficiently reduce the given vector or tuple of `AbstractDataFrame`s with
+`vcat`.
+
+See the [`vcat`](@ref) docstring for a description of keyword arguments `cols`
+and `source`.
+
+The keyword argument `init` is the initial value to use in the reductions.
+It must be a data frame that has zero rows. It is not taken into account when
+computing the value of the `source` column nor when determining metadata
+of the produced data frame.
+
+The column order, names, and types of the resulting `DataFrame`, and the
+behavior of `cols` and `source` keyword arguments follow the rules specified for
+[`vcat`](@ref) of `AbstractDataFrame`s.
+
+Metadata: `vcat` propagates table-level `:note`-style metadata for keys that are
+present in all passed data frames and have the same value. `vcat` propagates
+column-level `:note`-style metadata for keys that are present in all passed data
+frames that contain this column and have the same value.
+
+# Example
+```jldoctest
+julia> df1 = DataFrame(A=1:3, B=1:3)
+3×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
+
+julia> df2 = DataFrame(A=4:6, B=4:6)
+3×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     4      4
+   2 │     5      5
+   3 │     6      6
+
+julia> df3 = DataFrame(A=7:9, C=7:9)
+3×2 DataFrame
+ Row │ A      C
+     │ Int64  Int64
+─────┼──────────────
+   1 │     7      7
+   2 │     8      8
+   3 │     9      9
+
+julia> reduce(vcat, (df1, df2))
+6×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      1
+   2 │     2      2
+   3 │     3      3
+   4 │     4      4
+   5 │     5      5
+   6 │     6      6
+
+julia> reduce(vcat, [df1, df2, df3], cols=:union, source=:source)
+9×4 DataFrame
+ Row │ A      B        C        source
+     │ Int64  Int64?   Int64?   Int64
+─────┼─────────────────────────────────
+   1 │     1        1  missing       1
+   2 │     2        2  missing       1
+   3 │     3        3  missing       1
+   4 │     4        4  missing       2
+   5 │     5        5  missing       2
+   6 │     6        6  missing       2
+   7 │     7  missing        7       3
+   8 │     8  missing        8       3
+   9 │     9  missing        9       3
+```
+"""
+function Base.reduce(::typeof(vcat),
+    dfs::Union{AbstractVector{AbstractDataFrame},
+        AbstractVector{DataFrame},
+        AbstractVector{SubDataFrame},
+        AbstractVector{Union{DataFrame,SubDataFrame}},
+        Tuple{AbstractDataFrame,Vararg{AbstractDataFrame}}};
+    cols::Union{Symbol,AbstractVector{Symbol},
+        AbstractVector{<:AbstractString}}=:setequal,
+    source::Union{Nothing,SymbolOrString,
+        Pair{<:SymbolOrString,<:AbstractVector}}=nothing,
+    init::AbstractDataFrame=DataFrame())
+    if nrow(init) > 0
+        throw(ArgumentError("init data frame must have zero rows"))
+    end
+    dfs_init = AbstractDataFrame[emptycolmetadata!(copy(init))]
+    append!(dfs_init, dfs)
+    res = _vcat(AbstractDataFrame[df for df in dfs_init if ncol(df) != 0]; cols=cols)
+    # only handle table-level metadata, as column-level metadata was done in _vcat
+    _merge_matching_table_note_metadata!(res, dfs)
+
+    if source !== nothing
+        len = length(dfs)
+        if source isa SymbolOrString
+            col, vals = source, 1:len
+        else
+            @assert source isa Pair{<:SymbolOrString,<:AbstractVector}
+            col, vals = source
+        end
+
+        if columnindex(res, col) > 0
+            idx = findfirst(df -> columnindex(df, col) > 0, dfs)
+            @assert idx !== nothing
+            throw(ArgumentError("source column name :$col already exists in data frame " *
+                                " passed in position $idx"))
+        end
+
+        if len != length(vals)
+            throw(ArgumentError("number of passed source identifiers ($(length(vals)))" *
+                                "does not match the number of data frames ($len)"))
+        end
+
+        source_vec = Tables.allocatecolumn(eltype(vals), nrow(res))
+        @assert firstindex(source_vec) == 1 && lastindex(source_vec) == nrow(res)
+        start = 1
+        for (v, df) in zip(vals, dfs)
+            stop = start + nrow(df) - 1
+            source_vec[start:stop] .= Ref(v)
+            start = stop + 1
+        end
+
+        @assert start == nrow(res) + 1
+        insertcols!(res, col => source_vec)
+    end
+
+    return res
+end
+
+# definition needed to avoid dispatch ambiguity
+Base.reduce(::typeof(vcat),
+    dfs::Union{SentinelArrays.ChainedVector{AbstractDataFrame,<:AbstractVector{AbstractDataFrame}},
+        SentinelArrays.ChainedVector{DataFrame,<:AbstractVector{DataFrame}},
+        SentinelArrays.ChainedVector{SubDataFrame,<:AbstractVector{SubDataFrame}},
+        SentinelArrays.ChainedVector{Union{DataFrame,SubDataFrame},<:AbstractVector{Union{DataFrame,SubDataFrame}}}};
+    cols::Union{Symbol,AbstractVector{Symbol},
+        AbstractVector{<:AbstractString}}=:setequal,
+    source::Union{Nothing,SymbolOrString,
+        Pair{<:SymbolOrString,<:AbstractVector}}=nothing,
+    init::AbstractDataFrame=DataFrame()) =
+    reduce(vcat, collect(AbstractDataFrame, dfs), cols=cols, source=source, init=init)
+
+function _vcat(dfs::AbstractVector{AbstractDataFrame};
+    cols::Union{Symbol,AbstractVector{Symbol},
+        AbstractVector{<:AbstractString}}=:setequal)
+    # note that empty DataFrame() objects are dropped from dfs before we call _vcat
+    if isempty(dfs)
+        cols isa Symbol && return DataFrame()
+        return DataFrame([col => Missing[] for col in cols])
+    end
+    # Array of all headers
+    allheaders = map(names, dfs)
+    # Array of unique headers across all data frames
+    uniqueheaders = unique(allheaders)
+    # All symbols present across all headers
+    unionunique = union(uniqueheaders...)
+    # List of symbols present in all dataframes
+    intersectunique = intersect(uniqueheaders...)
+
+    if cols === :orderequal
+        header = unionunique
+        if length(uniqueheaders) > 1
+            throw(ArgumentError("when `cols=:orderequal` all data frames need to " *
+                                "have the same column names and be in the same order"))
+        end
+    elseif cols === :setequal || cols === :equal
+        # an explicit error is thrown as :equal was supported in the past
+        if cols === :equal
+            throw(ArgumentError("`cols=:equal` is not supported. " *
+                                "Use `:setequal` instead."))
+        end
+
+        header = unionunique
+        coldiff = setdiff(unionunique, intersectunique)
+
+        if !isempty(coldiff)
+            # if any DataFrames are a full superset of names, skip them
+            let header = header     # julia #15276
+                filter!(u -> !issetequal(u, header), uniqueheaders)
+            end
+            estrings = map(enumerate(uniqueheaders)) do (i, head)
+                matching = findall(h -> head == h, allheaders)
+                headerdiff = setdiff(coldiff, head)
+                badcols = join(headerdiff, ", ", " and ")
+                args = join(matching, ", ", " and ")
+                return "column(s) $badcols are missing from argument(s) $args"
+            end
+            throw(ArgumentError(join(estrings, ", ", ", and ")))
+        end
+    elseif cols === :intersect
+        header = intersectunique
+    elseif cols === :union
+        header = unionunique
+    elseif cols isa Symbol
+        throw(ArgumentError("Invalid `cols` value :$cols. " *
+                            "Only `:orderequal`, `:setequal`, `:intersect`, " *
+                            "`:union`, or a vector of column names is allowed."))
+    elseif cols isa AbstractVector{Symbol}
+        header = cols
+    else
+        @assert cols isa AbstractVector{<:AbstractString}
+        header = Symbol.(cols)
+    end
+
+    if isempty(header)
+        out_df = DataFrame()
+    else
+        all_cols = Vector{AbstractVector}(undef, length(header))
+        for (i, name) in enumerate(header)
+            newcols = map(dfs) do df
+                if hasproperty(df, name)
+                    return df[!, name]
+                else
+                    Iterators.repeated(missing, nrow(df))
+                end
+            end
+
+            lens = map(length, newcols)
+            T = mapreduce(eltype, promote_type, newcols)
+            all_cols[i] = Tables.allocatecolumn(T, sum(lens))
+            offset = 1
+            for j in 1:length(newcols)
+                copyto!(all_cols[i], offset, newcols[j])
+                offset += lens[j]
+            end
+        end
+
+        out_df = DataFrame(all_cols, header, copycols=false)
+    end
+
+    # here we process column-level metadata, table-level metadata is processed in reduce
+
+    # first check if all data frames do not have column-level metadata
+    # in which case we do not have to do anything
+    all(df -> getfield(parent(df), :colmetadata) === nothing, dfs) && return out_df
+
+    for colname in _names(out_df)
+        if length(dfs) == 1
+            df1 = dfs[1]
+            hasproperty(df1, colname) && _copy_col_note_metadata!(out_df, colname, df1, colname)
+        else
+            start = findfirst(x -> hasproperty(x, colname), dfs)
+            start === nothing && continue
+            df_start = dfs[start]
+            for key_start in colmetadatakeys(df_start, colname)
+                meta_val_start, meta_style_start = colmetadata(df_start, colname, key_start, style=true)
+                if meta_style_start === :note
+                    good_key = true
+                    for i in start+1:length(dfs)
+                        dfi = dfs[i]
+                        if hasproperty(dfi, colname)
+                            if key_start in colmetadatakeys(dfi, colname)
+                                meta_vali, meta_stylei = colmetadata(dfi, colname, key_start, style=true)
+                                if !(meta_stylei === :note && isequal(meta_val_start, meta_vali))
+                                    good_key = false
+                                    break
+                                end
+                            else
+                                good_key = false
+                                break
+                            end
+                        end
+                    end
+                    good_key && colmetadata!(out_df, colname, key_start, meta_val_start, style=:note)
+                end
+            end
+        end
+    end
+
+    return out_df
+end
