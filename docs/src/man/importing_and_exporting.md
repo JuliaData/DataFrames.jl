@@ -129,7 +129,6 @@ df = CSV.read("""
 
 This will result in the following `DataFrame`:
 
-```julia
 3×3 DataFrame
  Row │ name     age      children 
      │ String7  Float64  Int64    
