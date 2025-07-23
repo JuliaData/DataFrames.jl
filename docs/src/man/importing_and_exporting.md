@@ -119,7 +119,7 @@ code. For better readability you probably want to define it in a way which resem
 a table. This can be done with `CSV.jl` like this:
 
 ```julia
-const df = CSV.read("""
+df = CSV.read("""
     name,age,children
     John,54.0,0
     Sally,34.0,2
@@ -145,7 +145,7 @@ to find a format which works for you, e.g. using
 [Unicode box drawing characters](https://en.wikipedia.org/wiki/Box-drawing_characters#Unicode)
 
 ```julia
-const data = """
+data = """
 ┌───────┬──────┬──────────┐
 │ name  │ age  │ children │
 ├───────┼──────┼──────────┤
