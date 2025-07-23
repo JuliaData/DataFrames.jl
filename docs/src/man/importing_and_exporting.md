@@ -113,6 +113,58 @@ As you can see the code required to transform `iris` into a proper input to the
 format is not easy. Therefore CSV.jl is the preferred package to write CSV files
 for data stored in data frames.
 
+### `DataFrame` Definition in Source Code
+Sometimes, you might want to define a `DataFrame` with data directly in the source
+code. For better readability you probably want to define it in a way which resembles
+a table. This can be done with `CSV.jl` like this:
+
+```julia
+df = CSV.read("""
+    name,age,children
+    John,54.0,0
+    Sally,34.0,2
+    Roger,79.0,4
+    """ |> IOBuffer, DataFrame)
+```
+
+This will result in the following `DataFrame`:
+
+```
+3×3 DataFrame
+ Row │ name     age      children 
+     │ String7  Float64  Int64    
+─────┼────────────────────────────
+   1 │ John        54.0         0
+   2 │ Sally       34.0         2
+   3 │ Roger       79.0         4
+```
+
+As the readability in the source code of the above format is not great, you can make
+use of [`CSV.jl`'s options](https://csv.juliadata.org/stable/examples.html#csv_string)
+to find a format which works for you, e.g. using
+[Unicode box drawing characters](https://en.wikipedia.org/wiki/Box-drawing_characters#Unicode)
+
+```julia
+data = """
+┌───────┬──────┬──────────┐
+│ name  │ age  │ children │
+├───────┼──────┼──────────┤
+│ John  │ 54.0 │    0     │
+│ Sally │ 34.0 │    2     │
+│ Roger │ 79.0 │    4     │
+└───────┴──────┴──────────┘
+"""
+```
+
+You can then create the above `DataFrame` object with
+
+```julia
+df = CSV.read(data |> IOBuffer, DataFrame, normalizenames=true,
+              header=2, skipto=4, footerskip=1, delim='│',
+              drop=(i, name) -> startswith(name |> String, "Column")
+     ) .|> x -> x isa AbstractString ? strip(x) : x
+```
+
 ## Other formats
 
 Other data formats are supported for reading and writing in the following packages
