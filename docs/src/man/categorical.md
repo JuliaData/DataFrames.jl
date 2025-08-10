@@ -104,7 +104,7 @@ julia> levels!(cv, ["Group B", "Group A"])
  missing
 
 julia> levels(cv)
-2-element Vector{String}:
+2-element CategoricalArray{String,1,UInt32}:
  "Group B"
  "Group A"
 
