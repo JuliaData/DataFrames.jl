@@ -84,9 +84,9 @@ actually used in the data):
 
 ```jldoctest categorical
 julia> levels(cv)
-2-element Vector{String}:
- "Group A"
+2-element CategoricalArray{String,1,UInt32}:
  "Group B"
+ "Group A"
 ```
 
 The `levels!` function also allows changing the order of appearance of the
