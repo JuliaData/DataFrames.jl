@@ -24,7 +24,7 @@ julia&gt; cv = categorical(v)
  &quot;Group B&quot;
  &quot;Group B&quot;
  missing</code></pre><p>In addition to representing repeated data efficiently, the <code>CategoricalArray</code> type allows us to determine efficiently the allowed levels of the variable at any time using the <code>levels</code> function (note that levels may or may not be actually used in the data):</p><pre><code class="language-julia-repl hljs">julia&gt; levels(cv)
-2-element Vector{String}:
+2-element CategoricalArray{String,1,UInt32}:
  &quot;Group A&quot;
  &quot;Group B&quot;</code></pre><p>The <code>levels!</code> function also allows changing the order of appearance of the levels, which can be useful for display purposes or when working with ordered variables.</p><pre><code class="language-julia-repl hljs">julia&gt; levels!(cv, [&quot;Group B&quot;, &quot;Group A&quot;])
 6-element CategoricalArray{Union{Missing, String},1,UInt32}:
@@ -36,7 +36,7 @@ julia&gt; cv = categorical(v)
  missing
 
 julia&gt; levels(cv)
-2-element Vector{String}:
+2-element CategoricalArray{String,1,UInt32}:
  &quot;Group B&quot;
  &quot;Group A&quot;
 
@@ -79,4 +79,4 @@ julia&gt; isordered(cv1)
 true
 
 julia&gt; cv1[1] &lt; cv1[2]
-true</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../sorting/">« Sorting</a><a class="docs-footer-nextpage" href="../missing/">Missing Data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Wednesday 23 July 2025 11:36">Wednesday 23 July 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+true</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../sorting/">« Sorting</a><a class="docs-footer-nextpage" href="../missing/">Missing Data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Tuesday 12 August 2025 05:19">Tuesday 12 August 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
