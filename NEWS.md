@@ -1,3 +1,10 @@
+# DataFrames.jl v1.7.1 Release Notes
+
+## Julia compatibility change
+
+* Make DataFrames.jl support DataStructures.jl version 0.19
+  ([#3503](https://github.com/JuliaData/DataFrames.jl/issues/3503))
+
 # DataFrames.jl v1.7.0 Release Notes
 
 ## New functionalities
