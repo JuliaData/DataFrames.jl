@@ -425,7 +425,12 @@ end
 
     @test hash(DataFrame([1 2; 3 4], :auto)) == hash(DataFrame([1 2; 3 4], :auto))
     @test hash(DataFrame([1 2; 3 4], :auto)) != hash(DataFrame([1 3; 2 4], :auto))
-    @test hash(DataFrame([1 2; 3 4], :auto)) == hash(DataFrame([1 2; 3 4], :auto), zero(UInt))
+    @test hash(DataFrame([1 2; 3 4], :auto)) != hash(DataFrame([1 2; 3 4], [:x2, :x1]))
+
+    @test hash(DataFrame([1 2; 3 4], :auto), UInt(10)) == hash(DataFrame([1 2; 3 4], :auto), UInt(10))
+    @test hash(DataFrame([1 2; 3 4], :auto), UInt(10)) != hash(DataFrame([1 2; 3 4], :auto), UInt(11))
+    @test hash(DataFrame([1 2; 3 4], :auto), UInt(10)) != hash(DataFrame([1 3; 2 4], :auto), UInt(10))
+    @test hash(DataFrame([1 2; 3 4], :auto), UInt(10)) != hash(DataFrame([1 2; 3 4], [:x2, :x1]), UInt(10))
 end
 
 @testset "deleteat!" begin

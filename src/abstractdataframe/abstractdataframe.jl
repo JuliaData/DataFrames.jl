@@ -1903,7 +1903,8 @@ const hashdf_seed = UInt == UInt32 ? 0xfd8bb02e : 0x6215bada8c8c46de
 
 function Base.hash(df::AbstractDataFrame, h::UInt)
     h += hashdf_seed
-    h += hash(size(df))
+    h = hash(size(df), h)
+    h = hash(_names(df), h)
     for i in 1:size(df, 2)
         h = hash(df[!, i], h)
     end
