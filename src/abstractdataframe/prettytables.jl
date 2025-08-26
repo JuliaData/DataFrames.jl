@@ -54,7 +54,7 @@ end
 const _PRETTY_TABLES_HTML_FORMATTER = [_pretty_tables_general_formatter]
 
 const _PRETTY_TABLES_HTML_HIGHLIGHTER = [
-    HtmlHighlighter(_pretty_tables_highlighter_func, ["font_style" => "italic"])
+    HtmlHighlighter(_pretty_tables_highlighter_func, ["font-style" => "italic"])
 ]
 
 const _PRETTY_TABLES_HTML_TABLE_STYLE = HtmlTableStyle(table = ["margin-bottom" => "6px"])
