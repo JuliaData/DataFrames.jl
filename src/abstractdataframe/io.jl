@@ -175,6 +175,7 @@ function _show(io::IO,
                rowid::Union{Int, Nothing}=nothing,
                title::AbstractString="",
                max_column_width::AbstractString="",
+               show_row_number::Bool=true,
                kwargs...)
     _check_consistency(df)
 
@@ -223,60 +224,48 @@ function _show(io::IO,
 
     # If `rowid` is not `nothing`, then we are printing a data row. In this
     # case, we will add this information using the row name column of
-    # PrettyTables.jl. Otherwise, we can just use the row number column.
+    # PrettyTables.jl.
     if (rowid === nothing) || (ncol(df) == 0)
-        show_row_number::Bool = get(kwargs, :show_row_number, true)
-        row_labels = nothing
-
-        # If the columns with row numbers is not shown, then we should not
-        # display a vertical line after the first column.
-        vlines = fill(1, show_row_number)
+        row_labels = 1:num_rows
     else
         nrow(df) != 1 &&
             throw(ArgumentError("rowid may be passed only with a single row data frame"))
 
-        # In this case, if the user does not want to show the row number, then
-        # we must hide the row name column, which is used to display the
-        # `rowid`.
-        if !get(kwargs, :show_row_number, true)
-            row_labels = nothing
-            vlines = Int[]
-        else
-            row_labels = [string(rowid)]
-            vlines = Int[1]
-        end
+        row_labels = [string(rowid)]
+    end
 
-        show_row_number = false
+    # Keep compatibility with the previous behavior of PrettyTables.jl if the user does not
+    # want to show the row numbers.
+    if !show_row_number
+        row_labels = nothing
     end
 
     pretty_table(io, df;
-                 alignment                 = alignment,
-                 backend                   = Val(:html),
-                 compact_printing          = compact_printing,
-                 formatters                = (_pretty_tables_general_formatter,),
-                 header                    = (names_str, types_str),
-                 header_alignment          = :l,
-                 header_cell_titles        = (nothing, types_str_complete),
-                 highlighters              = (_PRETTY_TABLES_HTML_HIGHLIGHTER,),
-                 max_num_of_columns        = mxcol,
-                 max_num_of_rows           = mxrow,
-                 maximum_columns_width     = max_column_width,
-                 minify                    = true,
-                 row_label_column_title    = "Row",
-                 row_labels                = row_labels,
-                 row_number_alignment      = :r,
-                 row_number_column_title   = "Row",
-                 show_omitted_cell_summary = true,
-                 show_row_number           = show_row_number,
-                 show_subheader            = eltypes,
-                 standalone                = false,
-                 table_class               = "data-frame",
-                 table_div_class           = "data-frame",
-                 table_style               = _PRETTY_TABLES_HTML_TABLE_STYLE,
-                 top_left_str              = String(title),
-                 top_right_str_decoration  = HtmlDecoration(font_style = "italic"),
-                 vcrop_mode                = :middle,
-                 wrap_table_in_div         = true,
+                 alignment                    = alignment,
+                 backend                      = :html,
+                 column_label_alignment       = :l,
+                 column_labels                = [names_str, types_str],
+                 column_label_titles          = [nothing, types_str_complete],
+                 compact_printing             = compact_printing,
+                 formatters                   = _PRETTY_TABLES_HTML_FORMATTER,
+                 highlighters                 = _PRETTY_TABLES_HTML_HIGHLIGHTER,
+                 maximum_column_width         = max_column_width,
+                 maximum_number_of_columns    = mxcol,
+                 maximum_number_of_rows       = mxrow,
+                 minify                       = true,
+                 row_label_column_alignment   = :r,
+                 row_labels                   = row_labels,
+                 show_first_column_label_only = !eltypes,
+                 show_omitted_cell_summary    = true,
+                 show_row_number_column       = false,
+                 stand_alone                  = false,
+                 stubhead_label               = "Row",
+                 style                        = _PRETTY_TABLES_HTML_TABLE_STYLE,
+                 table_class                  = "data-frame",
+                 table_div_class              = "data-frame",
+                 top_left_string              = String(title),
+                 vertical_crop_mode           = :middle,
+                 wrap_table_in_div            = true,
                  kwargs...)
 
     return nothing

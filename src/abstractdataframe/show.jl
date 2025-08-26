@@ -152,6 +152,7 @@ function _show(io::IO,
                summary::Bool = true,
                eltypes::Bool = true,
                rowid = nothing,
+               show_row_number::Bool=true,
                truncate::Int = 32,
                kwargs...)
 
@@ -163,15 +164,8 @@ function _show(io::IO,
     types = Any[eltype(c) for c in eachcol(df)]
     types_str = batch_compacttype(types, maxwidth)
 
-    if allcols && allrows
-        crop = :none
-    elseif allcols
-        crop = :vertical
-    elseif allrows
-        crop = :horizontal
-    else
-        crop = :both
-    end
+    fit_table_in_display_horizontally = !allcols
+    fit_table_in_display_vertically = !allrows
 
     # For consistency, if `kwargs` has `compact_printng`, we must use it.
     compact_printing::Bool = get(kwargs, :compact_printing, get(io, :compact, true))
@@ -184,7 +178,7 @@ function _show(io::IO,
 
     # Create the dictionary with the anchor regex that is used to align the
     # floating points.
-    alignment_anchor_regex = Dict{Int, Vector{Regex}}()
+    alignment_anchor_regex = Pair{Int, Vector{Regex}}[]
 
     # Regex to align real numbers.
     alignment_regex_real = [r"\."]
@@ -196,23 +190,25 @@ function _show(io::IO,
     alignment_regex_complex = [r"(?<!^)(?<!e)[+-]"]
 
     # Make sure that `truncate` does not hide the type and the column name.
-    maximum_columns_width = Int[truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
-                                for (l, t) in zip(names_len, types_str)]
+    maximum_data_column_widths = Int[
+        truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
+        for (l, t) in zip(names_len, types_str)
+    ]
 
     # Apply configurations according to the column's type.
     for i = 1:num_cols
         type_i = nonmissingtype(types[i])
 
         if type_i <: Complex
-            alignment_anchor_regex[i] = alignment_regex_complex
+            push!(alignment_anchor_regex, i => alignment_regex_complex)
             alignment[i] = :r
         elseif type_i <: Real
-            alignment_anchor_regex[i] = alignment_regex_real
+            push!(alignment_anchor_regex, i => alignment_regex_real)
             alignment[i] = :r
         elseif type_i <: Number
             alignment[i] = :r
         elseif type_i <: Base.UUID
-            maximum_columns_width[i] = 36
+            maximum_data_column_widths[i] = 36
         end
     end
 
@@ -223,59 +219,48 @@ function _show(io::IO,
 
     # If `rowid` is not `nothing`, then we are printing a data row. In this
     # case, we will add this information using the row name column of
-    # PrettyTables.jl. Otherwise, we can just use the row number column.
+    # PrettyTables.jl.
     if (rowid === nothing) || (ncol(df) == 0)
-        show_row_number::Bool = get(kwargs, :show_row_number, true)
-        row_labels = nothing
-
-        # If the columns with row numbers is not shown, then we should not
-        # display a vertical line after the first column.
-        vlines = fill(1, show_row_number)
+        row_labels = 1:num_rows
     else
         nrow(df) != 1 &&
             throw(ArgumentError("rowid may be passed only with a single row data frame"))
 
-        # In this case, if the user does not want to show the row number, then
-        # we must hide the row name column, which is used to display the
-        # `rowid`.
-        if !get(kwargs, :show_row_number, true)
-            row_labels = nothing
-            vlines = Int[]
-        else
-            row_labels = [string(rowid)]
-            vlines = Int[1]
-        end
+        row_labels = [string(rowid)]
+    end
 
-        show_row_number = false
+    # Keep compatibility with the previous behavior of PrettyTables.jl if the user does not
+    # want to show the row numbers.
+    if !show_row_number
+        row_labels = nothing
     end
 
     # Print the table with the selected options.
     pretty_table(io, df;
-                 alignment                   = alignment,
-                 alignment_anchor_fallback   = :r,
-                 alignment_anchor_regex      = alignment_anchor_regex,
-                 compact_printing            = compact_printing,
-                 crop                        = crop,
-                 ellipsis_line_skip          = 3,
-                 formatters                  = (_pretty_tables_general_formatter,),
-                 header                      = (names_str, types_str),
-                 header_alignment            = :l,
-                 hlines                      = [:header],
-                 highlighters                = (_PRETTY_TABLES_HIGHLIGHTER,),
-                 maximum_columns_width       = maximum_columns_width,
-                 newline_at_end              = false,
-                 reserved_display_lines      = 2,
-                 row_label_alignment         = :r,
-                 row_label_crayon            = Crayon(),
-                 row_label_column_title      = string(rowlabel),
-                 row_labels                  = row_labels,
-                 row_number_alignment        = :r,
-                 row_number_column_title     = string(rowlabel),
-                 show_row_number             = show_row_number,
-                 show_subheader              = eltypes,
-                 title                       = title,
-                 vcrop_mode                  = :middle,
-                 vlines                      = vlines,
+                 alignment                         = alignment,
+                 alignment_anchor_fallback         = :r,
+                 alignment_anchor_regex            = alignment_anchor_regex,
+                 column_label_alignment            = :l,
+                 column_labels                     = [names_str, types_str],
+                 compact_printing                  = compact_printing,
+                 continuation_row_alignment        = :c,
+                 fit_table_in_display_horizontally = fit_table_in_display_horizontally,
+                 fit_table_in_display_vertically   = fit_table_in_display_vertically,
+                 formatters                        = _PRETTY_TABLES_TEXT_FORMATTER,
+                 highlighters                      = _PRETTY_TABLES_TEXT_HIGHLIGHTER,
+                 maximum_data_column_widths        = maximum_data_column_widths,
+                 new_line_at_end                   = false,
+                 reserved_display_lines            = 2,
+                 row_label_column_alignment        = :r,
+                 row_labels                        = row_labels,
+                 show_first_column_label_only      = !eltypes,
+                 show_row_number_column            = false,
+                 stubhead_label                    = string(rowlabel),
+                 style                             = _PRETTY_TABLES_TEXT_TABLE_STYLE,
+                 table_format                      = _PRETTY_TABLES_TEXT_TABLE_FORMAT,
+                 title                             = title,
+                 title_alignment                   = :l,
+                 vertical_crop_mode                = :middle,
                  kwargs...)
 
     return nothing
@@ -326,7 +311,7 @@ julia> using DataFrames
 
 julia> df = DataFrame(A=1:3, B=["x", "y", "z"]);
 
-julia> show(df, show_row_number=false)
+julia> show(df, show_row_number_column=false)
 3×2 DataFrame
  A      B
  Int64  String
