@@ -465,14 +465,14 @@ end
                  "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
                  "<th style = \"text-align: left;\">x1</th>" *
                  "<th style = \"text-align: left;\">x2</th>" *
-                 "<td>&ctdot;</td>" *
+                 "<th>&ctdot;</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
                  "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
                  "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
-                 "<td>&ctdot;</td>" *
+                 "<th>&ctdot;</th>" *
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
