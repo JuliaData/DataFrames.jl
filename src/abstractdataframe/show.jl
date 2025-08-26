@@ -311,7 +311,7 @@ julia> using DataFrames
 
 julia> df = DataFrame(A=1:3, B=["x", "y", "z"]);
 
-julia> show(df, show_row_number_column=false)
+julia> show(df, row_labels=nothing)
 3×2 DataFrame
  A      B
  Int64  String
