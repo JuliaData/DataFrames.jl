@@ -1174,8 +1174,8 @@ end
         "<thead>" *
         "<tr class = \"columnLabelRow\">" *
         "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
-        "<th style = \"font-weight: bold; text-align: left;\">id</th>" *
-        "<th style = \"font-weight: bold; text-align: left;\">value</th>" *
+        "<th style = \"text-align: left;\">id</th>" *
+        "<th style = \"text-align: left;\">value</th>" *
         "</tr>" *
         "<tr class = \"columnLabelRow\">" *
         "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
@@ -1206,8 +1206,8 @@ end
         "<thead>" *
         "<tr class = \"columnLabelRow\">" *
         "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
-        "<th style = \"font-weight: bold; text-align: left;\">id</th>" *
-        "<th style = \"font-weight: bold; text-align: left;\">value</th>" *
+        "<th style = \"text-align: left;\">id</th>" *
+        "<th style = \"text-align: left;\">value</th>" *
         "</tr>" *
         "<tr class = \"columnLabelRow\">" *
         "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
@@ -1242,8 +1242,8 @@ end
         "<thead>" *
         "<tr class = \"columnLabelRow\">" *
         "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
-        "<th style = \"font-weight: bold; text-align: left;\">id</th>" *
-        "<th style = \"font-weight: bold; text-align: left;\">value</th>" *
+        "<th style = \"text-align: left;\">id</th>" *
+        "<th style = \"text-align: left;\">value</th>" *
         "</tr>" *
         "<tr class = \"columnLabelRow\">" *
         "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *

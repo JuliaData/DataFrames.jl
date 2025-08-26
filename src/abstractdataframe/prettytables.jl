@@ -57,7 +57,10 @@ const _PRETTY_TABLES_HTML_HIGHLIGHTER = [
     HtmlHighlighter(_pretty_tables_highlighter_func, ["font-style" => "italic"])
 ]
 
-const _PRETTY_TABLES_HTML_TABLE_STYLE = HtmlTableStyle(table = ["margin-bottom" => "6px"])
+const _PRETTY_TABLES_HTML_TABLE_STYLE = HtmlTableStyle(
+    first_line_column_label = Pair{String, String}[],
+    table = ["margin-bottom" => "6px"]
+)
 
 # Constants for the text backend.
 const _PRETTY_TABLES_TEXT_FORMATTER = [_pretty_tables_general_formatter]
