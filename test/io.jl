@@ -67,12 +67,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Fish</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Mass</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Fish</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Mass</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
@@ -80,14 +80,14 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">Suzy</td>" *
                  "<td style = \"text-align: right;\">1.5</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: left;\">Amir</td>" *
-                 "<td style = \"text-align: right; font_style: italic;\">missing</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
                  "</tr>" *
                  "</tbody>" *
                  "</table>" *
@@ -108,12 +108,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Fish</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Mass</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Fish</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Mass</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
@@ -121,14 +121,14 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
                  "<td style = \"text-align: right;\">1.5</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
-                 "<td style = \"text-align: right; font_style: italic;\">missing</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
                  "</tr>" *
                  "</tbody>" *
                  "</table>" *
@@ -148,12 +148,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Fish</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Mass</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Fish</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Mass</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
@@ -161,14 +161,14 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
                  "<td style = \"text-align: right;\">1.5</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
-                 "<td style = \"text-align: right; font_style: italic;\">missing</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
                  "</tr>" *
                  "</tbody>" *
                  "</table>" *
@@ -188,12 +188,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Fish</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Mass</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Fish</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Mass</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
@@ -201,14 +201,14 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
                  "<td style = \"text-align: right;\">1.5</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
-                 "<td style = \"text-align: right; font_style: italic;\">missing</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
                  "</tr>" *
                  "</tbody>" *
                  "</table>" *
@@ -228,12 +228,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Fish</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Mass</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Fish</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Mass</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
@@ -241,8 +241,8 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
                  "<td style = \"text-align: right;\">1.5</td>" *
                  "</tr>" *
                  "</tbody>" *
@@ -256,12 +256,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Fish</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Mass</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Fish</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Mass</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
@@ -269,14 +269,14 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
                  "<td style = \"text-align: right;\">1.5</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
-                 "<td style = \"text-align: right; font_style: italic;\">missing</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
                  "</tr>" *
                  "</tbody>" *
                  "</table>" *
@@ -289,12 +289,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Fish</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Mass</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Fish</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Mass</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
@@ -302,14 +302,14 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
                  "<td style = \"text-align: right;\">1.5</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
-                 "<td style = \"text-align: right; font_style: italic;\">missing</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
                  "</tr>" *
                  "</tbody>" *
                  "</table>" *
@@ -322,12 +322,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Fish</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Mass</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Fish</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Mass</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
@@ -335,14 +335,14 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
                  "<td style = \"text-align: right;\">1.5</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
-                 "<td style = \"text-align: right; font_style: italic;\">missing</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
                  "</tr>" *
                  "</tbody>" *
                  "</table>" *
@@ -355,12 +355,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Fish</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Mass</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Fish</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Mass</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "<th title = \"Union{Missing, Float64}\" style = \"text-align: left;\">Float64?</th>" *
@@ -368,8 +368,8 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
                  "<td style = \"text-align: right;\">1.5</td>" *
                  "</tr>" *
                  "</tbody>" *
@@ -390,8 +390,8 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Fish</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Mass</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Fish</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Mass</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
@@ -400,12 +400,12 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
                  "<td style = \"text-align: right;\">1.5</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
-                 "<td style = \"text-align: right; font_style: italic;\">missing</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
                  "</tr>" *
                  "</tbody>" *
                  "</table>" *
@@ -425,8 +425,8 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Fish</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">Mass</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Fish</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">Mass</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
@@ -435,8 +435,8 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
-                 "<td style = \"text-align: right; font_style: italic;\">missing</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: right;\">missing</td>" *
                  "</tr>" *
                  "</tbody>" *
                  "</table>" *
@@ -452,7 +452,7 @@ end
                  "<div style = \"float: left;\">" *
                  "<span>1×9 DataFrame</span>" *
                  "</div>" *
-                 "<div style = \"font-style: italic; float: right;\">" *
+                 "<div style = \"float: right; font-style: italic;\">" *
                  "<span>7 columns omitted</span>" *
                  "</div>" *
                  "<div style = \"clear: both;\">" *
@@ -462,13 +462,13 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">x1</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">x2</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">x1</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">x2</th>" *
                  "<td>&ctdot;</td>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
                  "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
@@ -477,7 +477,7 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">2</td>" *
                  "<td>&ctdot;</td>" *
@@ -510,12 +510,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">A</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">B</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">A</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">B</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
                  "<th title = \"Markdown.MD\" style = \"text-align: left;\">MD</th>" *
@@ -523,7 +523,7 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">" *
                  "<div class=\"markdown\">" *
@@ -534,7 +534,7 @@ end
                  "</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: right;\">4</td>" *
                  "<td style = \"text-align: left;\">" *
                  "<div class=\"markdown\">" *
@@ -543,7 +543,7 @@ end
                  "</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">3</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">3</td>" *
                  "<td style = \"text-align: right;\">9</td>" *
                  "<td style = \"text-align: left;\">" *
                  "<div class=\"markdown\">" *
@@ -552,7 +552,7 @@ end
                  "</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">4</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">4</td>" *
                  "<td style = \"text-align: right;\">16</td>" *
                  "<td style = \"text-align: left;\">" *
                  "<div class=\"markdown\">" *
@@ -586,13 +586,13 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">xs</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">ys</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">zs</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">xs</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">ys</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">zs</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "<th title = \"Any\" style = \"text-align: left;\">Any</th>" *
@@ -601,19 +601,19 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">&apos;</td>" *
                  "<td style = \"text-align: left;\">QuoteTestType{&apos;\\\\&apos;&apos;}()</td>" *
                  "<td style = \"text-align: left;\">QuoteTestType{&apos;&quot;&apos;}()</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: left;\">&quot;</td>" *
                  "<td style = \"text-align: left;\">QuoteTestType{&apos;&quot;&apos;}</td>" *
                  "<td style = \"text-align: left;\">QuoteTestType{&apos;&quot;&apos;}()</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">3</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">3</td>" *
                  "<td style = \"text-align: left;\">&lt;foo&gt;&apos;&lt;/bar&gt;</td>" *
                  "<td style = \"text-align: left;\">QuoteTestType{Symbol(&quot;\\\\&quot;&apos;&quot;)}()</td>" *
                  "<td style = \"text-align: left;\">QuoteTestType{&apos;&quot;&apos;}()</td>" *
@@ -640,118 +640,118 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">a</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">a</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">1</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: right;\">2</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">3</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">3</td>" *
                  "<td style = \"text-align: right;\">3</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">4</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">4</td>" *
                  "<td style = \"text-align: right;\">4</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">5</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">5</td>" *
                  "<td style = \"text-align: right;\">5</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">6</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">6</td>" *
                  "<td style = \"text-align: right;\">6</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">7</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">7</td>" *
                  "<td style = \"text-align: right;\">7</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">8</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">8</td>" *
                  "<td style = \"text-align: right;\">8</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">9</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">9</td>" *
                  "<td style = \"text-align: right;\">9</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">10</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">10</td>" *
                  "<td style = \"text-align: right;\">10</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">11</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">11</td>" *
                  "<td style = \"text-align: right;\">11</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">12</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">12</td>" *
                  "<td style = \"text-align: right;\">12</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">13</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">13</td>" *
                  "<td style = \"text-align: right;\">13</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">14</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">14</td>" *
                  "<td style = \"text-align: right;\">14</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">15</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">15</td>" *
                  "<td style = \"text-align: right;\">15</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">16</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">16</td>" *
                  "<td style = \"text-align: right;\">16</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">17</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">17</td>" *
                  "<td style = \"text-align: right;\">17</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">18</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">18</td>" *
                  "<td style = \"text-align: right;\">18</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">19</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">19</td>" *
                  "<td style = \"text-align: right;\">19</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">20</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">20</td>" *
                  "<td style = \"text-align: right;\">20</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">21</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">21</td>" *
                  "<td style = \"text-align: right;\">21</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">22</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">22</td>" *
                  "<td style = \"text-align: right;\">22</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">23</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">23</td>" *
                  "<td style = \"text-align: right;\">23</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">24</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">24</td>" *
                  "<td style = \"text-align: right;\">24</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">25</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">25</td>" *
                  "<td style = \"text-align: right;\">25</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">26</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">26</td>" *
                  "<td style = \"text-align: right;\">26</td>" *
                  "</tr>" *
                  "</tbody>" *
@@ -901,12 +901,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">A</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">B</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">A</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">B</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
                  "<th title = \"Markdown.MD\" style = \"text-align: left;\">MD</th>" *
@@ -914,7 +914,7 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">" *
                  "<div class=\"markdown\">" *
@@ -925,7 +925,7 @@ end
                  "</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: right;\">4</td>" *
                  "<td style = \"text-align: left;\">" *
                  "<div class=\"markdown\">" *
@@ -934,7 +934,7 @@ end
                  "</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">3</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">3</td>" *
                  "<td style = \"text-align: right;\">9</td>" *
                  "<td style = \"text-align: left;\">" *
                  "<div class=\"markdown\">" *
@@ -943,7 +943,7 @@ end
                  "</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">4</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">4</td>" *
                  "<td style = \"text-align: right;\">16</td>" *
                  "<td style = \"text-align: left;\">" *
                  "<div class=\"markdown\">" *
@@ -952,7 +952,7 @@ end
                  "</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">5</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">5</td>" *
                  "<td style = \"text-align: right;\">25</td>" *
                  "<td style = \"text-align: left;\">" *
                  "<div class=\"markdown\">" *
@@ -960,7 +960,7 @@ end
                  "</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">6</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">6</td>" *
                  "<td style = \"text-align: right;\">36</td>" *
                  "<td style = \"text-align: left;\">" *
                  "<div class=\"markdown\">" *
@@ -969,7 +969,7 @@ end
                  "</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">7</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">7</td>" *
                  "<td style = \"text-align: right;\">49</td>" *
                  "<td style = \"text-align: left;\">" *
                  "<div class=\"markdown\">" *
@@ -990,7 +990,7 @@ end
                  "</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">8</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">8</td>" *
                  "<td style = \"text-align: right;\">64</td>" *
                  "<td style = \"text-align: left;\">" *
                  "<div class=\"markdown\">" *
@@ -1186,12 +1186,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">A</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">B</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">A</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">B</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Int32\" style = \"text-align: left;\">Int32</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
@@ -1199,17 +1199,17 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">x</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: right;\">2</td>" *
                  "<td style = \"text-align: left;\">y</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">3</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">3</td>" *
                  "<td style = \"text-align: right;\">3</td>" *
                  "<td style = \"text-align: left;\">z</td>" *
                  "</tr>" *
@@ -1231,12 +1231,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">A</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">B</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">A</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">B</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Int32\" style = \"text-align: left;\">Int32</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
@@ -1244,17 +1244,17 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">x</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: right;\">2</td>" *
                  "<td style = \"text-align: left;\">y</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">3</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">3</td>" *
                  "<td style = \"text-align: right;\">3</td>" *
                  "<td style = \"text-align: left;\">z</td>" *
                  "</tr>" *
@@ -1276,12 +1276,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">A</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">B</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">A</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">B</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Int32\" style = \"text-align: left;\">Int32</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
@@ -1289,17 +1289,17 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">x</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: right;\">2</td>" *
                  "<td style = \"text-align: left;\">y</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">3</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">3</td>" *
                  "<td style = \"text-align: right;\">3</td>" *
                  "<td style = \"text-align: left;\">z</td>" *
                  "</tr>" *
@@ -1321,24 +1321,24 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">A</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">B</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">A</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">B</th>" *
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">x</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: right;\">2</td>" *
                  "<td style = \"text-align: left;\">y</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">3</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">3</td>" *
                  "<td style = \"text-align: right;\">3</td>" *
                  "<td style = \"text-align: left;\">z</td>" *
                  "</tr>" *
@@ -1360,24 +1360,24 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">A</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">B</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">A</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">B</th>" *
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">x</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: right;\">2</td>" *
                  "<td style = \"text-align: left;\">y</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">3</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">3</td>" *
                  "<td style = \"text-align: right;\">3</td>" *
                  "<td style = \"text-align: left;\">z</td>" *
                  "</tr>" *
@@ -1399,24 +1399,24 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">A</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">B</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">A</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">B</th>" *
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">x</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: right;\">2</td>" *
                  "<td style = \"text-align: left;\">y</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">3</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">3</td>" *
                  "<td style = \"text-align: right;\">3</td>" *
                  "<td style = \"text-align: left;\">z</td>" *
                  "</tr>" *
@@ -1520,12 +1520,12 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">A</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">B</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">A</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">B</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
                  "<th title = \"Any\" style = \"text-align: left;\">Any</th>" *
@@ -1533,50 +1533,50 @@ end
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">1</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">9×2 DataFrame</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">9×2 DataFrame</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">2</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: right;\">2</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">2-element DataFrameRow</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">2-element DataFrameRow</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">3</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">3</td>" *
                  "<td style = \"text-align: right;\">3</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">1×2 SubDataFrame</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">1×2 SubDataFrame</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">4</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">4</td>" *
                  "<td style = \"text-align: right;\">4</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">9-element DataFrameRows</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">9-element DataFrameRows</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">5</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">5</td>" *
                  "<td style = \"text-align: right;\">5</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">2-element DataFrameColumns</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">2-element DataFrameColumns</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">6</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">6</td>" *
                  "<td style = \"text-align: right;\">6</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">GroupedDataFrame with 9 groups based on key: A</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">GroupedDataFrame with 9 groups based on key: A</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">7</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">7</td>" *
                  "<td style = \"text-align: right;\">7</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">missing</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">missing</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">8</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">8</td>" *
                  "<td style = \"text-align: right;\">8</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">" *
+                 "<td style = \"font-style: italic; text-align: left;\">" *
                  "</td>" *
                  "</tr>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">9</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">9</td>" *
                  "<td style = \"text-align: right;\">9</td>" *
-                 "<td style = \"text-align: left; font_style: italic;\">#undef</td>" *
+                 "<td style = \"font-style: italic; text-align: left;\">#undef</td>" *
                  "</tr>" *
                  "</tbody>" *
                  "</table>" *
@@ -1665,18 +1665,18 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; font-weight: bold;\">x</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<th style = \"font-weight: bold; text-align: left;\">x</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; font-weight: bold;\">1</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789</td>" *
                  "</tr>" *
                  "</tbody>" *
@@ -1698,19 +1698,19 @@ end
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold;\">Row</th>" *
-                 "<th style = \"text-align: left; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold;\">x</th>" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; max-width: 100px; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap;\">Row</th>" *
+                 "<th style = \"font-weight: bold; max-width: 100px; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap;\">x</th>" *
                  "</tr>" *
                  "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"text-align: right; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold;\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; max-width: 100px; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap;\">" *
                  "</th>" *
-                 "<th title = \"String\" style = \"text-align: left; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;\">String</th>" *
+                 "<th title = \"String\" style = \"max-width: 100px; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap;\">String</th>" *
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
                  "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"text-align: right; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold;\">1</td>" *
-                 "<td style = \"text-align: left; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;\">0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789</td>" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; max-width: 100px; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap;\">1</td>" *
+                 "<td style = \"max-width: 100px; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap;\">0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789</td>" *
                  "</tr>" *
                  "</tbody>" *
                  "</table>" *
