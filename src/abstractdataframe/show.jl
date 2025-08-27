@@ -144,126 +144,265 @@ function compacttype(T::Type, maxwidth::Int)
     return first(sT, stop) * "…" * suffix
 end
 
-function _show(io::IO,
-               df::AbstractDataFrame;
-               allrows::Bool = !get(io, :limit, false),
-               allcols::Bool = !get(io, :limit, false),
-               rowlabel::Symbol = :Row,
-               summary::Bool = true,
-               eltypes::Bool = true,
-               rowid = nothing,
-               show_row_number::Bool=true,
-               truncate::Int = 32,
-               kwargs...)
+@static if pkgversion(PrettyTables).major == 2
+    function _show(io::IO,
+                   df::AbstractDataFrame;
+                   allrows::Bool = !get(io, :limit, false),
+                   allcols::Bool = !get(io, :limit, false),
+                   rowlabel::Symbol = :Row,
+                   summary::Bool = true,
+                   eltypes::Bool = true,
+                   rowid = nothing,
+                   truncate::Int = 32,
+                   kwargs...)
 
-    _check_consistency(df)
+        _check_consistency(df)
 
-    names_str = names(df)
-    names_len = Int[textwidth(n) for n in names_str]
-    maxwidth = Int[max(9, nl) for nl in names_len]
-    types = Any[eltype(c) for c in eachcol(df)]
-    types_str = batch_compacttype(types, maxwidth)
+        names_str = names(df)
+        names_len = Int[textwidth(n) for n in names_str]
+        maxwidth = Int[max(9, nl) for nl in names_len]
+        types = Any[eltype(c) for c in eachcol(df)]
+        types_str = batch_compacttype(types, maxwidth)
 
-    fit_table_in_display_horizontally = !allcols
-    fit_table_in_display_vertically = !allrows
-
-    # For consistency, if `kwargs` has `compact_printng`, we must use it.
-    compact_printing::Bool = get(kwargs, :compact_printing, get(io, :compact, true))
-
-    num_rows, num_cols = size(df)
-
-    # By default, we align the columns to the left unless they are numbers,
-    # which is checked in the following.
-    alignment = fill(:l, num_cols)
-
-    # Create the dictionary with the anchor regex that is used to align the
-    # floating points.
-    alignment_anchor_regex = Pair{Int, Vector{Regex}}[]
-
-    # Regex to align real numbers.
-    alignment_regex_real = [r"\."]
-
-    # Regex for columns with complex numbers.
-    #
-    # Here we are matching `+` or `-` unless it is not at the beginning of the
-    # string or an `e` precedes it.
-    alignment_regex_complex = [r"(?<!^)(?<!e)[+-]"]
-
-    # Make sure that `truncate` does not hide the type and the column name.
-    maximum_data_column_widths = Int[
-        truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
-        for (l, t) in zip(names_len, types_str)
-    ]
-
-    # Apply configurations according to the column's type.
-    for i = 1:num_cols
-        type_i = nonmissingtype(types[i])
-
-        if type_i <: Complex
-            push!(alignment_anchor_regex, i => alignment_regex_complex)
-            alignment[i] = :r
-        elseif type_i <: Real
-            push!(alignment_anchor_regex, i => alignment_regex_real)
-            alignment[i] = :r
-        elseif type_i <: Number
-            alignment[i] = :r
-        elseif type_i <: Base.UUID
-            maximum_data_column_widths[i] = 36
+        if allcols && allrows
+            crop = :none
+        elseif allcols
+            crop = :vertical
+        elseif allrows
+            crop = :horizontal
+        else
+            crop = :both
         end
+
+        # For consistency, if `kwargs` has `compact_printng`, we must use it.
+        compact_printing::Bool = get(kwargs, :compact_printing, get(io, :compact, true))
+
+        num_rows, num_cols = size(df)
+
+        # By default, we align the columns to the left unless they are numbers,
+        # which is checked in the following.
+        alignment = fill(:l, num_cols)
+
+        # Create the dictionary with the anchor regex that is used to align the
+        # floating points.
+        alignment_anchor_regex = Dict{Int, Vector{Regex}}()
+
+        # Regex to align real numbers.
+        alignment_regex_real = [r"\."]
+
+        # Regex for columns with complex numbers.
+        #
+        # Here we are matching `+` or `-` unless it is not at the beginning of the
+        # string or an `e` precedes it.
+        alignment_regex_complex = [r"(?<!^)(?<!e)[+-]"]
+
+        # Make sure that `truncate` does not hide the type and the column name.
+        maximum_columns_width = Int[truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
+                                    for (l, t) in zip(names_len, types_str)]
+
+        # Apply configurations according to the column's type.
+        for i = 1:num_cols
+            type_i = nonmissingtype(types[i])
+
+            if type_i <: Complex
+                alignment_anchor_regex[i] = alignment_regex_complex
+                alignment[i] = :r
+            elseif type_i <: Real
+                alignment_anchor_regex[i] = alignment_regex_real
+                alignment[i] = :r
+            elseif type_i <: Number
+                alignment[i] = :r
+            elseif type_i <: Base.UUID
+                maximum_columns_width[i] = 36
+            end
+        end
+
+        # Check if the user wants to display a summary about the DataFrame that is
+        # being printed. This will be shown using the `title` option of
+        # `pretty_table`.
+        title = summary ? Base.summary(df) : ""
+
+        # If `rowid` is not `nothing`, then we are printing a data row. In this
+        # case, we will add this information using the row name column of
+        # PrettyTables.jl. Otherwise, we can just use the row number column.
+        if (rowid === nothing) || (ncol(df) == 0)
+            show_row_number::Bool = get(kwargs, :show_row_number, true)
+            row_labels = nothing
+
+            # If the columns with row numbers is not shown, then we should not
+            # display a vertical line after the first column.
+            vlines = fill(1, show_row_number)
+        else
+            nrow(df) != 1 &&
+                throw(ArgumentError("rowid may be passed only with a single row data frame"))
+
+            # In this case, if the user does not want to show the row number, then
+            # we must hide the row name column, which is used to display the
+            # `rowid`.
+            if !get(kwargs, :show_row_number, true)
+                row_labels = nothing
+                vlines = Int[]
+            else
+                row_labels = [string(rowid)]
+                vlines = Int[1]
+            end
+
+            show_row_number = false
+        end
+
+        # Print the table with the selected options.
+        pretty_table(io, df;
+                     alignment                   = alignment,
+                     alignment_anchor_fallback   = :r,
+                     alignment_anchor_regex      = alignment_anchor_regex,
+                     compact_printing            = compact_printing,
+                     crop                        = crop,
+                     ellipsis_line_skip          = 3,
+                     formatters                  = (_pretty_tables_general_formatter,),
+                     header                      = (names_str, types_str),
+                     header_alignment            = :l,
+                     hlines                      = [:header],
+                     highlighters                = (_PRETTY_TABLES_HIGHLIGHTER,),
+                     maximum_columns_width       = maximum_columns_width,
+                     newline_at_end              = false,
+                     reserved_display_lines      = 2,
+                     row_label_alignment         = :r,
+                     row_label_crayon            = Crayon(),
+                     row_label_column_title      = string(rowlabel),
+                     row_labels                  = row_labels,
+                     row_number_alignment        = :r,
+                     row_number_column_title     = string(rowlabel),
+                     show_row_number             = show_row_number,
+                     show_subheader              = eltypes,
+                     title                       = title,
+                     vcrop_mode                  = :middle,
+                     vlines                      = vlines,
+                     kwargs...)
+
+        return nothing
     end
+else
+    function _show(io::IO,
+                   df::AbstractDataFrame;
+                   allrows::Bool = !get(io, :limit, false),
+                   allcols::Bool = !get(io, :limit, false),
+                   rowlabel::Symbol = :Row,
+                   summary::Bool = true,
+                   eltypes::Bool = true,
+                   rowid = nothing,
+                   show_row_number::Bool=true,
+                   truncate::Int = 32,
+                   kwargs...)
 
-    # Check if the user wants to display a summary about the DataFrame that is
-    # being printed. This will be shown using the `title` option of
-    # `pretty_table`.
-    title = summary ? Base.summary(df) : ""
+        _check_consistency(df)
 
-    # If `rowid` is not `nothing`, then we are printing a data row. In this
-    # case, we will add this information using the row name column of
-    # PrettyTables.jl.
-    if (rowid === nothing) || (ncol(df) == 0)
-        row_labels = 1:num_rows
-    else
-        nrow(df) != 1 &&
-            throw(ArgumentError("rowid may be passed only with a single row data frame"))
+        names_str = names(df)
+        names_len = Int[textwidth(n) for n in names_str]
+        maxwidth = Int[max(9, nl) for nl in names_len]
+        types = Any[eltype(c) for c in eachcol(df)]
+        types_str = batch_compacttype(types, maxwidth)
 
-        row_labels = [string(rowid)]
+        fit_table_in_display_horizontally = !allcols
+        fit_table_in_display_vertically = !allrows
+
+        # For consistency, if `kwargs` has `compact_printng`, we must use it.
+        compact_printing::Bool = get(kwargs, :compact_printing, get(io, :compact, true))
+
+        num_rows, num_cols = size(df)
+
+        # By default, we align the columns to the left unless they are numbers,
+        # which is checked in the following.
+        alignment = fill(:l, num_cols)
+
+        # Create the dictionary with the anchor regex that is used to align the
+        # floating points.
+        alignment_anchor_regex = Pair{Int, Vector{Regex}}[]
+
+        # Regex to align real numbers.
+        alignment_regex_real = [r"\."]
+
+        # Regex for columns with complex numbers.
+        #
+        # Here we are matching `+` or `-` unless it is not at the beginning of the
+        # string or an `e` precedes it.
+        alignment_regex_complex = [r"(?<!^)(?<!e)[+-]"]
+
+        # Make sure that `truncate` does not hide the type and the column name.
+        maximum_data_column_widths = Int[
+            truncate == 0 ? 0 : max(truncate + 1, l, textwidth(t))
+            for (l, t) in zip(names_len, types_str)
+        ]
+
+        # Apply configurations according to the column's type.
+        for i = 1:num_cols
+            type_i = nonmissingtype(types[i])
+
+            if type_i <: Complex
+                push!(alignment_anchor_regex, i => alignment_regex_complex)
+                alignment[i] = :r
+            elseif type_i <: Real
+                push!(alignment_anchor_regex, i => alignment_regex_real)
+                alignment[i] = :r
+            elseif type_i <: Number
+                alignment[i] = :r
+            elseif type_i <: Base.UUID
+                maximum_data_column_widths[i] = 36
+            end
+        end
+
+        # Check if the user wants to display a summary about the DataFrame that is
+        # being printed. This will be shown using the `title` option of
+        # `pretty_table`.
+        title = summary ? Base.summary(df) : ""
+
+        # If `rowid` is not `nothing`, then we are printing a data row. In this
+        # case, we will add this information using the row name column of
+        # PrettyTables.jl.
+        if (rowid === nothing) || (ncol(df) == 0)
+            row_labels = 1:num_rows
+        else
+            nrow(df) != 1 &&
+                throw(ArgumentError("rowid may be passed only with a single row data frame"))
+
+            row_labels = [string(rowid)]
+        end
+
+        # Keep compatibility with the previous behavior of PrettyTables.jl if the user does not
+        # want to show the row numbers.
+        if !show_row_number
+            row_labels = nothing
+        end
+
+        # Print the table with the selected options.
+        pretty_table(io, df;
+                     alignment                         = alignment,
+                     alignment_anchor_fallback         = :r,
+                     alignment_anchor_regex            = alignment_anchor_regex,
+                     column_label_alignment            = :l,
+                     column_labels                     = [names_str, types_str],
+                     compact_printing                  = compact_printing,
+                     continuation_row_alignment        = :c,
+                     fit_table_in_display_horizontally = fit_table_in_display_horizontally,
+                     fit_table_in_display_vertically   = fit_table_in_display_vertically,
+                     formatters                        = _PRETTY_TABLES_TEXT_FORMATTER,
+                     highlighters                      = _PRETTY_TABLES_TEXT_HIGHLIGHTER,
+                     maximum_data_column_widths        = maximum_data_column_widths,
+                     new_line_at_end                   = false,
+                     reserved_display_lines            = 2,
+                     row_label_column_alignment        = :r,
+                     row_labels                        = row_labels,
+                     show_first_column_label_only      = !eltypes,
+                     show_row_number_column            = false,
+                     stubhead_label                    = string(rowlabel),
+                     style                             = _PRETTY_TABLES_TEXT_TABLE_STYLE,
+                     table_format                      = _PRETTY_TABLES_TEXT_TABLE_FORMAT,
+                     title                             = title,
+                     title_alignment                   = :l,
+                     vertical_crop_mode                = :middle,
+                     kwargs...)
+
+        return nothing
     end
-
-    # Keep compatibility with the previous behavior of PrettyTables.jl if the user does not
-    # want to show the row numbers.
-    if !show_row_number
-        row_labels = nothing
-    end
-
-    # Print the table with the selected options.
-    pretty_table(io, df;
-                 alignment                         = alignment,
-                 alignment_anchor_fallback         = :r,
-                 alignment_anchor_regex            = alignment_anchor_regex,
-                 column_label_alignment            = :l,
-                 column_labels                     = [names_str, types_str],
-                 compact_printing                  = compact_printing,
-                 continuation_row_alignment        = :c,
-                 fit_table_in_display_horizontally = fit_table_in_display_horizontally,
-                 fit_table_in_display_vertically   = fit_table_in_display_vertically,
-                 formatters                        = _PRETTY_TABLES_TEXT_FORMATTER,
-                 highlighters                      = _PRETTY_TABLES_TEXT_HIGHLIGHTER,
-                 maximum_data_column_widths        = maximum_data_column_widths,
-                 new_line_at_end                   = false,
-                 reserved_display_lines            = 2,
-                 row_label_column_alignment        = :r,
-                 row_labels                        = row_labels,
-                 show_first_column_label_only      = !eltypes,
-                 show_row_number_column            = false,
-                 stubhead_label                    = string(rowlabel),
-                 style                             = _PRETTY_TABLES_TEXT_TABLE_STYLE,
-                 table_format                      = _PRETTY_TABLES_TEXT_TABLE_FORMAT,
-                 title                             = title,
-                 title_alignment                   = :l,
-                 vertical_crop_mode                = :middle,
-                 kwargs...)
-
-    return nothing
 end
 
 """

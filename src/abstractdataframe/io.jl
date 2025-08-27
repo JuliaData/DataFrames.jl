@@ -167,108 +167,225 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-function _show(io::IO,
-               ::MIME"text/html",
-               df::AbstractDataFrame;
-               summary::Bool=true,
-               eltypes::Bool=true,
-               rowid::Union{Int, Nothing}=nothing,
-               title::AbstractString="",
-               max_column_width::AbstractString="",
-               show_row_number::Bool=true,
-               kwargs...)
-    _check_consistency(df)
+@static if pkgversion(PrettyTables).major == 2
+    function _show(io::IO,
+                   ::MIME"text/html",
+                   df::AbstractDataFrame;
+                   summary::Bool=true,
+                   eltypes::Bool=true,
+                   rowid::Union{Int, Nothing}=nothing,
+                   title::AbstractString="",
+                   max_column_width::AbstractString="",
+                   kwargs...)
+        _check_consistency(df)
 
-    names_str = names(df)
-    types = Any[eltype(c) for c in eachcol(df)]
-    types_str = batch_compacttype(types, 9)
-    types_str_complete = batch_compacttype(types, 256)
+        names_str = names(df)
+        types = Any[eltype(c) for c in eachcol(df)]
+        types_str = batch_compacttype(types, 9)
+        types_str_complete = batch_compacttype(types, 256)
 
-    # For consistency, if `kwargs` has `compact_printing`, we must use it.
-    compact_printing::Bool = get(kwargs, :compact_printing, get(io, :compact, true))
+        # For consistency, if `kwargs` has `compact_printing`, we must use it.
+        compact_printing::Bool = get(kwargs, :compact_printing, get(io, :compact, true))
 
-    num_rows, num_cols = size(df)
+        num_rows, num_cols = size(df)
 
-    # By default, we align the columns to the left unless they are numbers,
-    # which is checked in the following.
-    alignment = fill(:l, num_cols)
+        # By default, we align the columns to the left unless they are numbers,
+        # which is checked in the following.
+        alignment = fill(:l, num_cols)
 
-    for i = 1:num_cols
-        type_i = nonmissingtype(types[i])
+        for i = 1:num_cols
+            type_i = nonmissingtype(types[i])
 
-        if type_i <: Number
-            alignment[i] = :r
+            if type_i <: Number
+                alignment[i] = :r
+            end
         end
-    end
 
-    if get(io, :limit, false)
-        # Obtain the maximum number of rows and columns that we can print from
-        # environment variables.
-        mxrow = something(tryparse(Int, get(ENV, "DATAFRAMES_ROWS", "25")), 25)
-        mxcol = something(tryparse(Int, get(ENV, "DATAFRAMES_COLUMNS", "100")), 100)
-    else
-        mxrow = -1
-        mxcol = -1
-    end
-
-    # Check if the user wants to display a summary about the DataFrame that is
-    # being printed. This will be shown using the `title` option of
-    # `pretty_table`.
-    if summary
-        if isempty(title)
-            title = Base.summary(df)
+        if get(io, :limit, false)
+            # Obtain the maximum number of rows and columns that we can print from
+            # environment variables.
+            mxrow = something(tryparse(Int, get(ENV, "DATAFRAMES_ROWS", "25")), 25)
+            mxcol = something(tryparse(Int, get(ENV, "DATAFRAMES_COLUMNS", "100")), 100)
+        else
+            mxrow = -1
+            mxcol = -1
         end
-    else
-        title = ""
+
+        # Check if the user wants to display a summary about the DataFrame that is
+        # being printed. This will be shown using the `title` option of
+        # `pretty_table`.
+        if summary
+            if isempty(title)
+                title = Base.summary(df)
+            end
+        else
+            title = ""
+        end
+
+        # If `rowid` is not `nothing`, then we are printing a data row. In this
+        # case, we will add this information using the row name column of
+        # PrettyTables.jl. Otherwise, we can just use the row number column.
+        if (rowid === nothing) || (ncol(df) == 0)
+            show_row_number::Bool = get(kwargs, :show_row_number, true)
+            row_labels = nothing
+
+            # If the columns with row numbers is not shown, then we should not
+            # display a vertical line after the first column.
+            vlines = fill(1, show_row_number)
+        else
+            nrow(df) != 1 &&
+                throw(ArgumentError("rowid may be passed only with a single row data frame"))
+
+            # In this case, if the user does not want to show the row number, then
+            # we must hide the row name column, which is used to display the
+            # `rowid`.
+            if !get(kwargs, :show_row_number, true)
+                row_labels = nothing
+                vlines = Int[]
+            else
+                row_labels = [string(rowid)]
+                vlines = Int[1]
+            end
+
+            show_row_number = false
+        end
+
+        pretty_table(io, df;
+                     alignment                 = alignment,
+                     backend                   = Val(:html),
+                     compact_printing          = compact_printing,
+                     formatters                = (_pretty_tables_general_formatter,),
+                     header                    = (names_str, types_str),
+                     header_alignment          = :l,
+                     header_cell_titles        = (nothing, types_str_complete),
+                     highlighters              = (_PRETTY_TABLES_HTML_HIGHLIGHTER,),
+                     max_num_of_columns        = mxcol,
+                     max_num_of_rows           = mxrow,
+                     maximum_columns_width     = max_column_width,
+                     minify                    = true,
+                     row_label_column_title    = "Row",
+                     row_labels                = row_labels,
+                     row_number_alignment      = :r,
+                     row_number_column_title   = "Row",
+                     show_omitted_cell_summary = true,
+                     show_row_number           = show_row_number,
+                     show_subheader            = eltypes,
+                     standalone                = false,
+                     table_class               = "data-frame",
+                     table_div_class           = "data-frame",
+                     table_style               = _PRETTY_TABLES_HTML_TABLE_STYLE,
+                     top_left_str              = String(title),
+                     top_right_str_decoration  = HtmlDecoration(font_style = "italic"),
+                     vcrop_mode                = :middle,
+                     wrap_table_in_div         = true,
+                     kwargs...)
+
+        return nothing
     end
+else
+    function _show(io::IO,
+                   ::MIME"text/html",
+                   df::AbstractDataFrame;
+                   summary::Bool=true,
+                   eltypes::Bool=true,
+                   rowid::Union{Int, Nothing}=nothing,
+                   title::AbstractString="",
+                   max_column_width::AbstractString="",
+                   show_row_number::Bool=true,
+                   kwargs...)
+        _check_consistency(df)
 
-    # If `rowid` is not `nothing`, then we are printing a data row. In this
-    # case, we will add this information using the row name column of
-    # PrettyTables.jl.
-    if (rowid === nothing) || (ncol(df) == 0)
-        row_labels = 1:num_rows
-    else
-        nrow(df) != 1 &&
-            throw(ArgumentError("rowid may be passed only with a single row data frame"))
+        names_str = names(df)
+        types = Any[eltype(c) for c in eachcol(df)]
+        types_str = batch_compacttype(types, 9)
+        types_str_complete = batch_compacttype(types, 256)
 
-        row_labels = [string(rowid)]
+        # For consistency, if `kwargs` has `compact_printing`, we must use it.
+        compact_printing::Bool = get(kwargs, :compact_printing, get(io, :compact, true))
+
+        num_rows, num_cols = size(df)
+
+        # By default, we align the columns to the left unless they are numbers,
+        # which is checked in the following.
+        alignment = fill(:l, num_cols)
+
+        for i = 1:num_cols
+            type_i = nonmissingtype(types[i])
+
+            if type_i <: Number
+                alignment[i] = :r
+            end
+        end
+
+        if get(io, :limit, false)
+            # Obtain the maximum number of rows and columns that we can print from
+            # environment variables.
+            mxrow = something(tryparse(Int, get(ENV, "DATAFRAMES_ROWS", "25")), 25)
+            mxcol = something(tryparse(Int, get(ENV, "DATAFRAMES_COLUMNS", "100")), 100)
+        else
+            mxrow = -1
+            mxcol = -1
+        end
+
+        # Check if the user wants to display a summary about the DataFrame that is
+        # being printed. This will be shown using the `title` option of
+        # `pretty_table`.
+        if summary
+            if isempty(title)
+                title = Base.summary(df)
+            end
+        else
+            title = ""
+        end
+
+        # If `rowid` is not `nothing`, then we are printing a data row. In this
+        # case, we will add this information using the row name column of
+        # PrettyTables.jl.
+        if (rowid === nothing) || (ncol(df) == 0)
+            row_labels = 1:num_rows
+        else
+            nrow(df) != 1 &&
+                throw(ArgumentError("rowid may be passed only with a single row data frame"))
+
+            row_labels = [string(rowid)]
+        end
+
+        # Keep compatibility with the previous behavior of PrettyTables.jl if the user does
+        # not want to show the row numbers.
+        if !show_row_number
+            row_labels = nothing
+        end
+
+        pretty_table(io, df;
+                     alignment                    = alignment,
+                     backend                      = :html,
+                     column_label_alignment       = :l,
+                     column_labels                = [names_str, types_str],
+                     column_label_titles          = [nothing, types_str_complete],
+                     compact_printing             = compact_printing,
+                     formatters                   = _PRETTY_TABLES_HTML_FORMATTER,
+                     highlighters                 = _PRETTY_TABLES_HTML_HIGHLIGHTER,
+                     maximum_column_width         = max_column_width,
+                     maximum_number_of_columns    = mxcol,
+                     maximum_number_of_rows       = mxrow,
+                     minify                       = true,
+                     row_label_column_alignment   = :r,
+                     row_labels                   = row_labels,
+                     show_first_column_label_only = !eltypes,
+                     show_omitted_cell_summary    = true,
+                     show_row_number_column       = false,
+                     stand_alone                  = false,
+                     stubhead_label               = "Row",
+                     style                        = _PRETTY_TABLES_HTML_TABLE_STYLE,
+                     table_class                  = "data-frame",
+                     table_div_class              = "data-frame",
+                     top_left_string              = String(title),
+                     vertical_crop_mode           = :middle,
+                     wrap_table_in_div            = true,
+                     kwargs...)
+
+        return nothing
     end
-
-    # Keep compatibility with the previous behavior of PrettyTables.jl if the user does not
-    # want to show the row numbers.
-    if !show_row_number
-        row_labels = nothing
-    end
-
-    pretty_table(io, df;
-                 alignment                    = alignment,
-                 backend                      = :html,
-                 column_label_alignment       = :l,
-                 column_labels                = [names_str, types_str],
-                 column_label_titles          = [nothing, types_str_complete],
-                 compact_printing             = compact_printing,
-                 formatters                   = _PRETTY_TABLES_HTML_FORMATTER,
-                 highlighters                 = _PRETTY_TABLES_HTML_HIGHLIGHTER,
-                 maximum_column_width         = max_column_width,
-                 maximum_number_of_columns    = mxcol,
-                 maximum_number_of_rows       = mxrow,
-                 minify                       = true,
-                 row_label_column_alignment   = :r,
-                 row_labels                   = row_labels,
-                 show_first_column_label_only = !eltypes,
-                 show_omitted_cell_summary    = true,
-                 show_row_number_column       = false,
-                 stand_alone                  = false,
-                 stubhead_label               = "Row",
-                 style                        = _PRETTY_TABLES_HTML_TABLE_STYLE,
-                 table_class                  = "data-frame",
-                 table_div_class              = "data-frame",
-                 top_left_string              = String(title),
-                 vertical_crop_mode           = :middle,
-                 wrap_table_in_div            = true,
-                 kwargs...)
-
-    return nothing
 end
 
 function Base.show(io::IO, mime::MIME"text/html", dfrs::DataFrameRows; kwargs...)

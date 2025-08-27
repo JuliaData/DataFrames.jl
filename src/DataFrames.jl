@@ -166,7 +166,12 @@ include("groupeddataframe/callprocessing.jl")
 include("groupeddataframe/fastaggregates.jl")
 include("groupeddataframe/complextransforms.jl")
 
-include("abstractdataframe/prettytables.jl")
+@static if pkgversion(PrettyTables).major == 2
+    include("abstractdataframe/prettytables_v2.jl")
+else
+    include("abstractdataframe/prettytables.jl")
+end
+
 include("abstractdataframe/show.jl")
 include("groupeddataframe/show.jl")
 include("dataframerow/show.jl")
