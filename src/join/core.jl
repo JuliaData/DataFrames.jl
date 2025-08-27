@@ -40,7 +40,9 @@ Base.hash(ocr1::OnColRow, h::UInt) = throw(MethodError(hash, (ocr1, h)))
 function _prehash(oc::OnCol)
     h = oc.h
     resize!(h, oc.len)
-    fill!(h, Base.tuplehash_seed)
+    h0 = @static Base.VERSION >= v"1.13.0-DEV" ? Base.HASH_SEED : UInt(0)
+    h0 ⊻= Base.tuplehash_seed
+    fill!(h, h0)
     for col in reverse(oc.cols)
         h .= hash.(col, h)
     end
