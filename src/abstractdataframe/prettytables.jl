@@ -62,7 +62,8 @@ const _PRETTY_TABLES_HTML_TABLE_STYLE = HtmlTableStyle(first_line_column_label =
 # Constants for the text backend.
 const _PRETTY_TABLES_TEXT_FORMATTER = [_pretty_tables_general_formatter]
 
-const _PRETTY_TABLES_TEXT_HIGHLIGHTER = [TextHighlighter(_pretty_tables_highlighter_func, Crayon(foreground = :dark_gray))]
+const _PRETTY_TABLES_TEXT_HIGHLIGHTER = [TextHighlighter(_pretty_tables_highlighter_func,
+                                                         Crayon(foreground = :dark_gray))]
 
 const _PRETTY_TABLES_TEXT_TABLE_FORMAT = TextTableFormat(; @text__no_horizontal_lines,
                                                          @text__no_vertical_lines,

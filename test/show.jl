@@ -446,8 +446,8 @@ end
             \e[1m Row \e[0m│\e[1m Fish   \e[0m\e[1m Mass      \e[0m
             \e[1m     \e[0m│\e[90m String \e[0m\e[90m Float64?  \e[0m
             ─────┼───────────────────
-               1 \e[0m│ Suzy          1.5
-               2 \e[0m│ Amir   \e[90m missing   \e[0m"""
+               1 │ Suzy          1.5
+               2 │ Amir   \e[90m missing   \e[0m"""
 
         df = DataFrame(A=[:Symbol, missing, :missing],
                        B=[missing, "String", "missing"],
@@ -457,9 +457,9 @@ end
             \e[1m Row \e[0m│\e[1m A       \e[0m\e[1m B       \e[0m\e[1m C       \e[0m
             \e[1m     \e[0m│\e[90m Symbol? \e[0m\e[90m String? \e[0m\e[90m Any     \e[0m
             ─────┼───────────────────────────
-               1 \e[0m│ Symbol  \e[90m missing \e[0m missing
-               2 \e[0m│\e[90m missing \e[0m String   missing
-               3 \e[0m│ missing  missing \e[90m missing \e[0m"""
+               1 │ Symbol  \e[90m missing \e[0m missing
+               2 │\e[90m missing \e[0m String   missing
+               3 │ missing  missing \e[90m missing \e[0m"""
     end
 
     df_nothing = DataFrame(A=[1.0, 2.0, 3.0], B=["g", "g", nothing])

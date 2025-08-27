@@ -1502,14 +1502,14 @@ end
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
-                 "<tr class = \"header\">" *
-                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<tr class = \"columnLabelRow\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
                  "<th style = \"text-align: left;\">A</th>" *
                  "<th style = \"text-align: left;\">B</th>" *
                  "<th style = \"text-align: left;\">C</th>" *
                  "</tr>" *
-                 "<tr class = \"subheader headerLastRow\">" *
-                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "<tr class = \"columnLabelRow\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
@@ -1517,8 +1517,8 @@ end
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<tr class = \"dataRow\">" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">x&quot;</td>" *
                  "<td style = \"text-align: right;\">1.0</td>" *
@@ -1537,14 +1537,14 @@ end
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
-                 "<tr class = \"header\">" *
-                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<tr class = \"columnLabelRow\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
                  "<th style = \"text-align: left;\">A</th>" *
                  "<th style = \"text-align: left;\">B</th>" *
                  "<th style = \"text-align: left;\">C</th>" *
                  "</tr>" *
-                 "<tr class = \"subheader headerLastRow\">" *
-                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "<tr class = \"columnLabelRow\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
@@ -1552,8 +1552,8 @@ end
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<tr class = \"dataRow\">" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">4</td>" *
                  "<td style = \"text-align: left;\">A\\nC</td>" *
                  "<td style = \"text-align: right;\">4.0</td>" *
@@ -1613,21 +1613,21 @@ end
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
-                 "<tr class = \"header\">" *
-                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<tr class = \"columnLabelRow\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
                  "<th style = \"text-align: left;\">a</th>" *
                  "<th style = \"text-align: left;\">b</th>" *
                  "</tr>" *
-                 "<tr class = \"subheader headerLastRow\">" *
-                 "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">" *
+                 "<tr class = \"columnLabelRow\">" *
+                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Symbol\" style = \"text-align: left;\">Symbol</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
-                 "<tr>" *
-                 "<td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 "<tr class = \"dataRow\">" *
+                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">&amp;</td>" *
                  "<td style = \"text-align: left;\">&amp;</td>" *
                  "</tr>" *
