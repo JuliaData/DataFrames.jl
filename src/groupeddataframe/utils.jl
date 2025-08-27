@@ -58,7 +58,7 @@ end
 # Calculate the vector of `df` rows hash values.
 function hashrows(cols::Tuple{Vararg{AbstractVector}}, skipmissing::Bool)
     len = length(cols[1])
-    rhashes = zeros(UInt, len)
+    rhashes = fill(@static Base.VERSION >= v"1.13.0-DEV" ? Base.HASH_SEED : UInt(0), len)
     missings = fill(false, skipmissing ? len : 0)
     for (i, col) in enumerate(cols)
         rp = DataAPI.refpool(col)
