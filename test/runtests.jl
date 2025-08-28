@@ -28,6 +28,9 @@ if !isempty(unbound_args_vec)
     throw(AssertionError("unbound type parameters found"))
 end
 
+# Flag to indicate if we are using PrettyTables.jl v2.
+pt_v2 = pkgversion(DataFrames.PrettyTables).major == 2
+
 my_tests = ["utils.jl",
             "cat.jl",
             "data.jl",
@@ -36,17 +39,17 @@ my_tests = ["utils.jl",
             "insertion.jl",
             "select.jl",
             "reshape.jl",
-            "dataframerow.jl",
-            "io.jl",
+            !pt_v2 ? "dataframerow.jl" : "dataframerow-pt_v2.jl",
+            !pt_v2 ? "io.jl" : "io-pt_v2.jl",
             "constructors.jl",
             "conversions.jl",
             "sort.jl",
-            "grouping.jl",
+            !pt_v2 ? "grouping.jl" : "grouping-pt_v2.jl",
             "subset.jl",
             "join.jl",
             "iteration.jl",
             "duplicates.jl",
-            "show.jl",
+            !pt_v2 ? "show.jl" : "show-pt_v2.jl",
             "subdataframe.jl",
             "subdataframe_mutation.jl",
             "tables.jl",
