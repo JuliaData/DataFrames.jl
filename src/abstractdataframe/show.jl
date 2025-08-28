@@ -144,7 +144,7 @@ function compacttype(T::Type, maxwidth::Int)
     return first(sT, stop) * "…" * suffix
 end
 
-@static if pkgversion(PrettyTables).major == 2
+@static if (Base.VERSION < v"1.7") || (pkgversion(PrettyTables).major == 2)
     function _show(io::IO,
                    df::AbstractDataFrame;
                    allrows::Bool = !get(io, :limit, false),

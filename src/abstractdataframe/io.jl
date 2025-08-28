@@ -167,7 +167,7 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-@static if pkgversion(PrettyTables).major == 2
+@static if (Base.VERSION < v"1.7") || (pkgversion(PrettyTables).major == 2)
     function _show(io::IO,
                    ::MIME"text/html",
                    df::AbstractDataFrame;

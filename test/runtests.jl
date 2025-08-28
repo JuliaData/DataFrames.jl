@@ -29,7 +29,7 @@ if !isempty(unbound_args_vec)
 end
 
 # Flag to indicate if we are using PrettyTables.jl v2.
-pt_v2 = pkgversion(DataFrames.PrettyTables).major == 2
+pt_v2 = VERSION < v"1.7" || pkgversion(DataFrames.PrettyTables).major == 2
 
 my_tests = ["utils.jl",
             "cat.jl",
