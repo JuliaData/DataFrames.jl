@@ -167,7 +167,7 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-@static if (Base.VERSION < v"1.7") || (pkgversion(PrettyTables).major == 2)
+@static if pkgversion(PrettyTables).major == 2
     # When PrettyTables v2 is more widely adopted in the ecosystem, we can remove this
     # function. In this case, we should also update the compat bounds in Project.toml to
     # list only PrettyTables v3.
