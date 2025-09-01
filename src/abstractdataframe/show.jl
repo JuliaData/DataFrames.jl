@@ -145,6 +145,9 @@ function compacttype(T::Type, maxwidth::Int)
 end
 
 @static if (Base.VERSION < v"1.7") || (pkgversion(PrettyTables).major == 2)
+    # When PrettyTables v2 is more widely adopted in the ecosystem, we can remove this
+    # function. In this case, we should also update the compat bounds in Project.toml to
+    # list only PrettyTables v3.
     function _show(io::IO,
                    df::AbstractDataFrame;
                    allrows::Bool = !get(io, :limit, false),
