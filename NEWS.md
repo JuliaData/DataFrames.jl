@@ -2,7 +2,7 @@
 
 ## Ecosystem compatibility changes
 
-* Make DataFrames.jl hashing consistent with Julia 1.13 and include column names when hashind `AbstractDataFrame`
+* Make DataFrames.jl hashing consistent with Julia 1.13 and take into account column names when hashing `AbstractDataFrame`
   ([#3507](https://github.com/JuliaData/DataFrames.jl/issues/3507))
 * Require Julia 1.10 and add PrettyTables.jl v3 support
   ([#3510](https://github.com/JuliaData/DataFrames.jl/issues/3510))
