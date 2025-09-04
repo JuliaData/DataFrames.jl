@@ -336,7 +336,7 @@ end
     end
 
     # printed height always matches desired height, above a reasonable minimum
-    for a in 1:50, b in 1:50, h in 15:40
+    for a in 1:50, b in 1:50, h in 17:40
         df = DataFrame(x = [fill(1, a); fill(2, b)])
         io = IOContext(IOBuffer(), :displaysize=>(h, 40), :limit=>true)
         show(io, groupby(df, :x), allcols=true)
@@ -348,7 +348,7 @@ end
         @test nlines == desired
     end
 
-    for a in 1:50, h in 15:40
+    for a in 1:50, h in 17:40
         df = DataFrame(x = fill(1, a))
         io = IOContext(IOBuffer(), :displaysize=>(h, 40), :limit=>true)
         show(io, groupby(df, :x), allcols=true)
@@ -444,7 +444,7 @@ end
         @test sprint(show, df, context=:color=>true) == """
             \e[1m2×2 DataFrame\e[0m
             \e[1m Row \e[0m│\e[1m Fish   \e[0m\e[1m Mass      \e[0m
-                 │\e[90m String \e[0m\e[90m Float64?  \e[0m
+            \e[1m     \e[0m│\e[90m String \e[0m\e[90m Float64?  \e[0m
             ─────┼───────────────────
                1 │ Suzy          1.5
                2 │ Amir   \e[90m missing   \e[0m"""
@@ -455,7 +455,7 @@ end
         @test sprint(show, df, context=:color=>true) == """
             \e[1m3×3 DataFrame\e[0m
             \e[1m Row \e[0m│\e[1m A       \e[0m\e[1m B       \e[0m\e[1m C       \e[0m
-                 │\e[90m Symbol? \e[0m\e[90m String? \e[0m\e[90m Any     \e[0m
+            \e[1m     \e[0m│\e[90m Symbol? \e[0m\e[90m String? \e[0m\e[90m Any     \e[0m
             ─────┼───────────────────────────
                1 │ Symbol  \e[90m missing \e[0m missing
                2 │\e[90m missing \e[0m String   missing
@@ -702,7 +702,7 @@ end
     show(io, df)
     str = String(take!(io.io))
     @test str === """
-        1×1 DataF…
+        1×1 Data ⋯
          Row │ x ⋯
              │ S ⋯
         ─────┼────
@@ -1160,50 +1160,107 @@ end
 
     io = IOContext(IOBuffer())
     show(io, MIME("text/html"), groupby(df, :id))
-    @test String(take!(io.io)) === "<p><b>GroupedDataFrame with 3 groups based on key: id</b></p>" *
-        "<div><div style = \"float: left;\"><span>First Group (1 row): id = &quot;a&quot;</span></div>" *
-        "<div style = \"clear: both;\"></div></div>" *
+    @test String(take!(io.io)) ===
+        "<p><b>GroupedDataFrame with 3 groups based on key: id</b></p>" *
+        "<div>" *
+        "<div style = \"float: left;\">" *
+        "<span>First Group (1 row): id = &quot;a&quot;</span>" *
+        "</div>" *
+        "<div style = \"clear: both;\">" *
+        "</div>" *
+        "</div>" *
         "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
         "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
-        "<thead><tr class = \"header\"><th class = \"rowNumber\" " *
-        "style = \"font-weight: bold; text-align: right;\">Row</th>" *
-        "<th style = \"text-align: left;\">id</th><th style = \"text-align: left;\">value</th></tr>" *
-        "<tr class = \"subheader headerLastRow\"><th class = \"rowNumber\" " *
-        "style = \"font-weight: bold; text-align: right;\"></th>" *
+        "<thead>" *
+        "<tr class = \"columnLabelRow\">" *
+        "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+        "<th style = \"text-align: left;\">id</th>" *
+        "<th style = \"text-align: left;\">value</th>" *
+        "</tr>" *
+        "<tr class = \"columnLabelRow\">" *
+        "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
+        "</th>" *
         "<th title = \"String1\" style = \"text-align: left;\">String1</th>" *
-        "<th title = \"Int64\" style = \"text-align: left;\">Int64</th></tr></thead>" *
-        "<tbody><tr><td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
-        "<td style = \"text-align: left;\">a</td><td style = \"text-align: right;\">1</td></tr></tbody>" *
-        "</table></div><p>&vellip;</p><div><div style = \"float: left;\">" *
-        "<span>Last Group (1 row): id = &quot;c&quot;</span></div>" *
-        "<div style = \"clear: both;\"></div></div><div class = \"data-frame\" " *
-        "style = \"overflow-x: scroll;\"><table class = \"data-frame\" " *
-        "style = \"margin-bottom: 6px;\"><thead><tr class = \"header\">" *
-        "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
-        "<th style = \"text-align: left;\">id</th><th style = \"text-align: left;\">value</th></tr>" *
-        "<tr class = \"subheader headerLastRow\"><th class = \"rowNumber\" " *
-        "style = \"font-weight: bold; text-align: right;\"></th>" *
+        "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
+        "</tr>" *
+        "</thead>" *
+        "<tbody>" *
+        "<tr class = \"dataRow\">" *
+        "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+        "<td style = \"text-align: left;\">a</td>" *
+        "<td style = \"text-align: right;\">1</td>" *
+        "</tr>" *
+        "</tbody>" *
+        "</table>" *
+        "</div>" *
+        "<p>&vellip;</p>" *
+        "<div>" *
+        "<div style = \"float: left;\">" *
+        "<span>Last Group (1 row): id = &quot;c&quot;</span>" *
+        "</div>" *
+        "<div style = \"clear: both;\">" *
+        "</div>" *
+        "</div>" *
+        "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+        "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+        "<thead>" *
+        "<tr class = \"columnLabelRow\">" *
+        "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+        "<th style = \"text-align: left;\">id</th>" *
+        "<th style = \"text-align: left;\">value</th>" *
+        "</tr>" *
+        "<tr class = \"columnLabelRow\">" *
+        "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
+        "</th>" *
         "<th title = \"String1\" style = \"text-align: left;\">String1</th>" *
-        "<th title = \"Int64\" style = \"text-align: left;\">Int64</th></tr></thead>" *
-        "<tbody><tr><td class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">1</td>" *
-        "<td style = \"text-align: left;\">c</td><td style = \"text-align: right;\">3</td></tr></tbody></table></div>"
+        "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
+        "</tr>" *
+        "</thead>" *
+        "<tbody>" *
+        "<tr class = \"dataRow\">" *
+        "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+        "<td style = \"text-align: left;\">c</td>" *
+        "<td style = \"text-align: right;\">3</td>" *
+        "</tr>" *
+        "</tbody>" *
+        "</table>" *
+        "</div>"
 
     io = IOContext(IOBuffer())
     show(io, MIME("text/html"), groupby(df[1:1, :], :id))
-    @test String(take!(io.io)) === "<p><b>GroupedDataFrame with 1 group based on key: id</b></p><div>" *
-        "<div style = \"float: left;\"><span>First Group (1 row): id = &quot;a&quot;</span></div>" *
-        "<div style = \"clear: both;\"></div></div><div class = \"data-frame\" " *
-        "style = \"overflow-x: scroll;\"><table class = \"data-frame\" " *
-        "style = \"margin-bottom: 6px;\"><thead><tr class = \"header\">" *
-        "<th class = \"rowNumber\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
-        "<th style = \"text-align: left;\">id</th><th style = \"text-align: left;\">value</th></tr>" *
-        "<tr class = \"subheader headerLastRow\"><th class = \"rowNumber\" " *
-        "style = \"font-weight: bold; text-align: right;\"></th>" *
+    @test String(take!(io.io)) ===
+        "<p><b>GroupedDataFrame with 1 group based on key: id</b></p>" *
+        "<div>" *
+        "<div style = \"float: left;\">" *
+        "<span>First Group (1 row): id = &quot;a&quot;</span>" *
+        "</div>" *
+        "<div style = \"clear: both;\">" *
+        "</div>" *
+        "</div>" *
+        "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
+        "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
+        "<thead>" *
+        "<tr class = \"columnLabelRow\">" *
+        "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+        "<th style = \"text-align: left;\">id</th>" *
+        "<th style = \"text-align: left;\">value</th>" *
+        "</tr>" *
+        "<tr class = \"columnLabelRow\">" *
+        "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
+        "</th>" *
         "<th title = \"String1\" style = \"text-align: left;\">String1</th>" *
-        "<th title = \"Int64\" style = \"text-align: left;\">Int64</th></tr></thead>" *
-        "<tbody><tr><td class = \"rowNumber\" style = \"font-weight: bold; " *
-        "text-align: right;\">1</td><td style = \"text-align: left;\">a</td>" *
-        "<td style = \"text-align: right;\">1</td></tr></tbody></table></div>"
+        "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
+        "</tr>" *
+        "</thead>" *
+        "<tbody>" *
+        "<tr class = \"dataRow\">" *
+        "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+        "<td style = \"text-align: left;\">a</td>" *
+        "<td style = \"text-align: right;\">1</td>" *
+        "</tr>" *
+        "</tbody>" *
+        "</table>" *
+        "</div>"
 
     io = IOContext(IOBuffer())
     show(io, MIME("text/latex"), groupby(df, :id))
