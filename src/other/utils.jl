@@ -225,13 +225,9 @@ macro spawn_or_run_task(threads, ex)
     letargs = Base._lift_one_interp!(ex)
 
     thunk = :(()->($(esc(ex))))
-    @static if VERSION >= v"1.10.0-DEV"
-        Base.replace_linenums!(thunk, __source__)
-    end
+    Base.replace_linenums!(thunk, __source__)
     var = esc(Base.sync_varname)
-    spawn_set_thrpool = VERSION >= v"1.9.0" ?
-        :(Base.Threads._spawn_set_thrpool(task, :default)) :
-        :()
+    spawn_set_thrpool = :(Base.Threads._spawn_set_thrpool(task, :default))
     quote
         let $(letargs...)
             if $(esc(threads))
@@ -264,13 +260,9 @@ macro spawn_or_run(threads, ex)
     letargs = Base._lift_one_interp!(ex)
 
     thunk = :(()->($(esc(ex))))
-    if VERSION >= v"1.10.0-DEV"
-        Base.replace_linenums!(thunk, __source__)
-    end
+    Base.replace_linenums!(thunk, __source__)
     var = esc(Base.sync_varname)
-    spawn_set_thrpool = VERSION >= v"1.9.0" ?
-        :(Base.Threads._spawn_set_thrpool(task, :default)) :
-        :()
+    spawn_set_thrpool = :(Base.Threads._spawn_set_thrpool(task, :default))
     quote
         let $(letargs...)
             if $(esc(threads))

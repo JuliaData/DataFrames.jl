@@ -557,7 +557,7 @@ end
                                        nothing, nothing, nothing],
                                 min=[1.0, 1.0, "a", "a", Date(2000), 1],
                                 q25=[1.75, 1.5, nothing, nothing, nothing, nothing],
-                                median=[2.5, 2.0, nothing, nothing, VERSION >= v"1.7.0-beta1.2" ? Date(2002) : nothing, nothing],
+                                median=[2.5, 2.0, nothing, nothing, Date(2002), nothing],
                                 q75=[3.25, 2.5, nothing, nothing, nothing, nothing],
                                 max=[4.0, 3.0, "d", "c", Date(2004), 2],
                                 sum=[10, 6, nothing, nothing, nothing, nothing],
@@ -1652,11 +1652,7 @@ end
     @test x == 1:10
     df.y .= 1
     @test df.y == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        @test y == 1.0:10.0
-    else
-        @test df.y === y
-    end
+    @test y == 1.0:10.0
     df.z = z
     @test df.z === z
     df[!, :zz] .= 1
@@ -1980,8 +1976,7 @@ end
         @test names(x, :) == names(x)
         @test names(x, <("a2")) == ["a1"]
 
-        # before Julia 1.8 it is TypeError; the change is caused by the redesign of ifelse
-        @test_throws Union{MethodError, TypeError} names(x, x -> 1)
+        @test_throws MethodError names(x, x -> 1)
     end
 end
 

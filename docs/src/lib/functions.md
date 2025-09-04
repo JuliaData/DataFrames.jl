@@ -29,9 +29,8 @@ This is a list of operations that currently make use of multi-threading:
 - `dropmissing` when the provided data frame has more than 1 column and `view=false` 
   (subsetting of individual columns is spawned in separate tasks).
 
-In general at least Julia 1.4 is required to ensure that multi-threading is used
-and the Julia process must be started with more than one thread. Some operations
-turn on multi-threading only if enough rows in the processed data frame are present
+In general to ensure that multi-threading is used Julia process must be started with more than one thread.
+Some operations turn on multi-threading only if enough rows in the processed data frame are present
 (the exact threshold when multi-threading is enabled is considered to be undefined
 and might change in the future).
 

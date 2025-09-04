@@ -71,10 +71,7 @@ In the descriptions below `df` represents a `DataFrame`, `sdf` is a
 `:` always expands to `axes(df, 1)` or `axes(sdf, 1)`.
 
 `df.col` works like `df[!, col]` and `sdf.col` works like `sdf[!, col]` in all
-cases. An exception is that under Julia 1.6 or earlier
-`df.col .= v` and `sdf.col .= v` performs in-place broadcasting
-if `col` is present in `df`/`sdf` and is a valid identifier (this inconsistency
-is not present under Julia 1.7 and later).
+cases.
 
 ## `getindex` and `view`
 
@@ -288,7 +285,7 @@ Additional rules:
   `df` with freshly allocated vectors;
 * `df.col .= v` syntax currently performs in-place assignment to an existing
   vector `df.col`; this behavior is deprecated and a new column will be
-  allocated in the future. Starting from Julia 1.7 if `:col` is not present in
+  allocated in the future. If `:col` is not present in
   `df` then a new column will be created in `df`.
 * in the `sdf[CartesianIndex(row, col)] .= v`, `sdf[row, col] .= v` and
   `sdf[row, cols] .= v` syntaxes the assignment to `sdf` is performed in-place;
@@ -308,7 +305,7 @@ Additional rules:
   values already present in `cols`;
 * `sdf.col .= v` syntax currently performs in-place assignment to an existing
   vector `sdf.col`; this behavior is deprecated and a new column will be
-  allocated in the future. Starting from Julia 1.7 if `:col` is not present in
+  allocated in the future. If `:col` is not present in
   `sdf` then a new column will be created in `sdf` if `sdf` was created with `:`
   as a column selector.
 * `dfr.col .= v` syntax is allowed and performs in-place assignment to a value

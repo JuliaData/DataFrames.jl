@@ -115,19 +115,8 @@ export AbstractDataFrame,
 using Base.Threads: @spawn
 using Base: ComposedFunction
 
-if isdefined(Base, :keepat!)  # Introduced in 1.7.0
-    import Base.keepat!
-else
-    import Compat.keepat!
-    export keepat!
-end
-
-if VERSION >= v"1.9.0-DEV.1163"
-    import Base: stack
-else
-    import Compat: stack
-    export stack
-end
+import Base.keepat!
+import Base: stack
 
 const METADATA_FIXED =
     """
