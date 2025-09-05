@@ -1463,50 +1463,25 @@ end
 
     df = copy(refdf)
     v1 = df[!, 1]
-    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        df.x1 .= 'd'
-        @test df.x1 == ['d', 'd', 'd']
-        @test eltype(df.x1) === Char
-        @test_throws MethodError df[:, 1] .= "d"
-        @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
-        @test v1 == [1.5, 2.5, 3.5]
-    else
-        df.x1 .= 'd'
-        @test v1 == [100.0, 100.0, 100.0]
-        @test_throws MethodError df[:, 1] .= "d"
-        @test v1 == [100.0, 100.0, 100.0]
-        @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
-        @test v1 == [100.0, 100.0, 100.0]
-    end
+    df.x1 .= 'd'
+    @test df.x1 == ['d', 'd', 'd']
+    @test eltype(df.x1) === Char
+    @test_throws MethodError df[:, 1] .= "d"
+    @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
+    @test v1 == [1.5, 2.5, 3.5]
 
-    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        df = DataFrame(a=1:4, b=1, c=2)
-        df.a .= 'a':'d'
-        @test df == DataFrame(a='a':'d', b=1, c=2)
-        dfv = view(df, 2:3, 2:3)
-        x = df.b
-        dfv.b .= 0
-        @test df.b == [1, 0, 0, 1]
-        @test x == [1, 1, 1, 1]
-    else
-        df = DataFrame(a=1:4, b=1, c=2)
-        df.a .= 'a':'d'
-        @test df == DataFrame(a=97:100, b=1, c=2)
-        dfv = view(df, 2:3, 2:3)
-        x = df.b
-        dfv.b .= 0
-        @test df.b == [1, 0, 0, 1]
-        @test x === df.b
-    end
+    df = DataFrame(a=1:4, b=1, c=2)
+    df.a .= 'a':'d'
+    @test df == DataFrame(a='a':'d', b=1, c=2)
+    dfv = view(df, 2:3, 2:3)
+    x = df.b
+    dfv.b .= 0
+    @test df.b == [1, 0, 0, 1]
+    @test x == [1, 1, 1, 1]
 
     df = copy(refdf)
-    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        df.newcol .= 'd'
-        @test df == [refdf DataFrame(newcol=fill('d', 3))]
-    else
-        @test_throws ArgumentError df.newcol .= 'd'
-        @test df == refdf
-    end
+    df.newcol .= 'd'
+    @test df == [refdf DataFrame(newcol=fill('d', 3))]
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
@@ -1637,31 +1612,17 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        df.x1 .= 'd'
-        @test df.x1 == ['d', 'd', 'd']
-        @test eltype(df.x1) === Any
-        df[:, 1] .= "d"
-        @test df.x1 == ["d", "d", "d"]
-        @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
-        @test v1 == [1.5, 2.5, 3.5]
-    else
-        df.x1 .= 'd'
-        @test v1 == [100.0, 100.0, 100.0]
-        @test_throws MethodError df[:, 1] .= "d"
-        @test v1 == [100.0, 100.0, 100.0]
-        @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
-        @test v1 == [100.0, 100.0, 100.0]
-    end
+    df.x1 .= 'd'
+    @test df.x1 == ['d', 'd', 'd']
+    @test eltype(df.x1) === Any
+    df[:, 1] .= "d"
+    @test df.x1 == ["d", "d", "d"]
+    @test_throws DimensionMismatch df[:, 1] .= [1 2 3]
+    @test v1 == [1.5, 2.5, 3.5]
 
     df = view(copy(refdf), :, :)
-    if VERSION >= v"1.7"
-        df.newcol .= 'd'
-        @test df.newcol == fill('d', 3)
-    else
-        @test_throws ArgumentError df.newcol .= 'd'
-        @test df == refdf
-    end
+    df.newcol .= 'd'
+    @test df.newcol == fill('d', 3)
 end
 
 @testset "DataFrameRow getproperty broadcasted assignment" begin
@@ -1910,47 +1871,28 @@ end
 
 @testset "broadcasting of getproperty" begin
     df = DataFrame(a=1:4)
-    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        df.b .= 1
-        x = df.b
-        df.c .= 4:-1:1
-        df.a .= 'a':'d'
-        @test df.a isa Vector{Char}
-        @test df == DataFrame(a='a':'d', b=1, c=4:-1:1)
+    df.b .= 1
+    x = df.b
+    df.c .= 4:-1:1
+    df.a .= 'a':'d'
+    @test df.a isa Vector{Char}
+    @test df == DataFrame(a='a':'d', b=1, c=4:-1:1)
 
-        # in views also column replacement is performed
-        dfv = view(df, 2:3, 2:3)
-        dfv.b .= 0
-        @test x == [1, 1, 1, 1]
-        @test df.b !== x
-        @test df == DataFrame(a='a':'d', b=[1, 0, 0, 1], c=4:-1:1)
-        dfv.c .= ["p", "q"]
-        @test df == DataFrame(a='a':'d', b=[1, 0, 0, 1], c=[4, "p", "q", 1])
-    else
-        # Julia older than 1.7
-        df[!, :b] .= 1
-        x = df.b
-        df[!, :c] .= 4:-1:1
-        df.a .= 'a':'d'
-        dfv = view(df, 2:3, 2:3)
-        dfv.b .= 0
-        @test x == [1, 0, 0, 1]
-        @test df.b === x
-        @test df == DataFrame(a=97:100, b=[1, 0, 0, 1], c=4:-1:1)
-        @test_throws MethodError dfv.c .= ["p", "q"]
-        @test df == DataFrame(a=97:100, b=[1, 0, 0, 1], c=[4, 3, 2, 1])
-    end
+    # in views also column replacement is performed
+    dfv = view(df, 2:3, 2:3)
+    dfv.b .= 0
+    @test x == [1, 1, 1, 1]
+    @test df.b !== x
+    @test df == DataFrame(a='a':'d', b=[1, 0, 0, 1], c=4:-1:1)
+    dfv.c .= ["p", "q"]
+    @test df == DataFrame(a='a':'d', b=[1, 0, 0, 1], c=[4, "p", "q", 1])
 end
 
 @testset "dotgetproperty on SubDataFrame" begin
     df = DataFrame(a=1:3, b=4:6)
     dfv = @view df[[3, 1], :]
-    if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-        dfv.c .= [1, 2]
-        @test df ≅ DataFrame(a=1:3, b=4:6, c=[2, missing, 1])
-    else
-        @test_throws ArgumentError dfv.c .= [1, 2]
-    end
+    dfv.c .= [1, 2]
+    @test df ≅ DataFrame(a=1:3, b=4:6, c=[2, missing, 1])
 
     df = DataFrame(a=1:3, b=4:6)
     dfv = @view df[[3, 1], 1:2]

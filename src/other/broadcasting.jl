@@ -183,14 +183,12 @@ function Base.dotview(df::AbstractDataFrame, ::typeof(!), cols)
     return LazyNewColDataFrame(df, cols isa AbstractString ? Symbol(cols) : cols)
 end
 
-if isdefined(Base, :dotgetproperty) # Introduced in Julia 1.7
-    function Base.dotgetproperty(df::AbstractDataFrame, col::SymbolOrString)
-        if columnindex(df, col) == 0 && !is_column_insertion_allowed(df)
-            throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
-                                "columns of its parent data frame is disallowed"))
-        end
-        return LazyNewColDataFrame(df, Symbol(col))
+function Base.dotgetproperty(df::AbstractDataFrame, col::SymbolOrString)
+    if columnindex(df, col) == 0 && !is_column_insertion_allowed(df)
+        throw(ArgumentError("creating new columns in a SubDataFrame that subsets " *
+                            "columns of its parent data frame is disallowed"))
     end
+    return LazyNewColDataFrame(df, Symbol(col))
 end
 
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcasted{T}) where T
