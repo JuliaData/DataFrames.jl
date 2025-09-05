@@ -30,7 +30,8 @@ This is a list of operations that currently make use of multi-threading:
   (subsetting of individual columns is spawned in separate tasks).
 
 In general to ensure that multi-threading is used Julia process must be started with more than one thread.
-Some operations turn on multi-threading only if enough rows in the processed data frame are present
+Some operations turn on multi-threading only if enough rows are present
+in the processed data frame.
 (the exact threshold when multi-threading is enabled is considered to be undefined
 and might change in the future).
 
