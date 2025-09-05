@@ -1976,7 +1976,7 @@ end
         @test names(x, :) == names(x)
         @test names(x, <("a2")) == ["a1"]
 
-        @test_throws MethodError names(x, x -> 1)
+        @test_throws TypeError names(x, x -> 1)
     end
 end
 

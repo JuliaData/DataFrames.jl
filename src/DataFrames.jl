@@ -1,20 +1,35 @@
 module DataFrames
 
-using Statistics, Printf
-using Reexport, SortingAlgorithms, Compat, Unicode, PooledArrays
-@reexport using Missings, InvertedIndices
-using Base.Sort, Base.Order, Base.Iterators, Base.Threads
-using TableTraits, IteratorInterfaceExtensions
-import LinearAlgebra: norm
-using Markdown
-using PrettyTables
-using Random
-using Tables: ByRow
-import PrecompileTools
-import SentinelArrays
-import InlineStrings
+using Base.Sort,
+      Base.Order,
+      Base.Iterators,
+      Base.Threads,
+      Statistics,
+      Printf,
+      Reexport,
+      SortingAlgorithms,
+      Compat,
+      Unicode,
+      PooledArrays,
+      TableTraits,
+      IteratorInterfaceExtensions,
+      Markdown,
+      PrettyTables,
+      Random
 
-import DataAPI,
+@reexport using Missings, InvertedIndices
+
+using Tables: ByRow
+using Base.Threads: @spawn
+using Base: ComposedFunction
+
+import Base.keepat!,
+       Base.stack,
+       LinearAlgebra.norm,
+       PrecompileTools,
+       SentinelArrays,
+       InlineStrings,
+       DataAPI,
        DataAPI.allcombinations,
        DataAPI.All,
        DataAPI.Between,
@@ -111,12 +126,6 @@ export AbstractDataFrame,
        colmetadata!,
        deletecolmetadata!,
        emptycolmetadata!
-
-using Base.Threads: @spawn
-using Base: ComposedFunction
-
-import Base.keepat!
-import Base: stack
 
 const METADATA_FIXED =
     """

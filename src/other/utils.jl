@@ -227,13 +227,12 @@ macro spawn_or_run_task(threads, ex)
     thunk = :(()->($(esc(ex))))
     Base.replace_linenums!(thunk, __source__)
     var = esc(Base.sync_varname)
-    spawn_set_thrpool = :(Base.Threads._spawn_set_thrpool(task, :default))
     quote
         let $(letargs...)
             if $(esc(threads))
                 local task = Task($thunk)
                 task.sticky = false
-                $(spawn_set_thrpool)
+                Base.Threads._spawn_set_thrpool(task, :default)
             else
                 # Run expr immediately
                 res = $thunk()
@@ -262,13 +261,12 @@ macro spawn_or_run(threads, ex)
     thunk = :(()->($(esc(ex))))
     Base.replace_linenums!(thunk, __source__)
     var = esc(Base.sync_varname)
-    spawn_set_thrpool = :(Base.Threads._spawn_set_thrpool(task, :default))
     quote
         let $(letargs...)
             if $(esc(threads))
                 local task = Task($thunk)
                 task.sticky = false
-                $(spawn_set_thrpool)
+                Base.Threads._spawn_set_thrpool(task, :default)
                 if $(Expr(:islocal, var))
                     put!($var, task)
                 end
