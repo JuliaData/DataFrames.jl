@@ -20,8 +20,6 @@ using Base.Sort,
 @reexport using Missings, InvertedIndices
 
 using Tables: ByRow
-using Base.Threads: @spawn
-using Base: ComposedFunction
 
 import Base.keepat!,
        Base.stack,
