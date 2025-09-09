@@ -263,10 +263,8 @@ metadata is always dropped). These are:
   for row keys columns.
 * [`permutedims`](@ref): propagates table-level metadata and drops column-level
    metadata.
-* broadcasted assignment does not change target metadata;
-  under Julia earlier than 1.7 operation of kind `df.a .= s` does not drop non-`:note`-style
-  metadata; under Julia 1.7 or later this operation preserves only `:note`-style
-  metadata
+* broadcasted assignment does not change target metadata:
+  operation preserves only `:note`-style metadata
 * broadcasting propagates table-level metadata if some key is present
   in all passed data frames and value associated with it is identical in all
   passed data frames; column-level metadata is propagated for columns if some

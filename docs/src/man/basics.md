@@ -36,8 +36,8 @@ you have installed with the `status` command.
 julia> ]
 
 (@v1.9) pkg> status DataFrames
-      Status `~\v1.6\Project.toml`
-  [a93c6f00] DataFrames v1.5.0
+      Status `~\v1.13\Project.toml`
+  [a93c6f00] DataFrames v1.8.0
 ```
 
 Throughout the rest of the tutorial we will assume that you have installed the
