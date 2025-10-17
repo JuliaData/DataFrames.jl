@@ -33,8 +33,8 @@ Base.IndexStyle(::Type{<:OnCol}) = Base.IndexLinear()
     return OnColRow(i, oc.cols, oc.h)
 end
 
-Base.hash(ocr1::OnColRow, h::UInt) = throw(MethodError(hash, (ocr1, h)))
-@inline Base.hash(ocr1::OnColRow) = @inbounds ocr1.h[ocr1.row]
+# Note second argument is ignored as it is always zero in practice
+@inline Base.hash(ocr1::OnColRow, ::UInt) = @inbounds ocr1.h[ocr1.row]
 
 # Hashing one column at a time is faster since it can use SIMD
 function _prehash(oc::OnCol)
