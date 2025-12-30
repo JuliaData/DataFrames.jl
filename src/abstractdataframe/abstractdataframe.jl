@@ -735,34 +735,36 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
     data = DataFrame()
     data.variable = propertynames(df)
 
+    predefined_funs_local = predefined_funs
+
     # An array of Dicts for summary statistics
     col_stats_dicts = map(eachcol(df)) do col
         if eltype(col) >: Missing
             t = skipmissing(col)
-            d = get_stats(t, predefined_funs)
+            d = get_stats(t, predefined_funs_local)
             get_stats!(d, t, custom_funs)
         else
-            d = get_stats(col, predefined_funs)
+            d = get_stats(col, predefined_funs_local)
             get_stats!(d, col, custom_funs)
         end
 
-        if :nmissing in predefined_funs
+        if :nmissing in predefined_funs_local
             d[:nmissing] = count(ismissing, col)
         end
 
-        if :nnonmissing in predefined_funs
+        if :nnonmissing in predefined_funs_local
             d[:nnonmissing] = count(!ismissing, col)
         end
 
-        if :first in predefined_funs
+        if :first in predefined_funs_local
             d[:first] = isempty(col) ? nothing : first(col)
         end
 
-        if :last in predefined_funs
+        if :last in predefined_funs_local
             d[:last] = isempty(col) ? nothing : last(col)
         end
 
-        if :eltype in predefined_funs
+        if :eltype in predefined_funs_local
             d[:eltype] = eltype(col)
         end
 

@@ -261,6 +261,24 @@ function row_group_slots!(cols::Tuple{Vararg{AbstractVector}},
     return ngroups, rhashes, gslots, false
 end
 
+function _reduce_or!(x::AbstractVector{Vector{Bool}})
+    len = length(x)
+    if len < 2
+        return
+    elseif len == 2
+        x[1] .|= x[2]
+    else
+        xl = view(x, 1:len ÷ 2)
+        xr = view(x, len ÷ 2 + 1:len)
+        t1 = @spawn _reduce_or!(xl)
+        t2 = @spawn _reduce_or!(xr)
+        fetch(t1)
+        fetch(t2)
+        xl[1] .|= xr[1]
+    end
+    return
+end
+
 # Optimized method for arrays for which DataAPI.refpool is defined and returns an AbstractVector
 function row_group_slots!(cols::NTuple{N, AbstractVector},
                           refpools::NTuple{N, AbstractVector},
@@ -424,25 +442,7 @@ function row_group_slots!(cols::NTuple{N, AbstractVector},
         end
     end
 
-    function reduce_or!(x::AbstractVector{Vector{Bool}})
-        len = length(x)
-        if len < 2
-            return
-        elseif len == 2
-            x[1] .|= x[2]
-        else
-            xl = view(x, 1:len ÷ 2)
-            xr = view(x, len ÷ 2 + 1:len)
-            t1 = @spawn reduce_or!(xl)
-            t2 = @spawn reduce_or!(xr)
-            fetch(t1)
-            fetch(t2)
-            xl[1] .|= xr[1]
-        end
-        return
-    end
-
-    reduce_or!(seen_vec)
+    _reduce_or!(seen_vec)
 
     # If some groups are unused, compress group indices to drop them
     # sum(seen) is faster than all(seen) when not short-circuiting,

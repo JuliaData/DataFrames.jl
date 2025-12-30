@@ -32,27 +32,29 @@ function _combine_with_first((first,)::Ref{Any},
     @assert incols isa Union{Nothing, AbstractVector, Tuple, NamedTuple}
     extrude = false
 
+    firstrow = first
+    wrapped_first = nothing
     lgd = length(gd)
-    if first isa AbstractDataFrame
+    if firstrow isa AbstractDataFrame
         n = 0
-        eltys = eltype.(eachcol(first))
-    elseif first isa NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}
+        eltys = eltype.(eachcol(firstrow))
+    elseif firstrow isa NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}
         n = 0
-        eltys = map(eltype, first)
-    elseif first isa DataFrameRow
+        eltys = map(eltype, firstrow)
+    elseif firstrow isa DataFrameRow
         n = lgd
-        eltys = [eltype(parent(first)[!, i]) for i in parentcols(index(first))]
-    elseif first isa Tables.AbstractRow
+        eltys = [eltype(parent(firstrow)[!, i]) for i in parentcols(index(firstrow))]
+    elseif firstrow isa Tables.AbstractRow
         n = lgd
-        eltys = [typeof(Tables.getcolumn(first, name)) for name in Tables.columnnames(first)]
-    elseif !firstmulticol && first[1] isa Union{AbstractArray{<:Any, 0}, Ref}
+        eltys = [typeof(Tables.getcolumn(firstrow, name)) for name in Tables.columnnames(firstrow)]
+    elseif !firstmulticol && firstrow[1] isa Union{AbstractArray{<:Any, 0}, Ref}
         extrude = true
-        first = wrap_row(first[1], firstcoltype(firstmulticol))
+        wrapped_first = wrap_row(firstrow[1], firstcoltype(firstmulticol))
         n = lgd
-        eltys = (typeof(first[1]),)
+        eltys = (typeof(wrapped_first[1]),)
     else # other NamedTuple giving a single row
         n = lgd
-        eltys = map(typeof, first)
+        eltys = map(typeof, firstrow)
         if any(x -> x <: AbstractVector, eltys)
             throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
         end
@@ -65,19 +67,21 @@ function _combine_with_first((first,)::Ref{Any},
     sizehint!(idx, lgd)
 
     local initialcols
+    firstrow_local = extrude ? wrapped_first : firstrow
+
     let eltys=eltys, n=n # Workaround for julia#15276
-        initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
+        initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(firstrow_local))
     end
-    targetcolnames = first isa Tables.AbstractRow ?
-                     tuple(Tables.columnnames(first)...) :
-                     tuple(propertynames(first)...)
-    if !extrude && first isa Union{AbstractDataFrame,
+    targetcolnames = firstrow_local isa Tables.AbstractRow ?
+                     tuple(Tables.columnnames(firstrow_local)...) :
+                     tuple(propertynames(firstrow_local)...)
+    if !extrude && firstrow_local isa Union{AbstractDataFrame,
                                    NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}}
-        outcols, finalcolnames = _combine_tables_with_first!(first, initialcols, idx, 1, 1,
+        outcols, finalcolnames = _combine_tables_with_first!(firstrow_local, initialcols, idx, 1, 1,
                                                              f, gd, incols, targetcolnames,
                                                              firstcoltype(firstmulticol))
     else
-        outcols, finalcolnames = _combine_rows_with_first!(Ref{Any}(first),
+        outcols, finalcolnames = _combine_rows_with_first!(Ref{Any}(firstrow_local),
                                                            Ref{Any}(initialcols),
                                                            Ref{Any}(f),
                                                            gd,
@@ -144,8 +148,7 @@ function _combine_rows_with_first_task!(tid::Integer,
         j = fill_row!(row, outcols, i, 1, colnames)
         if j !== nothing # Need to widen column
             # If another thread is already widening outcols, wait until it's done
-            lock(widen_type_lock)
-            try
+            Base.@lock widen_type_lock begin
                 newoutcols = outcolsref[]
                 # Workaround for julia#15276
                 newoutcols = let i=i, j=j, newoutcols=newoutcols, row=row
@@ -172,8 +175,6 @@ function _combine_rows_with_first_task!(tid::Integer,
 
                 outcolsref[] = newoutcols
                 type_widened[tid] = false
-            finally
-                unlock(widen_type_lock)
             end
             return _combine_rows_with_first_task!(tid, rowstart, rowend, i+1, newoutcols, outcolsref,
                                                   type_widened, widen_type_lock,
@@ -185,7 +186,7 @@ function _combine_rows_with_first_task!(tid::Integer,
         # This doesn't have to happen immediately (hence type_widened isn't atomic),
         # but the more we wait the more data will have to be copied
         if type_widened[tid]
-            lock(widen_type_lock) do
+            Base.@lock widen_type_lock begin
                 type_widened[tid] = false
                 newoutcols = outcolsref[]
                 for k in 1:length(outcols)
@@ -276,13 +277,14 @@ function _combine_rows_with_first!((firstrow,)::Ref{Any},
         partitions = (2:len,)
     end
     widen_type_lock = ReentrantLock()
-    outcolsref = Ref{NTuple{<:Any, AbstractVector}}(outcols)
+    outcols_local = outcols
+    outcolsref = Ref{NTuple{<:Any, AbstractVector}}(outcols_local)
     type_widened = fill(false, length(partitions))
     tasks = Vector{Task}(undef, length(partitions))
     for (tid, idx) in enumerate(partitions)
         tasks[tid] =
             @spawn_or_run_task threads _combine_rows_with_first_task!(tid, first(idx), last(idx), first(idx),
-                                                                      outcols, outcolsref,
+                                                                      outcols_local, outcolsref,
                                                                       type_widened, widen_type_lock,
                                                                       f, gd, starts, ends, incols, colnames,
                                                                       firstcoltype(firstmulticol))
@@ -378,10 +380,10 @@ function _combine_tables_with_first!(first::Union{AbstractDataFrame,
         _ncol(rows) == 0 && continue
         if isempty(colnames)
             newcolnames = tuple(propertynames(rows)...)
-            if rows isa AbstractDataFrame
-                eltys = eltype.(eachcol(rows))
+            eltys = if rows isa AbstractDataFrame
+                eltype.(eachcol(rows))
             else
-                eltys = map(eltype, rows)
+                map(eltype, rows)
             end
             initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], 0), _ncol(rows))
             return _combine_tables_with_first!(rows, initialcols, idx, i, 1,

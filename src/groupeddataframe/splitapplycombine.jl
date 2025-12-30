@@ -124,7 +124,7 @@ function _combine_prepare_norm(gd::GroupedDataFrame,
         @assert length(gd_keys) > 0 || idx == gd.idx
         # in this case we are sure that the result GroupedDataFrame has the
         # same structure as the source except that grouping columns are at the start
-        return Threads.lock(gd.lazy_lock) do
+        Base.@lock gd.lazy_lock begin
             return GroupedDataFrame(newparent, copy(gd.cols), gd.groups,
                                     getfield(gd, :idx), getfield(gd, :starts),
                                     getfield(gd, :ends), gd.ngroups,
@@ -298,19 +298,19 @@ function _combine_process_proprow((cs_i,)::Ref{Any},
 
     # introduce outcol1 and outcol2 as without it outcol is boxed
     # since it is later used inside the anonymous function we return
-    if getfield(gd, :idx) === nothing
+    outcol = if getfield(gd, :idx) === nothing
         outcol1 = zeros(Float64, length(gd) + 1)
         @inbounds @simd for gix in gd.groups
             outcol1[gix + 1] += 1
         end
         popfirst!(outcol1)
         outcol1 ./= sum(outcol1)
-        outcol = outcol1
+        outcol1
     else
         outcol2 = Vector{Float64}(undef, length(gd))
         outcol2 .= gd.ends .- gd.starts .+ 1
         outcol2 ./= sum(outcol2)
-        outcol = outcol2
+        outcol2
     end
 
     return function()
@@ -384,7 +384,7 @@ function _combine_process_callable(wcs_i::Ref{Any},
 
     if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
                             NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
-        lock(gd.lazy_lock) do
+        Base.@lock gd.lazy_lock begin
             # if idx_agg was not computed yet it is NOTHING_IDX_AGG
             # in this case if we are not passed a vector compute it.
             if idx_agg[] === NOTHING_IDX_AGG
@@ -396,6 +396,7 @@ function _combine_process_callable(wcs_i::Ref{Any},
         end
     end
     @assert length(outcols) == length(nms)
+    idx_local = idx
     return function()
         for j in eachindex(outcols)
             outcol = outcols[j]
@@ -408,11 +409,11 @@ function _combine_process_callable(wcs_i::Ref{Any},
                     # we have seen this col but it is not allowed to replace it
                     optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
                     @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-                    trans_res[loc] = TransformationResult(idx, outcol, out_col_name, optional_i, 0)
+                    trans_res[loc] = TransformationResult(idx_local, outcol, out_col_name, optional_i, 0)
                     seen_cols[out_col_name] = (optional_i, loc)
                 end
             else
-                push!(trans_res, TransformationResult(idx, outcol, out_col_name, optional_i, 0))
+                push!(trans_res, TransformationResult(idx_local, outcol, out_col_name, optional_i, 0))
                 seen_cols[out_col_name] = (optional_i, length(trans_res))
             end
         end
@@ -443,7 +444,7 @@ function _combine_process_pair_symbol(optional_i::Bool,
     end
     # if idx_agg was not computed yet it is NOTHING_IDX_AGG
     # in this case if we are not passed a vector compute it.
-    lock(gd.lazy_lock) do
+    Base.@lock gd.lazy_lock begin
         if !(firstres isa AbstractVector) && idx_agg[] === NOTHING_IDX_AGG
             idx_agg[] = Vector{Int}(undef, length(gd))
             fillfirst!(nothing, idx_agg[], 1:length(gd.groups), gd)
@@ -463,13 +464,13 @@ function _combine_process_pair_symbol(optional_i::Bool,
     @assert length(outcols) == 1
     outcol = outcols[1]
 
-    if (source_cols isa Int ||
+    metacol = if (source_cols isa Int ||
         (source_cols isa AbstractVector{Int} && length(source_cols) == 1)) &&
        (only(source_cols) == columnindex(parent(gd), out_col_name) ||
         only(wfun) === identity || only(wfun) === copy)
-        metacol = only(source_cols)
+        only(source_cols)
     else
-        metacol = 0
+        0
     end
 
     return function()
@@ -546,7 +547,7 @@ function _combine_process_pair_astable(optional_i::Bool,
                                               wincols, threads)
         if !(firstres isa Union{AbstractVecOrMat, AbstractDataFrame,
              NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}})
-            lock(gd.lazy_lock) do
+            Base.@lock gd.lazy_lock begin
                 # if idx_agg was not computed yet it is nothing
                 # in this case if we are not passed a vector compute it.
                 if idx_agg[] === NOTHING_IDX_AGG
@@ -568,24 +569,27 @@ function _combine_process_pair_astable(optional_i::Bool,
             nms = out_col_name
         end
     end
+    outcols_local = outcols
+    nms_local = nms
+    idx_local = idx
     return function()
-        for j in eachindex(outcols)
-            outcol = outcols[j]
-            out_col_name = nms[j]
-            if haskey(seen_cols, out_col_name)
-                optional, loc = seen_cols[out_col_name]
+        for j in eachindex(outcols_local)
+            outcol = outcols_local[j]
+            out_col_name_j = nms_local[j]
+            if haskey(seen_cols, out_col_name_j)
+                optional, loc = seen_cols[out_col_name_j]
                 # if column was seen and it is optional now ignore it
                 if !optional_i
-                    optional, loc = seen_cols[out_col_name]
+                    optional, loc = seen_cols[out_col_name_j]
                     # we have seen this col but it is not allowed to replace it
-                    optional || throw(ArgumentError("duplicate output column name: :$out_col_name"))
-                    @assert trans_res[loc].optional && trans_res[loc].name == out_col_name
-                    trans_res[loc] = TransformationResult(idx, outcol, out_col_name, optional_i, 0)
-                    seen_cols[out_col_name] = (optional_i, loc)
+                    optional || throw(ArgumentError("duplicate output column name: :$out_col_name_j"))
+                    @assert trans_res[loc].optional && trans_res[loc].name == out_col_name_j
+                    trans_res[loc] = TransformationResult(idx_local, outcol, out_col_name_j, optional_i, 0)
+                    seen_cols[out_col_name_j] = (optional_i, loc)
                 end
             else
-                push!(trans_res, TransformationResult(idx, outcol, out_col_name, optional_i, 0))
-                seen_cols[out_col_name] = (optional_i, length(trans_res))
+                push!(trans_res, TransformationResult(idx_local, outcol, out_col_name_j, optional_i, 0))
+                seen_cols[out_col_name_j] = (optional_i, length(trans_res))
             end
         end
     end
@@ -675,15 +679,15 @@ function _combine(gd::GroupedDataFrame,
         return Int[], DataFrame(), Int[]
     end
 
-    if keeprows
+    idx_keeprows = if keeprows
         if nrow(parent(gd)) > 0 && minimum(gd.groups) == 0
             throw(ArgumentError("select and transform do not support " *
                                 "`GroupedDataFrame`s from which some groups have "*
                                 "been dropped (including skipmissing=true)"))
         end
-        idx_keeprows = prepare_idx_keeprows(gd.idx, gd.starts, gd.ends, nrow(parent(gd)))
+        prepare_idx_keeprows(gd.idx, gd.starts, gd.ends, nrow(parent(gd)))
     else
-        idx_keeprows = Int[]
+        Int[]
     end
 
     idx_agg = Ref(NOTHING_IDX_AGG)

@@ -216,15 +216,17 @@ mutable struct DataFrame <: AbstractDataFrame
         end
         len == -1 && (len = 1) # we got no vectors so make one row of scalars
 
+        len_val = len
+
         # we write into columns as we know that it is guaranteed
         # that it was freshly allocated in the outer constructor
-        if copycols && len >= 100_000 && length(columns) > 1 && Threads.nthreads() > 1
+        if copycols && len_val >= 100_000 && length(columns) > 1 && Threads.nthreads() > 1
             @sync for i in eachindex(columns)
-                @spawn columns[i] = _preprocess_column(columns[i], len, copycols)
+                @spawn columns[i] = _preprocess_column(columns[i], len_val, copycols)
             end
         else
             for i in eachindex(columns)
-                columns[i] = _preprocess_column(columns[i], len, copycols)
+                columns[i] = _preprocess_column(columns[i], len_val, copycols)
             end
         end
 
@@ -901,8 +903,9 @@ function _deleteat!_helper(df::DataFrame, drop)
         return df
     end
 
-    if any(c -> c === drop || Base.mightalias(c, drop), cols)
-        drop = copy(drop)
+    drop_local = drop
+    if any(c -> c === drop_local || Base.mightalias(c, drop_local), cols)
+        drop = copy(drop_local)
     end
 
     n = nrow(df)

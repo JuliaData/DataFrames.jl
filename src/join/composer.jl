@@ -256,14 +256,17 @@ function compose_inner_table(joiner::DataFrameJoiner,
         right_ixs = right_ixs[csp_r]
     end
 
-    if Threads.nthreads() > 1 && length(left_ixs) >= 100_000
-        dfl_task = @spawn joiner.dfl[left_ixs, :]
-        dfr_noon_task = @spawn joiner.dfr[right_ixs, Not(joiner.right_on)]
+    left_ixs_final = left_ixs
+    right_ixs_final = right_ixs
+
+    if Threads.nthreads() > 1 && length(left_ixs_final) >= 100_000
+        dfl_task = @spawn joiner.dfl[left_ixs_final, :]
+        dfr_noon_task = @spawn joiner.dfr[right_ixs_final, Not(joiner.right_on)]
         dfl = fetch(dfl_task)
         dfr_noon = fetch(dfr_noon_task)
     else
-        dfl = joiner.dfl[left_ixs, :]
-        dfr_noon = joiner.dfr[right_ixs, Not(joiner.right_on)]
+        dfl = joiner.dfl[left_ixs_final, :]
+        dfr_noon = joiner.dfr[right_ixs_final, Not(joiner.right_on)]
     end
 
     ncleft = ncol(dfl)
