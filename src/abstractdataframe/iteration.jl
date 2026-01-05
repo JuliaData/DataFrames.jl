@@ -713,11 +713,11 @@ function Base.reduce(::typeof(vcat),
 
     if source !== nothing
         len = length(dfs)
-        if source isa SymbolOrString
-            col, vals = source, 1:len
+        col, vals = if source isa SymbolOrString
+            source, 1:len
         else
             @assert source isa Pair{<:SymbolOrString,<:AbstractVector}
-            col, vals = source
+            source
         end
 
         if columnindex(res, col) > 0

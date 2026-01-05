@@ -515,7 +515,7 @@ function subset!(gdf::GroupedDataFrame, @nospecialize(args...); skipmissing::Boo
     end
 
     # update GroupedDataFrame indices in a thread safe way
-    Threads.lock(lazy_lock) do
+    Base.@lock lazy_lock begin
         gdf.groups = newgroups
         gdf.idx = nothing
         gdf.starts = nothing
