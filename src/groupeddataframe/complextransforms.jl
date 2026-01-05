@@ -33,31 +33,31 @@ function _combine_with_first((first,)::Ref{Any},
     extrude = false
 
     firstrow = first
-    wrapped_first = nothing
     lgd = length(gd)
-    if firstrow isa AbstractDataFrame
+    eltys = if firstrow isa AbstractDataFrame
         n = 0
-        eltys = eltype.(eachcol(firstrow))
+        eltype.(eachcol(firstrow))
     elseif firstrow isa NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}
         n = 0
-        eltys = map(eltype, firstrow)
+        map(eltype, firstrow)
     elseif firstrow isa DataFrameRow
         n = lgd
-        eltys = [eltype(parent(firstrow)[!, i]) for i in parentcols(index(firstrow))]
+        [eltype(parent(firstrow)[!, i]) for i in parentcols(index(firstrow))]
     elseif firstrow isa Tables.AbstractRow
         n = lgd
-        eltys = [typeof(Tables.getcolumn(firstrow, name)) for name in Tables.columnnames(firstrow)]
+        [typeof(Tables.getcolumn(firstrow, name)) for name in Tables.columnnames(firstrow)]
     elseif !firstmulticol && firstrow[1] isa Union{AbstractArray{<:Any, 0}, Ref}
         extrude = true
         wrapped_first = wrap_row(firstrow[1], firstcoltype(firstmulticol))
         n = lgd
-        eltys = (typeof(wrapped_first[1]),)
+        (typeof(wrapped_first[1]),)
     else # other NamedTuple giving a single row
         n = lgd
         eltys = map(typeof, firstrow)
         if any(x -> x <: AbstractVector, eltys)
             throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
         end
+        eltys
     end
 
     idx = idx_agg === NOTHING_IDX_AGG ? Vector{Int}(undef, n) : idx_agg

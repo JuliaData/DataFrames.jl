@@ -216,17 +216,17 @@ mutable struct DataFrame <: AbstractDataFrame
         end
         len == -1 && (len = 1) # we got no vectors so make one row of scalars
 
-        len_val = len
+        len_local = len
 
         # we write into columns as we know that it is guaranteed
         # that it was freshly allocated in the outer constructor
-        if copycols && len_val >= 100_000 && length(columns) > 1 && Threads.nthreads() > 1
+        if copycols && len_local >= 100_000 && length(columns) > 1 && Threads.nthreads() > 1
             @sync for i in eachindex(columns)
-                @spawn columns[i] = _preprocess_column(columns[i], len_val, copycols)
+                @spawn columns[i] = _preprocess_column(columns[i], len_local, copycols)
             end
         else
             for i in eachindex(columns)
-                columns[i] = _preprocess_column(columns[i], len_val, copycols)
+                columns[i] = _preprocess_column(columns[i], len_local, copycols)
             end
         end
 
