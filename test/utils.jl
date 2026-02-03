@@ -166,3 +166,32 @@ end
 end
 
 end # module
+
+@testset "SubDataFrame copycols=false rejects transformations" begin
+    df = DataFrame(a = [1, 2, 3])
+    v = @view df[1:2, :]
+
+    err = try
+        select(v, :a => ByRow(x -> x + 1) => :a; copycols=false)
+        nothing
+    catch e
+        e
+    end
+
+    @test err isa ArgumentError
+    @test occursin("copycols=false", sprint(showerror, err))
+end
+
+@testset "SubDataFrame copycols=false column selection" begin
+    df = DataFrame(a = [1, 2, 3], b = [1, 2, 3])
+    v = @view df[1:2, :]
+
+    res = select(v, "a", "b", copycols=false)
+
+    @test size(res) == (2, 2)
+    @test names(res) == ["a", "b"]
+    @test res.a == [1, 2]
+    @test res.b == [1, 2]
+end
+
+
