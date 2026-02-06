@@ -190,8 +190,8 @@ end
 
     @test size(res) == (2, 2)
     @test names(res) == ["a", "b"]
-    @test res.a == [1, 2]
-    @test res.b == [1, 2]
+    @test res.a === [1, 2]
+    @test res.b === [1, 2]
 end
 
 
