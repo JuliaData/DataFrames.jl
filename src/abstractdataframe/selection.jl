@@ -1829,8 +1829,6 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
                 "Only column selection is allowed."
               ))
            end
-           
-           
            ind_idx = index(dfv)[ind]
 
            if ind isa ColumnIndex
