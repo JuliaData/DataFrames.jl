@@ -197,6 +197,3 @@ end
     @test parent(res.a) === parent(v.a)
     @test parent(res.b) === parent(v.b)
 end
-
-
-
