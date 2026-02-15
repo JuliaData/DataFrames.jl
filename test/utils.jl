@@ -173,7 +173,6 @@ end # module
 
     err = try
         select(v, :a => ByRow(x -> x + 1) => :a; copycols=false)
-        nothing
     catch e
         e
     end
