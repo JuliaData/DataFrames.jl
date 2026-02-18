@@ -489,7 +489,7 @@ For HTML output, DataFrames.jl reserves `rowid`, `title`, and `truncate` keyword
 `max_column_width` (instead of `truncate`) to control cell width in HTML rendering, and
 `top_left_str` (instead of `title`) to set the table title in HTML rendering.
 
-```julia
+```jldoctest
 julia> using DataFrames
 
 julia> df = DataFrame(
@@ -547,7 +547,7 @@ julia> show(df; eltypes = false)
 We can use formatters in PrettyTables.jl to change how cells are converted to strings. The
 following example shows how to replace negative values with parentheses in text output.
 
-```julia
+```jldoctest
 julia> using PrettyTables
 
 julia> df = DataFrame(
@@ -633,14 +633,12 @@ julia> profit = DataFrame(
            "2025" => [ 24.1,  136.1,   34.8, -183.7]
        );
 
-julia> metrics = [mean, std];
-
 julia> show(
            profit;
            # We use this option to align the summary rows with the data rows at the decimal
            # point.
            apply_alignment_regex_to_summary_rows = true,
-           summary_rows = metrics,
+           summary_rows = [mean, std],
            summary_row_labels = ["Mean", "Std. Dev."]
        )
 4×6 DataFrame
