@@ -25,6 +25,7 @@ makedocs(
         "First Steps with DataFrames.jl" => "man/basics.md",
         "User Guide" => Any[
             "Getting Started" => "man/getting_started.md",
+            "Customizing Display Output" => "man/customizing_output.md",
             "Working with DataFrames" => "man/working_with_dataframes.md",
             "Importing and Exporting Data (I/O)" => "man/importing_and_exporting.md",
             "Joins" => "man/joins.md",
