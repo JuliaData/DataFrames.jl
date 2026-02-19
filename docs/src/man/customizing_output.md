@@ -1,4 +1,3 @@
-
 # Customizing Display Output
 
 DataFrames.jl uses [PrettyTables.jl](https://github.com/ronisbr/PrettyTables.jl) to render
