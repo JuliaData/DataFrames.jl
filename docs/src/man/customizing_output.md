@@ -158,7 +158,6 @@ The color of the cells can be changed using highlighters. The following example 
 highlight negative values in red in HTML output (e.g. in Jupyter).
 
 ```julia
-# HTML output (e.g. in Jupyter): cap column width and highlight negatives in red.
 julia> hl = HtmlHighlighter((data, i, j) -> data[i, j] < 0, ["color" => "red"]);
 
 julia> show(
