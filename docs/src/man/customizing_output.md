@@ -156,7 +156,7 @@ julia> show(df; formatters = [parentheses_fmt])
 ```
 
 The color of the cells can be changed using highlighters. The following example shows how to
-highlight negative values in red in HTML output.
+highlight negative values in red in HTML output (e.g. in Jupyter).
 
 ```julia
 # HTML output (e.g. in Jupyter): cap column width and highlight negatives in red.
