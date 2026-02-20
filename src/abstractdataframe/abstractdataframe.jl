@@ -2947,23 +2947,9 @@ as a `SubDataFrame`.
 ```jldoctest
 julia> collect(Iterators.partition(DataFrame(x=1:5), 2))
 3-element Vector{SubDataFrame{DataFrame, DataFrames.Index, UnitRange{Int64}}}:
- 2×1 SubDataFrame
- Row │ x
-     │ Int64
-─────┼───────
-   1 │     1
-   2 │     2
- 2×1 SubDataFrame
- Row │ x
-     │ Int64
-─────┼───────
-   1 │     3
-   2 │     4
- 1×1 SubDataFrame
- Row │ x
-     │ Int64
-─────┼───────
-   1 │     5
+ SubDataFrame{DataFrame, DataFrames.Index, UnitRange{Int64}}(DataFrame(AbstractVector[[1, 2, 3, 4, 5]], DataFrames.Index(Dict(:x => 1), [:x]), nothing, nothing, true), DataFrames.Index(Dict(:x => 1), [:x]), 1:2)
+ SubDataFrame{DataFrame, DataFrames.Index, UnitRange{Int64}}(DataFrame(AbstractVector[[1, 2, 3, 4, 5]], DataFrames.Index(Dict(:x => 1), [:x]), nothing, nothing, true), DataFrames.Index(Dict(:x => 1), [:x]), 3:4)
+ SubDataFrame{DataFrame, DataFrames.Index, UnitRange{Int64}}(DataFrame(AbstractVector[[1, 2, 3, 4, 5]], DataFrames.Index(Dict(:x => 1), [:x]), nothing, nothing, true), DataFrames.Index(Dict(:x => 1), [:x]), 5:5)
 ```
 """
 function Iterators.partition(df::AbstractDataFrame, n::Integer)

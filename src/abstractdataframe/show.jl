@@ -409,7 +409,9 @@ else
 end
 
 """
-    show([io::IO, ]df::AbstractDataFrame;
+    show([io::IO, ],
+         ::MIME"text/plain",
+         df::AbstractDataFrame;
          allrows::Bool = !get(io, :limit, false),
          allcols::Bool = !get(io, :limit, false),
          allgroups::Bool = !get(io, :limit, false),
@@ -453,7 +455,7 @@ julia> using DataFrames
 
 julia> df = DataFrame(A=1:3, B=["x", "y", "z"]);
 
-julia> show(df, row_labels=nothing)
+julia> show(MIME("text/plain"), df, row_labels=nothing)
 3×2 DataFrame
  A      B
  Int64  String
@@ -464,6 +466,7 @@ julia> show(df, row_labels=nothing)
 ```
 """
 function Base.show(io::IO,
+                   ::MIME"text/plain",
                    df::AbstractDataFrame;
                    allrows::Bool = !get(io, :limit, false),
                    allcols::Bool = !get(io, :limit, false),
@@ -480,7 +483,8 @@ function Base.show(io::IO,
           summary=summary, eltypes=eltypes, truncate=truncate, kwargs...)
 end
 
-Base.show(df::AbstractDataFrame;
+Base.show(::MIME"text/plain",
+          df::AbstractDataFrame;
           allrows::Bool = !get(stdout, :limit, true),
           allcols::Bool = !get(stdout, :limit, true),
           rowlabel::Symbol = :Row,
@@ -488,7 +492,7 @@ Base.show(df::AbstractDataFrame;
           eltypes::Bool = true,
           truncate::Int = 32,
           kwargs...) =
-    show(stdout, df;
+    show(stdout, MIME("text/plain"), df;
          allrows=allrows, allcols=allcols, rowlabel=rowlabel, summary=summary,
          eltypes=eltypes, truncate=truncate, kwargs...)
 
