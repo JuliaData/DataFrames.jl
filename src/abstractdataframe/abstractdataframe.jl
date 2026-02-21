@@ -2994,3 +2994,29 @@ function Base.iterate(itr::Iterators.PartitionIterator{<:AbstractDataFrame}, sta
     r = min(state + itr.n - 1, last_idx)
     return view(itr.c, state:r, :), r + 1
 end
+
+"""
+    findall(f, df::AbstractDataFrame)
+
+Return an integer vector `I` of the column indices `i` of `df` where `f(df[:, i])` returns `true`.
+If there are no such columns of `df`, return `Int[]`.
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(a=[1, missing], b=[2, 3], c=[missing, 4])
+2×3 DataFrame
+ Row │ a        b      c
+     │ Int64?   Int64  Int64?
+─────┼─────────────────────────
+   1 │       1      2  missing
+   2 │ missing      3        4
+
+julia> findcols(x -> any(ismissing, x), df)
+2-element Vector{Int64}:
+ 1
+ 3
+```
+"""
+findcols(f::Function, df::AbstractDataFrame) =
+    findall(f, eachcol(df))
