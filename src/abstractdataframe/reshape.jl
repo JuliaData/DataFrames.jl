@@ -215,17 +215,18 @@ end
 """
     unstack(df::AbstractDataFrame, rowkeys, colkey, value;
             renamecols::Function=identity, allowmissing::Bool=false,
-            combine=only, fill=missing, threads::Bool=true)
+            combine=only, fill=missing, threads::Bool=true,
+            sortrows=false, sortcols=false)
     unstack(df::AbstractDataFrame, colkey, value;
             renamecols::Function=identity, allowmissing::Bool=false,
-            combine=only, fill=missing, threads::Bool=true)
+            combine=only, fill=missing, threads::Bool=true,
+            sortrows=false, sortcols=false)
     unstack(df::AbstractDataFrame;
             renamecols::Function=identity, allowmissing::Bool=false,
-            combine=only, fill=missing, threads::Bool=true)
+            combine=only, fill=missing, threads::Bool=true,
+            sortrows=false, sortcols=false)
 
 Unstack data frame `df`, i.e. convert it from long to wide format.
-
-Row and column keys are ordered in the order of their first appearance.
 
 # Positional arguments
 - `df` : the AbstractDataFrame to be unstacked
@@ -259,6 +260,14 @@ Row and column keys are ordered in the order of their first appearance.
   time). Whether or not tasks are actually spawned and their number are
   determined automatically. Set to `false` if `combine` requires serial
   execution or is not thread-safe.
+- `sortrows`: the order of rows in the output table; all values accepted by
+  `sort` keyword argument in `groupby` passed the `rowkeys` for grouping are supported;
+  `false` by default (rows are ordered following the first appereance order).
+- `sortcols`: the order of columns in the output table; all values accepted by
+  `sort` keyword argument in `groupby` passed `colkey` for grouping are supported;
+  `false` by default (columns are ordered following the first appereance order).
+  Note that the ordering is done on the source data (not on column final column names
+  that can be potentially changed by the function passed in the `renamecols` keyword argument).
 
 Metadata: table-level `:note`-style metadata and column-level `:note`-style
 metadata for row keys columns are preserved.
@@ -420,7 +429,8 @@ julia> unstack(df, :cols, :values, combine=sum)
 function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
                  values::ColumnIndex; renamecols::Function=identity,
                  allowmissing::Bool=false,  allowduplicates::Bool=false,
-                 combine=only, fill=missing, threads::Bool=true)
+                 combine=only, fill=missing, threads::Bool=true,
+                 sortrows=false, sortcols=false)
     if allowduplicates
         Base.depwarn("allowduplicates keyword argument is deprecated. " *
                      "Pass `combine=last` instead of `allowduplicates=true`.", :unstack)
@@ -472,8 +482,9 @@ function unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex,
         noduplicates = false
     end
 
-    g_rowkey = groupby(df_op, rowkeys)
-    g_colkey = groupby(df_op, colkey)
+    # if sorting is set to false we use fast aggregation, as we later fix the order
+    g_rowkey = groupby(df_op, rowkeys, sort=sortrows)
+    g_colkey = groupby(df_op, colkey, sort=sortcols)
     valuecol = df_op[!, values_out]
     return _unstack(df_op, index(df_op)[rowkeys], index(df_op)[colkey], g_colkey,
                     valuecol, g_rowkey, renamecols, allowmissing, noduplicates, fill)
@@ -481,8 +492,8 @@ end
 
 function unstack(df::AbstractDataFrame, colkey::ColumnIndex, values::ColumnIndex;
                  renamecols::Function=identity, allowmissing::Bool=false,
-                  allowduplicates::Bool=false, combine=only, fill=missing,
-                  threads::Bool=true)
+                 allowduplicates::Bool=false, combine=only, fill=missing,
+                 threads::Bool=true, sortrows=false, sortcols=false)
     if allowduplicates
         Base.depwarn("allowduplicates keyword argument is deprecated. " *
                      "Pass `combine=last` instead of allowduplicates=true.", :unstack)
@@ -492,20 +503,21 @@ function unstack(df::AbstractDataFrame, colkey::ColumnIndex, values::ColumnIndex
     value_int = index(df)[values]
     return unstack(df, Not(colkey_int, value_int), colkey_int, value_int,
             renamecols=renamecols, allowmissing=allowmissing,
-            combine=combine,
-            fill=fill, threads=threads)
+            combine=combine, fill=fill, threads=threads,
+            sortrows=sortrows, sortcols=sortcols)
 end
 
 function unstack(df::AbstractDataFrame; renamecols::Function=identity,
                  allowmissing::Bool=false, allowduplicates::Bool=false,
-                 combine=only, fill=missing, threads::Bool=true)
+                 combine=only, fill=missing, threads::Bool=true,
+                 sortrows=false, sortcols=false)
     if allowduplicates
         Base.depwarn("allowduplicates keyword argument is deprecated. " *
                      "Pass `combine=last` instead of allowduplicates=true.", :unstack)
         combine = last
     end
     unstack(df, :variable, :value, renamecols=renamecols, allowmissing=allowmissing,
-            combine=combine, fill=fill, threads=threads)
+            combine=combine, fill=fill, threads=threads, sortrows=sortrows, sortcols=sortcols)
 end
 
 # we take into account the fact that idx, starts and ends are computed lazily
@@ -590,10 +602,6 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
                     copycols=false)
 
     @assert length(col_group_row_idxs) == ncol(df2)
-    # avoid reordering when col_group_row_idxs was already ordered
-    if !issorted(col_group_row_idxs)
-        df2 = df2[!, sortperm(col_group_row_idxs)]
-    end
 
     if !isempty(intersect(_names(df1), _names(df2)))
         throw(ArgumentError("Non-unique column names produced. " *
@@ -604,10 +612,6 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Int},
     res_df = hcat(df1, df2, copycols=false)
 
     @assert length(row_group_row_idxs) == nrow(res_df)
-    # avoid reordering when row_group_row_idxs was already ordered
-    if !issorted(row_group_row_idxs)
-        res_df = res_df[sortperm(row_group_row_idxs), :]
-    end
 
     # only table-level :note-style metadata needs to be copied
     # as column-level :note-style metadata is already correctly set
