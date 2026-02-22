@@ -1823,7 +1823,7 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
         newinds = Any[]
         seen_single_column = Set{Int}()
         for ind in args
-           if ind isa Pair || ind isa AbstractVecOrMat{<:Pair}
+            if ind isa Pair || ind isa AbstractVecOrMat{<:Pair}
               throw(ArgumentError(
                 "Transformations are not supported for SubDataFrame with copycols=false. " *
                 "Only column selection is allowed."
