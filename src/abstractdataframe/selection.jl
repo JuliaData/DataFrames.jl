@@ -1828,19 +1828,19 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
                 "Transformations are not supported for SubDataFrame with copycols=false. " *
                 "Only column selection is allowed."
                 ))
-           end
+            end
             ind_idx = index(dfv)[ind]
             if ind isa ColumnIndex
                 if ind_idx in seen_single_column
                     throw(ArgumentError(
-                        "selecting the same column multiple times " *
-                        "using Symbol, string or integer is not allowed " *
-                        "($ind was passed more than once)"
+                    "selecting the same column multiple times " *
+                    "using Symbol, string or integer is not allowed " *
+                    "($ind was passed more than once)"
                     ))
                 end
                 push!(seen_single_column, ind_idx)
-             end
-           push!(newinds, ind_idx)
+            end
+            push!(newinds, ind_idx)
         end
         return view(dfv, :, Cols(newinds...))
     end
