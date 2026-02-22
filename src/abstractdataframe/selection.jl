@@ -1820,22 +1820,27 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
     else
         # we do not support transformations here
         # newinds contains only indexing; making it Vector{Any} avoids some compilation
-        newinds = []
+        newinds = Any[]
         seen_single_column = Set{Int}()
         for ind in args
-            if ind isa ColumnIndex
-                ind_idx = index(dfv)[ind]
-                if ind_idx in seen_single_column
-                    throw(ArgumentError("selecting the same column multiple times " *
-                                        "using Symbol, string or integer is not allowed " *
-                                        "($ind was passed more than once"))
-                else
-                    push!(seen_single_column, ind_idx)
-                end
-            else
-                newind = index(dfv)[ind]
-                push!(newinds, newind)
+            if ind isa Pair || ind isa AbstractVecOrMat{<:Pair}
+                throw(ArgumentError(
+                "Transformations are not supported for SubDataFrame with copycols=false. " *
+                "Only column selection is allowed."
+                ))
             end
+            ind_idx = index(dfv)[ind]
+            if ind isa ColumnIndex
+                if ind_idx in seen_single_column
+                    throw(ArgumentError(
+                    "selecting the same column multiple times " *
+                    "using Symbol, string or integer is not allowed " *
+                    "($ind was passed more than once)"
+                    ))
+                end
+                push!(seen_single_column, ind_idx)
+            end
+            push!(newinds, ind_idx)
         end
         return view(dfv, :, Cols(newinds...))
     end
