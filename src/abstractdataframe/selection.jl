@@ -1824,19 +1824,19 @@ function manipulate(dfv::SubDataFrame, @nospecialize(args...); copycols::Bool, k
         seen_single_column = Set{Int}()
         for ind in args
             if ind isa Pair || ind isa AbstractVecOrMat{<:Pair}
-              throw(ArgumentError(
+                throw(ArgumentError(
                 "Transformations are not supported for SubDataFrame with copycols=false. " *
                 "Only column selection is allowed."
-              ))
+                ))
            end
             ind_idx = index(dfv)[ind]
             if ind isa ColumnIndex
-               if ind_idx in seen_single_column
-                   throw(ArgumentError(
-                       "selecting the same column multiple times " *
-                       "using Symbol, string or integer is not allowed " *
-                       "($ind was passed more than once)"
-                   ))
+                if ind_idx in seen_single_column
+                    throw(ArgumentError(
+                        "selecting the same column multiple times " *
+                        "using Symbol, string or integer is not allowed " *
+                        "($ind was passed more than once)"
+                    ))
                 end
                 push!(seen_single_column, ind_idx)
              end
