@@ -6,7 +6,7 @@ function Base.summary(io::IO, gd::GroupedDataFrame)
     join(io, groupcols(gd), ", ")
 end
 
-function Base.show(io::IO, gd::GroupedDataFrame;
+function Base.show(io::IO, ::MIME"text/plain", gd::GroupedDataFrame;
                    allgroups::Bool = !get(io, :limit, false),
                    allrows::Bool = !get(io, :limit, false),
                    allcols::Bool = !get(io, :limit, false),
@@ -33,7 +33,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
             join(io, identified_groups, ", ")
             println(io)
 
-            show(io, gd[i]; summary=false,
+            show(io, MIME("text/plain"), gd[i]; summary=false,
                  allrows=allrows, allcols=allcols, rowlabel=rowlabel,
                  truncate=truncate, kwargs...)
         end
@@ -90,7 +90,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
         join(io, identified_groups, ", ")
         println(io)
 
-        show(io, gd[1]; summary=false,
+        show(io, MIME("text/plain"), gd[1]; summary=false,
              allrows=allrows, allcols=allcols, rowlabel=rowlabel,
              truncate=truncate, display_size=(h1, w), kwargs...)
 
@@ -106,13 +106,14 @@ function Base.show(io::IO, gd::GroupedDataFrame;
         join(io, identified_groups, ", ")
         println(io)
 
-        show(io, gd[N]; summary=false,
+        show(io, MIME("text/plain"), gd[N]; summary=false,
              allrows=allrows, allcols=allcols, rowlabel=rowlabel,
              truncate=truncate, display_size=(h2, w), kwargs...)
     end
 end
 
-function Base.show(df::GroupedDataFrame;
+function Base.show(::MIME"text/plain",
+                   df::GroupedDataFrame;
                    allrows::Bool = !get(stdout, :limit, true),
                    allcols::Bool = !get(stdout, :limit, true),
                    allgroups::Bool = !get(stdout, :limit, true),
@@ -120,7 +121,7 @@ function Base.show(df::GroupedDataFrame;
                    summary::Bool = true,
                    truncate::Int = 32,
                    kwargs...) # -> Nothing
-    return show(stdout, df;
+    return show(stdout, MIME("text/plain"), df;
                 allrows=allrows, allcols=allcols, allgroups=allgroups,
                 rowlabel=rowlabel, summary=summary, truncate=truncate,
                 kwargs...)
