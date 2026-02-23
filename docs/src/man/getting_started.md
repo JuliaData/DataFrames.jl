@@ -6,6 +6,7 @@ The DataFrames package is available through the Julia package system and can be 
 
 ```julia
 using Pkg
+Pkg.activate(".") # Best practice to activate a new environmnent.
 Pkg.add("DataFrames")
 ```
 
