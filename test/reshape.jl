@@ -1006,4 +1006,18 @@ end
     DataFrame(x=1:3, a=[11, missing, missing], b=[missing, 12, missing], missing=[missing, missing, 13])
 end
 
+
+@testset "better stack errors" begin
+    df = DataFrame(foo=["a","a","b"], variable=["x","x","x"], v1=[1,1.5,2], v2=[10,11.5,13.5])
+    @test_throws ArgumentError stack(df)
+    @test_throws ArgumentError stack(df, [:v1, :v2], variable_name=:foo)
+    @test_throws ArgumentError stack(df, [:v1, :v2], value_name=:foo)
+    df2 = DataFrame(foo=["a","b"], value=["x","y"], v1=[1,2])
+    @test_throws ArgumentError stack(df2, [:v1], value_name=:foo)
+    # view=true path
+    @test_throws ArgumentError stack(df, [:v1, :v2], view=true)
+    @test_throws ArgumentError stack(df, [:v1, :v2], variable_name=:foo, view=true)
+end
+
+
 end # module
