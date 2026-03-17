@@ -155,8 +155,22 @@ function stack(df::AbstractDataFrame,
     end
     N = length(ints_measure_vars)
     cnames = _names(df)[ints_id_vars]
+
+    if variable_name_s in cnames
+        throw(ArgumentError("Column name :$variable_name_s already exists in the " *
+                            "data frame. Pass `variable_name` keyword argument to " *
+                            "use a different name for the variable column."))
+    end
+
+    if value_name_s in cnames
+        throw(ArgumentError("Column name :$value_name_s already exists in the " * 
+                            "data frame. Pass `value_name` keyword argument to " * 
+                            "use a different name for the value column."))
+    end
+
     push!(cnames, variable_name_s)
     push!(cnames, value_name_s)
+
     if variable_eltype === Symbol
         catnms = PooledArray(_names(df)[ints_measure_vars])
     elseif variable_eltype === String
@@ -187,6 +201,18 @@ function _stackview(df::AbstractDataFrame, measure_vars::AbstractVector{Int},
                     value_name::Symbol, variable_eltype::Type)
     N = length(measure_vars)
     cnames = _names(df)[ints_id_vars]
+
+    if variable_name in cnames
+        throw(ArgumentError("Column name :$variable_name already exists in the " *
+                            "data frame. Pass `variable_name` keyword argument to " *
+                            "use a different name for the variable column."))
+    end
+    if value_name in cnames
+        throw(ArgumentError("Column name :$value_name already exists in the " *
+                            "data frame. Pass `value_name` keyword argument to " *
+                            "use a different name for the value column."))
+    end
+
     push!(cnames, variable_name)
     push!(cnames, value_name)
     if variable_eltype === Symbol
