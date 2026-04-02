@@ -494,7 +494,7 @@ end
         B = [
             md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)",
             md"###A",
-            md"``\frac{A}{B}``",
+            md"``AB``",
             md"*A*b**A**" ]
     )
 
@@ -547,7 +547,7 @@ end
                  "<td style = \"text-align: right;\">9</td>" *
                  "<td style = \"text-align: left;\">" *
                  "<div class=\"markdown\">" *
-                 "<p>&#36;\\frac&#123;A&#125;&#123;B&#125;&#36;</p>" *
+                 "<p>AB</p>" *
                  "</div>" *
                  "</td>" *
                  "</tr>" *
