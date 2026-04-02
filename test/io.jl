@@ -494,7 +494,7 @@ end
         B = [
             md"[DataFrames.jl](http://juliadata.github.io/DataFrames.jl)",
             md"###A",
-            md"``AB``",
+            md"AB",
             md"*A*b**A**" ]
     )
 
