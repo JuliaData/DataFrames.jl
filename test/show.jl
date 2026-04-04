@@ -44,17 +44,13 @@ end
 
     for allrows in [true, false], allcols in [true, false]
         io = IOBuffer()
-        show(io, df, allcols=allcols, allrows=allrows)
-        str = String(take!(io))
-        @test str == refstr
-        io = IOBuffer()
         show(io, MIME("text/plain"), df, allcols=allcols, allrows=allrows)
         str = String(take!(io))
         @test str == refstr
     end
 
     df = DataFrame(A=Vector{String}(undef, 3))
-    @test sprint(show, df) == """
+    @test sprint(show, MIME("text/plain"), df) == """
         3×1 DataFrame
          Row │ A
              │ String
@@ -69,7 +65,7 @@ end
                        :auto)
 
     io = IOContext(IOBuffer(), :displaysize=>(11, 40), :limit=>true)
-    show(io, df_big)
+    show(io, MIME("text/plain"), df_big)
     str = String(take!(io.io))
     @test str == """
         25×5 DataFrame
@@ -82,7 +78,7 @@ end
                    2 columns and 23 rows omitted"""
 
     io = IOContext(IOBuffer(), :displaysize=>(11, 40), :limit=>true)
-    show(io, df_big, allcols=true)
+    show(io, MIME("text/plain"), df_big, allcols=true)
     str = String(take!(io.io))
     @test str == """
         25×5 DataFrame
@@ -95,7 +91,7 @@ end
                                                  23 rows omitted"""
 
     io = IOContext(IOBuffer(), :displaysize=>(11, 40), :limit=>true)
-    show(io, df_big, allrows=true, allcols=true)
+    show(io, MIME("text/plain"), df_big, allrows=true, allcols=true)
     str = String(take!(io.io))
     @test str == """
         25×5 DataFrame
@@ -129,7 +125,7 @@ end
           25 │ 10000025  10000050  10000075  10000100  10000125"""
 
     io = IOContext(IOBuffer(), :displaysize=>(11, 40), :limit=>true)
-    show(io, df_big, allrows=true, allcols=false)
+    show(io, MIME("text/plain"), df_big, allrows=true, allcols=false)
     str = String(take!(io.io))
     @test str == """
         25×5 DataFrame
@@ -168,7 +164,7 @@ end
     df = DataFrame(x = (1:50) .> 5, y = (1:50) .> 25, z = (1:50) .> 45)
     io = IOContext(IOBuffer(), :displaysize=>(30, 40), :limit=>true)
 
-    show(io, groupby(df, :x), allcols=true)
+    show(io, MIME("text/plain"), groupby(df, :x), allcols=true)
     str = String(take!(io.io))
     @test str == """
         GroupedDataFrame with 2 groups based on key: x
@@ -199,7 +195,7 @@ end
           45 │ true   true   true
                    35 rows omitted"""
 
-    show(io, groupby(df, :y), allcols=true)
+    show(io, MIME("text/plain"), groupby(df, :y), allcols=true)
     str = String(take!(io.io))
     @test str == """
         GroupedDataFrame with 2 groups based on key: y
@@ -230,7 +226,7 @@ end
           25 │ true  true   true
                   19 rows omitted"""
 
-    show(io, groupby(df, :z), allcols=true)
+    show(io, MIME("text/plain"), groupby(df, :z), allcols=true)
     str = String(take!(io.io))
     @test str == """
         GroupedDataFrame with 2 groups based on key: z
@@ -261,7 +257,7 @@ end
            4 │ true  true  true
            5 │ true  true  true"""
 
-    show(io, groupby(df, :x), allcols=true, allrows=true)
+    show(io, MIME("text/plain"), groupby(df, :x), allcols=true, allrows=true)
     str = String(take!(io.io))
     @test str == """
         GroupedDataFrame with 2 groups based on key: x
@@ -328,9 +324,9 @@ end
     # height is zero or invalid -> print all rows
     for h in -1:0
         io = IOContext(IOBuffer(), :displaysize=>(h, 40), :limit=>true)
-        show(io, groupby(df, :x), allcols=true)
+        show(io, MIME("text/plain"), groupby(df, :x), allcols=true)
         str_hrows = String(take!(io.io))
-        show(io, groupby(df, :x), allcols=true, allrows=true)
+        show(io, MIME("text/plain"), groupby(df, :x), allcols=true, allrows=true)
         str_allrows = String(take!(io.io))
         @test str_hrows == str_allrows
     end
@@ -339,7 +335,7 @@ end
     for a in 1:50, b in 1:50, h in 17:40
         df = DataFrame(x = [fill(1, a); fill(2, b)])
         io = IOContext(IOBuffer(), :displaysize=>(h, 40), :limit=>true)
-        show(io, groupby(df, :x), allcols=true)
+        show(io, MIME("text/plain"), groupby(df, :x), allcols=true)
         str = String(take!(io.io))
         nlines = length(split(str, '\n'))
         # leave one line for last REPL prompt at top, two for new prompt
@@ -351,7 +347,7 @@ end
     for a in 1:50, h in 17:40
         df = DataFrame(x = fill(1, a))
         io = IOContext(IOBuffer(), :displaysize=>(h, 40), :limit=>true)
-        show(io, groupby(df, :x), allcols=true)
+        show(io, MIME("text/plain"), groupby(df, :x), allcols=true)
         str = String(take!(io.io))
         nlines = length(split(str, '\n'))
         # leave one line for last REPL prompt at top, two for new prompt
@@ -363,7 +359,7 @@ end
     # one group
     io = IOContext(IOBuffer(), :displaysize=>(15, 40), :limit=>true)
     df = DataFrame(x = Int64.(1:15), y = Int64(1))
-    show(io, groupby(df, :y))
+    show(io, MIME("text/plain"), groupby(df, :y))
     str = String(take!(io.io))
     @test str == """
         GroupedDataFrame with 1 group based on key: y
@@ -382,7 +378,7 @@ end
     # zero groups
     io = IOContext(IOBuffer())
     df = DataFrame(x=[], y=Int[])
-    show(io, groupby(df, :x))
+    show(io, MIME("text/plain"), groupby(df, :x))
     str = String(take!(io.io))
     @test str == "GroupedDataFrame with 0 groups based on key: x"
 end
@@ -391,20 +387,20 @@ end
     df = DataFrame(A=Int64[1:4;], B=["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
                    C=Float32[1.0, 2.0, 3.0, 4.0])
     str1, size = capture_stdout() do
-        show(df)
+        show(MIME("text/plain"), df)
     end
     io = IOContext(IOBuffer(), :limit=>true, :displaysize=>size)
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str2 = String(take!(io.io))
     @test str1 == str2
 
     Random.seed!(1)
     df_big = DataFrame(rand(25, 5), :auto)
     str1, size = capture_stdout() do
-        show(df_big)
+        show(MIME("text/plain"), df_big)
     end
     io = IOContext(IOBuffer(), :limit=>true, :displaysize=>size)
-    show(io, df_big)
+    show(io, MIME("text/plain"), df_big)
     str2 = String(take!(io.io))
     @test str1 == str2
 end
@@ -414,7 +410,7 @@ end
                    C=Float32[1.0, 2.0, 3.0, 4.0])
     subdf = view(df, [2, 3], :)
     io = IOBuffer()
-    show(io, subdf, allrows=true, allcols=false)
+    show(io, MIME("text/plain"), subdf, allrows=true, allcols=false)
     str = String(take!(io))
     @test str == """
         2×3 SubDataFrame
@@ -423,9 +419,9 @@ end
         ─────┼─────────────────────────────
            1 │     2  ∀ε>0: x+ε>x      2.0
            2 │     3  z\$               3.0"""
-    show(io, subdf, allrows=true)
-    show(io, subdf, allcols=true)
-    show(io, subdf, allcols=true, allrows=true)
+    show(io, MIME("text/plain"), subdf, allrows=true)
+    show(io, MIME("text/plain"), subdf, allcols=true)
+    show(io, MIME("text/plain"), subdf, allcols=true, allrows=true)
 end
 
 @testset "Test showing StackedVector and RepeatedVector" begin
@@ -441,7 +437,7 @@ end
     # TODO: update when https://github.com/KristofferC/Crayons.jl/issues/47 is resolved
     if Base.get_have_color()
         df = DataFrame(Fish=["Suzy", "Amir"], Mass=[1.5, missing])
-        @test sprint(show, df, context=:color=>true) == """
+        @test sprint(show, MIME("text/plain"), df, context=:color=>true) == """
             \e[1m2×2 DataFrame\e[0m
             \e[1m Row \e[0m│\e[1m Fish   \e[0m\e[1m Mass      \e[0m
             \e[1m     \e[0m│\e[90m String \e[0m\e[90m Float64?  \e[0m
@@ -452,7 +448,7 @@ end
         df = DataFrame(A=[:Symbol, missing, :missing],
                        B=[missing, "String", "missing"],
                        C=[:missing, "missing", missing])
-        @test sprint(show, df, context=:color=>true) == """
+        @test sprint(show, MIME("text/plain"), df, context=:color=>true) == """
             \e[1m3×3 DataFrame\e[0m
             \e[1m Row \e[0m│\e[1m A       \e[0m\e[1m B       \e[0m\e[1m C       \e[0m
             \e[1m     \e[0m│\e[90m Symbol? \e[0m\e[90m String? \e[0m\e[90m Any     \e[0m
@@ -463,7 +459,7 @@ end
     end
 
     df_nothing = DataFrame(A=[1.0, 2.0, 3.0], B=["g", "g", nothing])
-    @test sprint(show, df_nothing) == """
+    @test sprint(show, MIME("text/plain"), df_nothing) == """
         3×2 DataFrame
          Row │ A        B
              │ Float64  Union…
@@ -475,7 +471,7 @@ end
 
 @testset "Test correct width computation" begin
     df = DataFrame([["a"]], [:x])
-    @test sprint(show, df) == """
+    @test sprint(show, MIME("text/plain"), df) == """
         1×1 DataFrame
          Row │ x
              │ String
@@ -486,7 +482,7 @@ end
 @testset "Test showing special types" begin
     # strings with escapes
     df = DataFrame(a=["1\n1", "2\t2", "3\r3", "4\$4", "5\"5", "6\\6"])
-    @test sprint(show, df) == """
+    @test sprint(show, MIME("text/plain"), df) == """
         6×1 DataFrame
          Row │ a
              │ String
@@ -500,7 +496,7 @@ end
 
     # categorical
     df = DataFrame(a=categorical([1, 2, 3]), b=categorical(["a", "b", missing]))
-    @test sprint(show, df) == """
+    @test sprint(show, MIME("text/plain"), df) == """
         3×2 DataFrame
          Row │ a     b
              │ Cat…  Cat…?
@@ -511,7 +507,7 @@ end
 
     # BigFloat
     df = DataFrame(a=[big(1.0), missing])
-    @test sprint(show, df) == """
+    @test sprint(show, MIME("text/plain"), df) == """
         2×1 DataFrame
          Row │ a
              │ BigFloat?
@@ -521,7 +517,7 @@ end
 
     # date types
     df = DataFrame(a=Date(2020, 2, 11), b=DateTime(2020, 2, 11, 15), c=Day(1))
-    @test sprint(show, df) == """
+    @test sprint(show, MIME("text/plain"), df) == """
         1×3 DataFrame
          Row │ a           b                    c
              │ Date        DateTime             Day
@@ -530,7 +526,7 @@ end
 
     # Irrational
     df = DataFrame(a=π)
-    @test sprint(show, df) == """
+    @test sprint(show, MIME("text/plain"), df) == """
         1×1 DataFrame
          Row │ a
              │ Irration…
@@ -540,14 +536,14 @@ end
 
 @testset "Test using :compact parameter of IOContext" begin
     df = DataFrame(x=[float(pi)])
-    @test sprint(show, df) == """
+    @test sprint(show, MIME("text/plain"), df) == """
         1×1 DataFrame
          Row │ x
              │ Float64
         ─────┼─────────
            1 │ 3.14159"""
 
-    @test sprint(show, df, context=:compact=>false) == """
+    @test sprint(show, MIME("text/plain"), df, context=:compact=>false) == """
         1×1 DataFrame
          Row │ x
              │ Float64
@@ -557,27 +553,27 @@ end
 
 @testset "Test of DataFrameRows and DataFrameColumns" begin
     df = DataFrame(x=[float(pi)])
-    @test sprint(show, eachrow(df)) == """
+    @test sprint(show, MIME("text/plain"), eachrow(df)) == """
         1×1 DataFrameRows
          Row │ x
              │ Float64
         ─────┼─────────
            1 │ 3.14159"""
 
-    @test sprint((io, x) -> show(io, x, summary=false), eachrow(df)) == """
+    @test sprint((io, x) -> show(io, MIME("text/plain"), x, summary=false), eachrow(df)) == """
          Row │ x
              │ Float64
         ─────┼─────────
            1 │ 3.14159"""
 
-    @test sprint(show, eachcol(df)) == """
+    @test sprint(show, MIME("text/plain"), eachcol(df)) == """
         1×1 DataFrameColumns
          Row │ x
              │ Float64
         ─────┼─────────
            1 │ 3.14159"""
 
-    @test sprint((io, x) -> show(io, x, summary=false), eachcol(df)) == """
+    @test sprint((io, x) -> show(io, MIME("text/plain"), x, summary=false), eachcol(df)) == """
          Row │ x
              │ Float64
         ─────┼─────────
@@ -586,58 +582,58 @@ end
 
 @testset "Test empty data frame and DataFrameRow" begin
     df = DataFrame(x=[float(pi)])
-    @test sprint(show, df[:, 2:1]) == "0×0 DataFrame"
-    @test sprint(show, @view df[:, 2:1]) == "0×0 SubDataFrame"
-    @test sprint(show, df[1, 2:1]) == "DataFrameRow"
+    @test sprint(show, MIME("text/plain"), df[:, 2:1]) == "0×0 DataFrame"
+    @test sprint(show, MIME("text/plain"), @view df[:, 2:1]) == "0×0 SubDataFrame"
+    @test sprint(show, MIME("text/plain"), df[1, 2:1]) == "DataFrameRow"
 end
 
 @testset "consistency" begin
     df = DataFrame(a=[1, 1, 2, 2], b=[5, 6, 7, 8], c=1:4)
     push!(df.c, 5)
-    @test_throws AssertionError sprint(show, df)
+    @test_throws AssertionError sprint(show, MIME("text/plain"), df)
 
     df = DataFrame(a=[1, 1, 2, 2], b=[5, 6, 7, 8], c=1:4)
     push!(DataFrames._columns(df), df[:, :a])
-    @test_throws AssertionError sprint(show, df)
+    @test_throws AssertionError sprint(show, MIME("text/plain"), df)
 end
 
 @testset "wide type name" begin
-    @test sprint(show, DataFrame(a=⛵⛵⛵⛵⛵())) == """
+    @test sprint(show, MIME("text/plain"), DataFrame(a=⛵⛵⛵⛵⛵())) == """
         1×1 DataFrame
          Row │ a
              │ ⛵⛵⛵⛵…
         ─────┼───────────
            1 │ "⛵\""""
 
-    @test sprint(show, DataFrame(a=categorical([Int64(2)^54]))) == """
+    @test sprint(show, MIME("text/plain"), DataFrame(a=categorical([Int64(2)^54]))) == """
         1×1 DataFrame
          Row │ a
              │ Cat…
         ─────┼───────────────────
            1 │ 18014398509481984"""
 
-    @test sprint(show, DataFrame(a=categorical([Int64(2)^53]))) == """
+    @test sprint(show, MIME("text/plain"), DataFrame(a=categorical([Int64(2)^53]))) == """
         1×1 DataFrame
          Row │ a
              │ Cat…
         ─────┼──────────────────
            1 │ 9007199254740992"""
 
-    @test sprint(show, DataFrame(a=categorical([Int64(2)^37]))) == """
+    @test sprint(show, MIME("text/plain"), DataFrame(a=categorical([Int64(2)^37]))) == """
         1×1 DataFrame
          Row │ a
              │ Cat…
         ─────┼──────────────
            1 │ 137438953472"""
 
-    @test sprint(show, DataFrame(a=categorical([Int64(2)^36]))) == """
+    @test sprint(show, MIME("text/plain"), DataFrame(a=categorical([Int64(2)^36]))) == """
         1×1 DataFrame
          Row │ a
              │ Cat…
         ─────┼─────────────
            1 │ 68719476736"""
 
-    @test sprint(show, DataFrame(a=Union{Function, Missing}[missing])) == """
+    @test sprint(show, MIME("text/plain"), DataFrame(a=Union{Function, Missing}[missing])) == """
         1×1 DataFrame
          Row │ a
              │ Function?
@@ -649,7 +645,7 @@ end
     df = DataFrame(A=Int32.(1:3), B=["x", "y", "z"])
 
     io = IOBuffer()
-    show(io, df, eltypes=true)
+    show(io, MIME("text/plain"), df, eltypes=true)
     str = String(take!(io))
     @test str == """
         3×2 DataFrame
@@ -661,7 +657,7 @@ end
            3 │     3  z"""
 
     io = IOBuffer()
-    show(io, df, eltypes=false)
+    show(io, MIME("text/plain"), df, eltypes=false)
     str = String(take!(io))
     @test str == """
         3×2 DataFrame
@@ -676,7 +672,7 @@ end
     df = DataFrame(x=AbstractVector[1:2])
 
     io = IOBuffer()
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str = String(take!(io))
     @test str == """
         1×1 DataFrame
@@ -689,7 +685,7 @@ end
 @testset "wide output and column trimming" begin
     df = DataFrame(x="0123456789"^4)
     io = IOBuffer()
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str = String(take!(io))
     @test str == """
         1×1 DataFrame
@@ -699,7 +695,7 @@ end
            1 │ 01234567890123456789012345678901…"""
 
     io = IOContext(IOBuffer(), :displaysize=>(10, 10), :limit=>true)
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str = String(take!(io.io))
     @test str === """
         1×1 Data ⋯
@@ -711,7 +707,7 @@ end
 
     df = DataFrame(x="😄"^20)
     io = IOBuffer()
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str = String(take!(io))
     @test str === """
         1×1 DataFrame
@@ -729,7 +725,7 @@ end
                    e=[i == 2 ? -0.0 : i == 3 ? +0.0 : 10^i for i = -7:1.0:7])
 
     io = IOBuffer()
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str = String(take!(io))
     @test str == """
         15×5 DataFrame
@@ -754,7 +750,7 @@ end
 
 
     io = IOBuffer()
-    show(io, df, eltypes = false)
+    show(io, MIME("text/plain"), df, eltypes = false)
     str = String(take!(io))
     @test str == """
         15×5 DataFrame
@@ -779,7 +775,7 @@ end
     df = DataFrame(This_is_a_very_big_name=1.0, b=2.0, c=3.0)
 
     io = IOBuffer()
-    show(io, df, eltypes = false)
+    show(io, MIME("text/plain"), df, eltypes = false)
     str = String(take!(io))
     @test str == """
         1×3 DataFrame
@@ -792,7 +788,7 @@ end
                    T=100001:1.0:100011)
 
     io = IOBuffer()
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str = String(take!(io))
     @test str == """
         11×3 DataFrame
@@ -815,7 +811,7 @@ end
                    🚀🚀🚀🚀🚀=1.0:2:22)
 
     io = IOBuffer()
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str = String(take!(io))
     @test str == """
         11×2 DataFrame
@@ -838,7 +834,7 @@ end
                    🚀🚀🚀🚀🚀🚀🚀=collect(1.0:2:22) .+ pi)
 
     io = IOBuffer()
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str = String(take!(io))
     @test str == """
         11×2 DataFrame
@@ -858,7 +854,7 @@ end
           11 │          1.00003e5        24.1416"""
 
     io = IOContext(IOBuffer(), :compact => false)
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str = String(take!(io.io))
     @test str == """
         11×2 DataFrame
@@ -881,7 +877,7 @@ end
                    Union{F, Float64, Missing}[i == 6 ? F(1234567) : i == 4 ? missing : 10.0^i for i = -6:1:6])
 
     io = IOContext(IOBuffer())
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str = String(take!(io.io))
     @test str == """
         13×1 DataFrame
@@ -928,7 +924,7 @@ end
                    very_big_column_name_4=d)
 
     io = IOContext(IOBuffer())
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str = String(take!(io.io))
 
     @test str == """
@@ -952,7 +948,7 @@ end
 
 @testset "Invalid keywords in text mode" begin
     df = DataFrame(a=[1, 1, 2, 2], b=[5, 6, 7, 8], c=1:4)
-    @test_throws ArgumentError show(stdout, df, max_column_width="100px")
+    @test_throws MethodError show(stdout, df, max_column_width="100px")
     @test_throws ArgumentError show(stdout, MIME("text/plain"), df, max_column_width="100px")
 end
 
@@ -960,7 +956,7 @@ end
     df = DataFrame(a=Int64[10, 20], b=Int64[30, 40], c=Int64[50, 60])
 
     io = IOContext(IOBuffer())
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str = String(take!(io.io))
     @test str == """
         2×3 DataFrame
@@ -972,7 +968,7 @@ end
 
 
     io = IOContext(IOBuffer())
-    show(io, df, show_row_number=false)
+    show(io, MIME("text/plain"), df, show_row_number=false)
     str = String(take!(io.io))
     @test str == """
         2×3 DataFrame
@@ -983,7 +979,7 @@ end
             20     40     60"""
 
     io = IOContext(IOBuffer())
-    show(io, df[2, :])
+    show(io, MIME("text/plain"), df[2, :])
     str = String(take!(io.io))
     @test str == """
         DataFrameRow
@@ -994,7 +990,7 @@ end
 
 
     io = IOContext(IOBuffer())
-    show(io, df[2, :], show_row_number=false)
+    show(io, MIME("text/plain"), df[2, :], show_row_number=false)
     str = String(take!(io.io))
     @test str == """
         DataFrameRow
@@ -1012,7 +1008,7 @@ end
         float   = [10.0^n for n in 1:10], string = ["A"^100 for _ in 1:10]
     )
     io = IOContext(IOBuffer())
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str = String(take!(io.io))
 
     @test str == """
@@ -1034,7 +1030,7 @@ end
 
 @testset "cover all corner cases of compacttype" begin
     df = DataFrame(x2345678901234567=categorical(["1"]))
-    @test sprint(show, df) === """
+    @test sprint(show, MIME("text/plain"), df) === """
         1×1 DataFrame
          Row │ x2345678901234567
              │ CategoricalValue…
@@ -1046,22 +1042,6 @@ end
     df = DataFrame(id=inlinestrings(["a", "b", "c"]), value=collect(Int64, 1:3))
 
     io = IOContext(IOBuffer(), :limit=>true)
-    show(io, groupby(df, :id))
-    @test String(take!(io.io)) === """
-        GroupedDataFrame with 3 groups based on key: id
-        First Group (1 row): id = "a"
-         Row │ id       value
-             │ String1  Int64
-        ─────┼────────────────
-           1 │ a            1
-        ⋮
-        Last Group (1 row): id = "c"
-         Row │ id       value
-             │ String1  Int64
-        ─────┼────────────────
-           1 │ c            3"""
-
-    io = IOContext(IOBuffer(), :limit=>true)
     show(io, MIME("text/plain"), groupby(df, :id))
     @test String(take!(io.io)) === """
         GroupedDataFrame with 3 groups based on key: id
@@ -1076,27 +1056,6 @@ end
              │ String1  Int64
         ─────┼────────────────
            1 │ c            3"""
-
-    io = IOContext(IOBuffer(), :limit=>false)
-    show(io, groupby(df, :id))
-    @test String(take!(io.io)) === """
-        GroupedDataFrame with 3 groups based on key: id
-        Group 1 (1 row): id = "a"
-         Row │ id       value
-             │ String1  Int64
-        ─────┼────────────────
-           1 │ a            1
-        Group 2 (1 row): id = "b"
-         Row │ id       value
-             │ String1  Int64
-        ─────┼────────────────
-           1 │ b            2
-        Group 3 (1 row): id = "c"
-         Row │ id       value
-             │ String1  Int64
-        ─────┼────────────────
-           1 │ c            3"""
-
 
     io = IOContext(IOBuffer(), :limit=>false)
     show(io, MIME("text/plain"), groupby(df, :id))
@@ -1117,26 +1076,6 @@ end
              │ String1  Int64
         ─────┼────────────────
            1 │ c            3"""
-
-    io = IOContext(IOBuffer(), :limit=>true)
-    show(io, groupby(df[1:1, :], :id))
-    @test String(take!(io.io)) === """
-        GroupedDataFrame with 1 group based on key: id
-        First Group (1 row): id = "a"
-         Row │ id       value
-             │ String1  Int64
-        ─────┼────────────────
-           1 │ a            1"""
-
-    io = IOContext(IOBuffer(), :limit=>false)
-    show(io, groupby(df[1:1, :], :id))
-    @test String(take!(io.io)) === """
-        GroupedDataFrame with 1 group based on key: id
-        Group 1 (1 row): id = "a"
-         Row │ id       value
-             │ String1  Int64
-        ─────┼────────────────
-           1 │ a            1"""
 
     io = IOContext(IOBuffer(), :limit=>true)
     show(io, MIME("text/plain"), groupby(df[1:1, :], :id))

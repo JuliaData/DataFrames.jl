@@ -647,7 +647,7 @@ You can adjust how data frame is displayed by calling the `show` function manual
 `show(german, allcols=true)` does the same for columns, e.g.:
 
 ```jldoctest dataframe
-julia> show(german, allcols=true)
+julia> show(MIME("text/plain"), german, allcols=true)
 1000×10 DataFrame
   Row │ id     Age    Sex      Job    Housing  Saving accounts  Checking account  Credit amount  Duration  Purpose
       │ Int64  Int64  String7  Int64  String7  String15         String15          Int64          Int64     String31
