@@ -635,71 +635,7 @@ data frame and get a vector of results either use a comprehension or `collect`
 `GroupedDataFrame` into a vector first. Here are examples of both approaches:
 
 ```jldoctest sac
-julia> sdf_vec = collect(iris_gdf)
-3-element Vector{Any}:
- 50×5 SubDataFrame
- Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String15
-─────┼───────────────────────────────────────────────────────────────
-   1 │         5.1         3.5          1.4         0.2  Iris-setosa
-   2 │         4.9         3.0          1.4         0.2  Iris-setosa
-   3 │         4.7         3.2          1.3         0.2  Iris-setosa
-   4 │         4.6         3.1          1.5         0.2  Iris-setosa
-   5 │         5.0         3.6          1.4         0.2  Iris-setosa
-   6 │         5.4         3.9          1.7         0.4  Iris-setosa
-   7 │         4.6         3.4          1.4         0.3  Iris-setosa
-   8 │         5.0         3.4          1.5         0.2  Iris-setosa
-  ⋮  │      ⋮           ⋮            ⋮           ⋮            ⋮
-  44 │         5.0         3.5          1.6         0.6  Iris-setosa
-  45 │         5.1         3.8          1.9         0.4  Iris-setosa
-  46 │         4.8         3.0          1.4         0.3  Iris-setosa
-  47 │         5.1         3.8          1.6         0.2  Iris-setosa
-  48 │         4.6         3.2          1.4         0.2  Iris-setosa
-  49 │         5.3         3.7          1.5         0.2  Iris-setosa
-  50 │         5.0         3.3          1.4         0.2  Iris-setosa
-                                                      35 rows omitted
- 50×5 SubDataFrame
- Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String15
-─────┼───────────────────────────────────────────────────────────────────
-   1 │         7.0         3.2          4.7         1.4  Iris-versicolor
-   2 │         6.4         3.2          4.5         1.5  Iris-versicolor
-   3 │         6.9         3.1          4.9         1.5  Iris-versicolor
-   4 │         5.5         2.3          4.0         1.3  Iris-versicolor
-   5 │         6.5         2.8          4.6         1.5  Iris-versicolor
-   6 │         5.7         2.8          4.5         1.3  Iris-versicolor
-   7 │         6.3         3.3          4.7         1.6  Iris-versicolor
-   8 │         4.9         2.4          3.3         1.0  Iris-versicolor
-  ⋮  │      ⋮           ⋮            ⋮           ⋮              ⋮
-  44 │         5.0         2.3          3.3         1.0  Iris-versicolor
-  45 │         5.6         2.7          4.2         1.3  Iris-versicolor
-  46 │         5.7         3.0          4.2         1.2  Iris-versicolor
-  47 │         5.7         2.9          4.2         1.3  Iris-versicolor
-  48 │         6.2         2.9          4.3         1.3  Iris-versicolor
-  49 │         5.1         2.5          3.0         1.1  Iris-versicolor
-  50 │         5.7         2.8          4.1         1.3  Iris-versicolor
-                                                          35 rows omitted
- 50×5 SubDataFrame
- Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
-     │ Float64      Float64     Float64      Float64     String15
-─────┼──────────────────────────────────────────────────────────────────
-   1 │         6.3         3.3          6.0         2.5  Iris-virginica
-   2 │         5.8         2.7          5.1         1.9  Iris-virginica
-   3 │         7.1         3.0          5.9         2.1  Iris-virginica
-   4 │         6.3         2.9          5.6         1.8  Iris-virginica
-   5 │         6.5         3.0          5.8         2.2  Iris-virginica
-   6 │         7.6         3.0          6.6         2.1  Iris-virginica
-   7 │         4.9         2.5          4.5         1.7  Iris-virginica
-   8 │         7.3         2.9          6.3         1.8  Iris-virginica
-  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮
-  44 │         6.8         3.2          5.9         2.3  Iris-virginica
-  45 │         6.7         3.3          5.7         2.5  Iris-virginica
-  46 │         6.7         3.0          5.2         2.3  Iris-virginica
-  47 │         6.3         2.5          5.0         1.9  Iris-virginica
-  48 │         6.5         3.0          5.2         2.0  Iris-virginica
-  49 │         6.2         3.4          5.4         2.3  Iris-virginica
-  50 │         5.9         3.0          5.1         1.8  Iris-virginica
-                                                         35 rows omitted
+julia> sdf_vec = collect(iris_gdf);
 
 julia> map(nrow, sdf_vec)
 3-element Vector{Int64}:
@@ -942,7 +878,7 @@ julia> df = DataFrame(customer_id=["a", "b", "b", "b", "c", "c"],
 
 julia> gdf = groupby(df, :customer_id, sort=true);
 
-julia> show(gdf, allgroups=true)
+julia> show(MIME("text/plain"), gdf, allgroups=true)
 GroupedDataFrame with 3 groups based on key: customer_id
 Group 1 (1 row): customer_id = "a"
  Row │ customer_id  transaction_id  volume

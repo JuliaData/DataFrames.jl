@@ -53,7 +53,7 @@ julia> df
 
 julia> # Using this option, no cell will be truncated if there is room to display it.
 
-julia> show(df; truncate = 0)
+julia> show(MIME("text/plain"), df; truncate = 0)
 3×3 DataFrame
  Row │ a      b        c
      │ Int64  Float64  String
@@ -64,7 +64,7 @@ julia> show(df; truncate = 0)
 
 julia> # Hide row numbers.
 
-julia> show(df; show_row_number = false)
+julia> show(MIME("text/plain"), df; show_row_number = false)
 3×3 DataFrame
  a      b        c
  Int64  Float64  String
@@ -75,7 +75,7 @@ julia> show(df; show_row_number = false)
 
 julia> # Hide the column element types in text output.
 
-julia> show(df; eltypes = false)
+julia> show(MIME("text/plain"), df; eltypes = false)
 3×3 DataFrame
  Row │ a  b      c
 ─────┼─────────────────────────────────────────────
@@ -140,7 +140,7 @@ julia> function parentheses_fmt(v, i, j)
            return v
        end;
 
-julia> show(df; formatters = [parentheses_fmt])
+julia> show(MIME("text/plain"), df; formatters = [parentheses_fmt])
 7×5 DataFrame
  Row │ A        B        C        D        E
      │ Float64  Float64  Float64  Float64  Float64
@@ -190,6 +190,7 @@ julia> profit = DataFrame(
        );
 
 julia> show(
+           MIME("text/plain"),
            profit;
            # We use this option to align the summary rows with the data rows at the decimal
            # point.
