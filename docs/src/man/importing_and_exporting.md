@@ -178,5 +178,5 @@ Other data formats are supported for reading and writing in the following packag
   (alternatively [Queryverse](https://www.queryverse.org/)
    users can choose [StatFiles.jl](https://github.com/queryverse/StatFiles.jl))
 * reading R data files (.rda, .RData): [RData.jl](https://github.com/JuliaData/RData.jl)
-* Microsoft Excel (XLSX): [XLSX.jl](https://github.com/felipenoris/XLSX.jl)
+* Microsoft Excel (XLSX): [XLSX.jl](https://github.com/JuliaData/XLSX.jl)
 * Copying/pasting to clipboard, for sending data to and from spreadsheets: [ClipData.jl](https://github.com/pdeffebach/ClipData.jl)
