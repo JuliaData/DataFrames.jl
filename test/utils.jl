@@ -9,6 +9,7 @@ using Test, Random, DataFrames
 end
 
 @testset "duplicate-name error message uses repr for Symbols" begin
+    # this testset was AI generated
     # Identifier-like Symbols still render as `:name`.
     err = try DataFrames.make_unique([:a, :a]) catch e; e end
     @test err isa ArgumentError
