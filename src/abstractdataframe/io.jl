@@ -147,8 +147,6 @@ Base.show(io::IO, mime::MIME"text/csv", df::AbstractDataFrame) =
     printtable(io, df, header = true, separator = ',')
 Base.show(io::IO, mime::MIME"text/tab-separated-values", df::AbstractDataFrame) =
     printtable(io, df, header = true, separator = '\t')
-Base.show(io::IO, mime::MIME"text/plain", df::AbstractDataFrame; kwargs...) =
-    show(io, df; kwargs...)
 
 ##############################################################################
 #

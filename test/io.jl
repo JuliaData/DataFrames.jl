@@ -1436,7 +1436,7 @@ end
                  nothing]
 
     io = IOBuffer()
-    show(io, df)
+    show(io, MIME("text/plain"), df)
     str = String(take!(io))
 
     @test str == """
@@ -1457,7 +1457,7 @@ end
     # TODO: update when https://github.com/KristofferC/Crayons.jl/issues/47 is resolved
     if Base.get_have_color()
         io = IOBuffer()
-        show(IOContext(io, :color => true), df)
+        show(IOContext(io, :color => true), MIME("text/plain"), df)
         str = String(take!(io))
         @test str == """
         \e[1m9×2 DataFrame\e[0m
@@ -1724,19 +1724,9 @@ end
         ─────┼───────────────────────────────────
            1 │ 01234567890123456789012345678901…"""
 
-    io = IOBuffer()
-    show(io, df)
-    str = String(take!(io))
-    @test str == """
-        1×1 DataFrame
-         Row │ x
-             │ String
-        ─────┼───────────────────────────────────
-           1 │ 01234567890123456789012345678901…"""
-
     # no truncation
     io = IOBuffer()
-    show(io, df, truncate=0)
+    show(io, MIME("text/plain"), df, truncate=0)
     str = String(take!(io))
     @test str == """
         1×1 DataFrame
@@ -1747,7 +1737,7 @@ end
 
     # custom truncation
     io = IOBuffer()
-    show(io, df, truncate=1)
+    show(io, MIME("text/plain"), df, truncate=1)
     str = String(take!(io))
     @test str == """
         1×1 DataFrame
@@ -1759,7 +1749,7 @@ end
 
     df = DataFrame(x12345678901234567890="0123456789"^10)
     io = IOBuffer()
-    show(io, df, truncate=1, rowlabel=:r12345678901234567890)
+    show(io, MIME("text/plain"), df, truncate=1, rowlabel=:r12345678901234567890)
     str = String(take!(io))
     @test str == """
         1×1 DataFrame
