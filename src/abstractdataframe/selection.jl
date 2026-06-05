@@ -1415,7 +1415,8 @@ $TRANSFORMATION_COMMON_RULES
 - `renamecols::Bool=true` : whether in the `cols => function` form automatically generated
   column names should include the name of transformation functions or not.
 - `keepkeys::Bool=true` : whether grouping columns of `gd` should be kept in the returned
-  data frame.
+  data frame. If `keepkeys=true` the grouping columns are placed first, followed by the
+  columns produced by the performed aggregations.
 - `ungroup::Bool=true` : whether the return value of the operation on `gd` should be a data
   frame or a `GroupedDataFrame`.
 - `threads::Bool=true` : whether transformations may be run in separate tasks which
