@@ -1942,10 +1942,11 @@ end
     @test_throws ArgumentError reduce(vcat, dfs, cols=:union, source=:x, init=DataFrame(c=[1]))
 end
 
-@testset "vcat ChainedVector ambiguity" begin
-    dfs = DataFrames.SentinelArrays.ChainedVector([[DataFrame(a=1)], [DataFrame(a=2)]])
+import SentinelArrays
+@testset "vcat ChainedVector" begin
+    dfs = SentinelArrays.ChainedVector([[DataFrame(a=1)], [DataFrame(a=2)]])
     @test reduce(vcat, dfs) == DataFrame(a=1:2)
-    dfs = DataFrames.SentinelArrays.ChainedVector([[DataFrame(a=1)], [DataFrame(b=2)]])
+    dfs = SentinelArrays.ChainedVector([[DataFrame(a=1)], [DataFrame(b=2)]])
     @test reduce(vcat, dfs, cols=:union, source=:x, init=DataFrame(c=[])) ≅
           DataFrame(c=missing, a=[1, missing], b=[missing, 2], x=1:2)
 end
