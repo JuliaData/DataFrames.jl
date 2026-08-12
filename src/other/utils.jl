@@ -93,7 +93,7 @@ function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol};
 
     if length(dups) > 0
         if !makeunique
-            dupstr = join(string.(':', unique(src[dups])), ", ", " and ")
+            dupstr = join(repr.(unique(src[dups])), ", ", " and ")
             msg = "Duplicate variable names: $dupstr. Pass makeunique=true " *
                   "to make them unique using a suffix automatically."
             throw(ArgumentError(msg))
