@@ -5,7 +5,7 @@
 If want to use the DataFrames.jl package you need to install it first.
 You can do it using the following commands:
 
-```julia
+```julia-repl
 julia> using Pkg
 
 julia> Pkg.add("DataFrames")
@@ -13,17 +13,17 @@ julia> Pkg.add("DataFrames")
 
 or
 
-```julia
-julia> ] # ']' should be pressed
+```julia-repl
+julia> ] # Press ']' to drop into pkg mode
 
-(@v1.9) pkg> add DataFrames
+pkg> add DataFrames
 ```
 
 If you want to make sure everything works as expected you can run the tests
 bundled with DataFrames.jl, but be warned that it will take more than 30
 minutes:
 
-```julia
+```julia-repl
 julia> using Pkg
 
 julia> Pkg.test("DataFrames") # Warning! This will take more than 30 minutes.
@@ -32,11 +32,11 @@ julia> Pkg.test("DataFrames") # Warning! This will take more than 30 minutes.
 Additionally, it is recommended to check the version of DataFrames.jl that
 you have installed with the `status` command.
 
-```julia
+```julia-repl
 julia> ]
 
-(@v1.9) pkg> status DataFrames
-      Status `~\v1.13\Project.toml`
+pkg> status DataFrames
+      Status `~/.../Project.toml`
   [a93c6f00] DataFrames v1.8.0
 ```
 
