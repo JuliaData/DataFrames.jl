@@ -748,19 +748,6 @@ function Base.reduce(::typeof(vcat),
     return res
 end
 
-# definition needed to avoid dispatch ambiguity
-Base.reduce(::typeof(vcat),
-    dfs::Union{SentinelArrays.ChainedVector{AbstractDataFrame,<:AbstractVector{AbstractDataFrame}},
-        SentinelArrays.ChainedVector{DataFrame,<:AbstractVector{DataFrame}},
-        SentinelArrays.ChainedVector{SubDataFrame,<:AbstractVector{SubDataFrame}},
-        SentinelArrays.ChainedVector{Union{DataFrame,SubDataFrame},<:AbstractVector{Union{DataFrame,SubDataFrame}}}};
-    cols::Union{Symbol,AbstractVector{Symbol},
-        AbstractVector{<:AbstractString}}=:setequal,
-    source::Union{Nothing,SymbolOrString,
-        Pair{<:SymbolOrString,<:AbstractVector}}=nothing,
-    init::AbstractDataFrame=DataFrame()) =
-    reduce(vcat, collect(AbstractDataFrame, dfs), cols=cols, source=source, init=init)
-
 function _vcat(dfs::AbstractVector{AbstractDataFrame};
     cols::Union{Symbol,AbstractVector{Symbol},
         AbstractVector{<:AbstractString}}=:setequal)
