@@ -187,7 +187,8 @@ julia> gd[k]
    2 │     1      2      5
 
 julia> for g in gd
-           println(g)
+           show(MIME("text/plain"), g)
+           println()
        end
 2×3 SubDataFrame
  Row │ a      b      c

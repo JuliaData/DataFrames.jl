@@ -1434,7 +1434,7 @@ end
                    C=Float32[1.0, 2.0, 3.0, 4.0])
     gd = groupby_checked(df, :A)
     io = IOContext(IOBuffer(), :limit=>true)
-    show(io, gd)
+    show(io, MIME("text/plain"), gd)
     str = String(take!(io.io))
     summary_str = summary(gd)
     @test summary_str == "GroupedDataFrame with 4 groups based on key: A"
@@ -1451,7 +1451,7 @@ end
              │ Int64  String  Float32
         ─────┼────────────────────────
            1 │     4  A\\nC        4.0"""
-    show(io, gd, allgroups=true)
+    show(io, MIME("text/plain"), gd, allgroups=true)
     str = String(take!(io.io))
     @test str == """
         $summary_str
@@ -1476,17 +1476,17 @@ end
         ─────┼────────────────────────
            1 │     4  A\\nC        4.0"""
 
-    # Test two-argument show
+    # Test three-argument show
     str1, dsize = capture_stdout() do
-        show(gd)
+        show(MIME("text/plain"), gd)
     end
     io = IOContext(IOBuffer(), :limit=>true, :displaysize=>dsize)
-    show(io, gd)
+    show(io, MIME("text/plain"), gd)
     str2 = String(take!(io.io))
     @test str1 == str2
 
     # Test error when invalid keyword arguments are passed in text backend.
-    @test_throws ArgumentError show(stdout, gd, max_column_width="100px")
+    @test_throws ArgumentError show(stdout, MIME("text/plain"), gd, max_column_width="100px")
 
     str = sprint(show, "text/html", gd)
     @test str == "<p>" *
@@ -1591,7 +1591,7 @@ end
     gd = groupby_checked(DataFrame(a=[Symbol("&")], b=["&"]), [1, 2])
     summary_str = summary(gd)
     @test summary_str == "GroupedDataFrame with 1 group based on keys: a, b"
-    @test sprint(show, gd) === """
+    @test sprint(show, MIME("text/plain"), gd) === """
         $summary_str
         Group 1 (1 row): a = :&, b = "&"
          Row │ a       b
@@ -1782,7 +1782,7 @@ end
     @test isequal_typed(DataFrame(gdf), df)
 
     # work around automatic trimming of trailing whitespace in most editors
-    @test sprint(show, groupby_checked(df, [])) ==
+    @test sprint(show, MIME("text/plain"), groupby_checked(df, [])) ==
         "GroupedDataFrame with 1 group based on key: \n" *
         "Group 1 (3 rows): \n" *
         """ Row │ x1     x2     y
