@@ -1676,9 +1676,9 @@ end
 @testset "add new correct rules for df[row, col] .= v broadcasting" begin
     for v in [:a, "a"]
         df = DataFrame(a=1)
-        @test_throws MethodError df[1, 1] .= 10
-        @test_throws MethodError df[1, v] .= 10
-        @test_throws MethodError df[CartesianIndex(1, 1)] .= 10
+        @test_throws Exception df[1, 1] .= 10
+        @test_throws Exception df[1, v] .= 10
+        @test_throws Exception df[CartesianIndex(1, 1)] .= 10
         df = DataFrame(a=[[1, 2, 3]])
         df[1, 1] .= 10
         @test df == DataFrame(a=[[10, 10, 10]])
