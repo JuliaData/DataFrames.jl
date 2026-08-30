@@ -43,7 +43,7 @@ scenarios even standard aggregation functions should not be considered to
 provide reliable output, and users are recommended to switch to higher precision
 calculations. An example of a case when standard `sum` is affected by the
 situation discussed is:
-```
+```julia-repl
 julia> sum(Any[typemax(Int), typemax(Int), 1.0])
 -1.0
 

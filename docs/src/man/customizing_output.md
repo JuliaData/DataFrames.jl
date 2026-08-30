@@ -40,9 +40,7 @@ julia> df = DataFrame(
            c = ["short", "a very very very very very long string", "ok"]
        );
 
-julia> # This is the default output.
-
-julia> df
+julia> df   # This is the default output.
 3×3 DataFrame
  Row │ a      b        c
      │ Int64  Float64  String
@@ -62,9 +60,7 @@ julia> show(df; truncate = 0)
    2 │     2    -1.2   a very very very very very long string
    3 │     3    42.0   ok
 
-julia> # Hide row numbers.
-
-julia> show(df; show_row_number = false)
+julia> show(df; show_row_number = false)    # Hide row numbers.
 3×3 DataFrame
  a      b        c
  Int64  Float64  String
@@ -73,9 +69,7 @@ julia> show(df; show_row_number = false)
      2    -1.2   a very very very very very long …
      3    42.0   ok
 
-julia> # Hide the column element types in text output.
-
-julia> show(df; eltypes = false)
+julia> show(df; eltypes = false)    # Hide the column element types in text output.
 3×3 DataFrame
  Row │ a  b      c
 ─────┼─────────────────────────────────────────────
@@ -119,9 +113,7 @@ julia> df = DataFrame(
            E = [ 0.26, -1.67,  2.22, -0.75,  1.05, -0.48, -2.93]
        );
 
-julia> # This is the default output.
-
-julia> df
+julia> df   # This is the default output.
 7×5 DataFrame
  Row │ A        B        C        D        E
      │ Float64  Float64  Float64  Float64  Float64 
@@ -157,15 +149,10 @@ julia> show(df; formatters = [parentheses_fmt])
 The color of the cells can be changed using highlighters. The following example shows how to
 highlight negative values in red in HTML output (e.g. in Jupyter).
 
-```julia
+```julia-repl
 julia> hl = HtmlHighlighter((data, i, j) -> data[i, j] < 0, ["color" => "red"]);
 
-julia> show(
-           stdout,
-           MIME("text/html"),
-           df;
-           highlighters = [hl]
-       )
+julia> show(stdout, MIME("text/html"), df; highlighters = [hl])
 ```
 
 You can also add summary rows at the bottom of a table using PrettyTables.jl keywords.  Pass

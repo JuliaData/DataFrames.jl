@@ -81,7 +81,7 @@ Now let us initialize a `DataFrame` with several columns. This is a basic way to
 do it is the following:
 
 ```jldoctest dataframe
-julia> DataFrame(A=1:3, B=5:7, fixed=1)
+julia> DataFrame(A = 1:3, B = 5:7, fixed = 1)
 3×3 DataFrame
  Row │ A      B      fixed
      │ Int64  Int64  Int64
@@ -158,7 +158,10 @@ It is also quite common to create a `DataFrame` from a `NamedTuple` of vectors
 or a vector of `NamedTuple`s. Here are some examples of these operations:
 
 ```jldoctest dataframe
-julia> DataFrame((a=[1, 2], b=[3, 4]))
+julia> tup = (a = [1, 2], b = [3, 4])
+(a = [1, 2], b = [3, 4])
+
+julia> DataFrame(tup)
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -166,7 +169,12 @@ julia> DataFrame((a=[1, 2], b=[3, 4]))
    1 │     1      3
    2 │     2      4
 
-julia> DataFrame([(a=1, b=0), (a=2, b=0)])
+julia> tupvec = [(a = 1, b = 0), (a = 2, b = 0)]
+2-element Vector{@NamedTuple{a::Int64, b::Int64}}:
+ (a = 1, b = 0)
+ (a = 2, b = 0)
+
+julia> DataFrame(tupvec)
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -178,7 +186,7 @@ julia> DataFrame([(a=1, b=0), (a=2, b=0)])
 Sometimes your source data might have a heterogeneous set of columns for each observation.
 Here is an example:
 
-```
+```jldoctest
 julia> source = [(type="circle", radius=10), (type="square", side=20)]
 2-element Vector{NamedTuple{names, Tuple{String, Int64}} where names}:
  (type = "circle", radius = 10)
@@ -189,7 +197,7 @@ If you want to create a data frame from such data containing all columns present
 one of the source observations, with a `missing` entry if some column is not present then
 you can use `Tables.dictcolumntable` function to help you create the desired data frame:
 
-```
+```julia-repl
 julia> DataFrame(Tables.dictcolumntable(source))
 2×3 DataFrame
  Row │ type    radius   side
@@ -204,7 +212,7 @@ about all columns present in the source data and properly instantiates them. If 
 this function the `DataFrame` constructor would assume that the first row of data contains the set
 of columns present in the source, which would lead to an error in our example:
 
-```
+```julia-repl
 julia> DataFrame(source)
 ERROR: type NamedTuple has no field radius
 ```
@@ -262,7 +270,7 @@ disk in the CSV format.
 First make sure you have CSV.jl installed. You can do it using the following
 instructions:
 
-```julia
+```julia-repl
 julia> using Pkg
 
 julia> Pkg.add("CSV")
@@ -1024,7 +1032,7 @@ In order to compare the performance of indexing vs creation of a view let us
 run the following benchmark using the BenchmarkTools.jl package (please install
 it if you want to re-run this comparison):
 
-```julia
+```julia-repl
 julia> using BenchmarkTools
 
 julia> @btime $german[1:end-1, 1:end-1];
@@ -1459,17 +1467,17 @@ julia> insertcols!(df1, 1, :Country => "India")
 
 You can pass a column location where you want to put the inserted column as a
 second argument to the `insertcols!` function:
-```
+```jldoctest dataframe
 julia> insertcols!(df1, 4, :b => exp(4))
 6×7 DataFrame
- Row │ Country  Age        Sex          b        Job    Customers  City        ⋯
-     │ String   String     String       Float64  Int64  String     String      ⋯
-─────┼──────────────────────────────────────────────────────────────────────────
-   1 │ India    Economics  male         54.5982      4  Rohit      Kanpur      ⋯
+ Row │ Country  Age        Sex          b        Job    Customers  City
+     │ String   String     String       Float64  Int64  String     String
+─────┼─────────────────────────────────────────────────────────────────────────
+   1 │ India    Economics  male         54.5982      4  Rohit      Kanpur
    2 │ India    Economics  female       54.5982      4  Akshat     Lucknow
    3 │ India    Economics  male         54.5982      4  Rahul      Bhuvneshwar
    4 │ India    Economics  transgender  54.5982      4  Aayush     Jaipur
-   5 │ India    Economics  female       54.5982      4  Prateek    Ranchi      ⋯
+   5 │ India    Economics  female       54.5982      4  Prateek    Ranchi
    6 │ India    Economics  female       54.5982      4  Anam       Dehradoon
 ```
 
@@ -1517,28 +1525,28 @@ julia> german[:, Not(:Age)]
 
 Select columns starting from `:Sex` and ending at `:Housing`:
 
-```
+```julia-repl
 julia> german[:, Between(:Sex, :Housing)]
 1000×3 DataFrame
-  Row │ Sex     Job    Housing
-      │ String  Int64  String
-──────┼────────────────────────
-    1 │ male        2  own
-    2 │ female      2  own
-    3 │ male        1  own
-    4 │ male        2  free
-    5 │ male        2  free
-    6 │ male        1  free
-    7 │ male        2  own
-    8 │ male        3  rent
-  ⋮   │   ⋮       ⋮       ⋮
-  994 │ male        3  own
-  995 │ male        2  own
-  996 │ female      1  own
-  997 │ male        3  own
-  998 │ male        2  own
-  999 │ male        2  free
- 1000 │ male        2  own
+  Row │ Sex      Job    Housing
+      │ String7  Int64  String7
+──────┼─────────────────────────
+    1 │ male         2  own
+    2 │ female       2  own
+    3 │ male         1  own
+    4 │ male         2  free
+    5 │ male         2  free
+    6 │ male         1  free
+    7 │ male         2  own
+    8 │ male         3  rent
+  ⋮   │    ⋮       ⋮       ⋮
+  994 │ male         3  own
+  995 │ male         2  own
+  996 │ female       1  own
+  997 │ male         3  own
+  998 │ male         2  own
+  999 │ male         2  free
+ 1000 │ male         2  own
                985 rows omitted
 ```
 
@@ -1686,7 +1694,7 @@ or column index which identifies a data frame column.
 `source_column_selector` may be used as the entire `operation`
 with `select` or `select!` to isolate or reorder columns.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(a = [1, 2, 3], b = [4, 5, 6], c = [7, 8, 9])
 3×3 DataFrame
  Row │ a      b      c
@@ -1727,7 +1735,7 @@ julia> select(df, 2)
 `source_column_selector` may also be used as the entire `operation`
 with `subset` or `subset!` if the source column contains `Bool` values.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(
            name = ["Scott", "Jill", "Erica", "Jimmy"],
            minor = [false, true, false, true],
@@ -1763,7 +1771,7 @@ See the [Indexing](@ref) API for the full list of possible values with reference
     `ERROR: syntax: whitespace not allowed after ":" used for quoting`,
     try using `All()`, `Cols(:)`, or `(:)` instead to select all columns.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(
            id = [1, 2, 3],
            first_name = ["José", "Emma", "Nathan"],
@@ -1853,7 +1861,7 @@ When multiple columns are selected by `source_column_selector`,
 the `operation_function` will receive the columns as separate positional arguments
 in the order they were selected, e.g. `f(column1, column2, column3)`.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(a = [1, 2, 3], b = [4, 5, 4])
 3×2 DataFrame
  Row │ a      b
@@ -1900,7 +1908,7 @@ then you can wrap your element-wise function in `ByRow` like
 This will apply `my_elementwise_function` to every element in the column
 and then collect the results back into a vector.
 
-```julia
+```jldoctest dataframe
 julia> transform(df, [:a, :b] => ByRow(*))
 3×3 DataFrame
  Row │ a      b      a_b_*
@@ -1936,7 +1944,7 @@ Alternatively, you may just want to define the function itself so it
 [broadcasts](https://docs.julialang.org/en/v1/manual/arrays/#Broadcasting)
 over vectors.
 
-```julia
+```jldoctest dataframe
 julia> g(x) = x .+ 1
 g (generic function with 1 method)
 
@@ -1966,7 +1974,7 @@ julia> transform(df, [:a, :b] => h)
 are a convenient way to define and use an `operation_function`
 all within the manipulation function call.
 
-```julia
+```jldoctest dataframe
 julia> select(df, :a => ByRow(x -> x + 1))
 3×1 DataFrame
  Row │ a_function
@@ -2024,7 +2032,7 @@ The distinction is somewhat similar to the difference between the built-in
 while `minimum` is defined to find the minimum value
 among the elements of a single collection argument.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(a = 1:2, b = 3:4, c = 5:6, d = 2:-1:1)
 2×4 DataFrame
  Row │ a      b      c      d
@@ -2079,7 +2087,7 @@ julia> select(df, AsTable(Between(:b, :d)) => ByRow(mean)) # `mean` operates on 
 `AsTable` can also be used to pass columns to a function which operates
 on fields of a `NamedTuple`.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(a = 1:2, b = 3:4, c = 5:6, d = 7:8)
 2×4 DataFrame
  Row │ a      b      c      d
@@ -2114,7 +2122,7 @@ from its default value (`true`) to `renamecols=false`.
 This option prevents the function name from being appended to the column name
 as it usually would be.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(a=1:4, b=5:8)
 4×2 DataFrame
  Row │ a      b
@@ -2145,7 +2153,7 @@ specify your own `new_column_names`.
 the name of the new column(s).
 `new_column_names` may be a symbol, string, function, vector of symbols, vector of strings, or `AsTable`.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(a=1:4, b=5:8)
 4×2 DataFrame
  Row │ a      b
@@ -2193,7 +2201,7 @@ However, there are `rename` and `rename!` functions,
 which accept similar syntax,
 that tend to be more useful for this operation.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(a=1:4, b=5:8)
 4×2 DataFrame
  Row │ a      b
@@ -2241,7 +2249,7 @@ rather than being added to the end.
 This can be done by manually specifying an existing column name
 or by using the `renamecols=false` keyword argument.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(a=1:4, b=5:8)
 4×2 DataFrame
  Row │ a      b
@@ -2286,7 +2294,7 @@ julia> transform(df, :b => (x -> x .+ 10) => :a)  # replace column :a
 Actually, `renamecols=false` just prevents the function name from being appended
 to the final column name such that the operation is *usually* returned to the same column.
 
-```julia
+```jldoctest dataframe
 julia> transform(df, [:a, :b] => +)  # new column name is all source columns and function name
 4×3 DataFrame
  Row │ a      b      a_b_+
@@ -2322,7 +2330,7 @@ In the `source_column_selector => operation_function => new_column_names` operat
 `new_column_names` may also be a renaming function which operates on a string
 to create the destination column names programmatically.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(a=1:4, b=5:8)
 4×2 DataFrame
  Row │ a      b
@@ -2362,7 +2370,7 @@ julia> transform(df, :a => (x -> 10 .* x) => (s -> "new_" * s)) # with anonymous
     It is a good idea to wrap anonymous functions in parentheses
     to avoid the `=>` operator accidently becoming part of the anonymous function.
     The examples above do not work correctly without the parentheses!
-    ```julia
+    ```julia-repl
     julia> transform(df, :a => x -> 10 .* x => add_prefix)  # Not what we wanted!
     4×3 DataFrame
      Row │ a      b      a_function
@@ -2391,7 +2399,7 @@ To work around this limitation, use the
 `source_column_selector => operation_function => new_column_names` operation form
 with `identity` as the `operation_function`.
 
-```julia
+```jldoctest dataframe
 julia> transform(df, :a => add_prefix)
 ERROR: MethodError: no method matching *(::String, ::Vector{Int64})
 
@@ -2410,7 +2418,7 @@ In this case though,
 it is probably again more useful to use the `rename` or `rename!` function
 rather than one of the manipulation functions
 in order to rename in-place and avoid the intermediate `operation_function`.
-```julia
+```jldoctest dataframe
 julia> rename(add_prefix, df)  # rename all columns with a function
 4×2 DataFrame
  Row │ new_a  new_b
@@ -2439,7 +2447,7 @@ It is possible to split the data contained inside a single column
 into multiple new columns by supplying a vector of strings or symbols
 as `new_column_names`.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(data = [(1,2), (3,4)]) # vector of tuples
 2×1 DataFrame
  Row │ data
@@ -2459,7 +2467,7 @@ julia> transform(df, :data => [:first, :second]) # manual naming
 
 This kind of data splitting can even be done automatically with `AsTable`.
 
-```julia
+```jldoctest dataframe
 julia> transform(df, :data => AsTable) # default automatic naming with tuples
 2×3 DataFrame
  Row │ data    x1     x2
@@ -2471,7 +2479,7 @@ julia> transform(df, :data => AsTable) # default automatic naming with tuples
 
 If a data frame column contains `NamedTuple`s,
 then `AsTable` will preserve the field names.
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(data = [(a=1,b=2), (a=3,b=4)]) # vector of named tuples
 2×1 DataFrame
  Row │ data
@@ -2499,7 +2507,7 @@ julia> transform(df, :data => AsTable) # keeps names from named tuples
 Renaming functions also work for multi-column transformations,
 but they must operate on a vector of strings.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(data = [(1,2), (3,4)])
 2×1 DataFrame
  Row │ data
@@ -2531,7 +2539,7 @@ Passing multiple operations is especially useful for the `select`, `select!`,
 and `combine` manipulation functions,
 since they only retain columns which are a result of the passed operations.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(a = 1:4, b = [50,50,60,60], c = ["hat","bat","cat","dog"])
 4×3 DataFrame
  Row │ a      b      c
@@ -2559,7 +2567,7 @@ julia> select(df, :c, :b, :a) # re-order columns
    3 │ cat        60      3
    4 │ dog        60      4
 
-ulia> select(df, :b, :) # `:` here means all other columns
+julia> select(df, :b, :) # `:` here means all other columns
 4×3 DataFrame
  Row │ b      a      c
      │ Int64  Int64  String
@@ -2607,7 +2615,7 @@ This is a good way to make manipulations with many operations more readable.
 Passing multiple operations to `subset` or `subset!` is an easy way to narrow in
 on a particular row of data.
 
-```julia
+```jldoctest dataframe
 julia> subset(
            df,
            :b => ByRow(==(60)),
@@ -2625,13 +2633,13 @@ as it existed before the function call
 i.e. you cannot use newly created columns for subsequent operations
 within the same manipulation.
 
-```julia
+```jldoctest dataframe
 julia> transform(
            df,
            [:a, :b] => ByRow(+) => :d,
            :d => (x -> x ./ 2),
        ) # requires two separate transformations
-ERROR: ArgumentError: column name :d not found in the data frame; existing most similar names are: :a, :b and :c
+ERROR: ArgumentError: column name "d" not found in the data frame; existing most similar names are: "a", "b" and "c"
 
 julia> new_df = transform(df, [:a, :b] => ByRow(+) => :d)
 4×4 DataFrame
@@ -2674,7 +2682,7 @@ In DataFrames.jl, a symbol, string, or integer
 may be used to select a single column.
 Some `Pair`s with these types are below.
 
-```julia
+```jldoctest dataframe
 julia> typeof(:x => :a)
 Pair{Symbol, Symbol}
 
@@ -2688,7 +2696,7 @@ Pair{Int64, String}
 Any of the `Pair`s above could be used to rename the first column
 of the data frame below to `a`.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(x = 1:3, y = 4:6)
 3×2 DataFrame
  Row │ x      y
@@ -2721,7 +2729,7 @@ What should we do if we want to keep and rename both the `x` and `y` column?
 One option is to supply a `Vector` of operation `Pair`s to `select`.
 `select` will process all of these operations in order.
 
-```julia
+```jldoctest dataframe
 julia> ["x" => "a", "y" => "b"]
 2-element Vector{Pair{String, String}}:
  "x" => "a"
@@ -2739,7 +2747,7 @@ julia> select(df, ["x" => "a", "y" => "b"])
 
 We can use broadcasting to simplify the syntax above.
 
-```julia
+```jldoctest dataframe
 julia> ["x", "y"] .=> ["a", "b"]
 2-element Vector{Pair{String, String}}:
  "x" => "a"
@@ -2760,7 +2768,7 @@ argument whether the individual pairs are written out explicitly or
 constructed with broadcasting.
 The broadcasting is applied before the call to `select`.
 
-```julia
+```jldoctest dataframe
 julia> ["x" => "a", "y" => "b"] == (["x", "y"] .=> ["a", "b"])
 true
 ```
@@ -2782,7 +2790,7 @@ true
 In Julia,
 a non-vector broadcasted with a vector will be repeated in each resultant pair element.
 
-```julia
+```jldoctest dataframe
 julia> ["x", "y"] .=> :a    # :a is repeated
 2-element Vector{Pair{String, Symbol}}:
  "x" => :a
@@ -2796,7 +2804,7 @@ julia> 1 .=> [:a, :b]       # 1 is repeated
 
 We can use this fact to easily broadcast an `operation_function` to multiple columns.
 
-```julia
+```jldoctest dataframe
 julia> f(x) = 2 * x
 f (generic function with 1 method)
 
@@ -2832,7 +2840,7 @@ julia> select(df, ["x", "y"] .=> f .=> ["a", "b"])  # apply f with manual column
 A renaming function can be applied to multiple columns in the same way.
 It will also be repeated in each operation `Pair`.
 
-```julia
+```jldoctest dataframe
 julia> newname(s::String) = s * "_new"
 newname (generic function with 1 method)
 
@@ -2858,7 +2866,7 @@ Thus, `:x => :y => :z` becomes a nested `Pair`,
 where `:x` is the first element and points to the `Pair` `:y => :z`,
 which is the second element.
 
-```julia
+```jldoctest dataframe
 julia> p = :x => :y => :z
 :x => (:y => :z)
 
@@ -2884,7 +2892,7 @@ often similarities in the column names or position can be exploited to avoid
 tedious selection.
 Consider a data frame with temperature data at three different locations
 taken over time.
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(Time = 1:4,
                       Temperature1 = [20, 23, 25, 28],
                       Temperature2 = [33, 37, 41, 44],
@@ -2903,7 +2911,7 @@ To convert all of the temperature data in one transformation,
 we just need to define a conversion function and broadcast
 it to all of the "Temperature" columns.
 
-```julia
+```jldoctest dataframe
 julia> celsius_to_kelvin(x) = x + 273
 celsius_to_kelvin (generic function with 1 method)
 
@@ -2923,7 +2931,7 @@ julia> transform(
 ```
 Or, simultaneously changing the column names:
 
-```julia
+```jldoctest dataframe
 julia> rename_function(s) = "Temperature $(last(s)) (K)"
 rename_function (generic function with 1 method)
 
@@ -2960,7 +2968,7 @@ julia> select(
 You could also broadcast different columns to different functions
 by supplying a vector of functions.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(a=1:4, b=5:8)
 4×2 DataFrame
  Row │ a      b
@@ -2991,7 +2999,7 @@ julia> transform(df, [:a, :b] .=> [f1, f2])
 However, this form is not much more convenient than supplying
 multiple individual operations.
 
-```julia
+```jldoctest dataframe
 julia> transform(df, [:a => f1, :b => f2]) # same manipulation as previous
 4×4 DataFrame
  Row │ a      b      a_f1   b_f2
@@ -3009,7 +3017,7 @@ by changing the vector of functions to a 1-by-x matrix of functions.
 (Recall that a list, a vector, or a matrix of operation pairs are all valid
 for passing to the manipulation functions.)
 
-```julia
+```jldoctest dataframe
 julia> [:a, :b] .=> [f1 f2] # No comma `,` between f1 and f2
 2×2 Matrix{Pair{Symbol}}:
  :a=>f1  :a=>f2
@@ -3062,7 +3070,7 @@ and place the result in a new third column.
 
 **Setup:**
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(x = 1:3, y = 4:6)  # define a data frame
 3×2 DataFrame
  Row │ x      y
@@ -3075,7 +3083,7 @@ julia> df = DataFrame(x = 1:3, y = 4:6)  # define a data frame
 
 **Manipulation:**
 
-```julia
+```jldoctest dataframe
 julia> transform!(df, [:x, :y] => (+) => :z)
 3×3 DataFrame
  Row │ x      y      z
@@ -3088,7 +3096,7 @@ julia> transform!(df, [:x, :y] => (+) => :z)
 
 **Dot Syntax:**
 
-```julia
+```jldoctest dataframe
 julia> df.z = df.x + df.y
 3-element Vector{Int64}:
  5
@@ -3117,7 +3125,7 @@ and then `df` would not have been altered.
 The approach with dot syntax is very versatile
 since the data getting, mathematics, and data setting can be separate steps.
 
-```julia
+```jldoctest dataframe
 julia> df.x  # dot syntax returns a vector
 3-element Vector{Int64}:
  1
@@ -3148,7 +3156,7 @@ stored in variables.
 
 Imagine this setup data was read from a file and/or entered by a user at runtime.
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame("My First Column" => 1:3, "My Second Column" => 4:6)  # define a data frame
 3×2 DataFrame
  Row │ My First Column  My Second Column
@@ -3163,14 +3171,14 @@ julia> c1 = "My First Column"; c2 = "My Second Column"; c3 = "My Third Column"; 
 
 **Dot Syntax:**
 
-```julia
+```jldoctest dataframe
 julia> df.c1  # dot syntax expects an explicit column name and cannot be used to access variable column name
 ERROR: ArgumentError: column name :c1 not found in the data frame
 ```
 
 **Indexing:**
 
-```julia
+```jldoctest dataframe
 julia> df[:, c3] = df[:, c1] + df[:, c2]  # access columns with names stored in variables
 3-element Vector{Int64}:
  5
@@ -3189,7 +3197,7 @@ julia> df  # see that the previous expression updated the data frame `df`
 
 **Manipulation:**
 
-```julia
+```jldoctest dataframe
 julia> transform!(df, [c1, c2] => (+) => c3)  # access columns with names stored in variables
 3×3 DataFrame
  Row │ My First Column  My Second Column  My Third Column
@@ -3206,7 +3214,7 @@ This can be helpful when dealing with long variable and column names.
 
 **Setup:**
 
-```julia
+```jldoctest dataframe
 julia> my_very_long_data_frame_name = DataFrame(
            "My First Column" => 1:3,
            "My Second Column" => 4:6
@@ -3223,8 +3231,7 @@ julia> c1 = "My First Column"; c2 = "My Second Column"; c3 = "My Third Column"; 
 ```
 **Manipulation:**
 
-```julia
-
+```jldoctest dataframe
 julia> transform!(my_very_long_data_frame_name, [c1, c2] => (+) => c3)
 3×3 DataFrame
  Row │ My First Column  My Second Column  My Third Column
@@ -3237,7 +3244,7 @@ julia> transform!(my_very_long_data_frame_name, [c1, c2] => (+) => c3)
 
 **Indexing:**
 
-```julia
+```jldoctest dataframe
 julia> my_very_long_data_frame_name[:, c3] = my_very_long_data_frame_name[:, c1] + my_very_long_data_frame_name[:, c2]
 3-element Vector{Int64}:
  5
@@ -3259,7 +3266,7 @@ it is easier to operate on a subset of columns.
 
 **Setup:**
 
-```julia
+```jldoctest dataframe
 julia> df = DataFrame(x = 1:3, y = 4:6, z = 7:9)  # define data frame
 3×3 DataFrame
  Row │ x      y      z
@@ -3272,14 +3279,14 @@ julia> df = DataFrame(x = 1:3, y = 4:6, z = 7:9)  # define data frame
 
 **Dot Syntax:**
 
-```julia
+```jldoctest dataframe
 julia> df.Not(:x)  # will not work; requires a literal column name
 ERROR: ArgumentError: column name :Not not found in the data frame
 ```
 
 **Manipulation:**
 
-```julia
+```jldoctest dataframe
 julia> transform!(df, Not(:x) => ByRow(max))  # find maximum value across all rows except for column `x`
 3×4 DataFrame
  Row │ x      y      z      y_z_max
@@ -3292,7 +3299,7 @@ julia> transform!(df, Not(:x) => ByRow(max))  # find maximum value across all ro
 
 **Indexing:**
 
-```julia
+```jldoctest dataframe
 julia> df[:, :y_z_max] = maximum.(eachrow(df[:, Not(:x)]))  # find maximum value across all rows except for column `x`
 3-element Vector{Int64}:
  7
@@ -3313,7 +3320,7 @@ Moreover, indexing can operate on a subset of columns *and* rows.
 
 **Indexing:**
 
-```julia
+```jldoctest dataframe
 julia> y_z_max_row3 = maximum(df[3, Not(:x)])  # find maximum value across row 3 except for column `x`
 9
 ```
