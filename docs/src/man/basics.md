@@ -158,10 +158,10 @@ It is also quite common to create a `DataFrame` from a `NamedTuple` of vectors
 or a vector of `NamedTuple`s. Here are some examples of these operations:
 
 ```jldoctest dataframe
-julia> tup = (a = [1, 2], b = [3, 4])
+julia> namedtup = (a = [1, 2], b = [3, 4])
 (a = [1, 2], b = [3, 4])
 
-julia> DataFrame(tup)
+julia> DataFrame(namedtup)
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64
@@ -169,12 +169,12 @@ julia> DataFrame(tup)
    1 │     1      3
    2 │     2      4
 
-julia> tupvec = [(a = 1, b = 0), (a = 2, b = 0)]
+julia> namedtup_vec = [(a = 1, b = 0), (a = 2, b = 0)]
 2-element Vector{@NamedTuple{a::Int64, b::Int64}}:
  (a = 1, b = 0)
  (a = 2, b = 0)
 
-julia> DataFrame(tupvec)
+julia> DataFrame(namedtup_vec)
 2×2 DataFrame
  Row │ a      b
      │ Int64  Int64
