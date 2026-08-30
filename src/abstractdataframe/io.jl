@@ -23,9 +23,9 @@ implicit row ID column contained in every `AbstractDataFrame`.
 # Arguments
 - `df::AbstractDataFrame`: The data frame whose columns will be printed.
 - `io::IO`: The `IO` to which `df` is to be printed
-- `rowindices1::AbstractVector{Int}: A set of indices of the first
+- `rowindices1::AbstractVector{Int}`: A set of indices of the first
   chunk of the AbstractDataFrame that would be rendered to IO.
-- `rowindices2::AbstractVector{Int}: A set of indices of the second
+- `rowindices2::AbstractVector{Int}`: A set of indices of the second
   chunk of the AbstractDataFrame that would be rendered to IO. Can
   be empty if the AbstractDataFrame would be printed without any
   ellipses.

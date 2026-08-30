@@ -603,7 +603,7 @@ julia> df[:, :x1]
 
 By default `select` copies columns of a passed source data frame.
 In order to avoid copying, pass `copycols=false`:
-```
+```jldoctest dataframe
 julia> df2 = select(df, :x1)
 2×1 DataFrame
  Row │ x1
@@ -668,7 +668,7 @@ julia> transform(df, All() => +)
 Using the `ByRow` wrapper, we can easily compute for each row the name of column
 with the highest score:
 
-```
+```julia-repl
 julia> using Random
 
 julia> Random.seed!(1);
@@ -709,8 +709,8 @@ julia> transform(df, AsTable(:) => ByRow(argmax) => :prediction)
 In the most complex example below we compute row-wise sum, number of
 elements, and mean, while ignoring missing values.
 
-```
-julia> using Statistics
+```jldoctest
+julia> using DataFrames, Statistics
 
 julia> df = DataFrame(x=[1, 2, missing], y=[1, missing, missing])
 3×2 DataFrame
@@ -844,7 +844,7 @@ want to focus on the most common usage patterns.
 A `DataFrame` can store values of any type as its columns, for example
 below we show how one can store a `Tuple`:
 
-```
+```jldoctest dataframe
 julia> df2 = combine(df, All() .=> extrema)
 1×2 DataFrame
  Row │ A_extrema  B_extrema
@@ -858,7 +858,7 @@ minima and maxima. This can be achieved by passing multiple columns for the outp
 Here is an example of how this can be done by writing the column names by-hand for a single
 input column:
 
-```
+```jldoctest dataframe
 julia> combine(df2, "A_extrema" => identity => ["A_min", "A_max"])
 1×2 DataFrame
  Row │ A_min  A_max
@@ -869,7 +869,7 @@ julia> combine(df2, "A_extrema" => identity => ["A_min", "A_max"])
 
 You can extend it to handling all columns in `df2` using broadcasting:
 
-```
+```jldoctest dataframe
 julia> combine(df2, All() .=> identity .=> [["A_min", "A_max"], ["B_min", "B_max"]])
 1×4 DataFrame
  Row │ A_min  A_max  B_min    B_max
@@ -882,7 +882,7 @@ This approach works, but can be improved. Instead of writing all the column name
 manually we can instead use a function as a way to specify target column names
 based on source column names:
 
-```
+```jldoctest dataframe
 julia> combine(df2, All() .=> identity .=> c -> first(c) .* ["_min", "_max"])
 1×4 DataFrame
  Row │ A_min  A_max  B_min    B_max
@@ -898,7 +898,7 @@ treated as a transformation and not as a rule for target column names generation
 You might want to perform the transformation of the source data frame into the result
 we have just shown in one step. This can be achieved with the following expression:
 
-```
+```jldoctest dataframe
 julia> combine(df, All() .=> Ref∘extrema .=> c -> c .* ["_min", "_max"])
 1×4 DataFrame
  Row │ A_min  A_max  B_min    B_max
@@ -912,10 +912,9 @@ Without `Ref`, `combine` iterates the contents of the value returned by the oper
 which in our case is a tuple of numbers, and tries to expand it assuming that each produced value represents one row,
 so one gets an error:
 
-```
+```jldoctest dataframe
 julia> combine(df, All() .=> extrema .=> [c -> c .* ["_min", "_max"]])
-ERROR: ArgumentError: 'Tuple{Int64, Int64}' iterates 'Int64' values,
-which doesn't satisfy the Tables.jl `AbstractRow` interface
+ERROR: ArgumentError: 'Tuple{Int64, Int64}' iterates 'Int64' values, which doesn't satisfy the Tables.jl `AbstractRow` interface
 ```
 
 Note that we used `Ref` as it is a container that is typically used in DataFrames.jl when one

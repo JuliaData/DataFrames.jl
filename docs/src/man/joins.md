@@ -481,7 +481,7 @@ Note that in this case the order and number of rows in the left table is not
 changed. Therefore, in particular, it is not allowed to have duplicate keys
 in the right table:
 
-```
+```julia-repl
 julia> leftjoin!(main, DataFrame(id=[2, 2], info_bad=["a", "b"]), on=:id)
 ERROR: ArgumentError: duplicate rows found in right table
 ```
