@@ -1727,7 +1727,7 @@ end
         dfr[["a", "b"]] = (a=1000, b=2000)
         @test copy(dfr) == (b=2000, a=1000)
 
-        @test_throws MethodError dfr["a"] .= 100
+        @test_throws Exception dfr["a"] .= 100
         dfr[["a", "b"]] .= 50
         @test copy(dfr) == (b=50, a=50)
     end

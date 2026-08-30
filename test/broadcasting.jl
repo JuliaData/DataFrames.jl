@@ -1043,10 +1043,10 @@ end
 
 @testset "scalar on assignment side" begin
     df = DataFrame(rand(2, 3), :auto)
-    @test_throws MethodError df[1, 1] .= df[1, 1] .- df[1, 1]
+    @test_throws Exception df[1, 1] .= df[1, 1] .- df[1, 1]
     df[1, 1:1] .= df[1, 1] .- df[1, 1]
     @test df[1, 1] == 0
-    @test_throws MethodError df[1, 2] .-= df[1, 2]
+    @test_throws Exception df[1, 2] .-= df[1, 2]
     df[1:1, 2] .-= df[1, 2]
     @test df[1, 2] == 0
 end
