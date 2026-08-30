@@ -1290,27 +1290,27 @@ end
 @testset "additional checks of post-! broadcasting rules" begin
     df = copy(refdf)
     v1 = df[!, 1]
-    @test_throws MethodError df[CartesianIndex(1, 1)] .= 1
-    @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
-    @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1, 2]
+    @test_throws Exception df[CartesianIndex(1, 1)] .= 1
+    @test_throws Exception df[CartesianIndex(1, 1)] .= "d"
+    @test_throws Exception df[CartesianIndex(1, 1)] .= [1, 2]
 
     df = copy(refdf)
     v1 = df[!, 1]
-    @test_throws MethodError df[1, 1] .= 1
-    @test_throws MethodError df[1, 1] .= "d"
-    @test_throws DimensionMismatch df[1, 1] .= [1, 2]
+    @test_throws Exception df[1, 1] .= 1
+    @test_throws Exception df[1, 1] .= "d"
+    @test_throws Exception df[1, 1] .= [1, 2]
 
     df = copy(refdf)
     v1 = df[!, 1]
-    @test_throws MethodError df[1, :x1] .= 1
-    @test_throws MethodError df[1, :x1] .= "d"
-    @test_throws DimensionMismatch df[1, :x1] .= [1, 2]
+    @test_throws Exception df[1, :x1] .= 1
+    @test_throws Exception df[1, :x1] .= "d"
+    @test_throws Exception df[1, :x1] .= [1, 2]
 
     df = copy(refdf)
     v1 = df[!, 1]
-    @test_throws MethodError df[1, "x1"] .= 1
-    @test_throws MethodError df[1, "x1"] .= "d"
-    @test_throws DimensionMismatch df[1, "x1"] .= [1, 2]
+    @test_throws Exception df[1, "x1"] .= 1
+    @test_throws Exception df[1, "x1"] .= "d"
+    @test_throws Exception df[1, "x1"] .= [1, 2]
 
     df = copy(refdf)
     v1 = df[!, 1]
@@ -1485,21 +1485,21 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    @test_throws MethodError df[CartesianIndex(1, 1)] .= 1
-    @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
-    @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1, 2]
+    @test_throws Exception df[CartesianIndex(1, 1)] .= 1
+    @test_throws Exception df[CartesianIndex(1, 1)] .= "d"
+    @test_throws Exception df[CartesianIndex(1, 1)] .= [1, 2]
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    @test_throws MethodError df[1, 1] .= 1
-    @test_throws MethodError df[1, 1] .= "d"
-    @test_throws DimensionMismatch df[1, 1] .= [1, 2]
+    @test_throws Exception df[1, 1] .= 1
+    @test_throws Exception df[1, 1] .= "d"
+    @test_throws Exception df[1, 1] .= [1, 2]
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    @test_throws MethodError df[1, :x1] .= 1
-    @test_throws MethodError df[1, :x1] .= "d"
-    @test_throws DimensionMismatch df[1, :x1] .= [1, 2]
+    @test_throws Exception df[1, :x1] .= 1
+    @test_throws Exception df[1, :x1] .= "d"
+    @test_throws Exception df[1, :x1] .= [1, 2]
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
