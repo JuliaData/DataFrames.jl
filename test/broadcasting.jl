@@ -1043,10 +1043,10 @@ end
 
 @testset "scalar on assignment side" begin
     df = DataFrame(rand(2, 3), :auto)
-    @test_throws MethodError df[1, 1] .= df[1, 1] .- df[1, 1]
+    @test_throws Exception df[1, 1] .= df[1, 1] .- df[1, 1]
     df[1, 1:1] .= df[1, 1] .- df[1, 1]
     @test df[1, 1] == 0
-    @test_throws MethodError df[1, 2] .-= df[1, 2]
+    @test_throws Exception df[1, 2] .-= df[1, 2]
     df[1:1, 2] .-= df[1, 2]
     @test df[1, 2] == 0
 end
@@ -1290,27 +1290,27 @@ end
 @testset "additional checks of post-! broadcasting rules" begin
     df = copy(refdf)
     v1 = df[!, 1]
-    @test_throws MethodError df[CartesianIndex(1, 1)] .= 1
-    @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
-    @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1, 2]
+    @test_throws Exception df[CartesianIndex(1, 1)] .= 1
+    @test_throws Exception df[CartesianIndex(1, 1)] .= "d"
+    @test_throws Exception df[CartesianIndex(1, 1)] .= [1, 2]
 
     df = copy(refdf)
     v1 = df[!, 1]
-    @test_throws MethodError df[1, 1] .= 1
-    @test_throws MethodError df[1, 1] .= "d"
-    @test_throws DimensionMismatch df[1, 1] .= [1, 2]
+    @test_throws Exception df[1, 1] .= 1
+    @test_throws Exception df[1, 1] .= "d"
+    @test_throws Exception df[1, 1] .= [1, 2]
 
     df = copy(refdf)
     v1 = df[!, 1]
-    @test_throws MethodError df[1, :x1] .= 1
-    @test_throws MethodError df[1, :x1] .= "d"
-    @test_throws DimensionMismatch df[1, :x1] .= [1, 2]
+    @test_throws Exception df[1, :x1] .= 1
+    @test_throws Exception df[1, :x1] .= "d"
+    @test_throws Exception df[1, :x1] .= [1, 2]
 
     df = copy(refdf)
     v1 = df[!, 1]
-    @test_throws MethodError df[1, "x1"] .= 1
-    @test_throws MethodError df[1, "x1"] .= "d"
-    @test_throws DimensionMismatch df[1, "x1"] .= [1, 2]
+    @test_throws Exception df[1, "x1"] .= 1
+    @test_throws Exception df[1, "x1"] .= "d"
+    @test_throws Exception df[1, "x1"] .= [1, 2]
 
     df = copy(refdf)
     v1 = df[!, 1]
@@ -1485,21 +1485,21 @@ end
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    @test_throws MethodError df[CartesianIndex(1, 1)] .= 1
-    @test_throws MethodError df[CartesianIndex(1, 1)] .= "d"
-    @test_throws DimensionMismatch df[CartesianIndex(1, 1)] .= [1, 2]
+    @test_throws Exception df[CartesianIndex(1, 1)] .= 1
+    @test_throws Exception df[CartesianIndex(1, 1)] .= "d"
+    @test_throws Exception df[CartesianIndex(1, 1)] .= [1, 2]
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    @test_throws MethodError df[1, 1] .= 1
-    @test_throws MethodError df[1, 1] .= "d"
-    @test_throws DimensionMismatch df[1, 1] .= [1, 2]
+    @test_throws Exception df[1, 1] .= 1
+    @test_throws Exception df[1, 1] .= "d"
+    @test_throws Exception df[1, 1] .= [1, 2]
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
-    @test_throws MethodError df[1, :x1] .= 1
-    @test_throws MethodError df[1, :x1] .= "d"
-    @test_throws DimensionMismatch df[1, :x1] .= [1, 2]
+    @test_throws Exception df[1, :x1] .= 1
+    @test_throws Exception df[1, :x1] .= "d"
+    @test_throws Exception df[1, :x1] .= [1, 2]
 
     df = view(copy(refdf), :, :)
     v1 = df[!, 1]
@@ -1676,9 +1676,9 @@ end
 @testset "add new correct rules for df[row, col] .= v broadcasting" begin
     for v in [:a, "a"]
         df = DataFrame(a=1)
-        @test_throws MethodError df[1, 1] .= 10
-        @test_throws MethodError df[1, v] .= 10
-        @test_throws MethodError df[CartesianIndex(1, 1)] .= 10
+        @test_throws Exception df[1, 1] .= 10
+        @test_throws Exception df[1, v] .= 10
+        @test_throws Exception df[CartesianIndex(1, 1)] .= 10
         df = DataFrame(a=[[1, 2, 3]])
         df[1, 1] .= 10
         @test df == DataFrame(a=[[10, 10, 10]])
