@@ -102,6 +102,13 @@ Additionally selected MIME types support passing the following keyword arguments
 - MIME type `"text/plain"` accepts all listed keyword arguments and their behavior
   is identical as for `show(::IO, ::AbstractDataFrame)`
 - MIME type `"text/html"` accepts the following keyword arguments:
+    - `allrows::Bool = !get(io, :limit, false)`: Whether to print all rows. If `false`,
+      use the `DATAFRAMES_ROWS` environment variable (default: 25) as the row limit.
+    - `allcols::Bool = !get(io, :limit, false)`: Whether to print all columns. If `false`,
+      use the `DATAFRAMES_COLUMNS` environment variable (default: 100) as the column limit.
+    - `rowlabel::Symbol = :Row`: The label for the column containing row numbers.
+    - `allgroups::Bool = false`: Whether to print all groups when printing a
+      `GroupedDataFrame`, rather than only the first and last groups.
     - `eltypes::Bool = true`: Whether to print the column types under column names.
     - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
     - `max_column_width::AbstractString = ""`: The maximum column width. It must
@@ -168,12 +175,13 @@ function html_escape(cell::AbstractString)
 end
 
 @static if pkgversion(PrettyTables).major == 2
-    # When PrettyTables v2 is more widely adopted in the ecosystem, we can remove this
-    # function. In this case, we should also update the compat bounds in Project.toml to
-    # list only PrettyTables v3.
+    # PrettyTables v2 uses different keyword names from v3.
     function _show(io::IO,
                    ::MIME"text/html",
                    df::AbstractDataFrame;
+                   allrows::Bool=!get(io, :limit, false),
+                   allcols::Bool=!get(io, :limit, false),
+                   rowlabel::Symbol=:Row,
                    summary::Bool=true,
                    eltypes::Bool=true,
                    rowid::Union{Int, Nothing}=nothing,
@@ -204,15 +212,10 @@ end
             end
         end
 
-        if get(io, :limit, false)
-            # Obtain the maximum number of rows and columns that we can print from
-            # environment variables.
-            mxrow = something(tryparse(Int, get(ENV, "DATAFRAMES_ROWS", "25")), 25)
-            mxcol = something(tryparse(Int, get(ENV, "DATAFRAMES_COLUMNS", "100")), 100)
-        else
-            mxrow = -1
-            mxcol = -1
-        end
+        mxrow = allrows ? -1 :
+            something(tryparse(Int, get(ENV, "DATAFRAMES_ROWS", "25")), 25)
+        mxcol = allcols ? -1 :
+            something(tryparse(Int, get(ENV, "DATAFRAMES_COLUMNS", "100")), 100)
 
         # Check if the user wants to display a summary about the DataFrame that is
         # being printed. This will be shown using the `title` option of
@@ -266,10 +269,10 @@ end
                      max_num_of_rows           = mxrow,
                      maximum_columns_width     = max_column_width,
                      minify                    = true,
-                     row_label_column_title    = "Row",
+                     row_label_column_title    = string(rowlabel),
                      row_labels                = row_labels,
                      row_number_alignment      = :r,
-                     row_number_column_title   = "Row",
+                     row_number_column_title   = string(rowlabel),
                      show_omitted_cell_summary = true,
                      show_row_number           = show_row_number,
                      show_subheader            = eltypes,
@@ -289,6 +292,9 @@ else
     function _show(io::IO,
                    ::MIME"text/html",
                    df::AbstractDataFrame;
+                   allrows::Bool=!get(io, :limit, false),
+                   allcols::Bool=!get(io, :limit, false),
+                   rowlabel::Symbol=:Row,
                    summary::Bool=true,
                    eltypes::Bool=true,
                    rowid::Union{Int, Nothing}=nothing,
@@ -320,15 +326,10 @@ else
             end
         end
 
-        if get(io, :limit, false)
-            # Obtain the maximum number of rows and columns that we can print from
-            # environment variables.
-            mxrow = something(tryparse(Int, get(ENV, "DATAFRAMES_ROWS", "25")), 25)
-            mxcol = something(tryparse(Int, get(ENV, "DATAFRAMES_COLUMNS", "100")), 100)
-        else
-            mxrow = -1
-            mxcol = -1
-        end
+        mxrow = allrows ? -1 :
+            something(tryparse(Int, get(ENV, "DATAFRAMES_ROWS", "25")), 25)
+        mxcol = allcols ? -1 :
+            something(tryparse(Int, get(ENV, "DATAFRAMES_COLUMNS", "100")), 100)
 
         # Check if the user wants to display a summary about the DataFrame that is
         # being printed. This will be shown using the `title` option of
@@ -378,7 +379,7 @@ else
                      show_omitted_cell_summary    = true,
                      show_row_number_column       = false,
                      stand_alone                  = false,
-                     stubhead_label               = "Row",
+                     stubhead_label               = string(rowlabel),
                      style                        = _PRETTY_TABLES_HTML_TABLE_STYLE,
                      table_class                  = "data-frame",
                      table_div_class              = "data-frame",

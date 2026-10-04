@@ -9,11 +9,14 @@ PrettyTables.jl, so you can customize formatting, styling, and highlights.
 
 DataFrames-specific keywords accepted by `show` are:
 
-- `allrows::Bool` (text): print all rows instead of only the rows that fit the display
-   height.
-- `allcols::Bool` (text): print all columns instead of only the columns that fit the display
-   width.
-- `rowlabel::Symbol` (text): set the label used for the row-number column (default: `:Row`).
+- `allrows::Bool` (text and HTML): print all rows instead of limiting output to the display
+   height (text) or `DATAFRAMES_ROWS` environment variable (HTML, default: 25).
+- `allcols::Bool` (text and HTML): print all columns instead of limiting output to the display
+   width (text) or `DATAFRAMES_COLUMNS` environment variable (HTML, default: 100).
+- `allgroups::Bool` (text and HTML): print all groups of a `GroupedDataFrame` instead of
+   only the first and last groups. In HTML, the default is `false`.
+- `rowlabel::Symbol` (text and HTML): set the label used for the row-number column
+   (default: `:Row`).
 - `summary::Bool` (text and HTML): show or hide the summary line above the table (for
    example, `3×3 DataFrame`).
 - `eltypes::Bool` (text and HTML): show or hide the column element types under the column
