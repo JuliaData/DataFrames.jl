@@ -8,7 +8,7 @@ use the [CSV.jl](https://github.com/JuliaData/CSV.jl) package.
 If you have not used the CSV.jl package before then you may need to install it first:
 ```julia
 using Pkg
-Pkg.add("CSV")
+Pkg.add(["CSV", "InlineStrings"])
 ```
 
 The CSV.jl functions are not loaded automatically and must be imported into the session.
@@ -116,15 +116,18 @@ for data stored in data frames.
 ### `DataFrame` Definition in Source Code
 Sometimes, you might want to define a `DataFrame` with data directly in the source
 code. For better readability you probably want to define it in a way which resembles
-a table. This can be done with `CSV.jl` like this:
+a table. This can be done with `CSV.jl` like this, using InlineStrings.jl to choose
+the string representation explicitly:
 
 ```julia
+using InlineStrings
+
 df = CSV.read("""
     name,age,children
     John,54.0,0
     Sally,34.0,2
     Roger,79.0,4
-    """ |> IOBuffer, DataFrame)
+    """ |> IOBuffer, DataFrame; stringtype=InlineStrings.InlineString)
 ```
 
 This will result in the following `DataFrame`:
@@ -160,6 +163,7 @@ You can then create the above `DataFrame` object with
 
 ```julia
 df = CSV.read(data |> IOBuffer, DataFrame, normalizenames=true,
+              stringtype=InlineStrings.InlineString,
               header=2, skipto=4, footerskip=1, delim='│',
               drop=(i, name) -> startswith(name |> String, "Column")
      ) .|> x -> x isa AbstractString ? strip(x) : x

@@ -194,11 +194,11 @@ for details):
 We show several examples of these functions applied to the `iris` dataset below:
 
 ```jldoctest sac
-julia> using DataFrames, CSV, Statistics
+julia> using DataFrames, CSV, InlineStrings, Statistics
 
 julia> path = joinpath(pkgdir(DataFrames), "docs", "src", "assets", "iris.csv");
 
-julia> iris = CSV.read(path, DataFrame)
+julia> iris = CSV.read(path, DataFrame; stringtype=InlineStrings.InlineString)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
      │ Float64      Float64     Float64      Float64     String15

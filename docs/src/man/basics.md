@@ -267,23 +267,24 @@ from disk.
 Here we focus on one of the most common scenarios, where one has data stored on
 disk in the CSV format.
 
-First make sure you have CSV.jl installed. You can do it using the following
-instructions:
+First make sure you have CSV.jl and InlineStrings.jl installed. The examples use
+InlineStrings.jl to choose the string representation explicitly:
 
 ```julia-repl
 julia> using Pkg
 
-julia> Pkg.add("CSV")
+julia> Pkg.add(["CSV", "InlineStrings"])
 ```
 
 In order to read the file in we will use the `CSV.read` function.
 
 ```jldoctest dataframe
-julia> using CSV
+julia> using CSV, InlineStrings
 
 julia> path = joinpath(pkgdir(DataFrames), "docs", "src", "assets", "german.csv");
 
-julia> german_ref = CSV.read(path, DataFrame)
+julia> german_ref = CSV.read(path, DataFrame;
+                            stringtype=InlineStrings.InlineString, pool=true)
 1000×10 DataFrame
   Row │ id     Age    Sex      Job    Housing  Saving accounts  Checking accou ⋯
       │ Int64  Int64  String7  Int64  String7  String15         String15       ⋯
@@ -315,19 +316,21 @@ data frame if we wanted so.
 Also observe that DataFrames.jl displays the data type of the column
 below its name. In our case, it is an `Int64`, or `String7` and `String15`.
 
-Let us mention here the difference between the standard `String` type in Julia
-and e.g. the `String7` or `String15` types. The types with number suffix denote
-strings that have a fixed width (similar `CHAR(N)` type provided by many data
-bases). Such strings are much faster to work with (especially if you have many
-of them) than the standard `String` type because their instances are not heap
-allocated. For this reason `CSV.read` by default reads in narrow string columns
-using these fixed-width types.
+The `String7` and `String15` types come from InlineStrings.jl. Unlike Julia's
+standard `String`, they have a fixed capacity of 7 and 15 bytes, respectively,
+and can be stored directly in an array without a separate allocation for each
+value. The `stringtype=InlineStrings.InlineString` argument asks CSV.jl to choose
+an inline string type for each short string column. The displayed types reflect
+this explicit choice, rather than CSV.jl's default string representation.
+The `pool=true` argument stores repeated text values in a shared pool, instead
+of storing a separate copy for each row.
 
 Let us now explain in detail the following code block:
 ```julia
 path = joinpath(pkgdir(DataFrames), "docs", "src", "assets", "german.csv");
 
-german_ref = CSV.read(path, DataFrame)
+german_ref = CSV.read(path, DataFrame;
+                      stringtype=InlineStrings.InlineString, pool=true)
 ```
 - we are storing the `german.csv` file in the DataFrames.jl repository to make
   user's life easier and avoid having to download it each time;
