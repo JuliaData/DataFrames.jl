@@ -2,6 +2,14 @@ module TestGrouping
 
 using Test, DataFrames, Random, Statistics, PooledArrays, CategoricalArrays, DataAPI,
     Combinatorics, Unitful
+
+# Keep exact HTML references for both supported PrettyTables major versions.
+const pt_v2 = pkgversion(DataFrames.PrettyTables).major == 2
+const html_header = pt_v2 ? "header" : "columnLabelRow"
+const html_subheader = pt_v2 ? "subheader headerLastRow" : "columnLabelRow"
+const html_stubhead_number = pt_v2 ? "rowNumber" : "stubheadLabel"
+const html_row_number = pt_v2 ? "rowNumber" : "rowLabel"
+const html_data_row = pt_v2 ? "<tr>" : "<tr class = \"dataRow\">"
 const ≅ = isequal
 const ≇ = !isequal
 
@@ -1502,14 +1510,14 @@ end
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
-                 "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<tr class = \"$html_header\">" *
+                 "<th class = \"$html_stubhead_number\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
                  "<th style = \"text-align: left;\">A</th>" *
                  "<th style = \"text-align: left;\">B</th>" *
                  "<th style = \"text-align: left;\">C</th>" *
                  "</tr>" *
-                 "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
+                 "<tr class = \"$html_subheader\">" *
+                 "<th class = \"$html_stubhead_number\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
@@ -1517,8 +1525,8 @@ end
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
-                 "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 html_data_row *
+                 "<td class = \"$html_row_number\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">x&quot;</td>" *
                  "<td style = \"text-align: right;\">1.0</td>" *
@@ -1537,14 +1545,14 @@ end
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
-                 "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<tr class = \"$html_header\">" *
+                 "<th class = \"$html_stubhead_number\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
                  "<th style = \"text-align: left;\">A</th>" *
                  "<th style = \"text-align: left;\">B</th>" *
                  "<th style = \"text-align: left;\">C</th>" *
                  "</tr>" *
-                 "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
+                 "<tr class = \"$html_subheader\">" *
+                 "<th class = \"$html_stubhead_number\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
@@ -1552,8 +1560,8 @@ end
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
-                 "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 html_data_row *
+                 "<td class = \"$html_row_number\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: right;\">4</td>" *
                  "<td style = \"text-align: left;\">A\\nC</td>" *
                  "<td style = \"text-align: right;\">4.0</td>" *
@@ -1613,21 +1621,21 @@ end
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
-                 "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<tr class = \"$html_header\">" *
+                 "<th class = \"$html_stubhead_number\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
                  "<th style = \"text-align: left;\">a</th>" *
                  "<th style = \"text-align: left;\">b</th>" *
                  "</tr>" *
-                 "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
+                 "<tr class = \"$html_subheader\">" *
+                 "<th class = \"$html_stubhead_number\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"Symbol\" style = \"text-align: left;\">Symbol</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
-                 "<tr class = \"dataRow\">" *
-                 "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+                 html_data_row *
+                 "<td class = \"$html_row_number\" style = \"font-weight: bold; text-align: right;\">1</td>" *
                  "<td style = \"text-align: left;\">&amp;</td>" *
                  "<td style = \"text-align: left;\">&amp;</td>" *
                  "</tr>" *
