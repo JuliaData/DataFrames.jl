@@ -14,6 +14,14 @@ module TestShow
 
 using DataFrames, Dates, Random, Test, CategoricalArrays, InlineStrings
 
+# Keep exact HTML references for both supported PrettyTables major versions.
+const pt_v2 = pkgversion(DataFrames.PrettyTables).major == 2
+const html_header = pt_v2 ? "header" : "columnLabelRow"
+const html_subheader = pt_v2 ? "subheader headerLastRow" : "columnLabelRow"
+const html_stubhead_number = pt_v2 ? "rowNumber" : "stubheadLabel"
+const html_row_number = pt_v2 ? "rowNumber" : "rowLabel"
+const html_data_row = pt_v2 ? "<tr>" : "<tr class = \"dataRow\">"
+
 import Main: ⛵⛵⛵⛵⛵, F
 
 function capture_stdout(f::Function)
@@ -496,11 +504,12 @@ end
 @testset "Test colors and non-standard values: missing and nothing" begin
     # TODO: update when https://github.com/KristofferC/Crayons.jl/issues/47 is resolved
     if Base.get_have_color()
+        header_stub = pt_v2 ? "     " : "\e[1m     \e[0m"
         df = DataFrame(Fish=["Suzy", "Amir"], Mass=[1.5, missing])
         @test sprint(show, df, context=:color=>true) == """
             \e[1m2×2 DataFrame\e[0m
             \e[1m Row \e[0m│\e[1m Fish   \e[0m\e[1m Mass      \e[0m
-            \e[1m     \e[0m│\e[90m String \e[0m\e[90m Float64?  \e[0m
+            $(header_stub)│\e[90m String \e[0m\e[90m Float64?  \e[0m
             ─────┼───────────────────
                1 │ Suzy          1.5
                2 │ Amir   \e[90m missing   \e[0m"""
@@ -511,7 +520,7 @@ end
         @test sprint(show, df, context=:color=>true) == """
             \e[1m3×3 DataFrame\e[0m
             \e[1m Row \e[0m│\e[1m A       \e[0m\e[1m B       \e[0m\e[1m C       \e[0m
-            \e[1m     \e[0m│\e[90m Symbol? \e[0m\e[90m String? \e[0m\e[90m Any     \e[0m
+            $(header_stub)│\e[90m Symbol? \e[0m\e[90m String? \e[0m\e[90m Any     \e[0m
             ─────┼───────────────────────────
                1 │ Symbol  \e[90m missing \e[0m missing
                2 │\e[90m missing \e[0m String   missing
@@ -757,8 +766,9 @@ end
     io = IOContext(IOBuffer(), :displaysize=>(10, 10), :limit=>true)
     show(io, df)
     str = String(take!(io.io))
+    narrow_title = pt_v2 ? "1×1 DataF…" : "1×1 Data ⋯"
     @test str === """
-        1×1 Data ⋯
+        $narrow_title
          Row │ x ⋯
              │ S ⋯
         ─────┼────
@@ -1228,21 +1238,21 @@ end
         "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
         "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
         "<thead>" *
-        "<tr class = \"columnLabelRow\">" *
-        "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+        "<tr class = \"$html_header\">" *
+        "<th class = \"$html_stubhead_number\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
         "<th style = \"text-align: left;\">id</th>" *
         "<th style = \"text-align: left;\">value</th>" *
         "</tr>" *
-        "<tr class = \"columnLabelRow\">" *
-        "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
+        "<tr class = \"$html_subheader\">" *
+        "<th class = \"$html_stubhead_number\" style = \"font-weight: bold; text-align: right;\">" *
         "</th>" *
         "<th title = \"String1\" style = \"text-align: left;\">String1</th>" *
         "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
         "</tr>" *
         "</thead>" *
         "<tbody>" *
-        "<tr class = \"dataRow\">" *
-        "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+        html_data_row *
+        "<td class = \"$html_row_number\" style = \"font-weight: bold; text-align: right;\">1</td>" *
         "<td style = \"text-align: left;\">a</td>" *
         "<td style = \"text-align: right;\">1</td>" *
         "</tr>" *
@@ -1260,21 +1270,21 @@ end
         "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
         "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
         "<thead>" *
-        "<tr class = \"columnLabelRow\">" *
-        "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+        "<tr class = \"$html_header\">" *
+        "<th class = \"$html_stubhead_number\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
         "<th style = \"text-align: left;\">id</th>" *
         "<th style = \"text-align: left;\">value</th>" *
         "</tr>" *
-        "<tr class = \"columnLabelRow\">" *
-        "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
+        "<tr class = \"$html_subheader\">" *
+        "<th class = \"$html_stubhead_number\" style = \"font-weight: bold; text-align: right;\">" *
         "</th>" *
         "<th title = \"String1\" style = \"text-align: left;\">String1</th>" *
         "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
         "</tr>" *
         "</thead>" *
         "<tbody>" *
-        "<tr class = \"dataRow\">" *
-        "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+        html_data_row *
+        "<td class = \"$html_row_number\" style = \"font-weight: bold; text-align: right;\">1</td>" *
         "<td style = \"text-align: left;\">c</td>" *
         "<td style = \"text-align: right;\">3</td>" *
         "</tr>" *
@@ -1296,21 +1306,21 @@ end
         "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
         "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
         "<thead>" *
-        "<tr class = \"columnLabelRow\">" *
-        "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+        "<tr class = \"$html_header\">" *
+        "<th class = \"$html_stubhead_number\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
         "<th style = \"text-align: left;\">id</th>" *
         "<th style = \"text-align: left;\">value</th>" *
         "</tr>" *
-        "<tr class = \"columnLabelRow\">" *
-        "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
+        "<tr class = \"$html_subheader\">" *
+        "<th class = \"$html_stubhead_number\" style = \"font-weight: bold; text-align: right;\">" *
         "</th>" *
         "<th title = \"String1\" style = \"text-align: left;\">String1</th>" *
         "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
         "</tr>" *
         "</thead>" *
         "<tbody>" *
-        "<tr class = \"dataRow\">" *
-        "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">1</td>" *
+        html_data_row *
+        "<td class = \"$html_row_number\" style = \"font-weight: bold; text-align: right;\">1</td>" *
         "<td style = \"text-align: left;\">a</td>" *
         "<td style = \"text-align: right;\">1</td>" *
         "</tr>" *

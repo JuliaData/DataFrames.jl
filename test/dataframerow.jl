@@ -1,6 +1,14 @@
 module TestDataFrameRow
 
 using Test, DataFrames, Random, Logging, CategoricalArrays
+
+# Keep exact HTML references for both supported PrettyTables major versions.
+const pt_v2 = pkgversion(DataFrames.PrettyTables).major == 2
+const html_header = pt_v2 ? "header" : "columnLabelRow"
+const html_header_last = pt_v2 ? "header headerLastRow" : "columnLabelRow"
+const html_subheader = pt_v2 ? "subheader headerLastRow" : "columnLabelRow"
+const html_stubhead_label = pt_v2 ? "rowLabel" : "stubheadLabel"
+const html_data_row = pt_v2 ? "<tr>" : "<tr class = \"dataRow\">"
 const ≅ = isequal
 const ≇ = !isequal
 
@@ -446,20 +454,20 @@ end
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
-                 "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<tr class = \"$html_header\">" *
+                 "<th class = \"$html_stubhead_label\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
                  "<th style = \"text-align: left;\">b</th>" *
                  "<th style = \"text-align: left;\">c</th>" *
                  "</tr>" *
-                 "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">" *
+                 "<tr class = \"$html_subheader\">" *
+                 "<th class = \"$html_stubhead_label\" style = \"font-weight: bold; text-align: right;\">" *
                  "</th>" *
                  "<th title = \"String\" style = \"text-align: left;\">String</th>" *
                  "<th title = \"Int64\" style = \"text-align: left;\">Int64</th>" *
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
-                 "<tr class = \"dataRow\">" *
+                 html_data_row *
                  "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: left;\">b</td>" *
                  "<td style = \"text-align: right;\">0</td>" *
@@ -519,14 +527,14 @@ end
                  "<div class = \"data-frame\" style = \"overflow-x: scroll;\">" *
                  "<table class = \"data-frame\" style = \"margin-bottom: 6px;\">" *
                  "<thead>" *
-                 "<tr class = \"columnLabelRow\">" *
-                 "<th class = \"stubheadLabel\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
+                 "<tr class = \"$html_header_last\">" *
+                 "<th class = \"$html_stubhead_label\" style = \"font-weight: bold; text-align: right;\">Row</th>" *
                  "<th style = \"text-align: left;\">b</th>" *
                  "<th style = \"text-align: left;\">c</th>" *
                  "</tr>" *
                  "</thead>" *
                  "<tbody>" *
-                 "<tr class = \"dataRow\">" *
+                 html_data_row *
                  "<td class = \"rowLabel\" style = \"font-weight: bold; text-align: right;\">2</td>" *
                  "<td style = \"text-align: left;\">b</td>" *
                  "<td style = \"text-align: right;\">0</td>" *
