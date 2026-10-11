@@ -28,6 +28,62 @@ function capture_stdout(f::Function)
     str, size
 end
 
+@testset "HTML display controls" begin
+    df = DataFrame([Symbol("field$j") => ["cell$(i)_$j" for i in 1:5] for j in 1:5])
+    html(x; limit=true, kwargs...) = sprint(io -> show(io, MIME("text/html"), x; kwargs...);
+                                           context=:limit => limit)
+    withenv("DATAFRAMES_ROWS" => "2", "DATAFRAMES_COLUMNS" => "2") do
+        for limit in (true, false), allrows in (true, false), allcols in (true, false)
+            @testset "row and column limits $limit $allrows $allcols" begin
+                text = html(df; limit=limit, allrows=allrows, allcols=allcols)
+                @test occursin("cell3_1", text) == allrows
+                @test occursin("field3", text) == allcols
+            end
+        end
+        @test html(df) == html(df; allrows=false, allcols=false)
+        @test html(df; limit=false) == html(df; allrows=true, allcols=true)
+        for x in (df, view(df, :, :), eachrow(df), eachcol(df), df[3, :])
+            @testset "labels and wrappers $(typeof(x))" begin
+                text = html(x; allrows=true, allcols=true, rowlabel=Symbol("Entry<>"))
+                @test occursin("Entry&lt;&gt;", text)
+                @test occursin("cell3_3", text)
+            end
+        end
+        gd = groupby(DataFrame(group=repeat(1:3; inner=5), field=repeat(df.field1, 3)), :group)
+        @testset "all groups" begin
+            text = html(gd; allgroups=true, allrows=true, allcols=true, rowlabel=:Entry)
+            @test length(findall("<table ", text)) == 3
+            @test occursin("Group 2 (5 rows): group = 2", text)
+            @test length(findall("cell3_1", text)) == 3
+            @test !occursin("&vellip;", text)
+            @test occursin(">Entry</th>", text)
+        end
+        @testset "first and last groups" begin
+            @test html(gd) == html(gd; allgroups=false)
+            text = html(gd; allgroups=false, allrows=false, allcols=false)
+            @test length(findall("<table ", text)) == 2
+            @test occursin("First Group", text) && occursin("Last Group", text)
+            @test !occursin("cell3_1", text)
+            @test occursin("&vellip;", text)
+        end
+        @testset "grouped display options" begin
+            @test !occursin("<p><b>", html(gd; allgroups=true, summary=false))
+            @test !occursin("String", html(gd; eltypes=false))
+            @test !occursin(">Entry</th>", html(gd; rowlabel=:Entry, show_row_number=false))
+            @test_throws ArgumentError html(gd; rowid=1)
+            @test_throws ArgumentError html(gd; title="replacement")
+            @test_throws ArgumentError html(gd; truncate=10)
+        end
+        @testset "zero and one group" begin
+            @test !occursin("<table ", html(groupby(DataFrame(group=Int[]), :group); allgroups=true))
+            text = html(groupby(df, :field1)[[3]]; allgroups=true, allrows=true, allcols=true)
+            @test length(findall("<table ", text)) == 1
+            @test occursin("Group 1", text)
+            @test occursin("cell3_3", text)
+        end
+    end
+end
+
 @testset "Basic show test with allrows and allcols" begin
     df = DataFrame(A=Int64[1:4;], B=["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
                    C=Float32[1.0, 2.0, 3.0, 4.0], D=['\'', '∀', '$', '\n'])
