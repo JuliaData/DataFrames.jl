@@ -536,10 +536,10 @@ julia> readings = DataFrame(sensor=["A", "B", "A", "B", "A"],
 
 julia> sort!(readings, [:sensor, :day]);
 
+julia> w = 2; # window width
 julia> windows = combine(groupby(readings, :sensor),
-                         :day => (d -> d[2:end]) => :day,
-                         :reading =>
-                             (r -> rolling_mean(r, 2)) => :mean_reading);
+                         :day => (d -> d[w:end]) => :day,
+                         :reading => (r -> rolling_mean(r, w)) => :mean_reading);
 
 julia> windows == DataFrame(sensor=["A", "A", "B"], day=[2, 3, 2],
                             mean_reading=[11.0, 13.0, 5.0])
@@ -548,9 +548,9 @@ true
 
 The helper assumes a positive window width. Each group here has at least two
 readings. For a group of `N` readings and a window of width `w`, there are
-`N - w + 1` complete windows when `N >= w`.
+`N - w + 1` complete windows when `N >= w`. If `N < w` the group is dropped.
 The first result aligns with day 2 in each group. `combine` retains the sensor
-key for every window.
+key for every window as in this case each group has at least `w = 2` observations.
 
 ## Using `GroupedDataFrame` as an iterable and indexable object
 
