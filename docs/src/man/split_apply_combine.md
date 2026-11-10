@@ -537,6 +537,7 @@ julia> readings = DataFrame(sensor=["A", "B", "A", "B", "A"],
 julia> sort!(readings, [:sensor, :day]);
 
 julia> w = 2; # window width
+
 julia> windows = combine(groupby(readings, :sensor),
                          :day => (d -> d[w:end]) => :day,
                          :reading => (r -> rolling_mean(r, w)) => :mean_reading);
