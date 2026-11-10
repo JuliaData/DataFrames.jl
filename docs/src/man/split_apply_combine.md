@@ -523,13 +523,13 @@ julia> gd[1]
 
 A rolling mean often belongs to the last observation in its window. Sort the
 observations by time first, then use `combine` to keep one row per complete
-window. Here `rollmean` from [RollingFunctions.jl](https://github.com/JeffreySarnoff/RollingFunctions.jl)
-averages two consecutive readings from the same sensor.
+window. The `rolling_mean` helper below uses `mean` from `Statistics` to
+average consecutive readings from the same sensor.
 
 ```jldoctest sacrolling
-julia> using DataFrames
+julia> using DataFrames, Statistics
 
-julia> using RollingFunctions: rollmean
+julia> rolling_mean(x, w) = [mean(@view x[i:i+w-1]) for i in 1:length(x)-w+1];
 
 julia> readings = DataFrame(sensor=["A", "B", "A", "B", "A"],
                             day=[3, 2, 1, 1, 2], reading=[14, 6, 10, 4, 12]);
@@ -538,15 +538,17 @@ julia> sort!(readings, [:sensor, :day]);
 
 julia> windows = combine(groupby(readings, :sensor),
                          :day => (d -> d[2:end]) => :day,
-                         :reading => (r -> rollmean(r, 2)) => :mean_reading);
+                         :reading =>
+                             (r -> rolling_mean(r, 2)) => :mean_reading);
 
 julia> windows == DataFrame(sensor=["A", "A", "B"], day=[2, 3, 2],
                             mean_reading=[11.0, 13.0, 5.0])
 true
 ```
 
-Each group here has at least two readings. For a group of `N` readings and
-a window of width `w`, there are `N - w + 1` complete windows when `N >= w`.
+The helper assumes a positive window width. Each group here has at least two
+readings. For a group of `N` readings and a window of width `w`, there are
+`N - w + 1` complete windows when `N >= w`.
 The first result aligns with day 2 in each group. `combine` retains the sensor
 key for every window.
 
