@@ -63,6 +63,26 @@ julia> cv = categorical(v)
  "Group B"
 ```
 
+A `CategoricalVector` can be used directly as a column in a
+`DataFrame`. For example, the categorical vector created above
+can be added to a data frame:
+
+```jldoctest categorical
+julia> using DataFrames
+
+julia> df = DataFrame(group=cv, score=[85, 90, 88, 78, 82, 80])
+6×2 DataFrame
+ Row │ group    score
+     │ Cat…     Int64
+─────┼────────────────
+   1 │ Group A     85
+   2 │ Group A     90
+   3 │ Group A     88
+   4 │ Group B     78
+   5 │ Group B     82
+   6 │ Group B     80
+```
+
 `CategoricalVectors`s support missing values.
 
 ```jldoctest categorical
