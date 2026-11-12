@@ -519,6 +519,40 @@ julia> gd[1]
    1 │     1
 ```
 
+### Rolling means within groups
+
+A rolling mean often belongs to the last observation in its window. Sort the
+observations by time first, then use `combine` to keep one row per complete
+window. The `rolling_mean` helper below uses `mean` from `Statistics` to
+average consecutive readings from the same sensor.
+
+```jldoctest sacrolling
+julia> using DataFrames, Statistics
+
+julia> rolling_mean(x, w) = [mean(@view x[i:i+w-1]) for i in 1:length(x)-w+1];
+
+julia> readings = DataFrame(sensor=["A", "B", "A", "B", "A"],
+                            day=[3, 2, 1, 1, 2], reading=[14, 6, 10, 4, 12]);
+
+julia> sort!(readings, [:sensor, :day]);
+
+julia> w = 2; # window width
+
+julia> windows = combine(groupby(readings, :sensor),
+                         :day => (d -> d[w:end]) => :day,
+                         :reading => (r -> rolling_mean(r, w)) => :mean_reading);
+
+julia> windows == DataFrame(sensor=["A", "A", "B"], day=[2, 3, 2],
+                            mean_reading=[11.0, 13.0, 5.0])
+true
+```
+
+The helper assumes a positive window width. Each group here has at least two
+readings. For a group of `N` readings and a window of width `w`, there are
+`N - w + 1` complete windows when `N >= w`. If `N < w` the group is dropped.
+The first result aligns with day 2 in each group. `combine` retains the sensor
+key for every window as in this case each group has at least `w = 2` observations.
+
 ## Using `GroupedDataFrame` as an iterable and indexable object
 
 If you only want to split the data set into subsets, use the [`groupby`](@ref)
