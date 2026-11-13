@@ -194,11 +194,11 @@ for details):
 We show several examples of these functions applied to the `iris` dataset below:
 
 ```jldoctest sac
-julia> using DataFrames, CSV, Statistics
+julia> using DataFrames, CSV, InlineStrings, Statistics
 
 julia> path = joinpath(pkgdir(DataFrames), "docs", "src", "assets", "iris.csv");
 
-julia> iris = CSV.read(path, DataFrame)
+julia> iris = CSV.read(path, DataFrame; stringtype=InlineStrings.InlineString)
 150×5 DataFrame
  Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species
      │ Float64      Float64     Float64      Float64     String15
@@ -323,7 +323,7 @@ julia> combine(iris_gdf, :PetalLength => (x -> [extrema(x)]) => [:min, :max])
 ```
 
 To get row number for each observation within each group use the `eachindex` function:
-```
+```jldoctest sac
 julia> combine(iris_gdf, eachindex)
 150×2 DataFrame
  Row │ Species         eachindex
@@ -332,11 +332,20 @@ julia> combine(iris_gdf, eachindex)
    1 │ Iris-setosa             1
    2 │ Iris-setosa             2
    3 │ Iris-setosa             3
+   4 │ Iris-setosa             4
+   5 │ Iris-setosa             5
+   6 │ Iris-setosa             6
+   7 │ Iris-setosa             7
+   8 │ Iris-setosa             8
   ⋮  │       ⋮             ⋮
+ 144 │ Iris-virginica         44
+ 145 │ Iris-virginica         45
+ 146 │ Iris-virginica         46
+ 147 │ Iris-virginica         47
  148 │ Iris-virginica         48
  149 │ Iris-virginica         49
  150 │ Iris-virginica         50
-                 144 rows omitted
+                 135 rows omitted
 ```
 
 Contrary to `combine`, the `select` and `transform` functions always return
@@ -344,36 +353,53 @@ a data frame with the same number and order of rows as the source.
 In the example below
 the return values in columns `:SepalLength_SepalWidth_cor` and `:nrow` are
 broadcasted to match the number of elements in each group:
-```
+
+```jldoctest sac
 julia> select(iris_gdf, 1:2 => cor)
 150×2 DataFrame
  Row │ Species         SepalLength_SepalWidth_cor
-     │ String          Float64
+     │ String15        Float64
 ─────┼────────────────────────────────────────────
    1 │ Iris-setosa                       0.74678
    2 │ Iris-setosa                       0.74678
    3 │ Iris-setosa                       0.74678
    4 │ Iris-setosa                       0.74678
+   5 │ Iris-setosa                       0.74678
+   6 │ Iris-setosa                       0.74678
+   7 │ Iris-setosa                       0.74678
+   8 │ Iris-setosa                       0.74678
   ⋮  │       ⋮                     ⋮
+ 144 │ Iris-virginica                    0.457228
+ 145 │ Iris-virginica                    0.457228
+ 146 │ Iris-virginica                    0.457228
+ 147 │ Iris-virginica                    0.457228
  148 │ Iris-virginica                    0.457228
  149 │ Iris-virginica                    0.457228
  150 │ Iris-virginica                    0.457228
-                                  143 rows omitted
+                                  135 rows omitted
 
 julia> transform(iris_gdf, :Species => x -> chop.(x, head=5, tail=0))
 150×6 DataFrame
- Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species         Species_function
-     │ Float64      Float64     Float64      Float64     String          SubString…
-─────┼────────────────────────────────────────────────────────────────────────────────────
-   1 │         5.1         3.5          1.4         0.2  Iris-setosa     setosa
-   2 │         4.9         3.0          1.4         0.2  Iris-setosa     setosa
-   3 │         4.7         3.2          1.3         0.2  Iris-setosa     setosa
-   4 │         4.6         3.1          1.5         0.2  Iris-setosa     setosa
-  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮                ⋮
- 148 │         6.5         3.0          5.2         2.0  Iris-virginica  virginica
- 149 │         6.2         3.4          5.4         2.3  Iris-virginica  virginica
- 150 │         5.9         3.0          5.1         1.8  Iris-virginica  virginica
-                                                                          143 rows omitted
+ Row │ SepalLength  SepalWidth  PetalLength  PetalWidth  Species         Speci ⋯
+     │ Float64      Float64     Float64      Float64     String15        Strin ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │         5.1         3.5          1.4         0.2  Iris-setosa     setos ⋯
+   2 │         4.9         3.0          1.4         0.2  Iris-setosa     setos
+   3 │         4.7         3.2          1.3         0.2  Iris-setosa     setos
+   4 │         4.6         3.1          1.5         0.2  Iris-setosa     setos
+   5 │         5.0         3.6          1.4         0.2  Iris-setosa     setos ⋯
+   6 │         5.4         3.9          1.7         0.4  Iris-setosa     setos
+   7 │         4.6         3.4          1.4         0.3  Iris-setosa     setos
+   8 │         5.0         3.4          1.5         0.2  Iris-setosa     setos
+  ⋮  │      ⋮           ⋮            ⋮           ⋮             ⋮               ⋱
+ 144 │         6.8         3.2          5.9         2.3  Iris-virginica  virgi ⋯
+ 145 │         6.7         3.3          5.7         2.5  Iris-virginica  virgi
+ 146 │         6.7         3.0          5.2         2.3  Iris-virginica  virgi
+ 147 │         6.3         2.5          5.0         1.9  Iris-virginica  virgi
+ 148 │         6.5         3.0          5.2         2.0  Iris-virginica  virgi ⋯
+ 149 │         6.2         3.4          5.4         2.3  Iris-virginica  virgi
+ 150 │         5.9         3.0          5.1         1.8  Iris-virginica  virgi
+                                                   1 column and 135 rows omitted
 ```
 
 All functions also support the `do` block form. However, as noted above,
@@ -492,6 +518,40 @@ julia> gd[1]
 ─────┼───────
    1 │     1
 ```
+
+### Rolling means within groups
+
+A rolling mean often belongs to the last observation in its window. Sort the
+observations by time first, then use `combine` to keep one row per complete
+window. The `rolling_mean` helper below uses `mean` from `Statistics` to
+average consecutive readings from the same sensor.
+
+```jldoctest sacrolling
+julia> using DataFrames, Statistics
+
+julia> rolling_mean(x, w) = [mean(@view x[i:i+w-1]) for i in 1:length(x)-w+1];
+
+julia> readings = DataFrame(sensor=["A", "B", "A", "B", "A"],
+                            day=[3, 2, 1, 1, 2], reading=[14, 6, 10, 4, 12]);
+
+julia> sort!(readings, [:sensor, :day]);
+
+julia> w = 2; # window width
+
+julia> windows = combine(groupby(readings, :sensor),
+                         :day => (d -> d[w:end]) => :day,
+                         :reading => (r -> rolling_mean(r, w)) => :mean_reading);
+
+julia> windows == DataFrame(sensor=["A", "A", "B"], day=[2, 3, 2],
+                            mean_reading=[11.0, 13.0, 5.0])
+true
+```
+
+The helper assumes a positive window width. Each group here has at least two
+readings. For a group of `N` readings and a window of width `w`, there are
+`N - w + 1` complete windows when `N >= w`. If `N < w` the group is dropped.
+The first result aligns with day 2 in each group. `combine` retains the sensor
+key for every window as in this case each group has at least `w = 2` observations.
 
 ## Using `GroupedDataFrame` as an iterable and indexable object
 
@@ -730,7 +790,7 @@ syntax in `combine`, `select` or `transform` will usually be faster for large
 `GroupedDataFrame` objects than iterating them, with the difference that they
 produce a data frame. An operation corresponding to the example above is:
 
-```
+```julia-repl
 julia> combine(iris_gdf, nrow)
 3×2 DataFrame
  Row │ Species          nrow
@@ -1311,7 +1371,7 @@ julia> keys(groupby(df, :volume))
 
 If you want to have them sorted in ascending order pass `sort=true`:
 
-```
+```julia-repl
 julia> keys(groupby(df, :volume, sort=true))
 7-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
  GroupKey: (volume = 1,)
@@ -1328,7 +1388,7 @@ by or pass a named tuple as `sort` keyword argument containing one or more of
 `alg`, `lt`, `by`, `rev`, and `order` fields that will be treated just like in
 [`sortperm`](@ref):
 
-```
+```julia-repl
 julia> keys(groupby(df, [:customer_id, order(:volume, rev=true)]))
 6-element DataFrames.GroupKeys{GroupedDataFrame{DataFrame}}:
  GroupKey: (customer_id = "a", volume = 2)

@@ -146,7 +146,7 @@ Name: x, dtype: int64
 
 For DataFrames.jl, it looks like this:
 
-```julia
+```julia-repl
 julia> combine(groupby(df, :grp), :x => mean)
 2×2 DataFrame
  Row │ grp    x_mean

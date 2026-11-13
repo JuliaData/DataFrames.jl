@@ -333,7 +333,7 @@ The elements of a `GroupedDataFrame` are [`SubDataFrame`](@ref)s of its parent.
 * `gd[i::Integer]` -> Get the `i`th group.
 * `gd[key::NamedTuple]` -> Get the group corresponding to the given values of
   the grouping columns. The fields of the `NamedTuple` must match the grouping
-  columns columns passed to [`groupby`](@ref) (including order).
+  columns passed to [`groupby`](@ref) (including order).
 * `gd[key::Tuple]` -> Same as previous, but omitting the names on `key`.
 * `get(gd, key::Union{Tuple, NamedTuple}, default)` -> Get group for key `key`,
   returning `default` if it does not exist.

@@ -8,6 +8,30 @@ using Test, Random, DataFrames
     @test DataFrames.make_unique([:x, :x_1, :x2], makeunique=false) == [:x, :x_1, :x2]
 end
 
+@testset "duplicate-name error message uses repr for Symbols" begin
+    # this testset was AI generated
+    # Identifier-like Symbols still render as `:name`.
+    err = try DataFrames.make_unique([:a, :a]) catch e; e end
+    @test err isa ArgumentError
+    @test occursin(":a", err.msg)
+
+    # Symbols containing characters that aren't valid in an identifier
+    # must use the explicit `Symbol("...")` form so the message is
+    # unambiguous (previously rendered as `:column name`, which
+    # reads like a parse error rather than naming a single Symbol).
+    s = Symbol("column name")
+    for thunk in (
+        () -> DataFrames.make_unique([s, s]),                  # src/other/utils.jl
+        () -> rename!(DataFrames.Index([:a, :b]), [s, s]),     # src/other/index.jl rename!
+        () -> hcat(DataFrame(s => 1), DataFrame(s => 2)),      # src/other/index.jl add_names
+    )
+        err = try thunk() catch e; e end
+        @test err isa ArgumentError
+        @test occursin("Symbol(\"column name\")", err.msg)
+        @test !occursin(":column name", err.msg)
+    end
+end
+
 @testset "repeat count" begin
     df = DataFrame(a=1:2, b=3:4)
     ref = DataFrame(a=repeat(1:2, 2),
@@ -166,3 +190,33 @@ end
 end
 
 end # module
+
+@testset "SubDataFrame copycols=false rejects transformations" begin
+    df = DataFrame(a = [1, 2, 3])
+    v = @view df[1:2, :]
+
+    err = try
+        select(v, :a => ByRow(x -> x + 1) => :a; copycols=false)
+    catch e
+        e
+    end
+
+    @test err isa ArgumentError
+    @test occursin("copycols=false", sprint(showerror, err))
+end
+
+@testset "SubDataFrame copycols=false column selection" begin
+    df = DataFrame(a = [1, 2, 3], b = [1, 2, 3])
+    v = @view df[1:2, :]
+
+    res = select(v, :a, :b, copycols=false)
+
+    @test size(res) == (2, 2)
+    @test names(res) == ["a", "b"]
+
+    @test res.a == v.a
+    @test res.b == v.b
+
+    @test parent(res.a) === parent(v.a)
+    @test parent(res.b) === parent(v.b)
+end

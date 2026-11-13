@@ -45,7 +45,7 @@ function rename!(x::Index, nms::AbstractVector{Symbol}; makeunique::Bool=false)
     if !makeunique
         if length(unique(nms)) != length(nms)
             dup = unique(nms[nonunique(DataFrame(nms=nms))])
-            dupstr = join(string.(':', dup), ", ", " and ")
+            dupstr = join(repr.(dup), ", ", " and ")
             msg = "Duplicate variable names: $dupstr. Pass makeunique=true " *
                   "to make them unique using a suffix automatically."
             throw(ArgumentError(msg))
@@ -463,7 +463,7 @@ function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
     end
     if length(dups) > 0
         if !makeunique
-            dupstr = join(string.(':', unique(u[dups])), ", ", " and ")
+            dupstr = join(repr.(unique(u[dups])), ", ", " and ")
             msg = "Duplicate variable names: $dupstr. Pass makeunique=true " *
                   "to make them unique using a suffix automatically."
             throw(ArgumentError(msg))

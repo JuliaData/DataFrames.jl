@@ -97,7 +97,6 @@ See also: [`metadatakeys`](@ref), [`metadata!`](@ref),
 [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
 $TABLEMETA_EXAMPLE
-```
 """
 function metadata(df::DataFrame, key::AbstractString,
                   default=MetadataMissingDefault(); style::Bool=false)
@@ -186,7 +185,6 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
 $TABLEMETA_EXAMPLE
-```
 """
 function metadata!(df::DataFrame, key::AbstractString, value::Any;
                    style::Symbol=:default)
@@ -245,7 +243,6 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
 $TABLEMETA_EXAMPLE
-```
 """
 function deletemetadata!(df::DataFrame, key::AbstractString)
     meta = getfield(df, :metadata)
@@ -355,7 +352,6 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
 $COLMETADATA_EXAMPLE
-```
 """
 function colmetadata(df::DataFrame, col::ColumnIndex, key::AbstractString,
                      default=MetadataMissingDefault(); style::Bool=false)
@@ -421,7 +417,6 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
 $COLMETADATA_EXAMPLE
-```
 """
 function colmetadatakeys(df::DataFrame, col::ColumnIndex)
     idx = index(df)[col] # check if column exists and get its integer index
@@ -483,7 +478,6 @@ See also: [`metadata`](@ref), [`metadatakeys`](@ref),
 [`deletecolmetadata!`](@ref), [`emptycolmetadata!`](@ref).
 
 $COLMETADATA_EXAMPLE
-```
 """
 function colmetadata!(df::DataFrame, col::ColumnIndex, key::AbstractString, value::Any;
                       style::Symbol=:default)

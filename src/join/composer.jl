@@ -85,7 +85,9 @@ struct DataFrameJoiner
                     throw(ArgumentError("Missing values in key columns are not allowed " *
                                         "when matchmissing == :error. " *
                                         "`missing` found in column :$col_name in " *
-                                        (df_i == 1 ? "left" : "right") * " data frame."))
+                                        (df_i == 1 ? "left" : "right") * " data frame. " *
+                                        "To perform a join with missing values, use " *
+                                        "matchmissing=:equal or matchmissing=:notequal."))
                 end
             end
         elseif !(matchmissing in (:equal, :notequal))

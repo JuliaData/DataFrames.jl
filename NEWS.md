@@ -1,3 +1,9 @@
+# DataFrames.jl v1.8.2 Release Notes
+
+## Bug fixes
+
+* Fix a column selection bug when transforming `SubDataFrame` with `copycols=false` ([#3503](https://github.com/JuliaData/DataFrames.jl/pull/3522))
+
 # DataFrames.jl v1.8.0 Release Notes
 
 ## Ecosystem compatibility changes

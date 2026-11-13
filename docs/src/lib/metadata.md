@@ -104,7 +104,9 @@ metadata, which means that other metadata needs to be filtered-out).
 
 ## Examples
 
-Here is a simple example how you can work with metadata in DataFrames.jl:
+Here is a simple example how you can work with metadata in DataFrames.jl.
+The example sorts column metadata keys by name to display them in a consistent
+order:
 
 ```jldoctest dataframe
 julia> using DataFrames
@@ -163,19 +165,19 @@ julia> colmetadata(df, :rating, "label")
 julia> colmetadata(df, :rating, "label", style=true)
 ("ELO rating in classical time control", :note)
 
-julia> collect(colmetadatakeys(df))
+julia> colkeys = sort!(collect(colmetadatakeys(df)); by=first)
 3-element Vector{Pair{Symbol, Base.KeySet{String, Dict{String, Tuple{Any, Any}}}}}:
    :date => ["label"]
- :rating => ["label"]
    :name => ["label"]
+ :rating => ["label"]
 
 julia> [only(names(df, col)) =>
         [key => colmetadata(df, col, key) for key in metakeys] for
-        (col, metakeys) in colmetadatakeys(df)]
+        (col, metakeys) in colkeys]
 3-element Vector{Pair{String, Vector{Pair{String, String}}}}:
    "date" => ["label" => "Rating date in yyyy-u format"]
- "rating" => ["label" => "ELO rating in classical time control"]
    "name" => ["label" => "First and last name of a player"]
+ "rating" => ["label" => "ELO rating in classical time control"]
 
 julia> emptycolmetadata!(df);
 

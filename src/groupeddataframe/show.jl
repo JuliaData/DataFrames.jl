@@ -126,32 +126,28 @@ function Base.show(df::GroupedDataFrame;
                 kwargs...)
 end
 
-function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
+function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame;
+                   allgroups::Bool=false, summary::Bool=true, kwargs...)
+    _verify_kwargs_for_html(; kwargs...)
     N = length(gd)
     keys = html_escape(join(string.(groupcols(gd)), ", "))
     keystr = length(gd.cols) > 1 ? "keys" : "key"
     groupstr = N > 1 ? "groups" : "group"
-    write(io, "<p><b>$(nameof(typeof(gd))) with $N $groupstr based on $keystr: $keys</b></p>")
-    if N > 0
-        nrows = size(gd[1], 1)
+    summary && write(io, "<p><b>$(nameof(typeof(gd))) with $N $groupstr based on $keystr: $keys</b></p>")
+    group_indices = allgroups || N <= 1 ? (1:N) : (1, N)
+    for i in group_indices
+        nrows = size(gd[i], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [string(col, " = ", repr(MIME("text/plain"), first(gd[1][!, col])))
+        identified_groups = [string(col, " = ", repr(MIME("text/plain"), first(gd[i][!, col])))
                              for col in gd.cols]
 
-        title = "First Group ($nrows $rows): " * join(identified_groups, ", ")
-        _show(io, mime, gd[1], title=title)
-    end
-    if N > 1
-        nrows = size(gd[N], 1)
-        rows = nrows > 1 ? "rows" : "row"
-
-        identified_groups = [string(col, " = ", repr(MIME("text/plain"), first(gd[N][!, col])))
-                             for col in gd.cols]
-
-        write(io, "<p>&vellip;</p>")
-        title = "Last Group ($nrows $rows): " * join(identified_groups, ", ")
-        _show(io, mime, gd[N], title=title)
+        if !allgroups && i > 1
+            write(io, "<p>&vellip;</p>")
+        end
+        prefix = allgroups ? "Group $i" : i == 1 ? "First Group" : "Last Group"
+        title = "$prefix ($nrows $rows): " * join(identified_groups, ", ")
+        _show(io, mime, gd[i]; title=title, kwargs...)
     end
 end
 
