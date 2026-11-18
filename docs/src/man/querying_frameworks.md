@@ -10,7 +10,7 @@ and to allow advanced users to write more compact code.
 
 ## TidierData.jl
 [TidierData.jl](https://tidierorg.github.io/TidierData.jl/latest/), part of 
-the [Tidier](https://tidierorg.github.io/Tidier.jl/dev/) ecosystem, is a macro-based 
+the [Tidier](https://tidierorg.github.io/Tidier.jl/stable/) ecosystem, is a macro-based 
 data analysis interface that wraps DataFrames.jl.  The instructions below are for version 
 0.16.0 of TidierData.jl.
 
