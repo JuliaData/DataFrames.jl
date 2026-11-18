@@ -83,7 +83,7 @@ integrated they are with DataFrames.jl.
       frequency tables / cross-tabulations. Tightly integrated with DataFrames.jl.
     - [HypothesisTests.jl](https://juliastats.org/HypothesisTests.jl/stable/):
       A range of hypothesis testing tools.
-    - [GLM.jl](https://juliastats.org/GLM.jl/stable/manual/): Tools for estimating
+    - [GLM.jl](https://juliastats.org/GLM.jl/stable/): Tools for estimating
       linear and generalized linear models. Tightly integrated with DataFrames.jl.
     - [StatsModels.jl](https://juliastats.org/StatsModels.jl/stable/):
       For converting heterogeneous `DataFrame` into homogeneous matrices for use
